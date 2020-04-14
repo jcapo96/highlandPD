@@ -1,0 +1,93 @@
+--- Cut levels --------
+ < pionAnalysis.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
+
+--- Event Variations ------------
+
+The single systematics configuration (when EnableSingle...SystConfigurations = 1)
+or the all systematics configuration (when EnableAllSystematics = 1)
+need to be enabled in baseAnalysis parameter file
+
+ < pionAnalysis.Variations.EnabledEdx              = 0 >	
+
+
+--- Corrections -----------
+
+ < pionAnalysis.Corrections.EnabledEdx             = 0 >
+ < pionAnalysis.Corrections.EnabledEdxData         = 0 >
+ < pionAnalysis.Corrections.EnabledBrokenTrackData = 0 >  
+ < pionAnalysis.Corrections.EnabledBeamMom         = 0 >   
+ < pionAnalysis.Corrections.EnabledBeamMomSmearing = 0 >    
+ < pionAnalysis.Corrections.EnabledCryoWallBeamMom = 0 >   
+
+--- Other Parameters -----------
+
+ < pionAnalysis.Corrections.SeedValue              = 1 >
+
+
+--- Other Parameters -----------
+
+ < pionAnalysis.ElectronVeto                       = 1 >
+
+ < pionAnalysis.TreeConverter.UseSCE               = 1 >
+
+
+
+###############################################################################
+  baseAnslysis parameters
+###############################################################################
+
+This ia a copy of the baseAnalysis parameters file in highland, such that we can overwrite them
+
+
+Whether to initialize trees or not at the beginning of each configuration
+
+ < baseAnalysis.InitializeTrees = 1 >	
+
+ --- Corrections ------------
+
+Disables all corrections regardless of the ones enabled below
+
+ < baseAnalysis.Corrections.DisableAllCorrections  = 0 >
+
+Apply all corrections even if they were already applied in the input file
+
+ < baseAnalysis.Corrections.ForceApplyCorrections  = 0 >
+
+Enable/Disable individual corrections
+
+
+--- Event Weights ------------
+
+Enable/disable configurations with a single systematic (when EnableSingleWeightSystConfigurations = 1)
+and enable systematics in the "all_syst" configuration (when EnableAllSystematics = 1)
+
+No weights yet !!!
+
+--- Systematics ------------
+
+Number of toy experiments
+ < baseAnalysis.Systematics.NumberOfToys = 100 >
+
+The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
+
+     0 --> A pure random seed is generated based on time
+ not 0 --> A fix random seed is used 
+
+ < baseAnalysis.Systematics.RandomSeed = 1 >
+
+Use a different random generator for each systematic
+
+ < baseAnalysis.Systematics.IndividualRandomGenerator = 0 >
+
+
+--- Configurations ------------
+
+Create configurations with a single systematic ( a configuration for each systematic selected above)
+
+ < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 0 >
+ < baseAnalysis.Configurations.EnableSingleWeightSystConfigurations    = 0 >
+
+Enable/disable the configuration with all systematics (or the ones selected above)
+
+ < baseAnalysis.Configurations.EnableAllSystematics = 0 >
+ 
