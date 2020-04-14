@@ -629,7 +629,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
     double dy       = posY-beamPosY;
     double costheta = dirX*beamDirX+dirY*beamDirY+dirZ*beamDirZ;
 
-    if(dx > -3 && dx < 0 && dy > -1 && dy < 2 && posZ >28 && posZ < 32 && costheta >0.93)return true;
+    if(dx > -3 && dx < 7 && dy > -8 && dy < 7 && posZ >27.5 && posZ < 32.5 && costheta >0.93)return true;
   }
   else{
     //check beam data quality
