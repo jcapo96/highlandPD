@@ -1,3 +1,9 @@
+if [[ -z "${HIGHLANDPATH}" ]]; then
+    echo "Run the HighLAND setup script first !!!!"
+    return;
+fi
+
+
 # and this package to the highland package hierarchy (otherwise the parameters file will not be read)
 export HIGHLAND_PACKAGE_HIERARCHY=pionAnalysis:pdBaseAnalysis:LArSoftReader:pdUtils:pdEventModel:$HIGHLAND_PACKAGE_HIERARCHY
 
