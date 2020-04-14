@@ -167,7 +167,7 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersReco(OutputManager& 
 }
 
 //********************************************************************
-void standardPDTree::FillStandardVariables_CountersTrue(OutputManager& output, PionAnaCounters& counters){
+void standardPDTree::FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters){
 //********************************************************************
 
   output.FillVar(truebeamdau_npiplus,                  counters.ntrue_beamdaughter_piplus);
@@ -202,7 +202,7 @@ void standardPDTree::FillStandardVariables_BeamReco(OutputManager& output, AnaBe
 //********************************************************************
 
   if (!beamB) return;
-  AnaBeamPionAna* beam         = static_cast<AnaBeamPionAna*>(beamB);
+  AnaBeamPD* beam         = static_cast<AnaBeamPD*>(beamB);
 
   output.FillVar(beam_tof,     beam->TOF);
   output.FillVar(beam_trigger, beam->BeamTrigger);

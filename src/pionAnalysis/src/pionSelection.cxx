@@ -57,7 +57,7 @@ bool FindBeamPionTrackAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
  
   // loop ever particles in the event
   for (Int_t i=0;i<nParts; ++i){
-    AnaParticlePionAna* part = static_cast<AnaParticlePionAna*>(parts[i]);
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     //save the ones that are correctly selected by Pandora
     if(part->isBeamPart){
       box.MainTrack = part;
@@ -72,7 +72,7 @@ bool BeamPionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
   (void)boxB;
-  AnaBeamPionAna* beam = static_cast<AnaBeamPionAna*>(static_cast<AnaEventB*>(&event)->Beam);
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
 
   // Use the true beam particle to discriminate between data and MC
   AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
@@ -100,10 +100,10 @@ bool BeamIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   if (!box.MainTrack) return false;
 
   //if the main track exists cast it
-  AnaParticlePionAna* part = static_cast<AnaParticlePionAna*>(box.MainTrack);
+  AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
   
   //if the seltrk is a track, accept it
-  if (part->Type == AnaParticlePionAna::kTrack) return true;
+  if (part->Type == AnaParticlePD::kTrack) return true;
   else return false;
 }
 
@@ -120,7 +120,7 @@ bool BeamPionGeometricCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   if (!box.MainTrack) return false;
 
   //if the beam part exists cast it
-  AnaBeamPionAna* beam = static_cast<AnaBeamPionAna*>(static_cast<AnaEventB*>(&event)->Beam);
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
   if (!beam->BeamParticle) return false;
   AnaParticle* beampart = static_cast<AnaParticle*>(beam->BeamParticle);
 

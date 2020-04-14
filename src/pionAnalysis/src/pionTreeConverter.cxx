@@ -697,13 +697,13 @@ void pionTreeConverter::FillInfo(AnaSpill* spill){
   FillTrueInfo(spill);
 
   // beam related information (must be after true info)
-  FillBeamInfo(spill->TrueParticles, static_cast<AnaBeamPionAna*>(spill->Beam));
+  FillBeamInfo(spill->TrueParticles, static_cast<AnaBeamPD*>(spill->Beam));
   
   AnaBunch* bunch = MakeBunch();
   spill->Bunches.push_back(bunch);
 
   // All information about each bunch
-  FillBunchInfo(spill->TrueParticles, bunch, static_cast<AnaBeamPionAna*>(spill->Beam));
+  FillBunchInfo(spill->TrueParticles, bunch, static_cast<AnaBeamPD*>(spill->Beam));
 
 }
 
@@ -715,7 +715,7 @@ void pionTreeConverter::FillDQInfo(AnaDataQuality* dq){
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPionAna* beam){
+void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam){
 //*****************************************************************************
 
     beam->GoodSpill = true;
@@ -783,14 +783,14 @@ void pionTreeConverter::FillTrueInfo(AnaSpill* spill){
 
 
   // Add the true beam particle
-  AnaTrueParticlePionAna* beamTruePart = MakeTrueParticle();
+  AnaTrueParticlePD* beamTruePart = MakeTrueParticle();
   FillTrueBeamTrueParticleInfo(beamTruePart);
   spill->TrueParticles.push_back(beamTruePart);    
 
   // Add the true daughters of the true beam particle
   int nParts = std::min((int)NMAXTRUEPARTICLES,   (int)true_beam_daughter_ID->size());
   for (int ipart=0;ipart<nParts;ipart++){
-    AnaTrueParticlePionAna* truePart = MakeTrueParticle();
+    AnaTrueParticlePD* truePart = MakeTrueParticle();
     FillTrueBeamDaughterTrueParticleInfo(ipart, truePart, beamTruePart);
     beamTruePart->Daughters.push_back((*true_beam_daughter_ID)[ipart]);
     spill->TrueParticles.push_back(truePart);    
@@ -799,7 +799,7 @@ void pionTreeConverter::FillTrueInfo(AnaSpill* spill){
   // Add the true granddaughters of the true beam particle
   nParts = std::min((int)NMAXTRUEPARTICLES,   (int)true_beam_grand_daughter_ID->size());
   for (int ipart=0;ipart<nParts;ipart++){
-    AnaTrueParticlePionAna* truePart = MakeTrueParticle();
+    AnaTrueParticlePD* truePart = MakeTrueParticle();
     FillTrueBeamGrandDaughterTrueParticleInfo(ipart, truePart, beamTruePart);
     AnaTrueParticle* parent = pdAnaUtils::GetTrueParticle(spill->TrueParticles,(*true_beam_grand_daughter_parID)[ipart]);
     if (parent) parent->Daughters.push_back((*true_beam_grand_daughter_ID)[ipart]);
@@ -809,7 +809,7 @@ void pionTreeConverter::FillTrueInfo(AnaSpill* spill){
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPionAna* beam){
+void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam){
 //*****************************************************************************
 
   bunch->Bunch  = 1;
@@ -818,7 +818,7 @@ void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePartic
   bunch->Vertices.clear();
 
   // The beam particle
-  AnaParticlePionAna* part = MakeParticle();
+  AnaParticlePD* part = MakeParticle();
   FillBeamParticleInfo(trueParticles, part, beam);  
   bunch->Particles.push_back(part);
 
@@ -827,7 +827,7 @@ void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePartic
 
   // The daughter tracks
   for (UInt_t i=0;i<reco_daughter_allTrack_ID->size();i++){
-    AnaParticlePionAna* dautrk = MakeParticle();
+    AnaParticlePD* dautrk = MakeParticle();
     FillDaughterParticleTrackInfo(trueParticles, i, dautrk);
     bunch->Particles.push_back(dautrk);
     part->Daughters.push_back(dautrk);
@@ -836,7 +836,7 @@ void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePartic
 
   // The daughter showers
   for (UInt_t i=0;i<reco_daughter_allShower_ID->size();i++){
-    AnaParticlePionAna* dausho = MakeParticle();
+    AnaParticlePD* dausho = MakeParticle();
     FillDaughterParticleShowerInfo(trueParticles, i, dausho);
     bunch->Particles.push_back(dausho);
     part->Daughters.push_back(dausho);
@@ -879,7 +879,7 @@ void pionTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* trueVer
 
 //*****************************************************************************
 void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles,
-                                             AnaParticlePionAna* part, AnaBeamPionAna* beam){
+                                             AnaParticlePD* part, AnaBeamPD* beam){
 //*****************************************************************************
   
   part->UniqueID  = reco_beam_trackID;
@@ -887,10 +887,10 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   // This is the beam particle (TODO)
   part->Charge = -8888;
 
-  //  variable in AnaParticlePionAna as an example of custom event model
-  if      (reco_beam_type == 11) part->Type = AnaParticlePionAna::kShower;
-  else if (reco_beam_type == 13) part->Type = AnaParticlePionAna::kTrack;
-  else                           part->Type = AnaParticlePionAna::kUnknown;
+  //  variable in AnaParticlePD as an example of custom event model
+  if      (reco_beam_type == 11) part->Type = AnaParticlePD::kShower;
+  else if (reco_beam_type == 13) part->Type = AnaParticlePD::kTrack;
+  else                           part->Type = AnaParticlePD::kUnknown;
   
   SubDetId::SetDetectorUsed(part->Detector , SubDetId::kSubdet1_1);
   
@@ -998,7 +998,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
     
     // If not found create a new TrueParticle, fill it, and add it to the vector of TrueParticles
     if (!part->TrueObject){
-      AnaTrueParticlePionAna* truePart = MakeTrueParticle();
+      AnaTrueParticlePD* truePart = MakeTrueParticle();
       FillBeamTrueParticleInfo(truePart);
       trueParticles.push_back(truePart);    
 
@@ -1074,7 +1074,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
 
 //*****************************************************************************
 void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles,
-                                                      Int_t itrk, AnaParticlePionAna* part){
+                                                      Int_t itrk, AnaParticlePD* part){
 //*****************************************************************************
 
   /* There are two different vectors here: reco_daughter_allTrack and reco_daughter_PFP. 
@@ -1226,7 +1226,7 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
     
     // If not found create a new TrueParticle, fill it, and add it to the vector of TrueParticles
     if (!part->TrueObject){
-      AnaTrueParticlePionAna* truePart = MakeTrueParticle();
+      AnaTrueParticlePD* truePart = MakeTrueParticle();
       FillDaughterTrueParticleInfo(itrk, truePart);
       trueParticles.push_back(truePart);    
       
@@ -1243,7 +1243,7 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
 
 //*****************************************************************************
 void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles,
-                                                       Int_t itrk, AnaParticlePionAna* part){
+                                                       Int_t itrk, AnaParticlePD* part){
 //*****************************************************************************
 
   part->UniqueID  = (*reco_daughter_allShower_ID)[itrk];
@@ -1304,7 +1304,7 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
     // If not found create a new TrueParticle, fill it, and add it to the vector of TrueParticles
     // NEVER ENTERS HERE !!!!!
     if (!part->TrueObject){
-      AnaTrueParticlePionAna* truePart = MakeTrueParticle();
+      AnaTrueParticlePD* truePart = MakeTrueParticle();
       FillDaughterTrueParticleInfo(itrk, truePart);
       trueParticles.push_back(truePart);    
         
@@ -1320,7 +1320,7 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
 
 
 //*****************************************************************************
-void pionTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePionAna* truePart){
+void pionTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
 //*****************************************************************************
 
 
@@ -1383,7 +1383,7 @@ void pionTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePionAna* truePar
 
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueBeamTrueParticleInfo(AnaTrueParticlePionAna* truePart){
+void pionTreeConverter::FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
 //*****************************************************************************
 
   truePart->ID = true_beam_ID;
@@ -1470,7 +1470,7 @@ void pionTreeConverter::FillTrueBeamTrueParticleInfo(AnaTrueParticlePionAna* tru
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueBeamDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePionAna* truePart, AnaTrueParticlePionAna* parent){
+void pionTreeConverter::FillTrueBeamDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart, AnaTrueParticlePD* parent){
 //*****************************************************************************
 
 
@@ -1542,7 +1542,7 @@ void pionTreeConverter::FillTrueBeamDaughterTrueParticleInfo(Int_t ipart, AnaTru
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePionAna* truePart, AnaTrueParticlePionAna* parent){
+void pionTreeConverter::FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart, AnaTrueParticlePD* parent){
 //*****************************************************************************
 
 
@@ -1560,7 +1560,7 @@ void pionTreeConverter::FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, A
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePionAna* truePart){
+void pionTreeConverter::FillDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart){
 //*****************************************************************************
   
   truePart->ID =   (*reco_daughter_PFP_true_byHits_ID)[ipart];

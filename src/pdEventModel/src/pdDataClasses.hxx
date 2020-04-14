@@ -1,20 +1,20 @@
-#ifndef PionAnaDataClasses_hxx
-#define PionAnaDataClasses_hxx
+#ifndef pdDataClasses_hxx
+#define pdDataClasses_hxx
 
 #include "DataClasses.hxx"
 #include "ParticleId.hxx"
 
 
 /// AnaParticle
-class AnaParticlePionAna: public AnaParticle{
+class AnaParticlePD: public AnaParticle{
 public :
 
-  AnaParticlePionAna();
-  virtual ~AnaParticlePionAna();
+  AnaParticlePD();
+  virtual ~AnaParticlePD();
 
   /// Clone this object.
-  virtual AnaParticlePionAna* Clone() {
-    return new AnaParticlePionAna(*this);
+  virtual AnaParticlePD* Clone() {
+    return new AnaParticlePD(*this);
   }
 
   /// Dump the object to screen.
@@ -23,7 +23,7 @@ public :
 protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
-  AnaParticlePionAna(const AnaParticlePionAna& part);
+  AnaParticlePD(const AnaParticlePD& part);
 
 public:
 
@@ -39,15 +39,15 @@ public:
 };
 
 /// AnaTrueParticle
-class AnaTrueParticlePionAna: public AnaTrueParticle{
+class AnaTrueParticlePD: public AnaTrueParticle{
 public :
 
-  AnaTrueParticlePionAna();
-  virtual ~AnaTrueParticlePionAna();
+  AnaTrueParticlePD();
+  virtual ~AnaTrueParticlePD();
 
   /// Clone this object.
-  virtual AnaTrueParticlePionAna* Clone() {
-    return new AnaTrueParticlePionAna(*this);
+  virtual AnaTrueParticlePD* Clone() {
+    return new AnaTrueParticlePD(*this);
   }
 
   /// Dump the object to screen.
@@ -56,7 +56,7 @@ public :
 protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
-  AnaTrueParticlePionAna(const AnaTrueParticlePionAna& truePart);
+  AnaTrueParticlePD(const AnaTrueParticlePD& truePart);
 
 public:
 
@@ -70,15 +70,15 @@ public:
 
 
 /// Representation of the beam information, including POT and quality.
-class AnaBeamPionAna: public AnaBeam{
+class AnaBeamPD: public AnaBeam{
 public :
 
-  AnaBeamPionAna();
-  virtual ~AnaBeamPionAna();
+  AnaBeamPD();
+  virtual ~AnaBeamPD();
 
   /// Clone this object.
-  virtual AnaBeamPionAna* Clone() {
-    return new AnaBeamPionAna(*this);
+  virtual AnaBeamPD* Clone() {
+    return new AnaBeamPD(*this);
   }
 
   /// Dump the object to screen.
@@ -87,7 +87,7 @@ public :
 protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
-  AnaBeamPionAna(const AnaBeamPionAna& beam);
+  AnaBeamPD(const AnaBeamPD& beam);
 
 public:
 
@@ -111,11 +111,11 @@ public:
 
 
 
-class PionAnaCounters{
+class PDCounters{
 
 public:
   
-  PionAnaCounters(){
+  PDCounters(){
     ntrue_beamdaughter_piplus=0;
     ntrue_beamdaughter_piminus=0;
     ntrue_beamdaughter_pi0=0;
@@ -123,7 +123,7 @@ public:
     ntrue_beamdaughter_neutron=0;
     ntrue_beamdaughter_nucleus=0;    
   }
-  virtual ~PionAnaCounters(){}
+  virtual ~PDCounters(){}
   
   Int_t ntrue_beamdaughter_pi0;
   Int_t ntrue_beamdaughter_piplus;

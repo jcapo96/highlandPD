@@ -1,7 +1,7 @@
 #ifndef pionAnalysisUtils_h
 #define pionAnalysisUtils_h
 
-#include "PionAnaDataClasses.hxx"
+#include "pdDataClasses.hxx"
 
 namespace pionAnaUtils{
 
@@ -9,8 +9,8 @@ namespace pionAnaUtils{
   void AddCustomCategories();
   
   // Fill Custom categories
-  void FillCustomCategories(AnaEventB* event, AnaParticle* part, PionAnaCounters& counters);
-  void FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePionAna* part, AnaTrueParticlePionAna*  trueBeamPart);
+  void FillCustomCategories(AnaEventB* event, AnaParticle* part, PDCounters& counters);
+  void FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePD* part, AnaTrueParticlePD*  trueBeamPart);
   
 }
 

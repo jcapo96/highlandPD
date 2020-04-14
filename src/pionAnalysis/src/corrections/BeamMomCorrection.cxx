@@ -1,5 +1,5 @@
 #include "BeamMomCorrection.hxx"
-#include "PionAnaDataClasses.hxx"
+#include "pdDataClasses.hxx"
 #include <cassert>
 
 //#define DEBUG
@@ -21,7 +21,7 @@ void BeamMomCorrection::Apply(AnaSpillC& spillC){
     return;
 
   // Get particle beam
-  AnaBeamPionAna* beam = static_cast<AnaBeamPionAna*>(spill.Beam);
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(spill.Beam);
   AnaParticle* part = static_cast<AnaParticle*>(beam->BeamParticle);
   if (!part)                        return; //?
     

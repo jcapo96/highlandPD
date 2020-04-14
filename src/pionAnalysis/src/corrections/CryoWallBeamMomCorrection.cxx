@@ -1,5 +1,5 @@
 #include "CryoWallBeamMomCorrection.hxx"
-#include "PionAnaDataClasses.hxx"
+#include "pdDataClasses.hxx"
 #include <cassert>
 
 //#define DEBUG
@@ -17,7 +17,7 @@ void CryoWallBeamMomCorrection::Apply(AnaSpillC& spillC){
   AnaSpill& spill = *static_cast<AnaSpill*>(&spillC);
 
   // Get beam
-  AnaBeamPionAna* beam = static_cast<AnaBeamPionAna*>(spill.Beam);
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(spill.Beam);
   if (!beam)                        return; //?
     
   double corr = 0.0215;

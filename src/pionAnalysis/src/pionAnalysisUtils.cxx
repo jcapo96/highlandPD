@@ -90,23 +90,23 @@ void pionAnaUtils::AddCustomCategories(){
 }
 
 //********************************************************************
-void pionAnaUtils::FillCustomCategories(AnaEventB* event, AnaParticle* part, PionAnaCounters& counters){
+void pionAnaUtils::FillCustomCategories(AnaEventB* event, AnaParticle* part, PDCounters& counters){
 //********************************************************************
 
-  AnaBeamPionAna* beam  = static_cast<AnaBeamPionAna*>(event->Beam); 
+  AnaBeamPD* beam  = static_cast<AnaBeamPD*>(event->Beam); 
   
   if (!part->TrueObject) return;  
-  AnaTrueParticlePionAna*  truePart = static_cast<AnaTrueParticlePionAna*>(part->TrueObject);  
+  AnaTrueParticlePD*  truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);  
   if (!truePart) return;
 
 
   // --------- daupionana category ------------------------
   
   AnaParticleB* beamPart = beam->BeamParticle;
-  AnaTrueParticlePionAna* trueBeamPart = static_cast<AnaTrueParticlePionAna*>(beamPart->TrueObject);  
+  AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(beamPart->TrueObject);  
 
   for (Int_t i=0;i<std::min((Int_t)100,(Int_t)part->Daughters.size()); ++i){
-    pionAnaUtils::FillDaupionanaCategory(event, static_cast<AnaTrueParticlePionAna*>(part->Daughters[i]->TrueObject), trueBeamPart);
+    pionAnaUtils::FillDaupionanaCategory(event, static_cast<AnaTrueParticlePD*>(part->Daughters[i]->TrueObject), trueBeamPart);
   }
 
   
@@ -145,7 +145,7 @@ void pionAnaUtils::FillCustomCategories(AnaEventB* event, AnaParticle* part, Pio
 }
 
 //********************************************************************
-void pionAnaUtils::FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePionAna* truePart, AnaTrueParticlePionAna*  trueBeamPart){
+void pionAnaUtils::FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePD* truePart, AnaTrueParticlePD*  trueBeamPart){
 //********************************************************************
 
 
@@ -155,10 +155,10 @@ void pionAnaUtils::FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePionA
   bool true_grand_daughter = false;
   bool true_great_grand_daughter = false;
   for(UInt_t i = 0; i < trueBeamPart->Daughters.size(); i++){
-    AnaTrueParticlePionAna* trueBeamDaughter = pdAnaUtils::GetTrueParticle(event, trueBeamPart->Daughters[i]);
+    AnaTrueParticlePD* trueBeamDaughter = pdAnaUtils::GetTrueParticle(event, trueBeamPart->Daughters[i]);
     if (!trueBeamDaughter) continue;
     for(UInt_t j = 0; j < trueBeamDaughter->Daughters.size(); j++){
-      AnaTrueParticlePionAna* trueBeamGrandDaughter = pdAnaUtils::GetTrueParticle(event, trueBeamDaughter->Daughters[j]);
+      AnaTrueParticlePD* trueBeamGrandDaughter = pdAnaUtils::GetTrueParticle(event, trueBeamDaughter->Daughters[j]);
       if (trueBeamGrandDaughter->ID == truePart->ID){
         true_grand_daughter=true;
         break;
@@ -170,7 +170,7 @@ void pionAnaUtils::FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePionA
 
       /*      else{ 
         for(UInt_t k = 0; k < trueBeamGrandDaughter->Daughters.size(); k++){
-          AnaTrueParticlePionAna* trueBeamGreatGrandDaughter = pdAnaUtils::GetTrueParticle(spill->TrueParticles, trueBeamGrandDaughter->Daughters[k]);
+          AnaTrueParticlePD* trueBeamGreatGrandDaughter = pdAnaUtils::GetTrueParticle(spill->TrueParticles, trueBeamGrandDaughter->Daughters[k]);
           if (trueBeamGreatGrandDaughter->ID == truePart->ID){
             true_great_grand_daughter=true;
             break;
@@ -185,7 +185,7 @@ void pionAnaUtils::FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePionA
   bool pi0gamma=false;
   if (truePart->PDG==22){
     for(UInt_t i = 0; i < trueBeamPart->Daughters.size(); i++){
-      AnaTrueParticlePionAna* trueBeamDaughter = pdAnaUtils::GetTrueParticle(event, trueBeamPart->Daughters[i]);
+      AnaTrueParticlePD* trueBeamDaughter = pdAnaUtils::GetTrueParticle(event, trueBeamPart->Daughters[i]);
       if (!trueBeamDaughter) continue;
       if(trueBeamDaughter->PDG==111){
         std::vector<Int_t> miau = trueBeamPart->Pi0_decay_ID;

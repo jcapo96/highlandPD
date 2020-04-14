@@ -15,7 +15,7 @@
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
 #include "pionTreeConverter.hxx"
-#include "PionAnaDataClasses.hxx"
+#include "pdDataClasses.hxx"
 
 #include "HighlandMiniTreeConverter.hxx"
 #include "LArSoftTreeConverter.hxx"
@@ -95,7 +95,7 @@
 const UInt_t NMAXSAVEDPARTICLES=700;
 const UInt_t NMAXSAVEDDAUGHTERS=100;
 
-PionAnaCounters _globalCounters; 
+PDCounters _globalCounters; 
 
 //********************************************************************
 pionAnalysis::pionAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {

@@ -344,7 +344,7 @@ AnaTrueParticle* pdAnaUtils::FindBeamTrueParticle(const AnaSpillB& spill){
 
   AnaTrueParticle* beampart=NULL;
   
-  AnaBeamPionAna* beam         = static_cast<AnaBeamPionAna*>(spill.Beam);
+  AnaBeamPD* beam         = static_cast<AnaBeamPD*>(spill.Beam);
   AnaParticleMomB* beamPart = beam->BeamParticle;
 
   Float_t beammom=0;
@@ -472,7 +472,7 @@ void pdAnaUtils::ComputeDistanceToVertex(AnaParticle* part, std::vector<Float_t>
 }
 
 //*****************************************************************************
-AnaTrueParticlePionAna* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
+AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
 //*****************************************************************************
 
   // Get all reconstructed tracks in the event
@@ -481,7 +481,7 @@ AnaTrueParticlePionAna* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
 
   for (UInt_t i=0;i<nTrueParts;i++){
     if (trueParticles[i]->ID == ID){
-      return static_cast<AnaTrueParticlePionAna*>(trueParticles[i]);
+      return static_cast<AnaTrueParticlePD*>(trueParticles[i]);
     }
   }
 
@@ -489,13 +489,13 @@ AnaTrueParticlePionAna* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
 }
 
 //*****************************************************************************
-AnaTrueParticlePionAna* pdAnaUtils::GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID){
+AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID){
  //*****************************************************************************
  
   // Get all reconstructed tracks in the event
   for (UInt_t i=0;i<trueParticles.size();i++){
     if (trueParticles[i]->ID == ID){
-      return static_cast<AnaTrueParticlePionAna*>(trueParticles[i]);
+      return static_cast<AnaTrueParticlePD*>(trueParticles[i]);
     }
   }
 
@@ -504,12 +504,12 @@ AnaTrueParticlePionAna* pdAnaUtils::GetTrueParticle(const std::vector<AnaTruePar
 
 
 //********************************************************************
-void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PionAnaCounters& counters){
+void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters){
 //********************************************************************
 
-  AnaBeamPionAna* beam  = static_cast<AnaBeamPionAna*>(event.Beam); 
+  AnaBeamPD* beam  = static_cast<AnaBeamPD*>(event.Beam); 
   AnaParticleB* beamPart = beam->BeamParticle;
-  AnaTrueParticlePionAna* trueBeamPart = static_cast<AnaTrueParticlePionAna*>(beamPart->TrueObject);  
+  AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(beamPart->TrueObject);  
   if (!trueBeamPart) return;
   
   counters.ntrue_beamdaughter_piplus=0;
@@ -520,7 +520,7 @@ void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PionAnaCounters& cou
   counters.ntrue_beamdaughter_nucleus=0;
 
   for(UInt_t i = 0; i < trueBeamPart->Daughters.size(); i++){
-    AnaTrueParticlePionAna* trueBeamDaughter = pdAnaUtils::GetTrueParticle(&event, trueBeamPart->Daughters[i]);
+    AnaTrueParticlePD* trueBeamDaughter = pdAnaUtils::GetTrueParticle(&event, trueBeamPart->Daughters[i]);
     if (!trueBeamDaughter) continue;
     if      (trueBeamDaughter->PDG==211)  counters.ntrue_beamdaughter_piplus++;
     else if (trueBeamDaughter->PDG==-211) counters.ntrue_beamdaughter_piminus++;
@@ -585,7 +585,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticle& part, TProfile *
 }
 
 //*****************************************************************************
-bool pdAnaUtils::isBeamLike(AnaParticlePionAna* part, AnaBeamPionAna* beam ){
+bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
 //*****************************************************************************	
   
   //cast the beam particle
@@ -654,7 +654,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePionAna* part, AnaBeamPionAna* beam ){
 
 
 //***************************************************************
-std::vector< int > pdAnaUtils::GetPID( const AnaBeamPionAna& beam, double nominal_momentum ){
+std::vector< int > pdAnaUtils::GetPID( const AnaBeamPD& beam, double nominal_momentum ){
 //***************************************************************
   const auto& thePIDCands = GetPIDCandidates(beam, nominal_momentum);
   std::vector< int > thePIDs = thePIDCands.getPDGCodes();
@@ -662,12 +662,12 @@ std::vector< int > pdAnaUtils::GetPID( const AnaBeamPionAna& beam, double nomina
 }
 
 //***************************************************************
-PossibleParticleCands2 pdAnaUtils::GetPIDCandidates( const AnaBeamPionAna& beam, double nominal_momentum ){
+PossibleParticleCands2 pdAnaUtils::GetPIDCandidates( const AnaBeamPD& beam, double nominal_momentum ){
 //***************************************************************
   return GetPIDCandidates_CERNCalib(beam,nominal_momentum);
 }
 //***************************************************************
-PossibleParticleCands2 pdAnaUtils::GetPIDCandidates_CERNCalib( const AnaBeamPionAna& beam, double nominal_momentum ){
+PossibleParticleCands2 pdAnaUtils::GetPIDCandidates_CERNCalib( const AnaBeamPD& beam, double nominal_momentum ){
 //***************************************************************
   PossibleParticleCands2 candidates;
 

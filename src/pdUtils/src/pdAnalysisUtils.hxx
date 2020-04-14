@@ -4,7 +4,7 @@
 #include "CutUtils.hxx"
 #include "ToyBoxPD.hxx"
 #include "EventBoxId.hxx"
-#include "PionAnaDataClasses.hxx"
+#include "pdDataClasses.hxx"
 #include "TProfile.h"
 
 struct PossibleParticleCands2 {
@@ -96,22 +96,22 @@ namespace pdAnaUtils{
   void ComputeDistanceToVertex(AnaParticle* part, std::vector<Float_t>& distance);
   
   // Get te AnaTrueParticle with a given ID
-  AnaTrueParticlePionAna* GetTrueParticle(AnaEventB* event, Int_t ID);
-  AnaTrueParticlePionAna* GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID);
+  AnaTrueParticlePD* GetTrueParticle(AnaEventB* event, Int_t ID);
+  AnaTrueParticlePD* GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID);
 
   // Fill te counters for several type of true beam daughters
-  void FillBeamDaughterCounters(AnaEventB& event, PionAnaCounters& counters);
+  void FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters);
 
   //checks if the beam particle selected by Pandora has been correctly selected. Basic implementation for the moment
-  bool isBeamLike(AnaParticlePionAna* part, AnaBeamPionAna* beam);
+  bool isBeamLike(AnaParticlePD* part, AnaBeamPD* beam);
   
   // Compute the PID chi2 and ndf for protons
   std::pair< double, int > Chi2PID(const AnaParticle& part, TProfile * profile );
 
   // Methods to compute the beam PDG variables (cannot be used with the piontree since it does not contain TOF and CKOV info)
-  std::vector< int > GetPID( const AnaBeamPionAna& beam, double nominal_momentum );
-  PossibleParticleCands2 GetPIDCandidates( const AnaBeamPionAna& beam, double nominal_momentum );
-  PossibleParticleCands2 GetPIDCandidates_CERNCalib( const AnaBeamPionAna& beam, double nominal_momentum );
+  std::vector< int > GetPID( const AnaBeamPD& beam, double nominal_momentum );
+  PossibleParticleCands2 GetPIDCandidates( const AnaBeamPD& beam, double nominal_momentum );
+  PossibleParticleCands2 GetPIDCandidates_CERNCalib( const AnaBeamPD& beam, double nominal_momentum );
 }
 
 #endif

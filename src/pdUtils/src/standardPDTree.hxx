@@ -3,7 +3,7 @@
 
 #include "OutputManager.hxx"
 #include "baseAnalysis.hxx"
-#include "PionAnaDataClasses.hxx"
+#include "pdDataClasses.hxx"
 
 namespace standardPDTree{
 
@@ -25,7 +25,7 @@ namespace standardPDTree{
 
 
   // Methods to fill the standard sets of variables in the output tree
-  void FillStandardVariables_CountersTrue(OutputManager& output, PionAnaCounters& counters);
+  void FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters);
   
   void FillStandardVariables_BeamTrue(OutputManager& output, AnaBeamB* beamB);
   void FillStandardVariables_BeamReco(OutputManager& output, AnaBeamB* beamB);

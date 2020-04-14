@@ -1,6 +1,6 @@
-#define PionAnaDataClasses_C
+#define pdDataClasses_C
 
-#include "PionAnaDataClasses.hxx"
+#include "pdDataClasses.hxx"
 
 
 // define a constant value for uninitialised parameters
@@ -10,7 +10,7 @@ const Int_t    kIntUnassigned = -999;
 
 
 //********************************************************************
-AnaParticlePionAna::AnaParticlePionAna():AnaParticle(){
+AnaParticlePD::AnaParticlePD():AnaParticle(){
 //********************************************************************
 
   Type = kUnknown;
@@ -19,13 +19,13 @@ AnaParticlePionAna::AnaParticlePionAna():AnaParticle(){
 }
 
 //********************************************************************
-AnaParticlePionAna::~AnaParticlePionAna(){
+AnaParticlePD::~AnaParticlePD(){
 //********************************************************************
 
 }
 
 //********************************************************************
-AnaParticlePionAna::AnaParticlePionAna(const AnaParticlePionAna& part):AnaParticle(part){
+AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 //********************************************************************
 
   Type        = part.Type;
@@ -33,12 +33,12 @@ AnaParticlePionAna::AnaParticlePionAna(const AnaParticlePionAna& part):AnaPartic
 }
 
 //********************************************************************
-void AnaParticlePionAna::Print() const{
+void AnaParticlePD::Print() const{
 //********************************************************************
 
   AnaParticle::Print();
   
-  std::cout << "-------- AnaParticlePionAna --------- " << std::endl;
+  std::cout << "-------- AnaParticlePD --------- " << std::endl;
   std::cout << "Type:                    " << Type << std::endl;
   std::cout << "PassBeamCut:             " << isBeamPart << std::endl;
 
@@ -47,7 +47,7 @@ void AnaParticlePionAna::Print() const{
 
 
 //********************************************************************
-AnaTrueParticlePionAna::AnaTrueParticlePionAna():AnaTrueParticle(){
+AnaTrueParticlePD::AnaTrueParticlePD():AnaTrueParticle(){
 //********************************************************************
 
   Pi0_decay_ID.clear();
@@ -57,13 +57,13 @@ AnaTrueParticlePionAna::AnaTrueParticlePionAna():AnaTrueParticle(){
 }
 
 //********************************************************************
-AnaTrueParticlePionAna::~AnaTrueParticlePionAna(){
+AnaTrueParticlePD::~AnaTrueParticlePD(){
 //********************************************************************
   
 }
 
 //********************************************************************
-AnaTrueParticlePionAna::AnaTrueParticlePionAna(const AnaTrueParticlePionAna& truePart):AnaTrueParticle(truePart){
+AnaTrueParticlePD::AnaTrueParticlePD(const AnaTrueParticlePD& truePart):AnaTrueParticle(truePart){
 //********************************************************************
 
   for (UInt_t i=0;i<truePart.Pi0_decay_ID.size();i++)
@@ -75,10 +75,10 @@ AnaTrueParticlePionAna::AnaTrueParticlePionAna(const AnaTrueParticlePionAna& tru
 }
 
 //********************************************************************
-void AnaTrueParticlePionAna::Print() const{
+void AnaTrueParticlePD::Print() const{
 //********************************************************************
 
-  std::cout << "-------- AnaTrueParticlePionAna --------- " << std::endl;
+  std::cout << "-------- AnaTrueParticlePD --------- " << std::endl;
 
   AnaTrueParticle::Print();
   
@@ -90,7 +90,7 @@ void AnaTrueParticlePionAna::Print() const{
 
 
 //********************************************************************
-AnaBeamPionAna::AnaBeamPionAna(){
+AnaBeamPD::AnaBeamPD(){
 //********************************************************************
 
   POT           = kIntUnassigned;
@@ -119,13 +119,13 @@ AnaBeamPionAna::AnaBeamPionAna(){
 }
 
 //********************************************************************
-AnaBeamPionAna::~AnaBeamPionAna(){
+AnaBeamPD::~AnaBeamPD(){
 //********************************************************************
 
 }
 
 //********************************************************************
-AnaBeamPionAna::AnaBeamPionAna(const AnaBeamPionAna& beam):AnaBeam(beam){
+AnaBeamPD::AnaBeamPD(const AnaBeamPD& beam):AnaBeam(beam){
 //********************************************************************
 
   BeamTrigger   = beam.BeamTrigger;
@@ -153,10 +153,10 @@ AnaBeamPionAna::AnaBeamPionAna(const AnaBeamPionAna& beam):AnaBeam(beam){
 }
 
 //********************************************************************
-void AnaBeamPionAna::Print() const{
+void AnaBeamPD::Print() const{
 //********************************************************************
 
-  std::cout << "-------- AnaBeamPionAna --------- " << std::endl;
+  std::cout << "-------- AnaBeamPD --------- " << std::endl;
 
   std::cout << "BeamTrigger:      " << BeamTrigger << std::endl;
   std::cout << "TOF:              " << TOF << std::endl;
