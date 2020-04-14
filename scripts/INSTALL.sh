@@ -1,7 +1,7 @@
 # check that we are in the correct folder
 unset found
 if [ -f .git/config ]; then
-    if grep highland .git/config  | grep -q 'highland'; then
+    if grep highlandPD .git/config  | grep -q 'highlandPD'; then
         found=1
     fi
 fi
