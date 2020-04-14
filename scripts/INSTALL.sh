@@ -1,3 +1,9 @@
+# make sure highland is setup
+if [[ -z "${HIGHLANDPATH}" ]]; then
+    echo "Run the HighLAND setup script first !!!!"
+    return;
+fi
+
 # check that we are in the correct folder
 unset found
 if [ -f .git/config ]; then
@@ -13,7 +19,7 @@ fi
 
 # create a working directory
 if [ -d "build" ]; then
-    echo "build folder already exists. You should delete it manually or source cleanup.sh "
+    echo "build folder already exists. You should delete it manually or source scripts/cleanup.sh "
     return
 fi
 
