@@ -62,9 +62,9 @@ message("HighLAND libraries:           ${HIGHLAND_LIBRARIES}")
 #-------------------------------------------------------
 
 file(GLOB highlandPD_inc ${CMAKE_SOURCE_DIR}/src/*/src
-                           ${CMAKE_SOURCE_DIR}/src/*/src/corrections ${CMAKE_SOURCE_DIR}/src/*/src/systematics
-                           ${LARSOFTREADER_DIR} ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}
-                           ${CMAKE_BINARY_DIR}/dict)
+                         ${CMAKE_SOURCE_DIR}/src/*/src/corrections ${CMAKE_SOURCE_DIR}/src/*/src/systematics
+                         ${LARSOFTREADER_DIR} ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}
+                         ${CMAKE_BINARY_DIR}/dict)
 
 include_directories(${highlandPD_inc})
 message("Include directories: ${INCLUDE_DIRECTORIES}")
@@ -107,9 +107,9 @@ endforeach(file0)
 #-------------------------------------------------------
 
 file(GLOB highlandPD_src  ${CMAKE_SOURCE_DIR}/src/*/src/*.cxx
-                            h${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.cxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.cxx 
-                            ${LARSOFTREADER_DIR}/LArSoft*.cxx
-                            ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
+                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.cxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.cxx 
+                          ${LARSOFTREADER_DIR}/LArSoft*.cxx
+                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
 
 add_library(highlandPD SHARED ${dict_src} ${highlandPD_src} ) 
 target_include_directories(highlandPD PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
@@ -142,7 +142,7 @@ endforeach(file0)
 
 add_executable(pion.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunPionAnalysis.cxx)
 target_include_directories(pion.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc} ${CMAKE_SOURCE_DIR}/src/pionAnalysis/src)
-target_link_libraries(pion.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${PIONANA_LIBRARIES})
+target_link_libraries(pion.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
 INSTALL(TARGETS pion.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CreateMiniTreePionAna.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunCreateMiniTree.cxx)
@@ -170,8 +170,8 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 
 add_dependencies(CreateMiniTreePionAna.exe pion.exe)
 add_dependencies(pion.exe                  highlandPD)
-add_dependencies(highlandPD       highlandPD_dicts)
-add_dependencies(highlandPD_dicts include)
+add_dependencies(highlandPD                highlandPD_dicts)
+add_dependencies(highlandPD_dicts          include)
 
 #-------------------------------------------------------
 #------- other -----------------------------------------
