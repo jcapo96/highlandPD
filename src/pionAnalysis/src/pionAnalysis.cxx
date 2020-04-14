@@ -329,7 +329,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
     output().IncrementCounter(ntracks);
 
-    std::cout << "anselmo 2: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
+    //    std::cout << "anselmo 2: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
     if (part->TrueObject)
       static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
   }
