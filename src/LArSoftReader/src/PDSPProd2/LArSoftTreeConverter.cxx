@@ -75,8 +75,6 @@ LArSoftTreeConverter::LArSoftTreeConverter():InputConverter("Events"){
   templates[ 13 ]   = (TProfile*)dEdX_template_file->Get( "dedx_range_mu"  );
   templates[ 2212 ] = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 
-
-  templates[ 2212 ]->Print(); 
 }
 
 //********************************************************************
@@ -115,11 +113,16 @@ bool LArSoftTreeConverter::Initialize(){
 
   
   // Calorimetry
-  eventsTree->SetBranchAddress(("anab::Calorimetrys_pandoracalo__"+trailer).c_str(), &CALOs);
-  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Trackvoidart::Assns_pandoracalo__"+trailer).c_str(), &CALOs_Tracks);
+  eventsTree->SetBranchAddress(("anab::Calorimetrys_pandoracalo__"   +trailer).c_str(), &CALOs);
   eventsTree->SetBranchAddress(("anab::Calorimetrys_pandoracaloSCE__"+trailer).c_str(), &CALOsSCE);
+
+  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Trackvoidart::Assns_pandoracalo__"   +trailer).c_str(), &CALOs_Tracks);
   eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Trackvoidart::Assns_pandoracaloSCE__"+trailer).c_str(), &CALOsSCE_Tracks);
-                                
+
+  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercalo__"   +trailer).c_str(), &CALOs_Showers);
+  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercaloSCE__"+trailer).c_str(), &CALOsSCE_Showers);
+
+  
   // Particle id
   eventsTree->SetBranchAddress(("anab::ParticleIDs_pandorapid__"+trailer).c_str(), &PIDs);
 
@@ -128,13 +131,10 @@ bool LArSoftTreeConverter::Initialize(){
   // Reconstructed tracks
   //  eventsTree->SetBranchAddress(("recob::Tracks_pmtrackdc__"+trailer).c_str(), &Tracks);
 
-  eventsTree->SetBranchAddress(("recob::PFParticles_pandora__"+trailer).c_str(), &PFParticles);
-
-  eventsTree->SetBranchAddress(("recob::Tracks_pandoraTrack__"+trailer).c_str(), &Tracks);
-
+  eventsTree->SetBranchAddress(("recob::PFParticles_pandora__"  +trailer).c_str(), &PFParticles);
+  eventsTree->SetBranchAddress(("recob::Tracks_pandoraTrack__"  +trailer).c_str(), &Tracks);
   eventsTree->SetBranchAddress(("recob::Showers_pandoraShower__"+trailer).c_str(), &Showers);
-
-  eventsTree->SetBranchAddress(("recob::Vertexs_pandora__"+trailer).c_str(), &Vertices);
+  eventsTree->SetBranchAddress(("recob::Vertexs_pandora__"      +trailer).c_str(), &Vertices);
   
 
   eventsTree->SetBranchAddress(("recob::PFParticlerecob::Trackvoidart::Assns_pandoraTrack__"+trailer).c_str(),   &PFParticles_Tracks);
@@ -167,7 +167,7 @@ bool LArSoftTreeConverter::Initialize(){
     eventsTree->SetBranchAddress(("recob::Hits_gaushit__"+trailer).c_str(), &Hits);
 
     // Association between reconstructed hits and tracks/showers
-    eventsTree->SetBranchAddress(("recob::Hitrecob::Trackvoidart::Assns_pandoraTrack__"+trailer).c_str(), &Hits_Tracks);
+    eventsTree->SetBranchAddress(("recob::Hitrecob::Trackvoidart::Assns_pandoraTrack__"  +trailer).c_str(), &Hits_Tracks);
     eventsTree->SetBranchAddress(("recob::Hitrecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), &Hits_Showers);
 
     
@@ -180,8 +180,7 @@ bool LArSoftTreeConverter::Initialize(){
     //MVA
 
   eventsTree->SetBranchAddress(("4anab::FeatureVectors_emtrkmichelid_emtrkmichelrecobHit_"+trailer).c_str(), &MVA);
-
-  eventsTree->SetBranchAddress(("4anab::MVADescriptions_emtrkmichelid_emtrkmichel_"+trailer).c_str(), &MVADescription);
+  eventsTree->SetBranchAddress(("4anab::MVADescriptions_emtrkmichelid_emtrkmichel_"       +trailer).c_str(), &MVADescription);
 
                                  
     
@@ -243,6 +242,9 @@ bool LArSoftTreeConverter::Initialize(){
 
   eventsTree->SetBranchStatus(("recob::PFParticlerecob::Trackvoidart::Assns_pandoraTrack__"+trailer).c_str(),1);
 
+
+  eventsTree->SetBranchStatus(("recob::Hitrecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), 1);
+  
 #ifndef ISMC
   eventsTree->SetBranchStatus(("raw::ctb::pdspctbs_ctbrawdecoder_daq_"+trailer).c_str(),1);
 #endif
@@ -771,8 +773,6 @@ void LArSoftTreeConverter::FillPFParticleDaughterInfo(Int_t ipart, AnaBunch* bun
 void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Track& track, AnaParticle* part){
 //*****************************************************************************
 
-  Int_t itrk = track.fID;
-
   // Fill the basic track info
   FillBasicTrackInfo(track, part);
 
@@ -789,30 +789,17 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   part->RangeMomentum[0] = GetTrackMomentum(part->Length,  13);
   part->RangeMomentum[1] = GetTrackMomentum(part->Length,2212); 
   
-  // Compute the average dQdx of the track
-  /*
-  Int_t nsamples=0;
-  for (UInt_t i=0;i<track.fdQdx.size();i++){
-    for (UInt_t j=0;j<track.fdQdx[i].size();j++){
-      part->AveragedEdx += track.fdQdx[i][j];
-      nsamples++;
-    }
-  }
-
-  if (nsamples>0)
-    part->AveragedEdx /= (Float_t)nsamples;
-  */
   // ------------------- Fill PID variables -----------------------
   
-  // Vector of pids for track itrk
+  // Vector of pids for track track.fID
   std::vector<anab::ParticleID> pids;
 
   // Loop over the map with association between tracks and PIDs
   for (UInt_t i=0;i<PIDs_Tracks->obj.ptr_data_2_.size();i++){
     Int_t ipid =-1;
-    if (PIDs_Tracks->obj.ptr_data_2_[i].second == (UInt_t)itrk){
+    if (PIDs_Tracks->obj.ptr_data_2_[i].second == (UInt_t)track.fID){
       ipid = PIDs_Tracks->obj.ptr_data_1_[i].second;
-      // fill a vector with all pids associated to the track with index itrk
+      // fill a vector with all pids associated to the track with index track.fID
       pids.push_back(PIDs->obj[ipid]);
     }
   }
@@ -843,7 +830,7 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
 
   // ------------------- Fill Calorimetry variables -----------------------
 
-  // Vector of calos for track itrk
+  // Vector of calos for track track.fID
   std::vector<anab::Calorimetry*> calovector = GetRecoTrackCalorimetry(track,"pandora2Track", "pandora2calo");
   
   if(calovector.size() != 3)
@@ -946,13 +933,18 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
 
   // Associate a TrueObject to this Particle
 #ifdef ISMC
-  part->TrueObject = FindTrueParticle(itrk, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+  part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
 #endif
 
 
   std::pair< double, int >  this_chi2_ndof = GetChi2PID( track, "pandora2caloSCE", templates[2212]);
   part->Chi2Proton = this_chi2_ndof.first;
   part->Chi2ndf    = this_chi2_ndof.second;
+
+
+  std::cout << "anselmo track: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
+  if (part->TrueObject)
+    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
 
   
   //  std::cout << "TrueObject:" << part->TrueObject << std::endl;
@@ -1060,6 +1052,23 @@ void LArSoftTreeConverter::FillBasicTrackInfo(const recob::Track& track, AnaPart
 void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Shower& shower, AnaParticle* part){
 //*****************************************************************************
 
+/*
+   int         fID;         //
+   TVector3    fDCosStart;    //direction cosines at start of shower
+   TVector3    fSigmaDCosStart;    //uncertainty on initial direction cosines
+   TVector3    fXYZstart;          //direction cosines at start of shower
+   TVector3    fSigmaXYZstart;     //uncertainty on initial direction cosines
+   vector<double> fTotalEnergy;       //Calculated Energy per each plane
+   vector<double> fSigmaTotalEnergy;    //Calculated Energy per each plane
+   vector<double> fdEdx;                //Calculated dE/dx per each plane
+   vector<double> fSigmadEdx;           //Calculated dE/dx per each plane
+   vector<double> fTotalMIPEnergy;      //Calculated Energy per each plane
+   vector<double> fSigmaTotalMIPEnergy;    //Calculated Energy per each plane
+   int            fBestPlane;              //
+   double         fLength;                 //
+   double         fOpenAngle;              //
+*/
+  
   (void)trueParticles;
   
   // Unique ID. It is -999 in LArSoft. We should may be use the PFParticle.fSelf
@@ -1091,26 +1100,47 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
 
   if(shower.fdEdx.size())
     part->CALO[0][4] =   shower.fdEdx[0];
-    
-  //  part->Print();
+
+
+  // Associate a TrueObject to this Particle
+#ifdef ISMC
+  part->TrueObject = FindTrueParticle(false, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+#endif
+
+  std::cout << "anselmo shower: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
+  if (part->TrueObject)
+    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
+
 }
 
 #ifdef ISMC
 
 //*****************************************************************************
-AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(Int_t itrk, std::vector<AnaTrueParticleB*>& trueParticles, Float_t& purity){
+AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(bool isTrack, Int_t itrk, std::vector<AnaTrueParticleB*>& trueParticles, Float_t& purity){
 //*****************************************************************************
   
   // Vector of hits for track itrk
   std::vector<recob::Hit> hits;
 
   // Loop over the map with association between hits and trackID
-  for (UInt_t i=0;i<Hits_Tracks->obj.ptr_data_2_.size();i++){
-    Int_t ihit =-1;
-    if (Hits_Tracks->obj.ptr_data_2_[i].second == (UInt_t)itrk){
-      ihit = Hits_Tracks->obj.ptr_data_1_[i].second;
-      // fill a vector with all hits associated to the track with index itrk
-      hits.push_back(Hits->obj[ihit]);
+  if (isTrack){
+    for (UInt_t i=0;i<Hits_Tracks->obj.ptr_data_2_.size();i++){
+      Int_t ihit =-1;
+      if (Hits_Tracks->obj.ptr_data_2_[i].second == (UInt_t)itrk){
+        ihit = Hits_Tracks->obj.ptr_data_1_[i].second;
+        // fill a vector with all hits associated to the track with index itrk
+        hits.push_back(Hits->obj[ihit]);
+      }
+    }
+  }
+  else{
+    for (UInt_t i=0;i<Hits_Showers->obj.ptr_data_2_.size();i++){
+      Int_t ihit =-1;
+      if (Hits_Showers->obj.ptr_data_2_[i].second == (UInt_t)itrk){
+        ihit = Hits_Showers->obj.ptr_data_1_[i].second;
+        // fill a vector with all hits associated to the track with index itrk
+        hits.push_back(Hits->obj[ihit]);
+      }
     }
   }
 
@@ -1124,7 +1154,6 @@ AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(Int_t itrk, std::vector<A
   for (UInt_t i=0;i<trueParticles.size();i++){
     if (trueParticles[i]->ID == trackid) return trueParticles[i];
   }
-
   
   return NULL;
 }
@@ -1351,7 +1380,6 @@ simb::MCParticle* LArSoftTreeConverter::GetMotherMCParticle(const simb::MCPartic
   return mother;
 }
 
-
 //*****************************************************************************
 double LArSoftTreeConverter::GetTrueMomentumInTPC(const simb::MCParticle& part) const{
 //*****************************************************************************
@@ -1360,10 +1388,7 @@ double LArSoftTreeConverter::GetTrueMomentumInTPC(const simb::MCParticle& part) 
   while (part.ftrajectory.ftrajectory[i].first.Z()<0.0)    i=i+1; //TPC starts at Z=0
   double mom = part.ftrajectory.ftrajectory[i].second.P();
 
-  //  std::cout << "Mom in TPC: "<< part.ftrajectory.ftrajectory[0].second.P() << " " << i << " " << mom << std::endl;
-  
   return mom;
-
 }
 
 //*****************************************************************************
@@ -2042,22 +2067,17 @@ const recob::Track* LArSoftTreeConverter::GetPFParticleTrack(const recob::PFPart
     Int_t itrack =-1;
     if (PFParticles_Tracks->obj.ptr_data_1_[j].second == (UInt_t)particle.fSelf){
       itrack = PFParticles_Tracks->obj.ptr_data_2_[j].second;
-      //      std::cout << "anselmo " << j << " " << itrack << " " << particle.fSelf << std::endl;
+
       // fill a vector with all tracks associated to the track with index itrk
       pfpTracks.push_back(&Tracks->obj[itrack]);
     }
   }
   
-  //  std::cout << "an0: " << pfpTracks.size() << std::endl; 
-
   // Check that the track exists
-  if(pfpTracks.size() != 0){
+  if(pfpTracks.size() != 0)
     return (pfpTracks[0]);
-  }
-  else{
+  else
     return NULL;
-  }
-  
 }
 
 // Get the shower associated to this particle. Returns a null pointer if not found.
@@ -2073,25 +2093,18 @@ const recob::Shower* LArSoftTreeConverter::GetPFParticleShower(const recob::PFPa
     Int_t ishower =-1;
     if (PFParticles_Showers->obj.ptr_data_1_[j].second == (UInt_t)particle.fSelf){
       ishower = PFParticles_Showers->obj.ptr_data_2_[j].second;
-      //      std::cout << "anselmo " << j << " " << ishower << " " << particle.fSelf << std::endl;
+
       // fill a vector with all showers associated to the shower with index itrk
       pfpShowers.push_back(&Showers->obj[ishower]);
     }
   }
   
-  //  std::cout << "an0: " << pfpShowers.size() << std::endl; 
-
   // Check that the shower exists
-  if(pfpShowers.size() != 0){
+  if(pfpShowers.size() != 0)
     return (pfpShowers[0]);
-  }
-  else{
+  else
     return NULL;
-  }
-  
 }
-
-
 
 // Function to find the interaction vertex of a primary PFParticle
 //*****************************************************************************

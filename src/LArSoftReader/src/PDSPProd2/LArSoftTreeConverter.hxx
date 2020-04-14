@@ -169,7 +169,7 @@ class LArSoftTreeConverter: public InputConverter{
   virtual void FillPFParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles, Int_t itrk, AnaBunch* bunch);
   virtual void FillPFParticleDaughterInfo(Int_t itrk, AnaBunch* bunch, int indent=0);
   
-  AnaTrueObjectC* FindTrueParticle(Int_t itrk, std::vector<AnaTrueParticleB*>& trueParticles, Float_t& purity);
+  AnaTrueObjectC* FindTrueParticle(bool isTrack, Int_t itrk, std::vector<AnaTrueParticleB*>& trueParticles, Float_t& purity);
 
 
   double ComputeTrackLength(const recob::Track& track);
@@ -322,11 +322,14 @@ protected:
   art::Wrapper<vector<raw::ctb::pdspctb> >*      CTB;  
 #endif
 
-  art::Wrapper<art::Assns<recob::Track,recob::Hit       , void> >* Hits_Tracks;
-  art::Wrapper<art::Assns<recob::Track,recob::Hit       , void> >* Hits_Showers;
-  art::Wrapper<art::Assns<recob::Track,anab::ParticleID , void> >* PIDs_Tracks;
-  art::Wrapper<art::Assns<recob::Track,anab::Calorimetry, void> >* CALOs_Tracks;
-  art::Wrapper<art::Assns<recob::Track,anab::Calorimetry, void> >* CALOsSCE_Tracks;
+  art::Wrapper<art::Assns<recob::Track, recob::Hit       , void> >* Hits_Tracks;
+  art::Wrapper<art::Assns<recob::Shower,recob::Hit       , void> >* Hits_Showers;
+  art::Wrapper<art::Assns<recob::Track, anab::ParticleID , void> >* PIDs_Tracks;
+
+  art::Wrapper<art::Assns<recob::Track, anab::Calorimetry, void> >* CALOs_Tracks;
+  art::Wrapper<art::Assns<recob::Track, anab::Calorimetry, void> >* CALOsSCE_Tracks;
+  art::Wrapper<art::Assns<recob::Shower,anab::Calorimetry, void> >* CALOs_Showers;
+  art::Wrapper<art::Assns<recob::Shower,anab::Calorimetry, void> >* CALOsSCE_Showers;
 
   art::Wrapper<art::Assns<recob::PFParticle,recob::Track, void> >* PFParticles_Tracks;
   art::Wrapper<art::Assns<recob::PFParticle,recob::Shower,void> >* PFParticles_Showers;
