@@ -922,17 +922,17 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   part->AveragedEdx=0;
   part->AveragedQdx=0;
   Int_t ncontrib=0;
-  for (UInt_t i=0;i<1;i++){   // only the last slice 
-    for (UInt_t j=0;j<reco_beam_dQdX->size();j++){
+  for (UInt_t plane=2;plane<3;plane++){   // only the last slice 
+    for (UInt_t j=0;j<reco_beam_dEdX->size();j++){
       part->AveragedEdx += (*reco_beam_dEdX)[j];
       part->AveragedQdx += (*reco_beam_dQdX)[j];
-      part->dEdx[i][j] = (*reco_beam_dEdX)[j];
-      part->dQdx[i][j] = (*reco_beam_dQdX)[j];
+      part->dEdx[plane][j] = (*reco_beam_dEdX)[j];
+      part->dQdx[plane][j] = (*reco_beam_dQdX)[j];
 
       if (j < reco_beam_calibrated_dEdX->size())
-        part->dEdx_corr[i][j] = (*reco_beam_calibrated_dEdX)[j];
+        part->dEdx_corr[plane][j] = (*reco_beam_calibrated_dEdX)[j];
 
-      part->ResidualRange[i][j]= (*reco_beam_resRange)[j];
+      part->ResidualRange[plane][j]= (*reco_beam_resRange)[j];
       ncontrib++;
     }
   }
@@ -943,15 +943,17 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   }
 
   //TODO
-  part->NHitsPerPlane[0] = (Int_t)reco_beam_calibrated_dEdX->size();
-
+  part->NHitsPerPlane[0] = (Int_t)reco_beam_dEdX->size();
+  part->NHitsPerPlane[1] = (Int_t)reco_beam_dEdX->size();
+  part->NHitsPerPlane[2] = (Int_t)reco_beam_dEdX->size();
   
-  // TODO: Associating space points to hits in a plane for the moment
+  // TODO: Associating space points to hits in a plane for the moment. All space points in the pionana tree are in a single array regardless of the plane
+  // while reco_beam_calibrated_dEdX->size() corresponds to a single plane, reco_beam_spacePts_X->size() has all planes together
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_beam_spacePts_X->size());
   for (UInt_t j=0;j<nHits;j++){
-    part->HitX[0][j] = (*reco_beam_spacePts_X)[j];
-    part->HitY[0][j] = (*reco_beam_spacePts_Y)[j];
-    part->HitZ[0][j] = (*reco_beam_spacePts_Z)[j];
+    part->HitX[2][j] = (*reco_beam_spacePts_X)[j];
+    part->HitY[2][j] = (*reco_beam_spacePts_Y)[j];
+    part->HitZ[2][j] = (*reco_beam_spacePts_Z)[j];
   }
   
   // --------- reco_beam_PFP ------------------------
@@ -1133,7 +1135,7 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   part->AveragedEdx=0;
   part->AveragedQdx=0;
   Int_t ncontrib=0;
-  for (UInt_t i=0;i<1;i++){
+  for (UInt_t plane=2;plane<3;plane++){   // only the last slice 
     UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size());
     for (UInt_t j=0;j<nHits;j++){
 
@@ -1149,13 +1151,13 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
         dedx_cal = (*reco_daughter_allTrack_calibrated_dEdX)[itrk][j];
         resRange = (*reco_daughter_allTrack_resRange)[itrk][j];
       }
-      
+
       part->AveragedEdx += dedx;
       part->AveragedQdx += dqdx;
-      part->dEdx[i][j]         = dedx;
-      part->dQdx[i][j]         = dqdx;
-      part->dEdx_corr[i][j]    = dedx_cal;
-      part->ResidualRange[i][j]= resRange;
+      part->dEdx[plane][j]         = dedx;
+      part->dQdx[plane][j]         = dqdx;
+      part->dEdx_corr[plane][j]    = dedx_cal;
+      part->ResidualRange[plane][j]= resRange;
       ncontrib++;
     }
   }
@@ -1167,13 +1169,15 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
 
   //TODO
   part->NHitsPerPlane[0] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
+  part->NHitsPerPlane[1] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
+  part->NHitsPerPlane[2] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
   
   // TODO: Associating space points to hits in a plane for the moment
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_daughter_spacePts_X->size());
   for (UInt_t j=0;j<nHits;j++){
-    part->HitX[0][j] = (*reco_daughter_spacePts_X)[itrk][j];
-    part->HitY[0][j] = (*reco_daughter_spacePts_Y)[itrk][j];
-    part->HitZ[0][j] = (*reco_daughter_spacePts_Z)[itrk][j];
+    part->HitX[2][j] = (*reco_daughter_spacePts_X)[itrk][j];
+    part->HitY[2][j] = (*reco_daughter_spacePts_Y)[itrk][j];
+    part->HitZ[2][j] = (*reco_daughter_spacePts_Z)[itrk][j];
   }
    
   part->Chi2Proton = (*reco_daughter_allTrack_Chi2_proton)[itrk];
