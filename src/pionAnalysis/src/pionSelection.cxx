@@ -54,12 +54,20 @@ bool FindBeamPionTrackAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   // Get the array of parts from the event
   AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
   int nParts           = static_cast<AnaEventB*>(&event)->nParticles;
- 
+
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+  
   // loop ever particles in the event
   for (Int_t i=0;i<nParts; ++i){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     //save the ones that are correctly selected by Pandora
-    if(part->isBeamPart){
+    bool beamtrack=false;
+    if (useIsBeamLike)      
+      beamtrack = pdAnaUtils::isBeamLike(part,beam);
+    else
+      beamtrack = part->isBeamPart;
+
+    if(beamtrack){
       box.MainTrack = part;
       break;
     }

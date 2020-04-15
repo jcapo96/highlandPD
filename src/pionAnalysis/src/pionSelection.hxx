@@ -43,6 +43,8 @@ class FindBeamPionTrackAction: public StepBase{
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new FindBeamPionTrackAction();}
+  bool useIsBeamLike;
+  FindBeamPionTrackAction(){ useIsBeamLike = (bool)ND::params().GetParameterI("pionAnalysis.UseIsBeamLike");}
 };
 
 class ComputeDaughterDistanceAction: public StepBase{

@@ -31,6 +31,9 @@ need to be enabled in baseAnalysis parameter file
  < pionAnalysis.TreeConverter.UseSCE               = 1 >
 
 
+Recompute bease on distance whether this is the beam particle or not
+ < pionAnalysis.UseIsBeamLike                      = 1 >
+
 
 ###############################################################################
   baseAnslysis parameters
