@@ -265,6 +265,8 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_ndf,    "candidate daughters chi2 ndf",               seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_vtxdistance, "candidate daguhters distance to vtx",        seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVI( output(), seltrk_dau_type,        "candidate daguhters type(track=0, shower=1)",seltrk_ndau,NMAXSAVEDDAUGHTERS);
+
+  AddVarI(  output(), trk_pandora,      "trk is pandora candidate");
 }
 
 //********************************************************************
@@ -324,15 +326,16 @@ void pionAnalysis::FillMicroTrees(bool addBase){
   // ---------- Save information about all (max NMAXSAVEDPARTICLES) recon parts in the event --------------
   // These are standard variables for the PD analysis
   for (Int_t i=0;i<std::min((Int_t)NMAXSAVEDPARTICLES,nParts); ++i){    
-    AnaParticle* part = static_cast<AnaParticle*>(parts[i]);
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
     standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
+    output().FillVar(trk_pandora,(Int_t)part->isPandoraPart);
     output().IncrementCounter(ntracks);
 
     //    std::cout << "anselmo 2: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
-    if (part->TrueObject)
-      static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
-  }
+    //if (part->TrueObject)
+      //static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
+      }
 
   // ---------- Additional candidate variables --------------
   if (box().MainTrack){        

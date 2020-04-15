@@ -75,7 +75,7 @@ public:
     seltrk_pos_z0,
 
     seltrk_broken,
-
+    
     // seltrk_dedx_exp,
 
     seltrk_CNNscore,
@@ -87,7 +87,7 @@ public:
     seltrk_dau_chi2_ndf,
     seltrk_dau_vtxdistance,
     seltrk_dau_type,
-    
+    trk_pandora,
     enumStandardMicroTreesLast_pionAnalysis
   };
 

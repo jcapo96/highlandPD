@@ -36,6 +36,7 @@ public:
   PartTypeEnum Type;
 
   bool isBeamPart;
+  bool isPandoraPart;
 };
 
 /// AnaTrueParticle
