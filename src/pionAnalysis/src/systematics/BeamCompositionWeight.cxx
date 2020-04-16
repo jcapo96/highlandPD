@@ -4,7 +4,7 @@
 #include "EventBoxPD.hxx"
 
 //********************************************************************
-BeamCompositionWeight::BeamCompositionWeight():EventWeightBase(), BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","beam", BinnedParams::k2D_SYMMETRIC){
+BeamCompositionWeight::BeamCompositionWeight():EventWeightBase(), BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","beamComp", BinnedParams::k2D_SYMMETRIC){
 //********************************************************************
 
   // Read the systematic source parameters from the data files
