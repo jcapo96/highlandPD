@@ -7,7 +7,7 @@
 //#define DEBUG
 
 //********************************************************************
-dEdxVariation::dEdxVariation(): EventVariationBase(),BinnedParams(std::string(getenv("PROTODUNEEXAMPLEANALYSISROOT"))+"/data","dEdx", BinnedParams::k1D_SYMMETRIC){
+dEdxVariation::dEdxVariation(): EventVariationBase(),BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dEdx", BinnedParams::k1D_SYMMETRIC){
 //********************************************************************
 
   // Read the systematic source parameters from the data files
