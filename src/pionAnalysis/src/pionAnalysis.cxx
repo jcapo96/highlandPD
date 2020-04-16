@@ -4,13 +4,15 @@
 #include "BasicUtils.hxx"
 #include "pdAnalysisUtils.hxx"
 
-#include "dEdxVariation.hxx"
 #include "dEdxCorrection.hxx"
 #include "BeamMomCorrection.hxx"
 #include "BeamMomSmearingCorrection.hxx"
 #include "CryoWallBeamMomCorrection.hxx"
 #include "dEdxDataCorrection.hxx"
 #include "BrokenTrackDataCorrection.hxx"
+
+#include "dEdxVariation.hxx"
+#include "BeamCompositionWeight.hxx"
 
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
@@ -192,7 +194,8 @@ void pionAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   // Define additional systematics (pionAnalysys/src/systematics)
-  evar().AddEventVariation(SystId::kdEdx,           "dEdx",           new dEdxVariation());
+  evar().AddEventVariation(kdEdx, "dEdx",     new dEdxVariation());
+  eweight().AddEventWeight(kBeam, "beamComp", new BeamCompositionWeight());
 }
 
 //********************************************************************
@@ -208,7 +211,8 @@ void pionAnalysis::DefineConfigurations(){
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if (_enableAllSystConfig){
-    if (ND::params().GetParameterI("pionAnalysis.Variations.EnabledEdx"))        conf().EnableEventVariation(SystId::kdEdx,         all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdx"))             conf().EnableEventVariation(kdEdx,         all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
   }
 }
 
@@ -328,10 +332,6 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
     standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
     output().IncrementCounter(ntracks);
-
-    //    std::cout << "anselmo 2: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
-    if (part->TrueObject)
-      static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
   }
 
   // ---------- Additional candidate variables --------------

@@ -97,6 +97,12 @@ public:
     enumConfLast_pionAnalysis
   };
 
+  enum enumSyst_pionAnalysis{
+    kdEdx=0,
+    kBeam,
+    enumSystLast_pionAnalysis
+  };
+  
 
 
 };
