@@ -126,6 +126,7 @@ namespace standardPDTree{
     trk_mom_muon,
     trk_mom_prot,
     trk_pos,
+    trk_endpos,
     trk_dir,
     trk_ndau,
 

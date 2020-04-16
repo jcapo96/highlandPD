@@ -126,6 +126,7 @@ void standardPDTree::AddStandardVariables_AllParticlesReco(OutputManager& output
 //********************************************************************
 
   AddVarMaxSize4MF( output, trk_pos,          "start position",         ntracks,nmax);
+  AddVarMaxSize4MF( output, trk_endpos,       "end position",           ntracks,nmax);
   AddVarMaxSize3MF( output, trk_dir,          "start direction",        ntracks,nmax);  
   AddVarMaxSizeVF(  output, trk_length,       "length",                 ntracks,nmax);
   AddVarMaxSizeVF(  output, trk_dedx,         "average dedx",           ntracks,nmax);
@@ -234,13 +235,14 @@ void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& outpu
 
   if (!part) return;
   
-  output.FillMatrixVarFromArray(trk_pos,  part->PositionStart,4);
-  output.FillMatrixVarFromArray(trk_dir,  part->DirectionStart,3);
-  output.FillVectorVar(trk_mom_muon,      part->RangeMomentum[0]);
-  output.FillVectorVar(trk_mom_prot,      part->RangeMomentum[1]);
-  output.FillVectorVar(trk_dedx,          part->AveragedEdx);
-  output.FillVectorVar(trk_length,        part->Length);
-  output.FillVectorVar(trk_ndau,          (Int_t)part->Daughters.size());
+  output.FillMatrixVarFromArray(trk_pos,   part->PositionStart,4);
+  output.FillMatrixVarFromArray(trk_endpos,part->PositionEnd,4);
+  output.FillMatrixVarFromArray(trk_dir,   part->DirectionStart,3);
+  output.FillVectorVar(trk_mom_muon,       part->RangeMomentum[0]);
+  output.FillVectorVar(trk_mom_prot,       part->RangeMomentum[1]);
+  output.FillVectorVar(trk_dedx,           part->AveragedEdx);
+  output.FillVectorVar(trk_length,         part->Length);
+  output.FillVectorVar(trk_ndau,           (Int_t)part->Daughters.size());
 }
   
 //********************************************************************
