@@ -539,7 +539,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticle& part, TProfile *
   double pid_chi2 = 0.; 
   int npt = 0;
 
-  Int_t plane=0;
+  Int_t plane=2;
   
   profile = ProtonTemplate;
   
