@@ -1,13 +1,14 @@
 --- Cut levels --------
  < pionAnalysis.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
 
---- Event Variations ------------
+--- Systematics ------------
 
 The single systematics configuration (when EnableSingle...SystConfigurations = 1)
 or the all systematics configuration (when EnableAllSystematics = 1)
 need to be enabled in baseAnalysis parameter file
 
- < pionAnalysis.Variations.EnabledEdx              = 0 >	
+ < pionAnalysis.Systematics.EnabledEdx              = 0 >
+ < pionAnalysis.Systematics.EnabledBeamComposition  = 0 >	
 
 
 --- Corrections -----------
@@ -36,7 +37,7 @@ Recompute bease on distance whether this is the beam particle or not
 
 
 ###############################################################################
-  baseAnslysis parameters
+  baseAnalysis parameters
 ###############################################################################
 
 This ia a copy of the baseAnalysis parameters file in highland, such that we can overwrite them
