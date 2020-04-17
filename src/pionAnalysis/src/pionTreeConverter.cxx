@@ -981,9 +981,9 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   // Not yet implemented
   /*
     Int_t           reco_beam_PFP_ID;
-    Double_t        reco_beam_PFP_trackScore_collection;
-    Double_t        reco_beam_PFP_emScore_collection;
-    Double_t        reco_beam_PFP_michelScore_collection;
+    Double_t        reco_beam_PFP_trackScore;
+    Double_t        reco_beam_PFP_emScore;
+    Double_t        reco_beam_PFP_michelScore;
   */
 
 
@@ -1016,7 +1016,6 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
 
   // Not yet implemented
 /*
-   Int_t           reco_beam_type;
    Double_t        reco_beam_vtxX;
    Double_t        reco_beam_vtxY;
    Double_t        reco_beam_vtxZ;
@@ -1027,7 +1026,6 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
    Int_t           reco_beam_nTrackDaughters;
    Int_t           reco_beam_nShowerDaughters;
    Bool_t          reco_beam_flipped;
-   Bool_t          reco_beam_passes_beam_cuts;
 
    Int_t           reco_beam_allTrack_ID;
    Bool_t          reco_beam_allTrack_beam_cuts;
@@ -1213,9 +1211,9 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   // -------- Not yet implemented --------
   /*
     std::vector<int>     *reco_daughter_PFP_ID;
-    std::vector<double>  *reco_daughter_PFP_trackScore_collection;
-    std::vector<double>  *reco_daughter_PFP_emScore_collection;
-    std::vector<double>  *reco_daughter_PFP_michelScore_collection;
+    std::vector<double>  *reco_daughter_PFP_trackScore;
+    std::vector<double>  *reco_daughter_PFP_emScore;
+    std::vector<double>  *reco_daughter_PFP_michelScore;
   */
   
 
@@ -1273,9 +1271,9 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
 
 
   // --------- reco_daughter_PFP ------------------------
-  part->CNNscore[0] = (*reco_daughter_PFP_trackScore)[itrk];
-  part->CNNscore[1] = (*reco_daughter_PFP_emScore)[itrk];
-  part->CNNscore[2] = (*reco_daughter_PFP_michelScore)[itrk];
+  part->CNNscore[0] = (*reco_daughter_PFP_trackScore_collection)[itrk];
+  part->CNNscore[1] = (*reco_daughter_PFP_emScore_collection)[itrk];
+  part->CNNscore[2] = (*reco_daughter_PFP_michelScore_collection)[itrk];
 
   part->NHits = (*reco_daughter_PFP_nHits)[itrk];
 
@@ -1291,11 +1289,10 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
   // -------- Not yet implemented --------
   /*
     std::vector<int>     *reco_daughter_PFP_ID;
-    std::vector<double>  *reco_daughter_PFP_trackScore_collection;
-    std::vector<double>  *reco_daughter_PFP_emScore_collection;
-    std::vector<double>  *reco_daughter_PFP_michelScore_collection;
+    std::vector<double>  *reco_daughter_PFP_trackScore;
+    std::vector<double>  *reco_daughter_PFP_emScore;
+    std::vector<double>  *reco_daughter_PFP_michelScore;
   */
-
 
   
   //------ Truth association ------- //TODO
@@ -1612,7 +1609,6 @@ void pionTreeConverter::FillDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticl
   
   // --------- Not yet implemented -----------------
   /*
-    std::vector<int>     *reco_daughter_PFP_true_byHits_origin;    // has value 2 or 4
     std::vector<unsigned long> *reco_daughter_PFP_true_byHits_sharedHits;
     std::vector<unsigned long> *reco_daughter_PFP_true_byHits_emHits;
     std::vector<double>  *reco_daughter_PFP_true_byHits_startE;
