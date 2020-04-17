@@ -117,7 +117,7 @@ Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
   
   //*********For proton, the calculations are valid up to 3.022E3 cm range
   //corresponding to a Muon KE of 5 GeV**********//
-  
+
   if (trkrange < 0 || std::isnan(trkrange)) {
     std::cout << "TrackMomentumCalculator   " 
               << "Invalid track range " << trkrange << " return -1" << std::endl;
@@ -588,61 +588,52 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
 bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
 //*****************************************************************************	
   
+  //From Owen Goodwins studies
+  Float_t mccuts[7]  ={-3.,  7., -8.,  7., 27.5, 32.5, 0.93};
+  Float_t datacuts[7]={ 0., 10., -5., 10., 30.,  35.0, 0.93};
+
   //cast the beam particle
-  AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+  AnaParticlePD* beampart = static_cast<AnaParticlePD*>(beam->BeamParticle);
 
-  //cast the true beam particle
-  AnaTrueParticle* beamTruePart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
+  Float_t beampos[3],beamdir[3], dist[3], dcos=0, cuts[7];      
 
-  Float_t pos[3],dir[3];
-  //check if the particle has been reconstructed backwards and so flip it
-  if(part->PositionStart[2] < part->PositionEnd[2] && part->PositionEnd[2]!=-999){
-    for (Int_t i=0;i<3;i++){
-      pos[i] = part->PositionStart[i];
-      dir[i] = part->DirectionStart[i];
+  // different way of obtaining the beam position and angle for DATA and MC
+  // Use the true beam particle to discriminate between data and MC
+  AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
+
+  // For MC
+  if (trueBeamPart){
+    for (int i=0;i<3;i++){
+      beampos[i] = trueBeamPart->Position[i]-trueBeamPart->Position[2]*(trueBeamPart->Direction[i]/trueBeamPart->Direction[2]);
+      beamdir[i] = trueBeamPart->Direction[i];
     }
+    for (int i=0;i<7;i++) cuts[i] = mccuts[i];
   }
   else{
-    for (Int_t i=0;i<3;i++){
-      pos[i] = part->PositionEnd[i];
-      dir[i] = part->DirectionEnd[i];
-    }
-  }
-
-  //the check is different for data and MC
-  if(beamTruePart){
-    double beamDirX = beamTruePart->Direction[0];
-    double beamDirY = beamTruePart->Direction[1];
-    double beamDirZ = beamTruePart->Direction[2];
-
-    double beamPosX = beamTruePart->Position[0]+(-1*beamTruePart->Position[2])*(beamDirX/beamDirZ);
-    double beamPosY = beamTruePart->Position[1]+(-1*beamTruePart->Position[2])*(beamDirY/beamDirZ);
-
-    double dx       = pos[0]-beamPosX;
-    double dy       = pos[1]-beamPosY;
-    double costheta = dir[0]*beamDirX+dir[1]*beamDirY+dir[1]*beamDirZ;
-
-    if(dx > -3 && dx < 7 && dy > -8 && dy < 7 && pos[2] >27.5 && pos[2] < 32.5 && costheta >0.93)return true;
-  }
-  else{
-    //check beam data quality
+    // For Data
     if(beam->nMomenta != 1 || beam->nTracks != 1)return false;
-        
-    double beamDirX = beamPart->DirectionEnd[0];
-    double beamDirY = beamPart->DirectionEnd[1];
-    double beamDirZ = beamPart->DirectionEnd[2];
-
-    double beamPosX = beamPart->PositionEnd[0];
-    double beamPosY = beamPart->PositionEnd[1];
-
-    double dx       = pos[0]-beamPosX;
-    double dy       = pos[1]-beamPosY;
-    double costheta = dir[0]*beamDirX+dir[1]*beamDirY+dir[2]*beamDirZ;
-
-    if(dx > 0 && dx < 10 && dy > -5 && dy < 10 && pos[2] >30 && pos[2] < 35 && costheta >0.93)return true;
+    for (int i=0;i<3;i++){
+      beampos[i] = beampart->PositionEnd[i];
+      beamdir[i] = beampart->DirectionEnd[i];
+    }
+    for (int i=0;i<7;i++) cuts[i] = datacuts[i];
   }
 
-  return false;
+  // compute the difference in position and cos(angle) considering that particle could have been reconstructed backwards
+  if(part->PositionEnd[2]<part->PositionStart[2] && part->PositionEnd[2]!=-999){
+    for (int i=0;i<3;i++){
+      dist[i] = part->PositionEnd[i] - beampos[i];
+      dcos   += -1*(part->DirectionEnd[i])*beamdir[i];
+    }
+  }
+  else{
+    for (int i=0;i<3;i++){
+      dist[i] = part->PositionStart[i] - beampos[i];
+      dcos   += part->DirectionStart[i]*beamdir[i];
+    }
+  }
+  if(dist[0] < cuts[0] || dist[0] > cuts[1] || dist[1] < cuts[2] || dist[1] > cuts[3] || dist[2] < cuts[4] || dist[2] > cuts[5] || dcos < cuts[6]) return false;
+  else return true;
 }
 
 

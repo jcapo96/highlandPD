@@ -333,7 +333,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
     standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
-    output().FillVar(trk_pandora,(Int_t)part->isPandoraPart);
+    output().FillVar(trk_pandora,(Int_t)part->isPandora);
     output().IncrementCounter(ntracks);
   }
 
