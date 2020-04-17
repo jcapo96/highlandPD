@@ -21,7 +21,7 @@
 #include <iostream>
 #include <set>
 #include "InputConverter.hxx"
-#include "DataClasses.hxx"
+#include "pdDataClasses.hxx"
 #include "GeometryManager.hxx"
 #include "LArSoftReaderProjectHeaders.h"
 
@@ -139,14 +139,14 @@ class LArSoftTreeConverter: public InputConverter{
   //----------------
   virtual AnaSpillB* MakeSpill() { return new AnaSpill(); }
   virtual AnaBunch* MakeBunch() { return new AnaBunch(); }
-  virtual AnaBeamB* MakeBeam() { return new AnaBeam(); }
+  virtual AnaBeamPD* MakeBeam() { return new AnaBeamPD(); }
   virtual AnaDataQualityB* MakeDataQuality() { return new AnaDataQuality(); }
   virtual AnaEventInfoB* MakeEventInfo() { return new AnaEventInfo(); }
   virtual AnaTrigger* MakeTrigger() { return new AnaTrigger(); }
 
-  virtual AnaTrueParticle* MakeTrueParticle() { return new AnaTrueParticle(); }
-  virtual AnaTrueVertex*   MakeTrueVertex() { return new AnaTrueVertex(); }
-  virtual AnaParticle*     MakeParticle() { return new AnaParticle(); }
+  virtual AnaTrueParticlePD* MakeTrueParticle() { return new AnaTrueParticlePD(); }
+  virtual AnaTrueVertex*     MakeTrueVertex() { return new AnaTrueVertex(); }
+  virtual AnaParticlePD*     MakeParticle() { return new AnaParticlePD(); }
 
   // ----------------------------
 
@@ -158,11 +158,11 @@ class LArSoftTreeConverter: public InputConverter{
   virtual void FillTrueInfo(AnaSpill* spill);
   virtual void FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch);
   //  virtual void FillParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles, Int_t itrk, AnaParticle* part);
-  virtual void FillParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Track& track, AnaParticle* part);
+  virtual void FillParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Track& track, AnaParticlePD* part);
   virtual void FillBasicTrackInfo(const recob::Track& track, AnaParticleMomB* part);
-  virtual void FillParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Shower& shower, AnaParticle* part);
+  virtual void FillParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Shower& shower, AnaParticlePD* part);
 #ifdef ISMC
-  virtual void FillTrueParticleInfo(AnaTrueVertexB* trueVertex, const simb::MCParticle& part, AnaTrueParticle* truePart);
+  virtual void FillTrueParticleInfo(AnaTrueVertexB* trueVertex, const simb::MCParticle& part, AnaTrueParticlePD* truePart);
   virtual void FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* trueVertex);
 #endif
   
@@ -322,14 +322,14 @@ protected:
   art::Wrapper<vector<raw::ctb::pdspctb> >*      CTB;  
 #endif
 
-  art::Wrapper<art::Assns<recob::Track, recob::Hit       , void> >* Hits_Tracks;
-  art::Wrapper<art::Assns<recob::Shower,recob::Hit       , void> >* Hits_Showers;
-  art::Wrapper<art::Assns<recob::Track, anab::ParticleID , void> >* PIDs_Tracks;
+  art::Wrapper<art::Assns<recob::Track, recob::Hit       , void> >* Tracks_Hits;
+  art::Wrapper<art::Assns<recob::Shower,recob::Hit       , void> >* Showers_Hits;
+  art::Wrapper<art::Assns<recob::Track, anab::ParticleID , void> >* Tracks_PIDs;
 
-  art::Wrapper<art::Assns<recob::Track, anab::Calorimetry, void> >* CALOs_Tracks;
-  art::Wrapper<art::Assns<recob::Track, anab::Calorimetry, void> >* CALOsSCE_Tracks;
-  art::Wrapper<art::Assns<recob::Shower,anab::Calorimetry, void> >* CALOs_Showers;
-  art::Wrapper<art::Assns<recob::Shower,anab::Calorimetry, void> >* CALOsSCE_Showers;
+  art::Wrapper<art::Assns<recob::Track, anab::Calorimetry, void> >* Tracks_CALOs;
+  art::Wrapper<art::Assns<recob::Track, anab::Calorimetry, void> >* Tracks_CALOsSCE;
+  art::Wrapper<art::Assns<recob::Shower,anab::Calorimetry, void> >* Showers_CALOs;
+  art::Wrapper<art::Assns<recob::Shower,anab::Calorimetry, void> >* Showers_CALOsSCE;
 
   art::Wrapper<art::Assns<recob::PFParticle,recob::Track, void> >* PFParticles_Tracks;
   art::Wrapper<art::Assns<recob::PFParticle,recob::Shower,void> >* PFParticles_Showers;

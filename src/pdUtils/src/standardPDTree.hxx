@@ -30,15 +30,15 @@ namespace standardPDTree{
   void FillStandardVariables_BeamTrue(OutputManager& output, AnaBeamB* beamB);
   void FillStandardVariables_BeamReco(OutputManager& output, AnaBeamB* beamB);
 
-  void FillStandardVariables_AllParticlesReco(OutputManager& output, AnaParticle* part);
-  void FillStandardVariables_AllParticlesTrue(OutputManager& output, AnaParticle* part);
+  void FillStandardVariables_AllParticlesReco(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_AllParticlesTrue(OutputManager& output, AnaParticlePD* part);
 
-  void FillStandardVariables_CandidateTrue(OutputManager& output, AnaParticle* part);
-  void FillStandardVariables_CandidateReco(OutputManager& output, AnaParticle* part);
-  void FillStandardVariables_CandidateHitsReco(OutputManager& output, AnaParticle* part);
+  void FillStandardVariables_CandidateTrue(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_CandidateReco(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_CandidateHitsReco(OutputManager& output, AnaParticlePD* part);
 
-  void FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticle* part);
-  void FillStandardVariables_CandidateDaughterTrue(OutputManager& output, AnaParticle* part);  
+  void FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* part);  
 
 
   // Enum with unique indexes for output tree variables  

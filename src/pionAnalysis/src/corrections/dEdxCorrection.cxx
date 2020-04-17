@@ -1,11 +1,11 @@
 #include "dEdxCorrection.hxx"
-#include "DataClasses.hxx"
+#include "pdDataClasses.hxx"
 #include <cassert>
 
 //#define DEBUG
 
 //********************************************************************
-dEdxCorrection::dEdxCorrection():BinnedParams(std::string(getenv("PROTODUNEEXAMPLEANALYSISROOT"))+"/data","dEdx", BinnedParams::k1D_SYMMETRIC){
+dEdxCorrection::dEdxCorrection():BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dEdx", BinnedParams::k1D_SYMMETRIC){
 //********************************************************************
 
 }
@@ -27,10 +27,10 @@ void dEdxCorrection::Apply(AnaSpillC& spillC){
     // Loop over all relevant tracks for this variation
     for (UInt_t itrk = 0; itrk<bunch->Particles.size(); itrk++){
       
-      AnaParticle* part = static_cast<AnaParticle*>(bunch->Particles[itrk]);
+      AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[itrk]);
       
       // The un-corrected particle
-      const AnaParticle* original = static_cast<const AnaParticle*>(part->Original);
+      const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
       
       if (!part->TrueObject)            continue; //?
       if (!original)                    continue; //?

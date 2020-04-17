@@ -92,7 +92,7 @@ bool BeamPionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   else{
     // for real DATA
     for(int i = 0; i < (int)beam->PDGs.size(); i++){
-      if (beam->PDGs[i] == 211)return true;
+      if (beam->PDGs[i] == 211) return true;
     }
   }
   return false;
@@ -226,7 +226,7 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   // Look for pion daughters (track hypothesis)
   bool noPion = true;
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size()/2; i++){
-    AnaParticle* daughter = static_cast<AnaParticle*>(box.MainTrack->Daughters[i]);
+    AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
     if(daughter->UniqueID != -999 &&
        daughter->CNNscore[0]                  > cut_CNNTrackScore &&
        daughter->Chi2Proton/daughter->Chi2ndf > cut_chi2 &&
@@ -256,7 +256,7 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   // loop over daughters assuming shower hypothesis
   bool cex = false;
   for(UInt_t i = box.MainTrack->Daughters.size()/2; i < box.MainTrack->Daughters.size(); i++){
-    AnaParticle* daughter = static_cast<AnaParticle*>(box.MainTrack->Daughters[i]);
+    AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
     if(daughter->UniqueID != -999 &&
        daughter->CNNscore[0]           < cut_CNNTrackScore &&
        box.DaughterDistanceToVertex[i] > cut_daughter_shower_distance_low &&

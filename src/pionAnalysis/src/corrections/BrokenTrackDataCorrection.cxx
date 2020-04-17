@@ -26,10 +26,10 @@ void BrokenTrackDataCorrection::Apply(AnaSpillC& spillC){
 
     // Loop over all relevant tracks in this buch
     for (UInt_t itrk = 0; itrk<bunch->Particles.size(); itrk++){      
-      AnaParticle* part = static_cast<AnaParticle*>(bunch->Particles[itrk]);
+      AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[itrk]);
       
       // The un-corrected particle
-      const AnaParticle* original = static_cast<const AnaParticle*>(part->Original);
+      const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
       if (!original) continue; //?
 
       // Require mother to end at APA border
@@ -37,7 +37,7 @@ void BrokenTrackDataCorrection::Apply(AnaSpillC& spillC){
 
         // Loop over daughter particles
         for (std::vector<AnaRecObjectC*>::iterator it=part->Daughters.begin();it!=part->Daughters.end();it++){
-          AnaParticle* dau = static_cast<AnaParticle*>(*it);
+          AnaParticlePD* dau = static_cast<AnaParticlePD*>(*it);
 
           // Take the first one close and aligned to mother
           if (fabs(part->PositionEnd[0]-dau->PositionStart[0])<20 &&

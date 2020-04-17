@@ -69,10 +69,10 @@ namespace pdAnaUtils{
   Float_t ComputeCSDARange(double beammom, int pdg);
 
   /// Compute PIDA
-  Float_t ComputePIDA(const AnaParticle& part);
+  Float_t ComputePIDA(const AnaParticlePD& part);
 
   /// Computes the kinetic energy
-  Float_t ComputeKineticEnergy(const AnaParticle &part);
+  Float_t ComputeKineticEnergy(const AnaParticlePD &part);
 
   /// Compute dedx from dqdx
   Float_t ComputeDeDxFromDqDx(Float_t dqdx);
@@ -81,23 +81,30 @@ namespace pdAnaUtils{
   Float_t ComputeDqDxFromDeDx(Float_t dedx);
 
   /// Extrapolate the length of a track to a given Z
-  Float_t* ExtrapolateToZ(const AnaParticle* part, Float_t z, Float_t* posz);
+  Float_t* ExtrapolateToZ(const AnaParticlePD* part, Float_t z, Float_t* posz);
 
   /// Compute the average dEdx for several resrange bins
-  void ComputeBinnedDeDx(const AnaParticle* part, Float_t max_resrange, Int_t nbins, Float_t** avg_dedx);
+  void ComputeBinnedDeDx(const AnaParticlePD* part, Float_t max_resrange, Int_t nbins, Float_t** avg_dedx);
 
   /// Find the beam true particle 
   AnaTrueParticle* FindBeamTrueParticle(const AnaSpillB& spill);  
 
   // Add part2 to part1
-  void AddParticles(AnaParticle* part1, AnaParticle* part2);
+  void AddParticles(AnaParticlePD* part1, AnaParticlePD* part2);
 
   // Compute distances between daughters and vertex
-  void ComputeDistanceToVertex(AnaParticle* part, std::vector<Float_t>& distance);
+  void ComputeDistanceToVertex(AnaParticlePD* part, std::vector<Float_t>& distance);
   
   // Get te AnaTrueParticle with a given ID
   AnaTrueParticlePD* GetTrueParticle(AnaEventB* event, Int_t ID);
   AnaTrueParticlePD* GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID);
+
+
+  // retreieve the BI particle
+  AnaParticlePD* GetBeamParticle(const AnaEventC& event);
+
+  // retreieve the true BI particle
+  AnaTrueParticlePD* GetTrueBeamParticle(const AnaEventC& event);
 
   // Fill te counters for several type of true beam daughters
   void FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters);
@@ -106,7 +113,7 @@ namespace pdAnaUtils{
   bool isBeamLike(AnaParticlePD* part, AnaBeamPD* beam);
   
   // Compute the PID chi2 and ndf for protons
-  std::pair< double, int > Chi2PID(const AnaParticle& part, TProfile * profile );
+  std::pair< double, int > Chi2PID(const AnaParticlePD& part, TProfile * profile );
 
   // Methods to compute the beam PDG variables (cannot be used with the piontree since it does not contain TOF and CKOV info)
   std::vector< int > GetPID( const AnaBeamPD& beam, double nominal_momentum );

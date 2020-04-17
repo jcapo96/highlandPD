@@ -32,11 +32,57 @@ public:
       kShower,
       kTrack
   };
-    
+
+  /// Track or Shower
   PartTypeEnum Type;
 
+  /// Is this the beam particle according to Pandora
   bool isBeamPart;
+
+  /// 
   bool isPandoraPart;
+
+
+  /// Number of hits in each wire plane
+  Int_t NHitsPerPlane[3];
+
+  /// Residual range for each wire in each plane
+  Float_t ResidualRange[3][NMAXHITSPERPLANE];
+
+  /// dEdx for each wire in each plane
+  Float_t dEdx[3][NMAXHITSPERPLANE];
+  Float_t dEdx_corr[3][NMAXHITSPERPLANE];
+
+  /// dQdx for each wire in each plane
+  Float_t dQdx[3][NMAXHITSPERPLANE];  
+  Float_t dQdx_corr[3][NMAXHITSPERPLANE];  
+
+  /// dQdx for each wire in each plane
+  Float_t HitX[3][NMAXHITSPERPLANE]; 
+  Float_t HitY[3][NMAXHITSPERPLANE]; 
+  Float_t HitZ[3][NMAXHITSPERPLANE]; 
+
+    /// Particle ID hypothesis used in the fit (if any)
+  Int_t FitPDG;
+  
+  /// PDG of the most probable particle hypothesis used at reconstruction level
+  Int_t ReconPDG[3]; 
+
+  /// PID variables
+  Float_t PID[3][10];
+
+  Float_t PIDA[3];
+
+  Float_t Chi2Proton;
+  Float_t Chi2ndf;
+
+  Float_t CNNscore[3];
+  
+  /// CALO variables
+  Float_t CALO[3][10];
+  
+  /// Momentum by range for muon and proton hypotheses
+  Float_t RangeMomentum[2];
 };
 
 /// AnaTrueParticle
@@ -65,8 +111,15 @@ public:
   std::vector<Int_t> Pi0_decay_ID; 
 
   Bool_t Matched;
+
+  /// Origin
   Int_t  Origin;
+
+  /// The particle length inside the TPC
+  Float_t LengthInTPC;
   
+  /// The true momentum at the TPC entrance
+  Float_t MomentumInTPC;  
 };
 
 

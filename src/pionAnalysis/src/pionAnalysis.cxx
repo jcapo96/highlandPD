@@ -358,7 +358,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     // ---------- Save information about all (max NMAXSAVEDDAUGHTERS) daughters in the candidate --------------
     Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
     for (Int_t i=0;i<std::min((Int_t)NMAXSAVEDDAUGHTERS,ndau); ++i){      
-      AnaParticle* dau = static_cast<AnaParticle*>(box().MainTrack->Daughters[i]);
+      AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
 
       // These are standard variables for the PD analysis
       standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
@@ -378,7 +378,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     }    
 
     // ---------- Additional truth information -----------
-    AnaTrueParticle* truePart = static_cast<AnaTrueParticle*>(box().MainTrack->TrueObject);
+    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
     if (truePart){
       output().FillVar(seltrk_truemom_tpc,              truePart->MomentumInTPC);
       if (anaUtils::GetParticleMass(ParticleId::GetParticle(truePart->PDG))>0)

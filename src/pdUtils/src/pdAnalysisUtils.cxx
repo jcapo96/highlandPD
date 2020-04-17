@@ -188,7 +188,7 @@ Float_t pdAnaUtils::ComputeCSDARange(double beammom, int pdg){
 
 
 //********************************************************************
-Float_t pdAnaUtils::ComputePIDA(const AnaParticle &track) {
+Float_t pdAnaUtils::ComputePIDA(const AnaParticlePD &track) {
 //********************************************************************
 
   Float_t cut=30;
@@ -209,7 +209,7 @@ Float_t pdAnaUtils::ComputePIDA(const AnaParticle &track) {
 }
 
 //********************************************************************
-Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticle &part) {
+Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 //********************************************************************
 
 
@@ -272,7 +272,7 @@ Float_t pdAnaUtils::ComputeDqDxFromDeDx(Float_t dedx) {
 
 
 //********************************************************************
-Float_t* pdAnaUtils::ExtrapolateToZ(const AnaParticle* part, Float_t z, Float_t* posz) {
+Float_t* pdAnaUtils::ExtrapolateToZ(const AnaParticlePD* part, Float_t z, Float_t* posz) {
 //********************************************************************
 
   // Get track starting point
@@ -303,7 +303,7 @@ Float_t* pdAnaUtils::ExtrapolateToZ(const AnaParticle* part, Float_t z, Float_t*
 
 
 //********************************************************************
-void pdAnaUtils::ComputeBinnedDeDx(const AnaParticle* part, Float_t max_resrange, Int_t nbins, Float_t** avg_dedx){  
+void pdAnaUtils::ComputeBinnedDeDx(const AnaParticlePD* part, Float_t max_resrange, Int_t nbins, Float_t** avg_dedx){  
 //********************************************************************
 
   for (Int_t i=0;i<3;i++){
@@ -369,7 +369,7 @@ AnaTrueParticle* pdAnaUtils::FindBeamTrueParticle(const AnaSpillB& spill){
 
 
 //********************************************************************
-void pdAnaUtils::AddParticles(AnaParticle* part1, AnaParticle* part2){  
+void pdAnaUtils::AddParticles(AnaParticlePD* part1, AnaParticlePD* part2){  
 //********************************************************************
 
   part1->Length     += part2->Length;
@@ -378,7 +378,7 @@ void pdAnaUtils::AddParticles(AnaParticle* part1, AnaParticle* part2){
   anaUtils::CopyArray(part2->DirectionEnd,    part1->DirectionEnd,   3);
   anaUtils::CopyArray(part2->PositionEnd,     part1->PositionEnd,    4);
   
-  AnaParticle* part1c = part1->Clone();
+  AnaParticlePD* part1c = part1->Clone();
     
     
   for (Int_t i=0;i<3;i++){
@@ -451,7 +451,7 @@ void pdAnaUtils::AddParticles(AnaParticle* part1, AnaParticle* part2){
 }
 
 //********************************************************************
-void pdAnaUtils::ComputeDistanceToVertex(AnaParticle* part, std::vector<Float_t>& distance){
+void pdAnaUtils::ComputeDistanceToVertex(AnaParticlePD* part, std::vector<Float_t>& distance){
 //********************************************************************
 
   distance.clear();
@@ -459,7 +459,7 @@ void pdAnaUtils::ComputeDistanceToVertex(AnaParticle* part, std::vector<Float_t>
   if (part->Daughters.empty()) return;
 
   for(int i = 0; i < (int)part->Daughters.size(); i++){
-    AnaParticle* dau = static_cast<AnaParticle*>(part->Daughters[i]);
+    AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[i]);
 
     //compute distance between part and daughter. Assume dau can be reconstructed backwards
     Float_t dis1 = sqrt(pow(part->PositionEnd[0]-dau->PositionStart[0],2)+pow(part->PositionEnd[1]-dau->PositionStart[1],2)+pow(part->PositionEnd[2]-dau->PositionStart[2],2));
@@ -533,7 +533,7 @@ void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters
 
 
 //*****************************************************************************
-std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticle& part, TProfile * profile ){
+std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile * profile ){
 //*****************************************************************************	
 
   double pid_chi2 = 0.; 
@@ -589,31 +589,24 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
 //*****************************************************************************	
   
   //cast the beam particle
-  AnaParticle* beamPart = static_cast<AnaParticle*>(beam->BeamParticle);
+  AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
 
   //cast the true beam particle
   AnaTrueParticle* beamTruePart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
 
-  double posX,posY,posZ,dirX,dirY,dirZ;
-  
+  Float_t pos[3],dir[3];
   //check if the particle has been reconstructed backwards and so flip it
   if(part->PositionStart[2] < part->PositionEnd[2] && part->PositionEnd[2]!=-999){
-    posX = part->PositionStart[0];
-    posY = part->PositionStart[1];
-    posZ = part->PositionStart[2];
-
-    dirX = part->DirectionStart[0];
-    dirY = part->DirectionStart[1];
-    dirZ = part->DirectionStart[2];
+    for (Int_t i=0;i<3;i++){
+      pos[i] = part->PositionStart[i];
+      dir[i] = part->DirectionStart[i];
+    }
   }
   else{
-    posX = part->PositionEnd[0];
-    posY = part->PositionEnd[1];
-    posZ = part->PositionEnd[2];
-
-    dirX = -1*part->DirectionEnd[0];
-    dirY = -1*part->DirectionEnd[1];
-    dirZ = -1*part->DirectionEnd[2];
+    for (Int_t i=0;i<3;i++){
+      pos[i] = part->PositionEnd[i];
+      dir[i] = part->DirectionEnd[i];
+    }
   }
 
   //the check is different for data and MC
@@ -625,16 +618,16 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
     double beamPosX = beamTruePart->Position[0]+(-1*beamTruePart->Position[2])*(beamDirX/beamDirZ);
     double beamPosY = beamTruePart->Position[1]+(-1*beamTruePart->Position[2])*(beamDirY/beamDirZ);
 
-    double dx       = posX-beamPosX;
-    double dy       = posY-beamPosY;
-    double costheta = dirX*beamDirX+dirY*beamDirY+dirZ*beamDirZ;
+    double dx       = pos[0]-beamPosX;
+    double dy       = pos[1]-beamPosY;
+    double costheta = dir[0]*beamDirX+dir[1]*beamDirY+dir[1]*beamDirZ;
 
-    if(dx > -3 && dx < 7 && dy > -8 && dy < 7 && posZ >27.5 && posZ < 32.5 && costheta >0.93)return true;
+    if(dx > -3 && dx < 7 && dy > -8 && dy < 7 && pos[2] >27.5 && pos[2] < 32.5 && costheta >0.93)return true;
   }
   else{
     //check beam data quality
     if(beam->nMomenta != 1 || beam->nTracks != 1)return false;
-    
+        
     double beamDirX = beamPart->DirectionEnd[0];
     double beamDirY = beamPart->DirectionEnd[1];
     double beamDirZ = beamPart->DirectionEnd[2];
@@ -642,11 +635,11 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
     double beamPosX = beamPart->PositionEnd[0];
     double beamPosY = beamPart->PositionEnd[1];
 
-    double dx       = posX-beamPosX;
-    double dy       = posY-beamPosY;
-    double costheta = dirX*beamDirX+dirY*beamDirY+dirZ*beamDirZ;
+    double dx       = pos[0]-beamPosX;
+    double dy       = pos[1]-beamPosY;
+    double costheta = dir[0]*beamDirX+dir[1]*beamDirY+dir[2]*beamDirZ;
 
-    if(dx > 0 && dx < 10 && dy > -5 && dy < 10 && posZ >30 && posZ < 35 && costheta >0.93)return true;
+    if(dx > 0 && dx < 10 && dy > -5 && dy < 10 && pos[2] >30 && pos[2] < 35 && costheta >0.93)return true;
   }
 
   return false;
@@ -794,5 +787,28 @@ PossibleParticleCands2 pdAnaUtils::GetPIDCandidates_CERNCalib( const AnaBeamPD& 
 
 }
 
+//***************************************************************
+AnaParticlePD* pdAnaUtils::GetBeamParticle(const AnaEventC& event){
+//***************************************************************
+
+  //Get the beam 
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<const AnaEventB*>(&event)->Beam);
+  if (!beam->BeamParticle) return NULL;
+
+  // Get the beam particle
+  return static_cast<AnaParticlePD*>(beam->BeamParticle);
+}
+
+//***************************************************************
+AnaTrueParticlePD* pdAnaUtils::GetTrueBeamParticle(const AnaEventC& event){
+//***************************************************************
+
+  // Get the beam particle
+  AnaParticlePD* beampart = GetBeamParticle(event);
+  if (!beampart) return NULL;
+
+  // Get the true beam particle
+  return static_cast<AnaTrueParticlePD*>(beampart->TrueObject);
+}
 
 

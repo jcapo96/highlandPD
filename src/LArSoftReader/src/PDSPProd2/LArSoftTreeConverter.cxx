@@ -7,7 +7,7 @@
 #include "ClockConstants.h"
 
 const bool debug = false;
-const bool debugTrueReco = false;
+const bool debugTrueReco = true;
 
 float Range_grampercm[29] = {
   9.833E-1/1.396, 1.786E0/1.396, 3.321E0/1.396, 6.598E0/1.396, 1.058E1/1.396, 3.084E1/1.396, 4.250E1/1.396, 6.732E1/1.396,
@@ -116,17 +116,17 @@ bool LArSoftTreeConverter::Initialize(){
   eventsTree->SetBranchAddress(("anab::Calorimetrys_pandoracalo__"   +trailer).c_str(), &CALOs);
   eventsTree->SetBranchAddress(("anab::Calorimetrys_pandoracaloSCE__"+trailer).c_str(), &CALOsSCE);
 
-  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Trackvoidart::Assns_pandoracalo__"   +trailer).c_str(), &CALOs_Tracks);
-  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Trackvoidart::Assns_pandoracaloSCE__"+trailer).c_str(), &CALOsSCE_Tracks);
+  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Trackvoidart::Assns_pandoracalo__"   +trailer).c_str(), &Tracks_CALOs);
+  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Trackvoidart::Assns_pandoracaloSCE__"+trailer).c_str(), &Tracks_CALOsSCE);
 
-  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercalo__"   +trailer).c_str(), &CALOs_Showers);
-  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercaloSCE__"+trailer).c_str(), &CALOsSCE_Showers);
+  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercalo__"   +trailer).c_str(), &Showers_CALOs);
+  eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercaloSCE__"+trailer).c_str(), &Showers_CALOsSCE);
 
   
   // Particle id
   eventsTree->SetBranchAddress(("anab::ParticleIDs_pandorapid__"+trailer).c_str(), &PIDs);
 
-  eventsTree->SetBranchAddress(("anab::ParticleIDrecob::Trackvoidart::Assns_pandorapid__"+trailer).c_str(), &PIDs_Tracks);
+  eventsTree->SetBranchAddress(("anab::ParticleIDrecob::Trackvoidart::Assns_pandorapid__"+trailer).c_str(), &Tracks_PIDs);
 
   // Reconstructed tracks
   //  eventsTree->SetBranchAddress(("recob::Tracks_pmtrackdc__"+trailer).c_str(), &Tracks);
@@ -167,9 +167,8 @@ bool LArSoftTreeConverter::Initialize(){
     eventsTree->SetBranchAddress(("recob::Hits_gaushit__"+trailer).c_str(), &Hits);
 
     // Association between reconstructed hits and tracks/showers
-    eventsTree->SetBranchAddress(("recob::Hitrecob::Trackvoidart::Assns_pandoraTrack__"  +trailer).c_str(), &Hits_Tracks);
-    eventsTree->SetBranchAddress(("recob::Hitrecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), &Hits_Showers);
-
+    eventsTree->SetBranchAddress(("recob::Hitrecob::Trackvoidart::Assns_pandoraTrack__"  +trailer).c_str(), &Tracks_Hits);
+    eventsTree->SetBranchAddress(("recob::Hitrecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), &Showers_Hits);
     
   // Channels
 #ifdef ISMC
@@ -232,7 +231,10 @@ bool LArSoftTreeConverter::Initialize(){
   //  eventsTree->SetBranchStatus("recob::Tracks_pmtrackdc__"+trailer).c_str(),1);
   eventsTree->SetBranchStatus(("anab::ParticleIDs_pandorapid__"+trailer).c_str(),1);
   eventsTree->SetBranchStatus(("recob::Tracks_pandoraTrack__"+trailer).c_str(),1);
-  //  eventsTree->SetBranchStatus(("recob::Hitrecob::Trackvoidart::Assns_pmtrack__"+trailer).c_str(), 1);  
+  eventsTree->SetBranchStatus(("recob::Hitrecob::Trackvoidart::Assns_pandoraTrack__"  +trailer).c_str(), 1);
+  eventsTree->SetBranchStatus(("recob::Hitrecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), 1);
+
+
   //  eventsTree->SetBranchStatus("recob::Hits_lineclusterdc__"+trailer).c_str());
 
   //eventsTree->SetBranchStatus(("recob::Hits_linecluster__"+trailer).c_str(),1);
@@ -434,7 +436,7 @@ void LArSoftTreeConverter::FillBeamInfo(AnaBeam* beam){
     beam->BeamParticle->TrueObject = new AnaTrueParticle();
     
     // Downcast the AnaTRueObjectC inside BeamParticle to a AnaTrueParticle such that we can access all info
-    AnaTrueParticle * truePart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
+    AnaTrueParticlePD * truePart = static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
    
     FillTrueParticleInfo(NULL, *geantGoodParticle, truePart);
 
@@ -565,12 +567,12 @@ void LArSoftTreeConverter::FillTrueInfo(AnaSpill* spill){
   for (int i=0;i<nTrueParts;i++){
 
     // Check if already added to a vertex
-    AnaTrueParticle* truePart = NULL;
+    AnaTrueParticlePD* truePart = NULL;
     for (UInt_t j=0;j<spill->TrueVertices.size();j++){
       for (Int_t k=0;k<spill->TrueVertices[j]->nTrueParticles;k++){
         //        if (spill->TrueVertices[j]->TrueParticles[k]->ID == MCParticles->obj[i].ftrackId){
         if (fabs(spill->TrueVertices[j]->TrueParticles[k]->Momentum - MCParticles->obj[i].ftrajectory.ftrajectory[0].second.Vect().Mag())<0.001){
-          truePart = static_cast<AnaTrueParticle*>(spill->TrueVertices[j]->TrueParticles[k]);
+          truePart = static_cast<AnaTrueParticlePD*>(spill->TrueVertices[j]->TrueParticles[k]);
           truePart->ID = MCParticles->obj[i].ftrackId;
           break;
         }
@@ -711,7 +713,7 @@ void LArSoftTreeConverter::FillPFParticleInfo(std::vector<AnaTrueParticleB*>& tr
 
 
 
-  AnaParticle* part = MakeParticle();
+  AnaParticlePD* part = MakeParticle();
   
   const recob::Track*  track  = GetPFParticleTrack( PFPart);
   if (track){
@@ -770,7 +772,7 @@ void LArSoftTreeConverter::FillPFParticleDaughterInfo(Int_t ipart, AnaBunch* bun
 }
 
 //*****************************************************************************
-void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Track& track, AnaParticle* part){
+void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Track& track, AnaParticlePD* part){
 //*****************************************************************************
 
   // Fill the basic track info
@@ -795,10 +797,10 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   std::vector<anab::ParticleID> pids;
 
   // Loop over the map with association between tracks and PIDs
-  for (UInt_t i=0;i<PIDs_Tracks->obj.ptr_data_2_.size();i++){
+  for (UInt_t i=0;i<Tracks_PIDs->obj.ptr_data_2_.size();i++){
     Int_t ipid =-1;
-    if (PIDs_Tracks->obj.ptr_data_2_[i].second == (UInt_t)track.fID){
-      ipid = PIDs_Tracks->obj.ptr_data_1_[i].second;
+    if (Tracks_PIDs->obj.ptr_data_2_[i].second == (UInt_t)track.fID){
+      ipid = Tracks_PIDs->obj.ptr_data_1_[i].second;
       // fill a vector with all pids associated to the track with index track.fID
       pids.push_back(PIDs->obj[ipid]);
     }
@@ -831,7 +833,8 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   // ------------------- Fill Calorimetry variables -----------------------
 
   // Vector of calos for track track.fID
-  std::vector<anab::Calorimetry*> calovector = GetRecoTrackCalorimetry(track,"pandora2Track", "pandora2calo");
+  std::vector<anab::Calorimetry*> calovector = GetRecoTrackCalorimetry(track,"pandora2Track", "pandora2caloSCE");
+
   
   if(calovector.size() != 3)
     std::cerr << "WARNING::Calorimetry vector size for primary is = " << calovector.size() << std::endl;
@@ -852,6 +855,9 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
     int plane = calovector[k]->fPlaneID.Plane;
     if(plane < 0) continue;
     if(plane > 2) continue;
+
+    //    std::vector< double > cali_dEdX_SCE = GetCalibratedCalorimetry(track, plane, "pandora2Track", "pandora2caloSCE" );
+    
     //    CaloKin = 0.0;
     part->CALO[plane][0] = calovector[k]->fKineticEnergy;
     part->CALO[plane][1] = calovector[k]->fRange;
@@ -887,9 +893,14 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
 
       //but store only the first 300 hits
       if(l<(Int_t)NMAXHITSPERPLANE){
+
         part->ResidualRange[plane][l] = calovector[k]->fResidualRange[l];
         part->dEdx[plane][l]          = calovector[k]->fdEdx[l];
+        //        if (l<cali_dEdX_SCE.size())
+        //          part->dEdx[plane][l] = cali_dEdX_SCE[l];
         part->dQdx[plane][l]          = calovector[k]->fdQdx[l];
+
+        // TODO: PionAnalyzer_module uses trajectory points instead
         if (calovector[k]->fdEdx.size()     == calovector[k]->fXYZ.size()){
           part->HitX[plane][l]          = calovector[k]->fXYZ[l].X();
           part->HitY[plane][l]          = calovector[k]->fXYZ[l].Y();
@@ -900,13 +911,15 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
         part->dEdx_corr[plane][l]     = dedxi_corr;
 #endif
 
-        part->AveragedEdx += calovector[k]->fdEdx[l];
-        part->AveragedQdx += calovector[k]->fdQdx[l];
-
+        // TODO
+        if(plane == 2){
+          part->AveragedEdx += calovector[k]->fdEdx[l];
+          part->AveragedQdx += calovector[k]->fdQdx[l];
+          nsamples++;
+        }
         //      std::cout << CaloKin << std::endl;
         //      CaloKin = CaloKin + part->dEdx_corr[plane][l]*part->HitX[plane][l];
-
-        nsamples++;
+               
       }
 #ifdef ISMC
       // No need to loop more since for MC we don't recompute kinetic energy
@@ -930,10 +943,9 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
     part->AveragedQdx /= (Float_t)nsamples;
   }
 
-
   // Associate a TrueObject to this Particle
 #ifdef ISMC
-  part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+  //  part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
 #endif
 
 
@@ -942,9 +954,9 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   part->Chi2ndf    = this_chi2_ndof.second;
 
 
-  std::cout << "anselmo track: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
-  if (part->TrueObject)
-    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
+  //  std::cout << "anselmo track: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
+  //  if (part->TrueObject)
+  //    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
 
   
   //  std::cout << "TrueObject:" << part->TrueObject << std::endl;
@@ -953,6 +965,14 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   
   //  if (part->TrueObject) static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
 
+  if (part->PositionStart[2]>30.692947 && part->PositionStart[2]< 30.692948){
+    part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+    part->Print();
+    if (part->TrueObject)
+      static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
+  }
+  
+  
 }
 
 //********************************************************************
@@ -998,7 +1018,7 @@ void LArSoftTreeConverter::FillBasicTrackInfo(const recob::Track& track, AnaPart
   UInt_t lastTrajPoint = track.fTraj.fPositions.size()-1;
 
   for (int i=track.fTraj.fPositions.size()-1;i>=0;i--){
-    if (track.fTraj.fPositions[i].X() != -999){
+    if (track.fTraj.fPositions[i].X() != -999){      
       lastTrajPoint=i;
       break;
     }
@@ -1049,7 +1069,7 @@ void LArSoftTreeConverter::FillBasicTrackInfo(const recob::Track& track, AnaPart
 }
 
 //*****************************************************************************
-void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Shower& shower, AnaParticle* part){
+void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles, const recob::Shower& shower, AnaParticlePD* part){
 //*****************************************************************************
 
 /*
@@ -1077,7 +1097,10 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
   // Shower length
   part->Length = shower.fLength;
 
+  // TODO: Number of hits as 
+  //  part->NHits = 
 
+ 
   // Start position
   part->PositionStart[0] = shower.fXYZstart.X();
   part->PositionStart[1] = shower.fXYZstart.Y();
@@ -1104,12 +1127,12 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
 
   // Associate a TrueObject to this Particle
 #ifdef ISMC
-  part->TrueObject = FindTrueParticle(false, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+  //  part->TrueObject = FindTrueParticle(false, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
 #endif
 
-  std::cout << "anselmo shower: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
-  if (part->TrueObject)
-    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
+  //  std::cout << "anselmo shower: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
+  //  if (part->TrueObject)
+  //    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
 
 }
 
@@ -1118,32 +1141,49 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
 //*****************************************************************************
 AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(bool isTrack, Int_t itrk, std::vector<AnaTrueParticleB*>& trueParticles, Float_t& purity){
 //*****************************************************************************
+
+  if (debugTrueReco)
+    std::cout << "FindTrueParticle: " << isTrack << " " << itrk << std::endl;
+
   
   // Vector of hits for track itrk
   std::vector<recob::Hit> hits;
 
+  std::cout << "anselmo: " << Tracks_Hits->obj.ptr_data_1_.size() << " " << Tracks_Hits->obj.ptr_data_2_.size()  << std::endl;
+  for (UInt_t i=0;i<Tracks->obj.size();i++){
+    std::cout << i << " " << Tracks->obj[i].fID << std::endl;
+  }
+
+  
   // Loop over the map with association between hits and trackID
   if (isTrack){
-    for (UInt_t i=0;i<Hits_Tracks->obj.ptr_data_2_.size();i++){
+    for (UInt_t i=0;i<Tracks_Hits->obj.ptr_data_1_.size();i++){
+      //        std::cout << i << " " << Tracks_Hits->obj.ptr_data_1_[i].second << " " << Tracks_Hits->obj.ptr_data_2_[i].second << " " << itrk << std::endl;
+        //      if (Tracks_Hits->obj.ptr_data_1_[i].second >= Tracks->obj.size()) continue;
+      //        std::cout << i << " ----> " << Tracks_Hits->obj.ptr_data_1_[i].second << " ID=" << Tracks->obj[Tracks_Hits->obj.ptr_data_1_[i].second].fID << " " << Tracks_Hits->obj.ptr_data_2_[i].second << " " << itrk << std::endl;
       Int_t ihit =-1;
-      if (Hits_Tracks->obj.ptr_data_2_[i].second == (UInt_t)itrk){
-        ihit = Hits_Tracks->obj.ptr_data_1_[i].second;
+      
+      if (Tracks->obj[Tracks_Hits->obj.ptr_data_2_[i].second].fID == (UInt_t)itrk){
+        ihit = Tracks_Hits->obj.ptr_data_1_[i].second;
         // fill a vector with all hits associated to the track with index itrk
         hits.push_back(Hits->obj[ihit]);
       }
     }
   }
   else{
-    for (UInt_t i=0;i<Hits_Showers->obj.ptr_data_2_.size();i++){
+    for (UInt_t i=0;i<Showers_Hits->obj.ptr_data_2_.size();i++){
       Int_t ihit =-1;
-      if (Hits_Showers->obj.ptr_data_2_[i].second == (UInt_t)itrk){
-        ihit = Hits_Showers->obj.ptr_data_1_[i].second;
+      if (Showers_Hits->obj.ptr_data_2_[i].second == (UInt_t)itrk){
+        ihit = Showers_Hits->obj.ptr_data_1_[i].second;
         // fill a vector with all hits associated to the track with index itrk
         hits.push_back(Hits->obj[ihit]);
       }
     }
   }
 
+  if (debugTrueReco)
+    std::cout << "FindTrueParticle: " << "#hits = " << hits.size() << std::endl;
+  
   Int_t trackid; 
   purity=0;
   double maxe;
@@ -1243,7 +1283,7 @@ void LArSoftTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* true
   anaUtils::CreateArray(trueVertex->TrueParticles, parts.size());
 
   for (UInt_t i=0;i<parts.size();i++){
-    AnaTrueParticle* truePart = MakeTrueParticle();
+    AnaTrueParticlePD* truePart = MakeTrueParticle();
     FillTrueParticleInfo(trueVertex, parts[i], truePart);
     trueVertex->TrueParticles[trueVertex->nTrueParticles++] = truePart;
   }
@@ -1301,7 +1341,7 @@ double LArSoftTreeConverter::ComputeTrackLength(const recob::Track& track){
 #ifdef ISMC
 
 //*****************************************************************************
-void LArSoftTreeConverter::FillTrueParticleInfo(AnaTrueVertexB* trueVertex, const simb::MCParticle& artTruePart, AnaTrueParticle* truePart){
+void LArSoftTreeConverter::FillTrueParticleInfo(AnaTrueVertexB* trueVertex, const simb::MCParticle& artTruePart, AnaTrueParticlePD* truePart){
 //*****************************************************************************
   
   truePart->ID       = artTruePart.ftrackId;
@@ -1425,7 +1465,7 @@ void LArSoftTreeConverter::HitsPurity(std::vector<recob::Hit> const& hits, Int_t
   std::map<int,double> trkide;
 
   if (debugTrueReco)
-    std::cout << "HitsPurity: " << std::endl;
+    std::cout << "  HitsPurity: " << std::endl;
 
   // Loop over the input hits (the ones associated to a track)
   for(size_t h = 0; h < hits.size(); ++h){
@@ -1450,6 +1490,8 @@ void LArSoftTreeConverter::HitsPurity(std::vector<recob::Hit> const& hits, Int_t
     }
     */
 
+    std::cout << "  - " << h << " hit (channel,time): " << hit.fChannel << " " << hit.fPeakTime << std::endl;
+    
     std::vector<sim::TrackIDE> trackIDEs = HitToTrackIDEs(hit);
     
     // Loop over all trackIDEs
@@ -1460,19 +1502,22 @@ void LArSoftTreeConverter::HitsPurity(std::vector<recob::Hit> const& hits, Int_t
       //      trkide[abs(trackIDs[e].trackID)] += trackIDs[e].energy;
       trkide[trackIDEs[e].trackID] += trackIDEs[e].energy;
     }
-
-
   }
+
 
   maxe = -1;
   double tote = 0;
   // Find the particle with maximum energy from the input hits
-  for (std::map<int,double>::iterator ii = trkide.begin(); ii!=trkide.end(); ++ii){
-    tote += ii->second;
-    if ((ii->second)>maxe){
-      maxe = ii->second;
-      //      trackid = abs(ii->first);
-      trackid = ii->first;
+  for (std::map<int,double>::iterator it = trkide.begin(); it!=trkide.end(); ++it){
+    tote += it->second;
+
+    if (debugTrueReco)
+      std::cout << "    - (ID,E): " << it->first << " " << it->second << std::endl;
+
+    if ((it->second)>maxe){
+      maxe = it->second;
+      trackid = abs(it->first);
+      //      trackid = it->first;
     }
   }
 
@@ -1483,7 +1528,7 @@ void LArSoftTreeConverter::HitsPurity(std::vector<recob::Hit> const& hits, Int_t
   }
 
   if (debugTrueReco)
-    std::cout << "HitsPurity2: " << trackid << " " << purity << " " << maxe << " " << tote << std::endl;
+    std::cout << "  HitsPurity: " << trackid << " " << purity << " " << maxe << " " << tote << std::endl;
 }
 
 //*****************************************************************************
@@ -1508,7 +1553,7 @@ std::vector<sim::TrackIDE> LArSoftTreeConverter::HitToTrackIDEs(const recob::Hit
   const double start = hit.fPeakTime - hit.fRMS;
   const double end   = hit.fPeakTime + hit.fRMS;
 
-  if (debugTrueReco)  std::cout << "HitToTrackIDEs: " << start << " " << end << std::endl;
+  if (debugTrueReco)  std::cout << "    HitToTrackIDEs (t0,t1): " << start << " " << end << std::endl;
   std::vector<  sim::TrackIDE > trackIDEs = ChannelToTrackIDEs(hit.fChannel, start, end);
   return trackIDEs;
 }
@@ -1581,7 +1626,7 @@ std::vector< sim::TrackIDE > LArSoftTreeConverter::ChannelToTrackIDEs(Int_t chan
   sim::SimChannel* schannel = FindSimChannel(channel);
 
   if (!schannel) return trackIDEs;
-  if (debugTrueReco)  std::cout << "ChannelToTrackIDEs(0): " << schannel->fChannel << std::endl;
+  if (debugTrueReco)  std::cout << "      ChannelToTrackIDEs(0): " << channel << " " << schannel->fChannel << std::endl;
   
   // loop over the electrons in the channel and grab those that are in time
   // with the identified hit start and stop times
@@ -1592,7 +1637,7 @@ std::vector< sim::TrackIDE > LArSoftTreeConverter::ChannelToTrackIDEs(Int_t chan
   std::vector<sim::IDE> simides = TrackIDsAndEnergies(*schannel, start_tdc, end_tdc);
 
 
-  if (debugTrueReco)  std::cout << "ChannelToTrackIDEs(1): " << start_tdc << " " << end_tdc << " " << simides.size() << std::endl;
+  if (debugTrueReco)  std::cout << "      ChannelToTrackIDEs(1): " << start_tdc << " " << end_tdc << " " << simides.size() << std::endl;
   
   // first get the total energy represented by all track ids for
   // this channel and range of tdc values
@@ -1620,8 +1665,13 @@ std::vector< sim::TrackIDE > LArSoftTreeConverter::ChannelToTrackIDEs(Int_t chan
     
   }
 
-  if (debugTrueReco)  std::cout << "ChannelToTrackIDEs(2): " << totalE << std::endl;
-  
+  if (debugTrueReco){
+    if (trackIDEs.size()>0)
+      std::cout << "      ChannelToTrackIDEs(2): " << trackIDEs.size() << " " << totalE << " " << trackIDEs.back().trackID <<  std::endl;
+    else
+      std::cout << "      ChannelToTrackIDEs(2): " << trackIDEs.size() << " " << totalE <<  std::endl;
+
+  }
   return trackIDEs;
 
 }
@@ -1705,7 +1755,7 @@ struct LArSoftTreeConverter::CompareByTDC {
 TDCIDEs_t::const_iterator  LArSoftTreeConverter::findClosestTDCIDE(const sim::SimChannel& chan, StoredTDC_t tdc) const{	
 //*****************************************************************************
 
-  if (debugTrueReco)  std::cout << "findClosestTDCIDE(0): " << chan.fChannel << " " << chan.fTDCIDEs.size() << " " << tdc << std::endl;
+  if (debugTrueReco)  std::cout << "        findClosestTDCIDE(0): " << chan.fChannel << " " << chan.fTDCIDEs.size() << " " << tdc << std::endl;
 
 
   return std::lower_bound(chan.fTDCIDEs.begin(), chan.fTDCIDEs.end(), tdc, CompareByTDC());
@@ -1810,7 +1860,7 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
   
   auto itr = findClosestTDCIDE(chan,startTDC); 
 
-  if (debugTrueReco)  std::cout << "TrackIDsAndEnergies(0): " << startTDC << " " << std::endl;
+  if (debugTrueReco)  std::cout << "        TrackIDsAndEnergies(0): " << startTDC << " " << std::endl;
 
   
   while(itr != chan.fTDCIDEs.end()){
@@ -1841,6 +1891,9 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
         trackIDE.z            = (ide.z*nel2 + trackIDE.z*nel1)/weight;
         trackIDE.numElectrons = weight;
         trackIDE.energy = energy;
+
+
+        if (debugTrueReco)  std::cout << "        - TrackIDsAndEnergies(1): " << itr->first << " " << ide.trackID << " " << energy << std::endl;
       } // end if the track id for this one is found
       else{
         idToIDE[ide.trackID] = sim::IDE(ide);
@@ -1849,12 +1902,18 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
     
     ++itr;
   } // end loop over tdc values
+
+  if (debugTrueReco)
+    std::cout << "        TrackIDsAndEnergies(2): " << idToIDE.size() << std::endl;
+
   
   // now fill the vector with the ides from the map
   std::vector<sim::IDE> ides;
   ides.reserve(idToIDE.size());
   for(auto const& itr : idToIDE){
     ides.push_back(itr.second);
+
+      std::cout << "        - TrackIDsAndEnergies(3): " << itr.second.trackID << std::endl;
   }
   
   return ides;
@@ -2657,10 +2716,10 @@ std::vector<anab::Calorimetry*> LArSoftTreeConverter::GetRecoTrackCalorimetry(co
   
   if (caloModule == "pandora2calo"){
     // Loop over the map with association between tracks and CALOs
-    for (UInt_t i=0;i<CALOs_Tracks->obj.ptr_data_2_.size();i++){
+    for (UInt_t i=0;i<Tracks_CALOs->obj.ptr_data_2_.size();i++){
       Int_t icalo =-1;
-      if (CALOs_Tracks->obj.ptr_data_2_[i].second == (UInt_t)itrk){
-        icalo = CALOs_Tracks->obj.ptr_data_1_[i].second;
+      if (Tracks_CALOs->obj.ptr_data_2_[i].second == (UInt_t)itrk){
+        icalo = Tracks_CALOs->obj.ptr_data_1_[i].second;
         // fill a vector with all calos associated to the track with index itrk
         calovector.push_back(&CALOs->obj[icalo]);
       }
@@ -2668,10 +2727,10 @@ std::vector<anab::Calorimetry*> LArSoftTreeConverter::GetRecoTrackCalorimetry(co
   }
   else if (caloModule == "pandora2caloSCE"){
     // Loop over the map with association between tracks and CALOs
-    for (UInt_t i=0;i<CALOsSCE_Tracks->obj.ptr_data_2_.size();i++){
+    for (UInt_t i=0;i<Tracks_CALOsSCE->obj.ptr_data_2_.size();i++){
       Int_t icalo =-1;
-      if (CALOsSCE_Tracks->obj.ptr_data_2_[i].second == (UInt_t)itrk){
-        icalo = CALOsSCE_Tracks->obj.ptr_data_1_[i].second;
+      if (Tracks_CALOsSCE->obj.ptr_data_2_[i].second == (UInt_t)itrk){
+        icalo = Tracks_CALOsSCE->obj.ptr_data_1_[i].second;
         // fill a vector with all calos associated to the track with index itrk
         calovector.push_back(&CALOsSCE->obj[icalo]);
       }
@@ -2843,10 +2902,10 @@ double LArSoftTreeConverter::tot_Ef( double x, double y, double z ){
   std::vector<recob::Hit> hits;
 
   // Loop over the map with association between hits and trackID
-  for (UInt_t i=0;i<Hits_Tracks->obj.ptr_data_2_.size();i++){
+  for (UInt_t i=0;i<Tracks_Hits->obj.ptr_data_2_.size();i++){
     Int_t ihit =-1;
-    if (Hits_Tracks->obj.ptr_data_2_[i].second == (UInt_t)itrk){
-      ihit = Hits_Tracks->obj.ptr_data_1_[i].second;
+    if (Tracks_Hits->obj.ptr_data_2_[i].second == (UInt_t)itrk){
+      ihit = Tracks_Hits->obj.ptr_data_1_[i].second;
       // fill a vector with all hits associated to the track with index itrk
       hits.push_back(Hits->obj[ihit]);
     }
@@ -3045,10 +3104,10 @@ const std::vector<int> LArSoftTreeConverter::GetPFParticleHitsIndices(const reco
   const recob::Track* track = GetPFParticleTrack(part);
   if (track){
     // Loop over the map with association between hits and trackID
-    for (UInt_t i=0;i<Hits_Tracks->obj.ptr_data_2_.size();i++){
+    for (UInt_t i=0;i<Tracks_Hits->obj.ptr_data_2_.size();i++){
       Int_t ihit =-1;
-      if (Hits_Tracks->obj.ptr_data_2_[i].second == (UInt_t)track->fID){
-        ihit = Hits_Tracks->obj.ptr_data_1_[i].second;
+      if (Tracks_Hits->obj.ptr_data_2_[i].second == (UInt_t)track->fID){
+        ihit = Tracks_Hits->obj.ptr_data_1_[i].second;
         // fill a vector with all hits associated to the track with index itrk
         indices.push_back(ihit);
       }
@@ -3057,10 +3116,10 @@ const std::vector<int> LArSoftTreeConverter::GetPFParticleHitsIndices(const reco
     const recob::Shower* shower = GetPFParticleShower(part);
     if (shower){
       // Loop over the map with association between hits and showerID
-      for (UInt_t i=0;i<Hits_Showers->obj.ptr_data_2_.size();i++){
+      for (UInt_t i=0;i<Showers_Hits->obj.ptr_data_2_.size();i++){
         Int_t ihit =-1;
-        if (Hits_Showers->obj.ptr_data_2_[i].second == (UInt_t)shower->fID){
-          ihit = Hits_Showers->obj.ptr_data_1_[i].second;
+        if (Showers_Hits->obj.ptr_data_2_[i].second == (UInt_t)shower->fID){
+          ihit = Showers_Hits->obj.ptr_data_1_[i].second;
           // fill a vector with all hits associated to the shower with index itrk
           indices.push_back(ihit);
         }

@@ -2,7 +2,7 @@
 #define ToyBoxPD_h
 
 #include "ToyBoxB.hxx"
-#include "DataClasses.hxx"
+#include "pdDataClasses.hxx"
 
 class ToyBoxPD:public ToyBoxB{
 public :
@@ -25,7 +25,7 @@ public:
   AnaVertexB* Vertex;
 
   /// The MainTrack, defining the event vertex
-  AnaParticle* MainTrack;
+  AnaParticlePD* MainTrack;
 
   // Distance from the MainTrack to its daoughters
   std::vector<Float_t> DaughterDistanceToVertex;

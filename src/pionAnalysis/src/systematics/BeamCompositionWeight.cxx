@@ -20,17 +20,10 @@ Weight_h BeamCompositionWeight::ComputeWeight(const ToyExperiment& toy, const An
   // Initialy the weight is 1
   Weight_h eventWeight = 1;
 
-  //Get the beam 
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<const AnaEventB*>(&event)->Beam);
-  if (!beam->BeamParticle) return eventWeight;
-
-  // Get the beam particle
-  AnaParticle* beampart = static_cast<AnaParticle*>(beam->BeamParticle);
-  if (!beampart->TrueObject) return eventWeight;
-
   // Get the true beam particle
-  AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(beampart->TrueObject);
-   
+  AnaTrueParticlePD* trueBeamPart = pdAnaUtils::GetTrueBeamParticle(event);
+  if (!trueBeamPart) return eventWeight;
+  
   // We need the errors part of the data file but as well the relative uncertainty for sigma
   Float_t weight_mean, weight_error;
   Int_t weight_index;

@@ -185,7 +185,7 @@ void standardPDTree::FillStandardVariables_BeamTrue(OutputManager& output, AnaBe
 
   if (!beamB) return;  
   AnaBeam* beam = static_cast<AnaBeam*>(beamB);
-  AnaTrueParticle* beamTruePart= static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);   
+  AnaTrueParticlePD* beamTruePart= static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);   
   if (!beamTruePart) return;
 
   //      output.FillVar(beam_truelengthInTPC,                 beamTruePart->Length);
@@ -230,7 +230,7 @@ void standardPDTree::FillStandardVariables_BeamReco(OutputManager& output, AnaBe
 }
 
 //********************************************************************
-void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& output, AnaParticle* part){
+void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& output, AnaParticlePD* part){
 //********************************************************************
 
   if (!part) return;
@@ -246,7 +246,7 @@ void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& outpu
 }
   
 //********************************************************************
-void standardPDTree::FillStandardVariables_AllParticlesTrue(OutputManager& output, AnaParticle* part){
+void standardPDTree::FillStandardVariables_AllParticlesTrue(OutputManager& output, AnaParticlePD* part){
 //********************************************************************
 
   if (!part) return;
@@ -265,7 +265,7 @@ void standardPDTree::FillStandardVariables_AllParticlesTrue(OutputManager& outpu
 }
 
 //********************************************************************
-void standardPDTree::FillStandardVariables_CandidateTrue(OutputManager& output, AnaParticle* part){
+void standardPDTree::FillStandardVariables_CandidateTrue(OutputManager& output, AnaParticlePD* part){
 //********************************************************************
 
   if (!part) return;
@@ -291,7 +291,7 @@ void standardPDTree::FillStandardVariables_CandidateTrue(OutputManager& output, 
 }
 
 //********************************************************************
-void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, AnaParticle* part){
+void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, AnaParticlePD* part){
 //********************************************************************
 
   if (!part) return;
@@ -302,7 +302,7 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
   output.FillVar(seltrk_dedx,              part->AveragedEdx);
   output.FillVar(seltrk_dqdx,              part->AveragedQdx);
 
-  output.FillVar(seltrk_dedx_raw,              static_cast<const AnaParticle*>(part->Original)->AveragedEdx);
+  output.FillVar(seltrk_dedx_raw,              static_cast<const AnaParticlePD*>(part->Original)->AveragedEdx);
   output.FillVar(seltrk_nhits,                 part->NHits);
   output.FillVar(seltrk_length,                part->Length);
   output.FillVar(seltrk_costheta,              part->DirectionStart[2]);
@@ -318,7 +318,7 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
 }
 
 //********************************************************************
-void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& output, AnaParticle* part){
+void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& output, AnaParticlePD* part){
 //********************************************************************
 
   if (!part) return;
@@ -333,14 +333,14 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
     output.FillMatrixVarFromArray(seltrk_hit_dqdx_cor,  part->dQdx_corr[i],        i, NMAXHITSPERPLANE);
     output.FillMatrixVarFromArray(seltrk_hit_resrange,  part->ResidualRange[i],    i, NMAXHITSPERPLANE);
     output.FillVectorVarFromArray(seltrk_nhitsperplane, part->NHitsPerPlane,3);
-    output.FillMatrixVarFromArray(seltrk_hit_dedx_raw,  static_cast<const AnaParticle*>(part->Original->Original->Original)->dEdx[i], i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dqdx_raw,  static_cast<const AnaParticle*>(part->Original->Original->Original)->dQdx[i], i, NMAXHITSPERPLANE);
+    output.FillMatrixVarFromArray(seltrk_hit_dedx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->dEdx[i], i, NMAXHITSPERPLANE);
+    output.FillMatrixVarFromArray(seltrk_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->dQdx[i], i, NMAXHITSPERPLANE);
   }
   
 }
 
 //********************************************************************
-void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticle* dau){
+void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticlePD* dau){
 //********************************************************************
 
   if (!dau) return;
@@ -356,13 +356,13 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
   
   
   output.FillMatrixVarFromArray(seltrk_dau_hit_dedx,      dau->dEdx[2],          NMAXHITSPERPLANE);
-  output.FillMatrixVarFromArray(seltrk_dau_hit_dqdx_raw,  static_cast<const AnaParticle*>(dau->Original->Original->Original)->dQdx[2],   NMAXHITSPERPLANE);  
+  output.FillMatrixVarFromArray(seltrk_dau_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(dau->Original->Original->Original)->dQdx[2],   NMAXHITSPERPLANE);  
   output.FillMatrixVarFromArray(seltrk_dau_hit_resrange,  dau->ResidualRange[2], NMAXHITSPERPLANE);
 
 }
 
 //********************************************************************
-void standardPDTree::FillStandardVariables_CandidateDaughterTrue(OutputManager& output, AnaParticle* dau){
+void standardPDTree::FillStandardVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* dau){
 //********************************************************************
 
   if (!dau) return;  

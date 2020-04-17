@@ -4,8 +4,6 @@
 #include <cassert>
 #include "EventBoxPD.hxx"
 
-//#define DEBUG
-
 //********************************************************************
 dEdxVariation::dEdxVariation(): EventVariationBase(),BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dEdx", BinnedParams::k1D_SYMMETRIC){
 //********************************************************************
@@ -25,10 +23,10 @@ void dEdxVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // Loop over all relevant tracks for this variation
   for (Int_t itrk = 0; itrk < box->nRelevantRecObjects; itrk++){
     
-    AnaParticle* part = static_cast<AnaParticle*>(box->RelevantRecObjects[itrk]);
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[itrk]);
 
     // The un-corrected particle
-    const AnaParticle* original = static_cast<const AnaParticle*>(part->Original);
+    const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
 
     if (!part->TrueObject) continue;
     if (!original)         continue;
@@ -51,7 +49,7 @@ void dEdxVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
       }
     }
 
-    // Recompute the derived quantities
+    // Recompute the derived quantities. TODO: This should be done somewhere else, in a more transparent way
     std::pair<double, int> chi2pid = pdAnaUtils::Chi2PID(*part, NULL);
     part->Chi2Proton  = chi2pid.first;
     part->Chi2ndf     = chi2pid.second;
@@ -66,8 +64,8 @@ bool dEdxVariation::UndoSystematic(AnaEventC& event){
   SystBoxB* box = GetSystBox(event);
 
   for (Int_t itrk=0;itrk<box->nRelevantRecObjects;itrk++){
-    AnaParticle* part = static_cast<AnaParticle*>(box->RelevantRecObjects[itrk]);
-    const AnaParticle* original = static_cast<const AnaParticle*>(part->Original);
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[itrk]);
+    const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
     if (!original)   continue;
 
     for (Int_t i=0;i<3;i++){
