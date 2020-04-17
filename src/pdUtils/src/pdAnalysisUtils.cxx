@@ -117,7 +117,7 @@ Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
   
   //*********For proton, the calculations are valid up to 3.022E3 cm range
   //corresponding to a Muon KE of 5 GeV**********//
-  
+
   if (trkrange < 0 || std::isnan(trkrange)) {
     std::cout << "TrackMomentumCalculator   " 
               << "Invalid track range " << trkrange << " return -1" << std::endl;
@@ -619,12 +619,19 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
     for (int i=0;i<7;i++) cuts[i] = datacuts[i];
   }
 
-  // compute the difference in position and cos(angle)
-  for (int i=0;i<3;i++){
-    dist[i] = part->PositionStart[i] - beampos[i];
-    dcos   += part->DirectionStart[i]*beamdir[i];
+  // compute the difference in position and cos(angle) considering that particle could have been reconstructed backwards
+  if(part->PositionEnd[2]<part->PositionStart[2] && part->PositionEnd[2]!=-999){
+    for (int i=0;i<3;i++){
+      dist[i] = part->PositionEnd[i] - beampos[i];
+      dcos   += -1*(part->DirectionEnd[i])*beamdir[i];
+    }
   }
-  
+  else{
+    for (int i=0;i<3;i++){
+      dist[i] = part->PositionStart[i] - beampos[i];
+      dcos   += part->DirectionStart[i]*beamdir[i];
+    }
+  }
   if(dist[0] < cuts[0] || dist[0] > cuts[1] || dist[1] < cuts[2] || dist[1] > cuts[3] || dist[2] < cuts[4] || dist[2] > cuts[5] || dcos < cuts[6]) return false;
   else return true;
 }

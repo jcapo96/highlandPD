@@ -38,13 +38,11 @@ protected:
 };
 
 
-class FindBeamPionTrackAction: public StepBase{
+class FindPandoraTrackAction: public StepBase{
  public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new FindBeamPionTrackAction();}
-  bool useIsBeamLike;
-  FindBeamPionTrackAction(){ useIsBeamLike = (bool)ND::params().GetParameterI("pionAnalysis.UseIsBeamLike");}
+  StepBase* MakeClone(){return new FindPandoraTrackAction();}
 };
 
 class ComputeDaughterDistanceAction: public StepBase{
@@ -62,18 +60,27 @@ class BeamPionCut: public StepBase{
   StepBase* MakeClone(){return new BeamPionCut();}
 };
 
-class BeamIsTrackCut: public StepBase{
+class CandidateExistsCut: public StepBase{
  public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new BeamIsTrackCut();}
+  StepBase* MakeClone(){return new CandidateExistsCut();}
 };
 
-class BeamPionGeometricCut: public StepBase{
+class CandidateIsBeamCut: public StepBase{
  public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new BeamPionGeometricCut();}
+  StepBase* MakeClone(){return new CandidateIsBeamCut();}
+  bool useIsBeamLike;
+  CandidateIsBeamCut(){ useIsBeamLike = (bool)ND::params().GetParameterI("pionAnalysis.UseIsBeamLike");}
+};
+
+class CandidateIsTrackCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new CandidateIsTrackCut();}
 };
 
 class PionEndsAPA3Cut: public StepBase{
