@@ -882,6 +882,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
                                              AnaParticlePD* part, AnaBeamPD* beam){
 //*****************************************************************************
   
+  part->isPandora = true;
   part->UniqueID  = reco_beam_trackID;
 
   // This is the beam particle (TODO)

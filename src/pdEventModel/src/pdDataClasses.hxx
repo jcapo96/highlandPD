@@ -40,7 +40,7 @@ public:
   bool isBeamPart;
 
   /// 
-  bool isPandoraPart;
+  bool isPandora;
 
 
   /// Number of hits in each wire plane

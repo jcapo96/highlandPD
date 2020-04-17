@@ -15,7 +15,7 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
 
   Type = kUnknown;
   isBeamPart    = false;
-  isPandoraPart = false;
+  isPandora = false;
 
 
   FitPDG        = kFloatUnassigned;
@@ -67,7 +67,7 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
   Type           = part.Type;
   isBeamPart     = part.isBeamPart;
-  isPandoraPart  = part.isPandoraPart;
+  isPandora  = part.isPandora;
 
   FitPDG        = part.FitPDG;
 
@@ -117,7 +117,7 @@ void AnaParticlePD::Print() const{
   
   std::cout << "-------- AnaParticlePD --------- " << std::endl;
   std::cout << "Type:                    " << Type << std::endl;
-  std::cout << "isPandoraPart:           " << isPandoraPart << std::endl;
+  std::cout << "isPandora:           " << isPandora << std::endl;
   std::cout << "PassBeamCut:             " << isBeamPart << std::endl;
 
   std::cout << "FitPDG:                  " << FitPDG << std::endl;
