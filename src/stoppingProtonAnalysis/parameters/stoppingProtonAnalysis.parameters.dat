@@ -1,0 +1,29 @@
+--- Cut levels --------
+ < stoppingProtonAnalysis.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
+
+--- Event Variations ------------
+
+The single systematics configuration (when EnableSingle...SystConfigurations = 1)
+or the all systematics configuration (when EnableAllSystematics = 1)
+need to be enabled in baseAnalysis parameter file
+
+ < stoppingProtonAnalysis.Variations.EnabledEdx              = 0 >	
+
+
+--- Corrections -----------
+
+ < stoppingProtonAnalysis.Corrections.EnabledEdx             = 0 >
+ < stoppingProtonAnalysis.Corrections.EnabledEdxData         = 1 >
+ < stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData = 0 >  
+ < stoppingProtonAnalysis.Corrections.EnabledBeamMom         = 1 >   
+ < stoppingProtonAnalysis.Corrections.EnabledBeamMomSmearing = 1 >    
+ < stoppingProtonAnalysis.Corrections.EnabledCryoWallBeamMom = 1 >   
+
+--- Other Parameters -----------
+
+ < stoppingProtonAnalysis.Corrections.SeedValue              = 1 >
+
+
+--- Other Parameters -----------
+
+ < stoppingProtonAnalysis.ElectronVeto                       = 1 >

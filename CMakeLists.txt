@@ -123,9 +123,9 @@ set(HIGHLAND_PD_LIBRARIES "-L${CMAKE_BINARY_DIR} -lhighlandPD")
 #-------------------------------------------------------
 
 file(GLOB highlandPD_inc2 ${CMAKE_SOURCE_DIR}/src/*/src/*.hxx
-                            ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.hxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.hxx 
-                            ${LARSOFTREADER_DIR}/*.hxx
-                            ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/*.h)
+                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.hxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.hxx 
+                          ${LARSOFTREADER_DIR}/*.hxx
+                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/*.h)
 
 foreach(file0 ${highlandPD_inc2})
    INSTALL(FILES ${file0} DESTINATION ${CMAKE_SOURCE_DIR}/include)
@@ -141,14 +141,19 @@ endforeach(file0)
 #INSTALL(TARGETS CreateMiniTree DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(pion.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunPionAnalysis.cxx)
-target_include_directories(pion.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc} ${CMAKE_SOURCE_DIR}/src/pionAnalysis/src)
+target_include_directories(pion.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(pion.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
 INSTALL(TARGETS pion.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CreateMiniTreePionAna.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunCreateMiniTree.cxx)
-target_include_directories(CreateMiniTreePionAna.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc} ${CMAKE_SOURCE_DIR}/src/pionAnalysis/src)
+target_include_directories(CreateMiniTreePionAna.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(CreateMiniTreePionAna.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
 INSTALL(TARGETS CreateMiniTreePionAna.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+add_executable(proton.exe ${CMAKE_SOURCE_DIR}/src/stoppingProtonAnalysis/app/RunStoppingProtonAnalysis.cxx)
+target_include_directories(proton.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(proton.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
+INSTALL(TARGETS proton.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 
 #-------------------------------------------------------
@@ -168,7 +173,8 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
-add_dependencies(CreateMiniTreePionAna.exe pion.exe)
+add_dependencies(CreateMiniTreePionAna.exe proton.exe)
+add_dependencies(proton.exe                pion.exe)
 add_dependencies(pion.exe                  highlandPD)
 add_dependencies(highlandPD                highlandPD_dicts)
 add_dependencies(highlandPD_dicts          include)
