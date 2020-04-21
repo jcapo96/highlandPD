@@ -166,7 +166,7 @@ class LArSoftTreeConverter: public InputConverter{
   virtual void FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* trueVertex);
 #endif
   
-  virtual void FillPFParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles, Int_t itrk, AnaBunch* bunch);
+  virtual bool FillPFParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles, recob::PFParticle& PFPart, AnaParticlePD* part);
   virtual void FillPFParticleDaughterInfo(Int_t itrk, AnaBunch* bunch, int indent=0);
   
   AnaTrueObjectC* FindTrueParticle(bool isTrack, Int_t itrk, std::vector<AnaTrueParticleB*>& trueParticles, Float_t& purity);
