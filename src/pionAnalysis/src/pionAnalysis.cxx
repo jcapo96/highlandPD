@@ -16,9 +16,9 @@
 
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
-#include "pionTreeConverter.hxx"
 #include "pdDataClasses.hxx"
 
+#include "pionTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 #include "LArSoftTreeConverter.hxx"
 
@@ -349,8 +349,8 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     Float_t diflength = sqrt(pow(posz[0]-box().MainTrack->PositionStart[0],2) + pow(posz[1]-box().MainTrack->PositionStart[1],2) + pow(posz[2]-box().MainTrack->PositionStart[2],2));
     output().FillVar(seltrk_length_z0,             box().MainTrack->Length + diflength);
     
-    output().FillVar(seltrk_mom_muon_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 13));
-    output().FillVar(seltrk_mom_prot_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 2212));
+    //    output().FillVar(seltrk_mom_muon_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 13));
+    //    output().FillVar(seltrk_mom_prot_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 2212));
     
     //Jake/Franceska variable    
     output().FillVectorVarFromArray(seltrk_CNNscore,       box().MainTrack->CNNscore,3);
