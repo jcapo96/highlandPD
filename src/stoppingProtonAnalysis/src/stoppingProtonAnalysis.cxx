@@ -1,8 +1,8 @@
 #include "stoppingProtonAnalysis.hxx"
 #include "Parameters.hxx"
-#include "stoppingKaonSelection.hxx"
+//#include "stoppingKaonSelection.hxx"
 #include "stoppingProtonSelection.hxx"
-#include "stoppingMuonSelection.hxx"
+//#include "stoppingMuonSelection.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 
