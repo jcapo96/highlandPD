@@ -18,7 +18,8 @@ void pandoraPreselection::DefineSteps(){
   // the step sequence is broken if cut is not passed (default is "false")
   AddStep(StepBase::kAction, "find Pandora track",         new FindPandoraTrackAction());  
   AddStep(StepBase::kCut,    "candidate exists",           new CandidateExistsCut());
-  
+  AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());
+
   // No preselection for the moment
   SetPreSelectionAccumLevel(-1);
 }
@@ -56,6 +57,25 @@ bool CandidateExistsCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
   if (!box.MainTrack) return false;
   else return true;
+}
+
+//**************************************************
+bool CandidateIsBeamCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+
+  // Cast the candidate
+  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);
+  AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
+  //Get the beam from the event
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+  
+  bool candidateIsBeam=false;
+  if (useIsBeamLike)      
+    candidateIsBeam = pdAnaUtils::isBeamLike(part,beam);
+  else
+    candidateIsBeam = part->isBeamPart;
+  
+  return candidateIsBeam;
 }
 
 //**************************************************

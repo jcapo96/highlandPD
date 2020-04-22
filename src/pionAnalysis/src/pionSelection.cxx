@@ -69,25 +69,6 @@ bool BeamPionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 }
 
 //**************************************************
-bool CandidateIsBeamCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  // Cast the candidate
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);
-  AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
-  //Get the beam from the event
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-  
-  bool candidateIsBeam=false;
-  if (useIsBeamLike)      
-    candidateIsBeam = pdAnaUtils::isBeamLike(part,beam);
-  else
-    candidateIsBeam = part->isBeamPart;
-  
-  return candidateIsBeam;
-}
-
-//**************************************************
 bool CandidateIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
   
