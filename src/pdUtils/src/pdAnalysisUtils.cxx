@@ -587,6 +587,8 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
 //*****************************************************************************
 bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
 //*****************************************************************************	
+
+  if (!part) return false;
   
   //From Owen Goodwins studies
   Float_t mccuts[7]  ={-3.,  7., -8.,  7., 27.5, 32.5, 0.93};
@@ -594,7 +596,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
 
   //cast the beam particle
   AnaParticlePD* beampart = static_cast<AnaParticlePD*>(beam->BeamParticle);
-
+  
   Float_t beampos[3],beamdir[3], dist[3], dcos=0, cuts[7];      
 
   // different way of obtaining the beam position and angle for DATA and MC
@@ -618,7 +620,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
     }
     for (int i=0;i<7;i++) cuts[i] = datacuts[i];
   }
-
+  
   // compute the difference in position and cos(angle) considering that particle could have been reconstructed backwards
   if(part->PositionEnd[2]<part->PositionStart[2] && part->PositionEnd[2]!=-999){
     for (int i=0;i<3;i++){
@@ -632,6 +634,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
       dcos   += part->DirectionStart[i]*beamdir[i];
     }
   }
+
   if(dist[0] < cuts[0] || dist[0] > cuts[1] || dist[1] < cuts[2] || dist[1] > cuts[3] || dist[2] < cuts[4] || dist[2] > cuts[5] || dcos < cuts[6]) return false;
   else return true;
 }
