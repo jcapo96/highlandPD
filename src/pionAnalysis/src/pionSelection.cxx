@@ -96,26 +96,28 @@ bool CandidateExistsCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   (void)event;
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
-  if (!box.MainTrack) return false;
-  else return true;
+  if (box.MainTrack) return true;
+  else return false;
 }
 
 //**************************************************
 bool CandidateIsBeamCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
-  // Cast the candidate
+  // Cast the box
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);
-  AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
+
+  // Main track must exist
+  if (!box.MainTrack) return false;
+
   //Get the beam from the event
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-  
   bool candidateIsBeam=false;
   if (useIsBeamLike)      
-    candidateIsBeam = pdAnaUtils::isBeamLike(part,beam);
+    candidateIsBeam = pdAnaUtils::isBeamLike(box.MainTrack,beam);
   else
-    candidateIsBeam = part->isBeamPart;
-  
+    candidateIsBeam = box.MainTrack->isBeamPart;
+
   return candidateIsBeam;
 }
 
@@ -125,12 +127,14 @@ bool CandidateIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   (void)event;
 
-  //cast the maintrack
+  //cast the box
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
-  AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
+
+  // Main track shouldmust exist
+  if (!box.MainTrack) return false;
   
   //if the seltrk is a track, accept it
-  if (part->Type == AnaParticlePD::kTrack) return true;
+  if (box.MainTrack->Type == AnaParticlePD::kTrack) return true;
   else return false;
 }
 
