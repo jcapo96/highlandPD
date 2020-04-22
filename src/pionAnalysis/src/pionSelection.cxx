@@ -2,6 +2,7 @@
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pionAnalysisUtils.hxx"
+#include "pandoraPreselection.hxx"
 
 //********************************************************************
 pionSelection::pionSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -16,9 +17,11 @@ void pionSelection::DefineSteps(){
   // Steps must be added in the right order
   // if "true" is added to the constructor of the step,
   // the step sequence is broken if cut is not passed (default is "false")
+
+  //copy steps from pandoraPreselecion
   AddStep(StepBase::kAction, "find Pandora track",         new FindPandoraTrackAction());  
-  AddStep(StepBase::kCut,    "beam is pion",               new BeamPionCut());
   AddStep(StepBase::kCut,    "candidate exists",           new CandidateExistsCut());
+  AddStep(StepBase::kCut,    "beam is pion",               new BeamPionCut());
   AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());
   AddStep(StepBase::kCut,    "candidate is track",         new CandidateIsTrackCut());
   AddStep(StepBase::kCut,    "pion track end",             new PionEndsAPA3Cut());
@@ -43,31 +46,6 @@ void pionSelection::DefineSteps(){
 }
 
 //**************************************************
-bool FindPandoraTrackAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-  
-  // Cast the ToyBox to the appropriate type
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB); 
-
-  // This action fills box.MainTrack 
-  box.MainTrack = NULL;
-  
-  // Get the array of parts from the event
-  AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
-  int nParts           = static_cast<AnaEventB*>(&event)->nParticles;
-
-  //look over the particles in the event
-  for(int i = 0; i < nParts; i++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
-    if(part->isPandora){
-      box.MainTrack = part;
-      break;
-    }
-  }
-  return true;
-}
-
-//**************************************************
 bool BeamPionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
@@ -88,16 +66,6 @@ bool BeamPionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     }
   }
   return false;
-}
-
-//**************************************************
-bool CandidateExistsCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  (void)event;
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
-  if (!box.MainTrack) return false;
-  else return true;
 }
 
 //**************************************************

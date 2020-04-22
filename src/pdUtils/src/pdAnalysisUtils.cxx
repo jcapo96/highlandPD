@@ -479,7 +479,7 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
   AnaTrueParticleB** trueParticles = event->TrueParticles;
   Int_t nTrueParts                 = event->nTrueParticles;
 
-  for (UInt_t i=0;i<nTrueParts;i++){
+  for (Int_t i=0;i<nTrueParts;i++){
     if (trueParticles[i]->ID == ID){
       return static_cast<AnaTrueParticlePD*>(trueParticles[i]);
     }
@@ -547,7 +547,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
     return std::make_pair(9999., -1);
   
   //Ignore first and last point
-  for( size_t i = 1; i < part.NHitsPerPlane[plane]-1; ++i ){
+  for( Int_t i = 1; i < part.NHitsPerPlane[plane]-1; ++i ){
     //Skip large pulse heights
     if( part.dEdx_corr[plane][i] > 1000. )
       continue;

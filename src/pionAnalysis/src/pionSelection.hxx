@@ -33,17 +33,8 @@ protected:
 
   Int_t _PionRangeCutIndex;
   Int_t _PionRangeStepIndex;
-  Int_t _FindMainTrackStepIndex;
-  Int_t _TotalMultiplicityCutIndex;
 };
 
-
-class FindPandoraTrackAction: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new FindPandoraTrackAction();}
-};
 
 class ComputeDaughterDistanceAction: public StepBase{
  public:
@@ -52,19 +43,11 @@ class ComputeDaughterDistanceAction: public StepBase{
   StepBase* MakeClone(){return new ComputeDaughterDistanceAction();}
 };
 
-
 class BeamPionCut: public StepBase{
  public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new BeamPionCut();}
-};
-
-class CandidateExistsCut: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new CandidateExistsCut();}
 };
 
 class CandidateIsBeamCut: public StepBase{

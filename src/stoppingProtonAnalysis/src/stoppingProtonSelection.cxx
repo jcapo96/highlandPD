@@ -1,7 +1,7 @@
 #include "stoppingProtonSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pionSelection.hxx"
+#include "pandoraPreselection.hxx"
 
 //********************************************************************
 stoppingProtonSelection::stoppingProtonSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
