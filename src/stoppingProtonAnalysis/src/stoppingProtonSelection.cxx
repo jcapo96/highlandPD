@@ -16,11 +16,12 @@ void stoppingProtonSelection::DefineSteps(){
   // Steps must be added in the right order
   // if "true" is added to the constructor of the step,
   // the step sequence is broken if cut is not passed (default is "false")
-  AddStep(StepBase::kAction, "find main track",    new FindBeamTrackAction());  
-  AddStep(StepBase::kCut,    "beam protom",        new BeamProtonCut());
-  AddStep(StepBase::kCut,    "beam track in TPC",  new CandidateExistsCut());
-  AddStep(StepBase::kCut,    "seltrk angle cut",   new BeamProtonAngleCut());
-  AddStep(StepBase::kCut,    "proton CSDA range",  new ProtonCSDARangeCut());
+  //AddStep(StepBase::kAction, "find main track",     new FindBeamTrackAction());  
+  AddStep(StepBase::kAction, "find Pandora track",  new FindPandoraTrackAction());
+  AddStep(StepBase::kCut,    "beam track in TPC",   new CandidateExistsCut());
+  AddStep(StepBase::kCut,    "beam protom",         new BeamProtonCut());
+  AddStep(StepBase::kCut,    "pandora reco worked", new CandidateIsBeamCut());
+  AddStep(StepBase::kCut,    "proton CSDA range",   new ProtonCSDARangeCut());
   
   SetBranchAlias(0,"trunk");
 }
@@ -74,6 +75,24 @@ bool BeamProtonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
   (void)boxB;
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+
+  // Use the true beam particle to discriminate between data and MC
+  AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
+
+  if (trueBeamPart){
+    // for MC
+    if (trueBeamPart->PDG==2212) return true;
+  }
+  else{
+    // for real DATA
+    for(int i = 0; i < (int)beam->PDGs.size(); i++){
+      if (beam->PDGs[i] == 2212) return true;
+    }
+  }
+  return false;
+
+  /*(void)boxB;
   
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
 
@@ -87,7 +106,7 @@ bool BeamProtonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   else{
     if (beam->TOF>170 && beam->TOF<210) return true;
     else return false;    
-  }
+    }*/
 }
 
 //**************************************************
