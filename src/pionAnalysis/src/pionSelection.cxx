@@ -19,10 +19,10 @@ void pionSelection::DefineSteps(){
   // the step sequence is broken if cut is not passed (default is "false")
 
   //copy steps from pandoraPreselecion
-  AddStep(StepBase::kAction, "find Pandora track",         new FindPandoraTrackAction());  
-  AddStep(StepBase::kCut,    "candidate exists",           new CandidateExistsCut());
+  AddStep(StepBase::kAction, "find Pandora track",         new FindPandoraTrackAction());          // in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kCut,    "candidate exists",           new CandidateExistsCut());              // in pdBaseAnalysis/src/pandoraPreselection  
   AddStep(StepBase::kCut,    "beam is pion",               new BeamPionCut());
-  AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());
+  AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());              // in pdBaseAnalysis/src/pandoraPreselection  
   AddStep(StepBase::kCut,    "candidate is track",         new CandidateIsTrackCut());
   AddStep(StepBase::kCut,    "pion track end",             new PionEndsAPA3Cut());
   AddStep(StepBase::kCut,    "seltrk chi2 cut",            new PionPassChi2Cut());
@@ -74,12 +74,14 @@ bool CandidateIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   (void)event;
 
-  //cast the maintrack
+  //cast the box
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
-  AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
+
+  // Main track shouldmust exist
+  if (!box.MainTrack) return false;
   
   //if the seltrk is a track, accept it
-  if (part->Type == AnaParticlePD::kTrack) return true;
+  if (box.MainTrack->Type == AnaParticlePD::kTrack) return true;
   else return false;
 }
 
