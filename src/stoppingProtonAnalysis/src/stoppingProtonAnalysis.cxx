@@ -2,7 +2,7 @@
 #include "Parameters.hxx"
 //#include "stoppingKaonSelection.hxx"
 #include "stoppingProtonSelection.hxx"
-//#include "stoppingMuonSelection.hxx"
+#include "stoppingMuonSelection.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 
@@ -159,11 +159,11 @@ void stoppingProtonAnalysis::DefineSelections(){
 
 
   sel().AddSelection("stoppingProtonSelection",  "protoDuneExample selection",     new stoppingProtonSelection(false));     // true/false for forcing break
-  /*
-
-  sel().AddSelection("stoppingKaonSelection",    "protoDuneExample selection",     new stoppingKaonSelection(false));     // true/false for forcing break
   sel().AddSelection("stoppingMuonSelection",    "protoDuneExample selection",     new stoppingMuonSelection(false));
-  */
+  
+  //sel().AddSelection("stoppingKaonSelection",    "protoDuneExample selection",     new stoppingKaonSelection(false));     // true/false for forcing break
+  
+  
 }
 
 //********************************************************************
