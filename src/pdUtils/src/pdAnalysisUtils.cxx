@@ -42,11 +42,7 @@ TGraph const RvsKE_P(31, KE_MeV_P_Nist, Range_gpercm_P_Nist);
 TSpline3 const RvsKE_P_spline3("RvsKE_P_S", &RvsKE_P);
 
 
-
-
-std::string dEdX_template_name = std::string(getenv("PIONANALYSISROOT"))+"/data/dEdxrestemplates.root"; 
-
-TFile* dEdX_template_file = new TFile( dEdX_template_name.c_str(), "OPEN" );
+TFile* dEdX_template_file = new TFile( (std::string(getenv("PIONANALYSISROOT"))+"/data/dEdxrestemplates.root").c_str(), "OPEN" );
 std::map< int, TProfile* > templates;
 
 TProfile* ProtonTemplate = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
