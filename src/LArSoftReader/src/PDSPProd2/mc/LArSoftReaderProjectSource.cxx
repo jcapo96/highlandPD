@@ -343,26 +343,6 @@ art::Wrapper<vector<simb::MCTruth> >::~Wrapper() {
 }
 #endif // art__Wrapper_vector_simb__MCTruth____cxx
 
-#ifndef simb__MCTruth_cxx
-#define simb__MCTruth_cxx
-simb::MCTruth::MCTruth() {
-}
-simb::MCTruth::MCTruth(const MCTruth & rhs)
-   : fPartList(const_cast<MCTruth &>( rhs ).fPartList)
-   , fMCNeutrino(const_cast<MCTruth &>( rhs ).fMCNeutrino)
-   , fOrigin(const_cast<MCTruth &>( rhs ).fOrigin)
-   , fNeutrinoSet(const_cast<MCTruth &>( rhs ).fNeutrinoSet)
-{
-   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
-   // Use at your own risk!
-   (void)rhs; // avoid warning about unused parameter
-   MCTruth &modrhs = const_cast<MCTruth &>( rhs );
-   modrhs.fPartList.clear();
-}
-simb::MCTruth::~MCTruth() {
-}
-#endif // simb__MCTruth_cxx
-
 #ifndef simb__MCNeutrino_cxx
 #define simb__MCNeutrino_cxx
 simb::MCNeutrino::MCNeutrino() {
@@ -1080,21 +1060,6 @@ art::RefCore::~RefCore() {
 }
 #endif // art__RefCore_cxx
 
-#ifndef sim__GeneratedParticleInfo_cxx
-#define sim__GeneratedParticleInfo_cxx
-sim::GeneratedParticleInfo::GeneratedParticleInfo() {
-}
-sim::GeneratedParticleInfo::GeneratedParticleInfo(const GeneratedParticleInfo & rhs)
-   : fGeneratedParticleIndex(const_cast<GeneratedParticleInfo &>( rhs ).fGeneratedParticleIndex)
-{
-   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
-   // Use at your own risk!
-   (void)rhs; // avoid warning about unused parameter
-}
-sim::GeneratedParticleInfo::~GeneratedParticleInfo() {
-}
-#endif // sim__GeneratedParticleInfo_cxx
-
 #ifndef sim__AuxDetIDE_cxx
 #define sim__AuxDetIDE_cxx
 sim::AuxDetIDE::AuxDetIDE() {
@@ -1121,26 +1086,6 @@ sim::AuxDetIDE::AuxDetIDE(const AuxDetIDE & rhs)
 sim::AuxDetIDE::~AuxDetIDE() {
 }
 #endif // sim__AuxDetIDE_cxx
-
-#ifndef sim__SDP_cxx
-#define sim__SDP_cxx
-sim::SDP::SDP() {
-}
-sim::SDP::SDP(const SDP & rhs)
-   : trackID(const_cast<SDP &>( rhs ).trackID)
-   , numPhotons(const_cast<SDP &>( rhs ).numPhotons)
-   , energy(const_cast<SDP &>( rhs ).energy)
-   , x(const_cast<SDP &>( rhs ).x)
-   , y(const_cast<SDP &>( rhs ).y)
-   , z(const_cast<SDP &>( rhs ).z)
-{
-   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
-   // Use at your own risk!
-   (void)rhs; // avoid warning about unused parameter
-}
-sim::SDP::~SDP() {
-}
-#endif // sim__SDP_cxx
 
 #ifndef sim__IDE_cxx
 #define sim__IDE_cxx
@@ -1278,48 +1223,6 @@ raw::OpDetWaveform::~OpDetWaveform() {
 }
 #endif // raw__OpDetWaveform_cxx
 
-#ifndef art__Wrapper_vector_raw__RawDigit____cxx
-#define art__Wrapper_vector_raw__RawDigit____cxx
-art::Wrapper<vector<raw::RawDigit> >::Wrapper() {
-}
-art::Wrapper<vector<raw::RawDigit> >::Wrapper(const Wrapper & rhs)
-   : art::EDProduct(const_cast<Wrapper &>( rhs ))
-   , present(const_cast<Wrapper &>( rhs ).present)
-   , rangeSetID(const_cast<Wrapper &>( rhs ).rangeSetID)
-   , obj(const_cast<Wrapper &>( rhs ).obj)
-{
-   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
-   // Use at your own risk!
-   (void)rhs; // avoid warning about unused parameter
-   Wrapper &modrhs = const_cast<Wrapper &>( rhs );
-   modrhs.obj.clear();
-}
-art::Wrapper<vector<raw::RawDigit> >::~Wrapper() {
-}
-#endif // art__Wrapper_vector_raw__RawDigit____cxx
-
-#ifndef raw__RawDigit_cxx
-#define raw__RawDigit_cxx
-raw::RawDigit::RawDigit() {
-}
-raw::RawDigit::RawDigit(const RawDigit & rhs)
-   : fADC(const_cast<RawDigit &>( rhs ).fADC)
-   , fChannel(const_cast<RawDigit &>( rhs ).fChannel)
-   , fSamples(const_cast<RawDigit &>( rhs ).fSamples)
-   , fPedestal(const_cast<RawDigit &>( rhs ).fPedestal)
-   , fSigma(const_cast<RawDigit &>( rhs ).fSigma)
-   , fCompression(const_cast<RawDigit &>( rhs ).fCompression)
-{
-   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
-   // Use at your own risk!
-   (void)rhs; // avoid warning about unused parameter
-   RawDigit &modrhs = const_cast<RawDigit &>( rhs );
-   modrhs.fADC.clear();
-}
-raw::RawDigit::~RawDigit() {
-}
-#endif // raw__RawDigit_cxx
-
 #ifndef art__Wrapper_vector_sim__OpDetDivRec____cxx
 #define art__Wrapper_vector_sim__OpDetDivRec____cxx
 art::Wrapper<vector<sim::OpDetDivRec> >::Wrapper() {
@@ -1373,41 +1276,6 @@ CRT::Hit::Hit(const Hit & rhs)
 CRT::Hit::~Hit() {
 }
 #endif // CRT__Hit_cxx
-
-#ifndef sim__OpDet_Time_Chans_cxx
-#define sim__OpDet_Time_Chans_cxx
-sim::OpDet_Time_Chans::OpDet_Time_Chans() {
-}
-sim::OpDet_Time_Chans::OpDet_Time_Chans(const OpDet_Time_Chans & rhs)
-   : time(const_cast<OpDet_Time_Chans &>( rhs ).time)
-   , phots(const_cast<OpDet_Time_Chans &>( rhs ).phots)
-{
-   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
-   // Use at your own risk!
-   (void)rhs; // avoid warning about unused parameter
-   OpDet_Time_Chans &modrhs = const_cast<OpDet_Time_Chans &>( rhs );
-   modrhs.phots.clear();
-}
-sim::OpDet_Time_Chans::~OpDet_Time_Chans() {
-}
-#endif // sim__OpDet_Time_Chans_cxx
-
-#ifndef sim__Chan_Phot_cxx
-#define sim__Chan_Phot_cxx
-sim::Chan_Phot::Chan_Phot() {
-}
-sim::Chan_Phot::Chan_Phot(const Chan_Phot & rhs)
-   : opChan(const_cast<Chan_Phot &>( rhs ).opChan)
-   , trackID(const_cast<Chan_Phot &>( rhs ).trackID)
-   , phot(const_cast<Chan_Phot &>( rhs ).phot)
-{
-   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
-   // Use at your own risk!
-   (void)rhs; // avoid warning about unused parameter
-}
-sim::Chan_Phot::~Chan_Phot() {
-}
-#endif // sim__Chan_Phot_cxx
 
 #ifndef art__Wrapper_art__Assns_CRT__Trigger_anab__CosmicTag_void____cxx
 #define art__Wrapper_art__Assns_CRT__Trigger_anab__CosmicTag_void____cxx
@@ -3354,6 +3222,41 @@ recob::Wire::~Wire() {
 }
 #endif // recob__Wire_cxx
 
+#ifndef sim__GeneratedParticleInfo_cxx
+#define sim__GeneratedParticleInfo_cxx
+sim::GeneratedParticleInfo::GeneratedParticleInfo() {
+}
+sim::GeneratedParticleInfo::GeneratedParticleInfo(const GeneratedParticleInfo & rhs)
+   : fGeneratedParticleIndex(const_cast<GeneratedParticleInfo &>( rhs ).fGeneratedParticleIndex)
+{
+   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
+   // Use at your own risk!
+   (void)rhs; // avoid warning about unused parameter
+}
+sim::GeneratedParticleInfo::~GeneratedParticleInfo() {
+}
+#endif // sim__GeneratedParticleInfo_cxx
+
+#ifndef sim__SDP_cxx
+#define sim__SDP_cxx
+sim::SDP::SDP() {
+}
+sim::SDP::SDP(const SDP & rhs)
+   : trackID(const_cast<SDP &>( rhs ).trackID)
+   , numPhotons(const_cast<SDP &>( rhs ).numPhotons)
+   , energy(const_cast<SDP &>( rhs ).energy)
+   , x(const_cast<SDP &>( rhs ).x)
+   , y(const_cast<SDP &>( rhs ).y)
+   , z(const_cast<SDP &>( rhs ).z)
+{
+   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
+   // Use at your own risk!
+   (void)rhs; // avoid warning about unused parameter
+}
+sim::SDP::~SDP() {
+}
+#endif // sim__SDP_cxx
+
 #ifndef lar__sparse_vector_float___datarange_t_cxx
 #define lar__sparse_vector_float___datarange_t_cxx
 lar::sparse_vector<float>::datarange_t::datarange_t() {
@@ -3389,6 +3292,82 @@ lar::sparse_vector<float>::sparse_vector(const sparse_vector & rhs)
 lar::sparse_vector<float>::~sparse_vector() {
 }
 #endif // lar__sparse_vector_float__cxx
+
+#ifndef simb__MCTruth_cxx
+#define simb__MCTruth_cxx
+simb::MCTruth::MCTruth() {
+}
+simb::MCTruth::MCTruth(const MCTruth & rhs)
+   : fPartList(const_cast<MCTruth &>( rhs ).fPartList)
+   , fMCNeutrino(const_cast<MCTruth &>( rhs ).fMCNeutrino)
+   , fOrigin(const_cast<MCTruth &>( rhs ).fOrigin)
+   , fGenInfo(const_cast<MCTruth &>( rhs ).fGenInfo)
+   , fNeutrinoSet(const_cast<MCTruth &>( rhs ).fNeutrinoSet)
+{
+   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
+   // Use at your own risk!
+   (void)rhs; // avoid warning about unused parameter
+   MCTruth &modrhs = const_cast<MCTruth &>( rhs );
+   modrhs.fPartList.clear();
+}
+simb::MCTruth::~MCTruth() {
+}
+#endif // simb__MCTruth_cxx
+
+#ifndef simb__MCGeneratorInfo_cxx
+#define simb__MCGeneratorInfo_cxx
+simb::MCGeneratorInfo::MCGeneratorInfo() {
+}
+simb::MCGeneratorInfo::MCGeneratorInfo(const MCGeneratorInfo & rhs)
+   : generator(const_cast<MCGeneratorInfo &>( rhs ).generator)
+   , generatorVersion(const_cast<MCGeneratorInfo &>( rhs ).generatorVersion)
+   , generatorConfig(const_cast<MCGeneratorInfo &>( rhs ).generatorConfig)
+{
+   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
+   // Use at your own risk!
+   (void)rhs; // avoid warning about unused parameter
+   MCGeneratorInfo &modrhs = const_cast<MCGeneratorInfo &>( rhs );
+   modrhs.generatorVersion.clear();
+   modrhs.generatorConfig.clear();
+}
+simb::MCGeneratorInfo::~MCGeneratorInfo() {
+}
+#endif // simb__MCGeneratorInfo_cxx
+
+#ifndef sim__OpDet_Time_Chans_cxx
+#define sim__OpDet_Time_Chans_cxx
+sim::OpDet_Time_Chans::OpDet_Time_Chans() {
+}
+sim::OpDet_Time_Chans::OpDet_Time_Chans(const OpDet_Time_Chans & rhs)
+   : time(const_cast<OpDet_Time_Chans &>( rhs ).time)
+   , phots(const_cast<OpDet_Time_Chans &>( rhs ).phots)
+{
+   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
+   // Use at your own risk!
+   (void)rhs; // avoid warning about unused parameter
+   OpDet_Time_Chans &modrhs = const_cast<OpDet_Time_Chans &>( rhs );
+   modrhs.phots.clear();
+}
+sim::OpDet_Time_Chans::~OpDet_Time_Chans() {
+}
+#endif // sim__OpDet_Time_Chans_cxx
+
+#ifndef sim__Chan_Phot_cxx
+#define sim__Chan_Phot_cxx
+sim::Chan_Phot::Chan_Phot() {
+}
+sim::Chan_Phot::Chan_Phot(const Chan_Phot & rhs)
+   : opChan(const_cast<Chan_Phot &>( rhs ).opChan)
+   , trackID(const_cast<Chan_Phot &>( rhs ).trackID)
+   , phot(const_cast<Chan_Phot &>( rhs ).phot)
+{
+   // This is NOT a copy constructor. This is actually a move constructor (for stl container's sake).
+   // Use at your own risk!
+   (void)rhs; // avoid warning about unused parameter
+}
+sim::Chan_Phot::~Chan_Phot() {
+}
+#endif // sim__Chan_Phot_cxx
 
 #ifndef recob__TrackHitMeta_cxx
 #define recob__TrackHitMeta_cxx
