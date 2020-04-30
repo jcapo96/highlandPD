@@ -148,6 +148,7 @@ void pionAnaUtils::FillCustomCategories(AnaEventB* event, AnaParticle* part, PDC
 void pionAnaUtils::FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePD* truePart, AnaTrueParticlePD*  trueBeamPart){
 //********************************************************************
 
+  if (!trueBeamPart || !truePart) return; 
 
   bool true_daughter = (trueBeamPart->ID == truePart->ParentID);
   bool is_self       = (trueBeamPart->ID == truePart->ID);
