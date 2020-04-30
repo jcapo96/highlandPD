@@ -604,6 +604,8 @@ void LArSoftTreeConverter::FillInfo(AnaSpill* spill){
   info.IsMC   = _isMC;
   info.EventTime = EventTime;
 
+  info.Print();
+
   spill->DataQuality = MakeDataQuality();
   spill->Beam = MakeBeam();
 
@@ -1159,7 +1161,8 @@ AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(bool isTrack, Int_t itrk,
   // Vector of hits for track itrk
   std::vector<recob::Hit> hits;
 
-  std::cout << "FindTrueParticle: Tracks_Hits->obj.ptr_data_1_.size(), Tracks_Hits->obj.ptr_data_2_.size() " << Tracks_Hits->obj.ptr_data_1_.size() << " " << Tracks_Hits->obj.ptr_data_2_.size()  << std::endl;
+  if (debugTrueReco)
+    std::cout << "FindTrueParticle: Tracks_Hits->obj.ptr_data_1_.size(), Tracks_Hits->obj.ptr_data_2_.size() " << Tracks_Hits->obj.ptr_data_1_.size() << " " << Tracks_Hits->obj.ptr_data_2_.size()  << std::endl;
 
   // Tracks_Hits->obj.ptr_data_1_.second is the hit index
   // Tracks_Hits->obj.ptr_data_2_.second is the track index
@@ -1497,7 +1500,8 @@ void LArSoftTreeConverter::HitsPurity(std::vector<recob::Hit> const& hits, Int_t
     }
     */
 
-    std::cout << "  - " << h << " hit: ch = " << hit.fChannel << ", PeakTime = " << hit.fPeakTime << std::endl;
+    if (debugTrueReco)
+      std::cout << "  - " << h << " hit: ch = " << hit.fChannel << ", PeakTime = " << hit.fPeakTime << std::endl;
 
     // Get all IDEs correspondint to a hit
     std::vector<sim::TrackIDE> trackIDEs = HitToTrackIDEs(hit);
@@ -1924,7 +1928,8 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
   for(auto const& itr : idToIDE){
     ides.push_back(itr.second);
 
-    std::cout << "        - TrackIDsAndEnergies(3): trackID = " << itr.first << " " <<  itr.second.trackID << ", E = " << itr.second.energy << std::endl;
+    if (debugTrueReco)
+      std::cout << "        - TrackIDsAndEnergies(3): trackID = " << itr.first << " " <<  itr.second.trackID << ", E = " << itr.second.energy << std::endl;
   }
   
   return ides;
@@ -1989,11 +1994,11 @@ const simb::MCParticle* LArSoftTreeConverter::GetGeantGoodParticle(const simb::M
 //*****************************************************************************
   
   // Get the good particle from the MCTruth
-  simb::MCParticle goodPart;
+  const simb::MCParticle* goodPart;
   bool found = false;
   for(UInt_t t = 0; t < genTruth.fPartList.size(); ++t){
-    simb::MCParticle part = genTruth.fPartList[t];
-    if(part.fprocess == "primary"){
+    const simb::MCParticle* part = &genTruth.fPartList[t];
+    if(part->fprocess == "primary"){
       goodPart = part;
       found = true;
       break;
@@ -2009,7 +2014,7 @@ const simb::MCParticle* LArSoftTreeConverter::GetGeantGoodParticle(const simb::M
   // Get list of the g4 particles. plist should be a std::map< int, simb::MCParticle* >
 
   for (UInt_t i=0;i<MCParticles->obj.size();i++){
-    if((goodPart.fpdgCode == MCParticles->obj[i].fpdgCode) && fabs(goodPart.ftrajectory.ftrajectory[0].second.E() - MCParticles->obj[i].ftrajectory.ftrajectory[0].second.E()) < 1e-5){
+    if((goodPart->fpdgCode == MCParticles->obj[i].fpdgCode) && fabs(goodPart->ftrajectory.ftrajectory[0].second.E() - MCParticles->obj[i].ftrajectory.ftrajectory[0].second.E()) < 1e-5){
       return &(MCParticles->obj[i]);
     }
   } 
