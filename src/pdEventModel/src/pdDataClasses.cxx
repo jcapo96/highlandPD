@@ -67,9 +67,9 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
   Type           = part.Type;
   isBeamPart     = part.isBeamPart;
-  isPandora  = part.isPandora;
+  isPandora      = part.isPandora;
 
-  FitPDG        = part.FitPDG;
+  FitPDG         = part.FitPDG;
 
   
   for (Int_t i=0;i<3;i++){
@@ -117,7 +117,7 @@ void AnaParticlePD::Print() const{
   
   std::cout << "-------- AnaParticlePD --------- " << std::endl;
   std::cout << "Type:                    " << Type << std::endl;
-  std::cout << "isPandora:           " << isPandora << std::endl;
+  std::cout << "isPandora:               " << isPandora << std::endl;
   std::cout << "PassBeamCut:             " << isBeamPart << std::endl;
 
   std::cout << "FitPDG:                  " << FitPDG << std::endl;
