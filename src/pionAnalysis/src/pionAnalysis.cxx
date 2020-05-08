@@ -12,6 +12,7 @@
 #include "BrokenTrackDataCorrection.hxx"
 
 #include "dEdxVariation.hxx"
+#include "LengthVariation.hxx"
 #include "BeamCompositionWeight.hxx"
 
 #include "pionSelection.hxx"
@@ -194,8 +195,9 @@ void pionAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   // Define additional systematics (pionAnalysys/src/systematics)
-  evar().AddEventVariation(kdEdx, "dEdx",     new dEdxVariation());
-  eweight().AddEventWeight(kBeam, "beamComp", new BeamCompositionWeight());
+  evar().AddEventVariation(kdEdx,   "dEdx",     new dEdxVariation());
+  evar().AddEventVariation(kLength, "Length",   new LengthVariation());
+  eweight().AddEventWeight(kBeam,   "beamComp", new BeamCompositionWeight());
 }
 
 //********************************************************************
@@ -212,6 +214,7 @@ void pionAnalysis::DefineConfigurations(){
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if (_enableAllSystConfig){
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdx"))             conf().EnableEventVariation(kdEdx,         all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
   }
 }

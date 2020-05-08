@@ -8,6 +8,7 @@ or the all systematics configuration (when EnableAllSystematics = 1)
 need to be enabled in baseAnalysis parameter file
 
  < pionAnalysis.Systematics.EnabledEdx              = 0 >
+ < pionAnalysis.Systematics.EnableLength            = 1 >
  < pionAnalysis.Systematics.EnabledBeamComposition  = 0 >	
 
 --- Corrections -----------
@@ -85,5 +86,5 @@ Create configurations with a single systematic ( a configuration for each system
 
 Enable/disable the configuration with all systematics (or the ones selected above)
 
- < baseAnalysis.Configurations.EnableAllSystematics = 0 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 1 >
  

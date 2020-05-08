@@ -99,6 +99,7 @@ public:
 
   enum enumSyst_pionAnalysis{
     kdEdx=0,
+    kLength,
     kBeam,
     enumSystLast_pionAnalysis
   };
