@@ -3,8 +3,8 @@
 
 --- Event Variations ------------
 
-The single systematics configuration (when EnableSingle...SystConfigurations = 1)
-or the all systematics configuration (when EnableAllSystematics = 1)
+The single systematics configuration (when EnableSingle...SystConfigurations = 0)
+or the all systematics configuration (when EnableAllSystematics = 0)
 need to be enabled in baseAnalysis parameter file
 
  < stoppingProtonAnalysis.Variations.EnabledEdx              = 0 >	
@@ -14,8 +14,8 @@ need to be enabled in baseAnalysis parameter file
 
  < stoppingProtonAnalysis.Corrections.EnabledEdx             = 0 >
  < stoppingProtonAnalysis.Corrections.EnabledEdxData         = 1 >
- < stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData = 0 >  
- < stoppingProtonAnalysis.Corrections.EnabledBeamMom         = 1 >   
+ < stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData = 1 >  
+ < stoppingProtonAnalysis.Corrections.EnabledBeamMom         = 0 >   
  < stoppingProtonAnalysis.Corrections.EnabledBeamMomSmearing = 1 >    
  < stoppingProtonAnalysis.Corrections.EnabledCryoWallBeamMom = 1 >   
 

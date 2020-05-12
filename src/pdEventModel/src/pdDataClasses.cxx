@@ -75,7 +75,8 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
   FitPDG         = part.FitPDG;
 
-  
+  corrected_Length = part.corrected_Length;
+
   for (Int_t i=0;i<3;i++){
     NHitsPerPlane[i] = part.NHitsPerPlane[i];
     for (Int_t j=0;j<std::min((Int_t)NMAXHITSPERPLANE,NHitsPerPlane[i]);j++){
@@ -86,6 +87,9 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
       HitX[i][j]=part.HitX[i][j];
       HitY[i][j]=part.HitY[i][j];
       HitZ[i][j]=part.HitZ[i][j];
+      HitX_corrected[i][j]=part.HitX_corrected[i][j];
+      HitY_corrected[i][j]=part.HitY_corrected[i][j];
+      HitZ_corrected[i][j]=part.HitZ_corrected[i][j];
       ResidualRange[i][j]=part.ResidualRange[i][j];
     }
   }

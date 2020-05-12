@@ -960,14 +960,14 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
     //get the corrected coordinates
     std::vector<double> point  = {(*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]};
     std::vector<double> offset = sce->GetPosOffsets(point);
-    if(j == 0)disp.SetXYZ(point[0]+offset[0],point[1]-offset[1],point[2]-offset[2]);
+    if(j == 0)disp.SetXYZ(point[0]-offset[0],point[1]-offset[1],point[2]-offset[2]);
     else pos.SetXYZ(point[0]+offset[0],point[1]-offset[1],point[2]-offset[2]);
     //but store only 300 as maximum
     if(j < nHits){
       part->HitX[2][j] = (*reco_beam_spacePts_X)[j];
       part->HitY[2][j] = (*reco_beam_spacePts_Y)[j];
       part->HitZ[2][j] = (*reco_beam_spacePts_Z)[j];
-      part->HitX_corrected[2][j] = point[0]+offset[0];
+      part->HitX_corrected[2][j] = point[0]-offset[0];
       part->HitY_corrected[2][j] = point[1]-offset[1];
       part->HitZ_corrected[2][j] = point[2]-offset[2];
     }
@@ -983,7 +983,6 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
  
   if(part->Length==-1)part->corrected_Length = -1;
   else part->corrected_Length = corrected_Length;
-  //std::cout << part->Length << " " << part->corrected_Length << std::endl;
 
   // --------- reco_beam_PFP ------------------------
 
