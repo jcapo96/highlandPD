@@ -261,6 +261,7 @@ void stoppingProtonAnalysis::DefineMicroTrees(bool addBase){
 
   AddVar3VF(output(),seltrk_pos_z0,        "candidate start position extrapolated at z=0");
   AddVarF(output(), seltrk_length_z0,     "candidate length assuming the particle starts at z=0");
+  AddVarF(output(), seltrk_length_sce,    "candidate length corrected by sce");
   AddVarF(output(), seltrk_mom_muon_z0,   "candidate reconstructed momentum at z=0 (muon)");
   AddVarF(output(), seltrk_mom_prot_z0,   "candidate reconstructed momentum at z=0 (proton)");
   
@@ -327,6 +328,7 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
   standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
+  if(box().MainTrack)output().FillVar(seltrk_length_sce,            box().MainTrack->corrected_Length);
   standardPDTree::FillStandardVariables_CandidateTrue(    output(), box().MainTrack);    
   standardPDTree::FillStandardVariables_CandidateHitsReco(output(), box().MainTrack);
 

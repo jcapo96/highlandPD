@@ -22,6 +22,7 @@
 #include "GeometryManager.hxx"
 
 #include "pdDataClasses.hxx"
+#include "pdSpaceCharge.hxx"
 
 /*
 const unsigned int NMAXHITS      = 3000;
@@ -86,7 +87,6 @@ class pionTreeConverter: public InputConverter{
 
 protected:
 
-
   AnaSpill* _spill;
   
   std::string _previousFile;
@@ -97,6 +97,9 @@ protected:
   bool _useSCE;
   
  protected:
+
+  //for sce corrections
+  pdspacecharge::pdSpaceCharge* sce = new pdspacecharge::pdSpaceCharge();
 
   // TChains   
   TChain *eventsTree;

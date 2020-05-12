@@ -44,7 +44,7 @@ bool pionTreeConverter::Initialize(){
 //********************************************************************
 
   _useSCE = (bool)(ND::params().GetParameterI("pionAnalysis.TreeConverter.UseSCE"));
-  
+
   std::string folder= "pionana";
 
   AddChain(folder+"/beamana");
@@ -950,13 +950,41 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   
   // TODO: Associating space points to hits in a plane for the moment. All space points in the pionana tree are in a single array regardless of the plane
   // while reco_beam_calibrated_dEdX->size() corresponds to a single plane, reco_beam_spacePts_X->size() has all planes together
+
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_beam_spacePts_X->size());
-  for (UInt_t j=0;j<nHits;j++){
-    part->HitX[2][j] = (*reco_beam_spacePts_X)[j];
-    part->HitY[2][j] = (*reco_beam_spacePts_Y)[j];
-    part->HitZ[2][j] = (*reco_beam_spacePts_Z)[j];
-  }
   
+  //run over all points to compute the corrected length
+  Float_t corrected_Length = 0;
+  TVector3 disp,pos;
+  for (UInt_t j=0; j<(UInt_t)reco_beam_spacePts_X->size() ;j++){
+    //get the corrected coordinates
+    std::vector<double> point  = {(*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]};
+    std::vector<double> offset = sce->GetPosOffsets(point);
+    if(j == 0)disp.SetXYZ(point[0]+offset[0],point[1]-offset[1],point[2]-offset[2]);
+    else pos.SetXYZ(point[0]+offset[0],point[1]-offset[1],point[2]-offset[2]);
+    //but store only 300 as maximum
+    if(j < nHits){
+      part->HitX[2][j] = (*reco_beam_spacePts_X)[j];
+      part->HitY[2][j] = (*reco_beam_spacePts_Y)[j];
+      part->HitZ[2][j] = (*reco_beam_spacePts_Z)[j];
+      part->HitX_corrected[2][j] = point[0]+offset[0];
+      part->HitY_corrected[2][j] = point[1]-offset[1];
+      part->HitZ_corrected[2][j] = point[2]-offset[2];
+    }
+    
+    //compute track length
+    if(j > 0){
+      //if (part->HitX[2][j] == -999) break;
+      disp -= pos;
+      corrected_Length += disp.Mag();
+      disp = pos;
+    }
+  }
+ 
+  if(part->Length==-1)part->corrected_Length = -1;
+  else part->corrected_Length = corrected_Length;
+  //std::cout << part->Length << " " << part->corrected_Length << std::endl;
+
   // --------- reco_beam_PFP ------------------------
 
   part->CNNscore[0] = reco_beam_PFP_trackScore_collection;

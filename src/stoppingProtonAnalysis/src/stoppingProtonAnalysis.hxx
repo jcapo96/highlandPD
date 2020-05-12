@@ -68,6 +68,7 @@ public:
     seltrk_mom_prot_z0,
     seltrk_length_z0,
     seltrk_pos_z0,
+    seltrk_length_sce,
 
     seltrk_broken,
     

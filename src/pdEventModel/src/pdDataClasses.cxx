@@ -29,6 +29,9 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
       HitX[i][j]=kFloatUnassigned;
       HitY[i][j]=kFloatUnassigned;
       HitZ[i][j]=kFloatUnassigned;
+      HitX_corrected[i][j]=kFloatUnassigned;
+      HitY_corrected[i][j]=kFloatUnassigned;
+      HitZ_corrected[i][j]=kFloatUnassigned;
       ResidualRange[i][j]=kFloatUnassigned;
     }
   }  
@@ -47,6 +50,7 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
 
   Chi2Proton=kFloatUnassigned;
   Chi2ndf=kIntUnassigned;
+  corrected_Length=kFloatUnassigned;
 
   for (int i=0; i<3; i++)
     CNNscore[i]=kFloatUnassigned;

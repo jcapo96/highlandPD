@@ -62,6 +62,13 @@ public:
   Float_t HitY[3][NMAXHITSPERPLANE]; 
   Float_t HitZ[3][NMAXHITSPERPLANE]; 
 
+  //Hits corrected
+  Float_t HitX_corrected[3][NMAXHITSPERPLANE]; 
+  Float_t HitY_corrected[3][NMAXHITSPERPLANE]; 
+  Float_t HitZ_corrected[3][NMAXHITSPERPLANE]; 
+
+  Float_t corrected_Length;
+
     /// Particle ID hypothesis used in the fit (if any)
   Int_t FitPDG;
   

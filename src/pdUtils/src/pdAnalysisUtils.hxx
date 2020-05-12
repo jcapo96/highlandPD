@@ -119,6 +119,8 @@ namespace pdAnaUtils{
   std::vector< int > GetPID( const AnaBeamPD& beam, double nominal_momentum );
   PossibleParticleCands2 GetPIDCandidates( const AnaBeamPD& beam, double nominal_momentum );
   PossibleParticleCands2 GetPIDCandidates_CERNCalib( const AnaBeamPD& beam, double nominal_momentum );
+
+  Float_t ComputeCorrectedTrackLength(const AnaParticlePD* part, int nHits); 
 }
 
 #endif

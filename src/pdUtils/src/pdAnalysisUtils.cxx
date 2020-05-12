@@ -801,4 +801,20 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueBeamParticle(const AnaEventC& event){
   return static_cast<AnaTrueParticlePD*>(beampart->TrueObject);
 }
 
+//***************************************************************
+Float_t pdAnaUtils::ComputeCorrectedTrackLength(const AnaParticlePD* part, int nHits){
+//***************************************************************
+  double result = 0.;
 
+  TVector3 disp(part->HitX_corrected[2][0],part->HitY_corrected[2][0],part->HitZ_corrected[2][0]);
+
+  for(int i = 1; i < nHits; ++i){
+    if (part->HitX_corrected[2][i] == -999) break;
+    TVector3 pos(part->HitX_corrected[2][i],part->HitY_corrected[2][i],part->HitZ_corrected[2][i]);
+    disp -= pos;
+    result += disp.Mag();
+    disp = pos;
+  }
+
+  return result;
+}
