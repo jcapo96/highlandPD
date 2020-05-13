@@ -104,10 +104,11 @@ bool MuonCSDARangeCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   if(beamPart){
     Float_t mom = beamPart->Momentum;
     if (beamPart->TrueObject) mom =  static_cast<AnaTrueParticle*>(beamPart->TrueObject)->Momentum;
-    Float_t length = static_cast<AnaParticle*>(box.MainTrack)->Length;
+    Float_t length = static_cast<AnaParticle*>(box.MainTrack)->corrected_Length;
     Float_t csdarange = pdAnaUtils::ComputeCSDARange(mom*1000, 13);
     if (csdarange<=0) return false;
-    if (length/csdarange>0.69 && length/csdarange<1.05) return true;
+    //if (length/csdarange>0.69 && length/csdarange<1.05) return true;
+    if (length/csdarange>0.9 && length/csdarange<1.1) return true;
   }
 
   return false;  
