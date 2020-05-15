@@ -210,7 +210,7 @@ void stoppingProtonAnalysis::DefineConfigurations(){
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if (_enableAllSystConfig){
-    if (ND::params().GetParameterI("stoppingProtonAnalysis.Variations.EnabledEdx"))        conf().EnableEventVariation(SystId::kdEdx,         all_syst);
+    if (ND::params().GetParameterI("stoppingProtonAnalysis.Systematics.EnableHit"))        conf().EnableEventVariation(SystId::kdEdx,         all_syst);
   }
 }
 
