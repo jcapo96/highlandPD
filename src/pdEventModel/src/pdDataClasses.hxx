@@ -57,19 +57,10 @@ public:
   Float_t dQdx[3][NMAXHITSPERPLANE];  
   Float_t dQdx_corr[3][NMAXHITSPERPLANE];  
 
-  /// dQdx for each wire in each plane
-  Float_t HitX[3][NMAXHITSPERPLANE]; 
-  Float_t HitY[3][NMAXHITSPERPLANE]; 
-  Float_t HitZ[3][NMAXHITSPERPLANE]; 
+  ///Hit position
+  std::vector<TVector3> HitPosition[3];
 
-  //Hits corrected
-  Float_t HitX_corrected[3][NMAXHITSPERPLANE]; 
-  Float_t HitY_corrected[3][NMAXHITSPERPLANE]; 
-  Float_t HitZ_corrected[3][NMAXHITSPERPLANE]; 
-
-  Float_t corrected_Length;
-
-    /// Particle ID hypothesis used in the fit (if any)
+  /// Particle ID hypothesis used in the fit (if any)
   Int_t FitPDG;
   
   /// PDG of the most probable particle hypothesis used at reconstruction level

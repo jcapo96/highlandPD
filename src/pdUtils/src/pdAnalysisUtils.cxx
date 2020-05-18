@@ -387,7 +387,7 @@ void pdAnaUtils::AddParticles(AnaParticlePD* part1, AnaParticlePD* part2){
       part1->dQdx[i]         [j+offset]=part2->dQdx[i][j];
       part1->dEdx_corr[i]    [j+offset]=part2->dEdx_corr[i][j];
       part1->dQdx_corr[i]    [j+offset]=part2->dQdx_corr[i][j];
-      part1->HitX[i]         [j+offset]=part2->HitX[i][j];
+      part1->HitPosition[i].at(j+offset).SetX(part2->HitPosition[i].at(j).X());
       part1->ResidualRange[i][j+offset]=part2->ResidualRange[i][j];
       last_hit=j;
     }
@@ -398,7 +398,7 @@ void pdAnaUtils::AddParticles(AnaParticlePD* part1, AnaParticlePD* part2){
       part1->dQdx[i]         [j+offset]=part1c->dQdx[i][j];
       part1->dEdx_corr[i]    [j+offset]=part1c->dEdx_corr[i][j];
       part1->dQdx_corr[i]    [j+offset]=part1c->dQdx_corr[i][j];
-      part1->HitX[i]         [j+offset]=part1c->HitX[i][j];
+      part1->HitPosition[i].at(j+offset).SetX(part1c->HitPosition[i].at(j).X());
       part1->ResidualRange[i][j+offset]=part1c->ResidualRange[i][j]+part2->ResidualRange[i][last_hit];
     }    
   }
@@ -802,19 +802,25 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueBeamParticle(const AnaEventC& event){
 }
 
 //***************************************************************
-Float_t pdAnaUtils::ComputeCorrectedTrackLength(const AnaParticlePD* part, int nHits){
+Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part){
 //***************************************************************
-  double result = 0.;
+  double length = 0.;
 
-  TVector3 disp(part->HitX_corrected[2][0],part->HitY_corrected[2][0],part->HitZ_corrected[2][0]);
-
-  for(int i = 1; i < nHits; ++i){
-    if (part->HitX_corrected[2][i] == -999) break;
-    TVector3 pos(part->HitX_corrected[2][i],part->HitY_corrected[2][i],part->HitZ_corrected[2][i]);
-    disp -= pos;
-    result += disp.Mag();
-    disp = pos;
+  //check if hit vector is empty
+  if(part->HitPosition[2].empty()){
+    //std::cout << "HitPosition vector empty! Returning -1" << std::endl;
+    return -1;
   }
 
-  return result;
+  TVector3 disp(part->HitPosition[2].at(0).X(),part->HitPosition[2].at(0).Y(),part->HitPosition[2].at(0).Z());
+
+  for(int i = 1; i < (int)part->HitPosition[2].size(); ++i){
+    if (part->HitPosition[2].at(i).X() == -999) break;
+    TVector3 pos(part->HitPosition[2].at(i).X(),part->HitPosition[2].at(i).Y(),part->HitPosition[2].at(i).Z());
+    disp -= pos;
+    length += disp.Mag();
+    disp = pos;
+  }
+  
+  return length;
 }

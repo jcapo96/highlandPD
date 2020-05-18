@@ -7,7 +7,7 @@
 #include "ClockConstants.h"
 
 const bool debug = false;
-const bool debugTrueReco = true;
+const bool debugTrueReco = false;
 
 float Range_grampercm[29] = {
   9.833E-1/1.396, 1.786E0/1.396, 3.321E0/1.396, 6.598E0/1.396, 1.058E1/1.396, 3.084E1/1.396, 4.250E1/1.396, 6.732E1/1.396,
@@ -514,12 +514,12 @@ void LArSoftTreeConverter::FillBeamInfo(AnaBeam* beam){
     }
 
     std::cout << "beam info" << std::endl;
-    beam->Print();
+    //beam->Print();
 
     
     std::cout << "beam particle: " <<     beam->BeamParticle << std::endl;
-    if (beam->BeamParticle)
-      beam->BeamParticle->Print();
+    //if (beam->BeamParticle)
+    //beam->BeamParticle->Print();
     
 #endif
 
@@ -604,7 +604,7 @@ void LArSoftTreeConverter::FillInfo(AnaSpill* spill){
   info.IsMC   = _isMC;
   info.EventTime = EventTime;
 
-  info.Print();
+  //info.Print();
 
   spill->DataQuality = MakeDataQuality();
   spill->Beam = MakeBeam();
@@ -902,9 +902,9 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
 
         // TODO: PionAnalyzer_module uses trajectory points instead
         if (calovector[k]->fdEdx.size()     == calovector[k]->fXYZ.size()){
-          part->HitX[plane][l]          = calovector[k]->fXYZ[l].X();
-          part->HitY[plane][l]          = calovector[k]->fXYZ[l].Y();
-          part->HitZ[plane][l]          = calovector[k]->fXYZ[l].Z();
+          part->HitPosition[plane].at(l).SetX(calovector[k]->fXYZ[l].X());
+          part->HitPosition[plane].at(l).SetY(calovector[k]->fXYZ[l].Y());
+          part->HitPosition[plane].at(l).SetX(calovector[k]->fXYZ[l].Z());
         }
 #ifndef ISMC
         part->dQdx_corr[plane][l]     = dqdxi_corr;
@@ -969,11 +969,11 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   //  if (part->isPandora){
 
     part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
-    part->Print();
-    if (part->TrueObject){
-      if (static_cast<AnaTrueParticle*>(part->TrueObject)->Position[1]!=865)
-        static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
-    }
+    //part->Print();
+    //if (part->TrueObject){
+    //if (static_cast<AnaTrueParticle*>(part->TrueObject)->Position[1]!=865)
+    //  static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
+    //}
   
   
 }
@@ -1136,9 +1136,9 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
 
   if (part->isPandora){
     part->TrueObject = FindTrueParticle(true, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
-    part->Print();
-    if (part->TrueObject)
-      static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
+    //part->Print();
+    //if (part->TrueObject)
+    //static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
   }
 
   

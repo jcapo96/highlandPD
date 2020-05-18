@@ -1,5 +1,5 @@
 //minimal implementetation of the space charge effects in protodune
-//since the most used method is voxelized, only this one is taken into account
+//since the most used method is voxelized_TH3, only this one is taken into account
 
 #ifndef pdSpaceCharge_h
 #define pdSpaceCharge_h
@@ -13,23 +13,13 @@ namespace pdspacecharge {
   public:
     pdSpaceCharge();
     virtual ~pdSpaceCharge();
-
-    //Clone this object.
-    //virtual pdSpaceCharge* Clone() {
-    //  return new pdSpaceCharge(*this);
-    //}
-
-    //bool Configure(fhicl::ParameterSet const& pset, detinfo::DetectorProperties const*);
-    //bool Update(uint64_t ts=0);
-
+ 
     bool EnableSimSpatialSCE() const;
     bool EnableSimEfieldSCE() const;
     bool EnableCalSpatialSCE() const;
     bool EnableCalEfieldSCE() const;
     bool EnableCorrSCE() const {return (EnableCalSpatialSCE()||EnableCalEfieldSCE()) ;}
     
-    //on the larsoft version these methods work with geo::vector, which at the end of the day are just 3d arrays
-    //they are implemented here withd std::vector s instead. Dunno if this is the best choice. Should ask Anselmo
     std::vector<double> GetPosOffsets      (std::vector<double> const& point) const;
     std::vector<double> GetEfieldOffsets   (std::vector<double> const& point) const;
     std::vector<double> GetCalPosOffsets   (std::vector<double> const& point, int const& TPCid) const;
@@ -37,9 +27,6 @@ namespace pdspacecharge {
     
   private:
   protected:
-
-    /// Copy constructor is protected, as Clone() should be used to copy this object.
-    pdSpaceCharge(const pdSpaceCharge& sce);
          
     std::vector<double> GetOffsetsVoxel(std::vector<double> const& point, TH3F* hX, TH3F* hY, TH3F* hZ) const;
     

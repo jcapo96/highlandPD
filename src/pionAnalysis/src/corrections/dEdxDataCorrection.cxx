@@ -47,7 +47,7 @@ void dEdxDataCorrection::Apply(AnaSpillC& spillC){
       for (Int_t i=0;i<3;i++){
         for (Int_t j=0;j<std::min((Int_t)NMAXHITSPERPLANE,part->NHitsPerPlane[i]);j++){
           if (part->dQdx[i][j]<0.1) continue;  // Protection against crazy values
-          part->dQdx[i][j] = ComputeCalibratedDqDx(original->dQdx[i][j],original->HitX[i][j]);
+          part->dQdx[i][j] = ComputeCalibratedDqDx(original->dQdx[i][j],original->HitPosition[i].at(j).X());
           part->dEdx[i][j] = pdAnaUtils::ComputeDeDxFromDqDx(part->dQdx[i][j]);
           //          std::cout << part->dQdx[i][j] << " " << original->dQdx[i][j] << " " << part->dEdx[i][j] << " " << original->dEdx[i][j] << " " << part->HitX[i][j] << std::endl; 
         }

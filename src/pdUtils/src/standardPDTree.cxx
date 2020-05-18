@@ -1,4 +1,5 @@
 #include "standardPDTree.hxx"
+#include "pdAnalysisUtils.hxx"
 
 //********************************************************************
 void standardPDTree::AddStandardVariables_CountersTrue(OutputManager& output){
@@ -58,6 +59,7 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
   AddVarF(    output, seltrk_costheta,       "candidate reconstructed cos(theta)");
   AddVarI(    output, seltrk_nhits,          "candidate number of hits");
   AddVarF(    output, seltrk_length,         "candidate length");
+  AddVarF(    output, seltrk_length_raw,     "candidate length");
   AddVarFixVI(output, seltrk_nhitsperplane,  "candidate number of hits per plane",3);
 
   AddVarF(    output, seltrk_mom_muon,       "candidate momentum muon");
@@ -74,9 +76,12 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
 void standardPDTree::AddStandardVariables_CandidateHitsReco(OutputManager& output){
 //********************************************************************
 
-  AddVarFixMF(output, seltrk_hit_x,          "candidate x per hit",3,NMAXHITSPERPLANE);
-  AddVarFixMF(output, seltrk_hit_y,          "candidate y per hit",3,NMAXHITSPERPLANE);
-  AddVarFixMF(output, seltrk_hit_z,          "candidate z per hit",3,NMAXHITSPERPLANE);
+  AddVarFixMF(output, seltrk_hit_x,          "candidate x per hit",3,NMAXHITSPERPLANE_SELTRK);
+  AddVarFixMF(output, seltrk_hit_y,          "candidate y per hit",3,NMAXHITSPERPLANE_SELTRK);
+  AddVarFixMF(output, seltrk_hit_z,          "candidate z per hit",3,NMAXHITSPERPLANE_SELTRK);
+  AddVarFixMF(output, seltrk_hit_x_raw,      "candidate x per hit",3,NMAXHITSPERPLANE_SELTRK);
+  AddVarFixMF(output, seltrk_hit_y_raw,      "candidate y per hit",3,NMAXHITSPERPLANE_SELTRK);
+  AddVarFixMF(output, seltrk_hit_z_raw,      "candidate z per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_dedx_raw,   "candidate dEdx per hit",3,NMAXHITSPERPLANE);
   AddVarFixMF(output, seltrk_hit_dedx,       "candidate calibrated dEdx per hit",3,NMAXHITSPERPLANE);
   AddVarFixMF(output, seltrk_hit_dedx_cor,   "candidate LAr calibrated dEdx per hit",3,NMAXHITSPERPLANE);
@@ -304,7 +309,8 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
 
   output.FillVar(seltrk_dedx_raw,              static_cast<const AnaParticlePD*>(part->Original)->AveragedEdx);
   output.FillVar(seltrk_nhits,                 part->NHits);
-  output.FillVar(seltrk_length,                part->Length);
+  output.FillVar(seltrk_length,                pdAnaUtils::ComputeTrackLengthFromHitPosition(part));
+  output.FillVar(seltrk_length_raw,            part->Original->Length);
   output.FillVar(seltrk_costheta,              part->DirectionStart[2]);
   output.FillVectorVarFromArray(seltrk_pos,    part->PositionStart, 4);
   output.FillVectorVarFromArray(seltrk_endpos, part->PositionEnd, 4);
@@ -322,16 +328,33 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
 //********************************************************************
 
   if (!part) return;
-  
-  for (int i=0;i<3;i++){
-    output.FillMatrixVarFromArray(seltrk_hit_x,         part->HitX[i],             i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_y,         part->HitY[i],             i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_z,         part->HitZ[i],             i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dedx,      part->dEdx[i],             i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dedx_cor,  part->dEdx_corr[i],        i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dqdx,      part->dQdx[i],             i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dqdx_cor,  part->dQdx_corr[i],        i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_resrange,  part->ResidualRange[i],    i, NMAXHITSPERPLANE);
+   
+  for (int i = 0; i < 3; i++){
+    if(part->HitPosition[i].empty()){
+      for (int j = 0; j < (int)NMAXHITSPERPLANE_SELTRK; j++){
+	output.FillMatrixVar(seltrk_hit_x    ,(Float_t)-999, i, j);
+	output.FillMatrixVar(seltrk_hit_y    ,(Float_t)-999., i, j);
+	output.FillMatrixVar(seltrk_hit_z    ,(Float_t)-999., i, j);
+	output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)-999., i, j);
+	output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)-999., i, j);
+	output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)-999., i, j);
+      }
+    }
+    else{
+      for (int j = 0; j < (int)part->HitPosition[i].size(); j++){
+	output.FillMatrixVar(seltrk_hit_x    ,(Float_t)part->                                             HitPosition[i].at(j).X(), i, j);
+	output.FillMatrixVar(seltrk_hit_y    ,(Float_t)part->                                             HitPosition[i].at(j).Y(), i, j);
+	output.FillMatrixVar(seltrk_hit_z    ,(Float_t)part->                                             HitPosition[i].at(j).Z(), i, j);
+	output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original)->HitPosition[i].at(j).X(), i, j);
+	output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original)->HitPosition[i].at(j).Y(), i, j);
+	output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original)->HitPosition[i].at(j).Z(), i, j);
+      }
+    }
+    output.FillMatrixVarFromArray(seltrk_hit_dedx,      part->dEdx[i],              i, NMAXHITSPERPLANE);
+    output.FillMatrixVarFromArray(seltrk_hit_dedx_cor,  part->dEdx_corr[i],         i, NMAXHITSPERPLANE);
+    output.FillMatrixVarFromArray(seltrk_hit_dqdx,      part->dQdx[i],              i, NMAXHITSPERPLANE);
+    output.FillMatrixVarFromArray(seltrk_hit_dqdx_cor,  part->dQdx_corr[i],         i, NMAXHITSPERPLANE);
+    output.FillMatrixVarFromArray(seltrk_hit_resrange,  part->ResidualRange[i],     i, NMAXHITSPERPLANE);
     output.FillVectorVarFromArray(seltrk_nhitsperplane, part->NHitsPerPlane,3);
     output.FillMatrixVarFromArray(seltrk_hit_dedx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->dEdx[i], i, NMAXHITSPERPLANE);
     output.FillMatrixVarFromArray(seltrk_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->dQdx[i], i, NMAXHITSPERPLANE);

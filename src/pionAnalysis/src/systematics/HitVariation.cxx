@@ -41,16 +41,16 @@ void HitVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     if (!GetBinValues(abs(truePart->PDG), mean_corr,  mean_var,  mean_index))  return;
 
     // Apply the variation to the evnt model quantities
-    for (Int_t j = 0 ; j < (Int_t)NMAXHITSPERPLANE ; j++){
-      part->HitX[2][j] = original->HitX[2][j] + mean_corr + (mean_var*toy.GetToyVariations(_index)->Variations[mean_index]);
+    //for (Int_t j = 0 ; j < (Int_t)NMAXHITSPERPLANE ; j++){
+    //  part->HitPosition[2].at(j).SetX(original->HitPosition[2].at(j).X() + mean_corr + (mean_var*toy.GetToyVariations(_index)->Variations[mean_index]);
       //get the corrected coordinates
-      std::vector<double> point  = {part->HitX[2][j],part->HitY[2][j],part->HitZ[2][j]};
-      std::vector<double> offset = sce->GetPosOffsets(point);
-      part->HitX_corrected[2][j] = part->HitX[2][j] - offset[0];
-    }
+    //  std::vector<double> point  = {part->HitX[2][j],part->HitY[2][j],part->HitZ[2][j]};
+    //  std::vector<double> offset = sce->GetPosOffsets(point);
+    //  part->HitX_corrected[2][j] = part->HitX[2][j] - offset[0];
+    //}
     
     // Recompute the derived quantities. TODO: This should be done somewhere else, in a more transparent way
-    part->corrected_Length = pdAnaUtils::ComputeCorrectedTrackLength(part,NMAXHITSPERPLANE);
+    //part->corrected_Length = pdAnaUtils::ComputeCorrectedTrackLength(part,NMAXHITSPERPLANE);
   }
 }
 
@@ -66,11 +66,11 @@ bool HitVariation::UndoSystematic(AnaEventC& event){
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
     if (!original)   continue;
 
-    for(Int_t j = 0; j < (Int_t)NMAXHITSPERPLANE; j++){
-        part->HitX[2][j]           = original->HitX[2][j];
-        part->HitX_corrected[2][j] = original->HitX_corrected[2][j];
-        part->corrected_Length     = original->corrected_Length;
-    }   
+    //for(Int_t j = 0; j < (Int_t)NMAXHITSPERPLANE; j++){
+    //    part->HitX[2][j]           = original->HitX[2][j];
+    //    part->HitX_corrected[2][j] = original->HitX_corrected[2][j];
+    //     part->corrected_Length     = original->corrected_Length;
+    //}   
   }
   
   // Don't reset the spill to corrected

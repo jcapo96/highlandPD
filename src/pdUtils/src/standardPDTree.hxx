@@ -57,6 +57,7 @@ namespace standardPDTree{
     seltrk_costheta,
     seltrk_nhits,
     seltrk_length,
+    seltrk_length_raw,
     seltrk_ndau,
     seltrk_dqdx,
     seltrk_dedx,
@@ -83,6 +84,9 @@ namespace standardPDTree{
     seltrk_hit_x,
     seltrk_hit_y,
     seltrk_hit_z,
+    seltrk_hit_x_raw,
+    seltrk_hit_y_raw,
+    seltrk_hit_z_raw,
     seltrk_hit_resrange,
     seltrk_nhitsperplane,
 

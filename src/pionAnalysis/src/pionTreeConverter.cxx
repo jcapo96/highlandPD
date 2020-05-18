@@ -951,39 +951,16 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   // TODO: Associating space points to hits in a plane for the moment. All space points in the pionana tree are in a single array regardless of the plane
   // while reco_beam_calibrated_dEdX->size() corresponds to a single plane, reco_beam_spacePts_X->size() has all planes together
 
-  UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_beam_spacePts_X->size());
-  
-  //run over all points to compute the corrected length
-  Float_t corrected_Length = 0;
-  TVector3 disp,pos;
-  for (UInt_t j=0; j<(UInt_t)reco_beam_spacePts_X->size() ;j++){
-    //get the corrected coordinates
-    std::vector<double> point  = {(*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]};
-    std::vector<double> offset = sce->GetPosOffsets(point);
-    if(j == 0)disp.SetXYZ(point[0]-offset[0],point[1]-offset[1],point[2]-offset[2]);
-    else pos.SetXYZ(point[0]+offset[0],point[1]-offset[1],point[2]-offset[2]);
-    //but store only 300 as maximum
-    if(j < nHits){
-      part->HitX[2][j] = (*reco_beam_spacePts_X)[j];
-      part->HitY[2][j] = (*reco_beam_spacePts_Y)[j];
-      part->HitZ[2][j] = (*reco_beam_spacePts_Z)[j];
-      part->HitX_corrected[2][j] = point[0]-offset[0];
-      part->HitY_corrected[2][j] = point[1]-offset[1];
-      part->HitZ_corrected[2][j] = point[2]-offset[2];
-    }
-    
-    //compute track length
-    if(j > 0){
-      //if (part->HitX[2][j] == -999) break;
-      disp -= pos;
-      corrected_Length += disp.Mag();
-      disp = pos;
-    }
+  UInt_t nHits = std::min((int)NMAXHITSPERPLANE_SELTRK,   (int)reco_beam_spacePts_X->size());
+  for (UInt_t j = 0; j < nHits; j++){
+    TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
+    part->HitPosition[2].push_back(point);
+    //part->HitPosition[2].at(j).SetX((*reco_beam_spacePts_X)[j]);
+    //part->HitPosition[2].at(j).SetY((*reco_beam_spacePts_Y)[j]);
+    //part->HitPosition[2].at(j).SetZ((*reco_beam_spacePts_Z)[j]);
   }
- 
-  if(part->Length==-1)part->corrected_Length = -1;
-  else part->corrected_Length = corrected_Length;
-
+  if(part->HitPosition[2].size()>0)std::cout << part->HitPosition[2].at(0).X() << std::endl; 
+    
   // --------- reco_beam_PFP ------------------------
 
   part->CNNscore[0] = reco_beam_PFP_trackScore_collection;
@@ -1201,9 +1178,11 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   // TODO: Associating space points to hits in a plane for the moment
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_daughter_spacePts_X->size());
   for (UInt_t j=0;j<nHits;j++){
-    part->HitX[2][j] = (*reco_daughter_spacePts_X)[itrk][j];
-    part->HitY[2][j] = (*reco_daughter_spacePts_Y)[itrk][j];
-    part->HitZ[2][j] = (*reco_daughter_spacePts_Z)[itrk][j];
+    TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
+    part->HitPosition[2].push_back(point);
+    //part->HitPosition[2].at(j).SetX((*reco_daughter_spacePts_X)[itrk][j]);
+    //part->HitPosition[2].at(j).SetY((*reco_daughter_spacePts_Y)[itrk][j]);
+    //part->HitPosition[2].at(j).SetZ((*reco_daughter_spacePts_Z)[itrk][j]);
   }
    
   part->Chi2Proton = (*reco_daughter_allTrack_Chi2_proton)[itrk];
@@ -1290,10 +1269,12 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
 
   // TODO: Associating space points to hits in a plane for the moment
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_daughter_shower_spacePts_X->size());
-  for (UInt_t j=0;j<nHits;j++){
-    part->HitX[0][j] = (*reco_daughter_shower_spacePts_X)[itrk][j];
-    part->HitY[0][j] = (*reco_daughter_shower_spacePts_Y)[itrk][j];
-    part->HitZ[0][j] = (*reco_daughter_shower_spacePts_Z)[itrk][j];
+  for (UInt_t j = 0 ; j < nHits ; j++){
+    TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
+    part->HitPosition[2].push_back(point);
+    //part->HitPosition[2].at(j).SetX((*reco_daughter_shower_spacePts_X)[itrk][j]);
+    //part->HitPosition[2].at(j).SetY((*reco_daughter_shower_spacePts_Y)[itrk][j]);
+    //part->HitPosition[2].at(j).SetZ((*reco_daughter_shower_spacePts_Z)[itrk][j]);
   }
 
 

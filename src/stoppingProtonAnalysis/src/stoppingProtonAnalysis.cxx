@@ -13,6 +13,7 @@
 #include "CryoWallBeamMomCorrection.hxx"
 #include "dEdxDataCorrection.hxx"
 #include "BrokenTrackDataCorrection.hxx"
+#include "HitPositionSCECorrection.hxx"
 
 #include "pdAnalysisUtils.hxx"
 
@@ -112,7 +113,6 @@ bool stoppingProtonAnalysis::Initialize(){
      option (-p param.dat) to work, parameters cannot be accessed in the constructors. 
   */
 
-  
   // Initialize the baseAnalysis
   if(!baseAnalysis::Initialize()) return false;
 
@@ -130,7 +130,6 @@ bool stoppingProtonAnalysis::Initialize(){
 //********************************************************************
 void stoppingProtonAnalysis::DefineInputConverters(){
 //********************************************************************
-
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new pionTreeConverter());
   input().AddConverter("minitree",       new HighlandMiniTreeConverter());
@@ -140,7 +139,6 @@ void stoppingProtonAnalysis::DefineInputConverters(){
 //********************************************************************
 void stoppingProtonAnalysis::DefineSelections(){
 //********************************************************************
-
   /* In this method the user will add to the SelectionManager (accessed by  sel() ) the selections to be run, 
      defined in other files. In general an analysis has a single selection, which could have multiple branches. 
      Each of the branches is in fact a different selection (different cuts and actions), but defining them as branches 
@@ -157,7 +155,6 @@ void stoppingProtonAnalysis::DefineSelections(){
   //   step sequence is not broken when a cut is not passed. In this way we can save intermediate information for events 
   //   not passing the entire selection
 
-
   sel().AddSelection("stoppingProtonSelection",  "protoDuneExample selection",     new stoppingProtonSelection(false));     // true/false for forcing break
   sel().AddSelection("stoppingMuonSelection",    "protoDuneExample selection",     new stoppingMuonSelection(false));
   
@@ -169,11 +166,10 @@ void stoppingProtonAnalysis::DefineSelections(){
 //********************************************************************
 void stoppingProtonAnalysis::DefineCorrections(){
 //********************************************************************
-
   /* Corrections modify some aspect of the input data (real data or MC). 
      The entire analysis will proceed on the modified data
   */
-  
+
   // Some corrections are defined in baseAnalysis
   baseAnalysis::DefineCorrections();
 
@@ -183,28 +179,26 @@ void stoppingProtonAnalysis::DefineCorrections(){
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledBeamMomSmearing")) corr().AddCorrection("BeamMomSmearing",   new BeamMomSmearingCorrection());
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledCryoWallBeamMom")) corr().AddCorrection("CryoWallBeamMom",   new CryoWallBeamMomCorrection());
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData")) corr().AddCorrection("broken track data", new BrokenTrackDataCorrection());   
+  //if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledHitPositionSCE"))  corr().AddCorrection("hit positionnSCE",   new HitPositionSCECorrection());
 
 }
 
 //********************************************************************
 void stoppingProtonAnalysis::DefineSystematics(){
 //********************************************************************
-
   // Some corrections are defined in baseAnalysis
   baseAnalysis::DefineSystematics();
 
-  evar().AddEventVariation(SystId::kdEdx,           "dEdx",           new dEdxVariation());
+  //evar().AddEventVariation(SystId::kdEdx,           "dEdx",           new dEdxVariation());
 }
 
 //********************************************************************
 void stoppingProtonAnalysis::DefineConfigurations(){
 //********************************************************************
-
   /*  A "configuration" is defined by the systematics that are enabled, the number of toys being run and the random seed 
       used to generate the toys. Each configuration has a micro-tree associated in the output file (with the same name)
   */
 
-  
   // Some configurations are defined in baseAnalysis
   baseAnalysis::DefineConfigurations();
 
@@ -217,7 +211,6 @@ void stoppingProtonAnalysis::DefineConfigurations(){
 //********************************************************************
 void stoppingProtonAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
-
   /*  We call Micro-trees to the standard analysis trees appearing in the output file. 
       There is always a Micro-Tree call "default" which should contain the basic info to understand our selection. 
       The user can add extra Micro-Trees by adding configurations to the analysis (see DefineConfigurations method above).
@@ -287,12 +280,11 @@ void stoppingProtonAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
 void stoppingProtonAnalysis::DefineTruthTree(){
 //********************************************************************
-
   /*  The "truth" tree also appears in the output file. It contains all interactions in which we are interested in regardless on whether 
       the selection was passed or not. This is the tree that should be used to compute signal efficiencies
   */
 
-  
+
   // Variables from baseAnalysis (run, event, ...)
   baseAnalysis::DefineTruthTree();
 
@@ -308,7 +300,6 @@ void stoppingProtonAnalysis::DefineTruthTree(){
 //********************************************************************
 void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
-
   /*  In this method we fill all toy-independent variables (all except the ones added with AddToy...) defined in the method DefineMicroTrees. 
       This method is called once all toys has been run, what means that the value of all variables for the last toy will be saved. This is not a problem 
       for variables that are not expected to change from a toy to another.
@@ -323,19 +314,19 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
     else output().FillVar(true_signal, 0);
   }
 
+
   // Fill standard variables for the PD analysis
   //  standardPDTree::FillStandardVariables_CountersTrue(     output(), _globalCounters);  
   standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
-  if(box().MainTrack)output().FillVar(seltrk_length_sce,            box().MainTrack->corrected_Length);
   standardPDTree::FillStandardVariables_CandidateTrue(    output(), box().MainTrack);    
   standardPDTree::FillStandardVariables_CandidateHitsReco(output(), box().MainTrack);
 
   // Get all reconstructed parts in the event
   AnaParticleB** parts = GetEvent().Particles;
   Int_t nParts         = GetEvent().nParticles;
-  
+
   // ---------- Save information about all (max NMAXSAVEDPARTICLES) recon parts in the event --------------
   // These are standard variables for the PD analysis
   for (Int_t i=0;i<std::min((Int_t)NMAXSAVEDPARTICLES,nParts); ++i){    
@@ -345,7 +336,7 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
     //    output().FillVar(trk_pandora,(Int_t)part->isPandora);
     output().IncrementCounter(ntracks);
   }
-
+    
   // ---------- Additional candidate variables --------------
   if (box().MainTrack){        
     output().FillVar(seltrk_broken,                (Int_t)(box().MainTrack->NDOF==8888));
@@ -360,7 +351,7 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
         output().FillVar(seltrk_pida_raw,  pdAnaUtils::ComputePIDA(*static_cast<const AnaParticlePD*>(box().MainTrack->Original->Original->Original)));
       }
     }
-
+    
     // Extrapolation to z=0
     Float_t posz[3]={0};
     output().FillVectorVarFromArray(seltrk_pos_z0, pdAnaUtils::ExtrapolateToZ(box().MainTrack,0,posz), 3); //default extrapolates to 0    
@@ -395,17 +386,18 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
 
     //    output().FillVar(seltrk_mom_muon2,         pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length/10., 13));
     //    output().FillVar(seltrk_mom_prot2,         pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length/10., 2212));
-    
 
+   
     Float_t *binned_dedx[3];
     for(int i = 0; i < 3; i++)
       binned_dedx[i] = new Float_t[4];
 
+   
     pdAnaUtils::ComputeBinnedDeDx(static_cast<const AnaParticlePD*>(box().MainTrack),20,4,binned_dedx);
     for (int i=0;i<3;i++){
       output().FillMatrixVarFromArray(seltrk_dedx_binned,  binned_dedx[i] , i, 4);
     }
-    
+   
     for(int i = 0; i < 3; i++)
       delete binned_dedx[i];
 
@@ -413,7 +405,7 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
     Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
     for (Int_t i=0;i<std::min((Int_t)NMAXSAVEDDAUGHTERS,ndau); ++i){      
       AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
-
+   
       // These are standard variables for the PD analysis
       standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
       standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
@@ -425,6 +417,7 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
         output().FillVectorVar(seltrk_dau_type,              1);
       */
 
+   
       Float_t *dau_binned_dedx[3];
       for(int i = 0; i < 3; i++)
         dau_binned_dedx[i] = new Float_t[4];
@@ -437,7 +430,7 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
 
       output().IncrementCounter(seltrk_ndau);
     }    
-
+   
     // ---------- Additional truth information -----------
     AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
     if (truePart){
@@ -446,13 +439,11 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
         output().FillVar(seltrk_truebeta,          anaUtils::ComputeBetaGamma(truePart->Momentum, ParticleId::GetParticle(truePart->PDG)));
     }
   }
-
 }
 
 //********************************************************************
 void stoppingProtonAnalysis::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
-
   /*  In this method we fill all toy-dependent variables (the ones added with AddToy...) defined in the method DefineMicroTrees. 
       This method is called at the end of each toy.
 
@@ -475,7 +466,6 @@ void stoppingProtonAnalysis::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
 bool stoppingProtonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
-
   /* To avoid unecessary events in the "truth" tree in this method we define the condition to include or not a given 
      true vertex in the tree. 
   */
@@ -489,7 +479,6 @@ bool stoppingProtonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 void stoppingProtonAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
-
   // Fill the common variables
   baseAnalysis::FillTruthTreeBase(vtx);
 
@@ -507,7 +496,6 @@ void stoppingProtonAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 void stoppingProtonAnalysis::FillCategories(){
 //********************************************************************
-
   /* This method fills the micro-tree variables related with track categories for color drawing. 
      Those variables are added automatically (no need to explicitely add them in DefineMicroTrees) to the 
      micro-trees, but must be filled by the analyser, provided the event and the relevant track 

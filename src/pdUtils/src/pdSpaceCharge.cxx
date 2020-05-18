@@ -7,22 +7,20 @@
 pdspacecharge::pdSpaceCharge::pdSpaceCharge(){
 //********************************************************************
 
+  //get parameters from parameters file
   fEnableSimSpatialSCE = ND::params().GetParameterI("pdUtils.SCE.EnableSimSpatialSCE");
   fEnableSimEfieldSCE  = ND::params().GetParameterI("pdUtils.SCE.EnableSimEfieldSCE");
   fEnableCalSpatialSCE = ND::params().GetParameterI("pdUtils.SCE.EnableCalSpatialSCE");
   fEnableCalEfieldSCE  = ND::params().GetParameterI("pdUtils.SCE.EnableCalEfieldSCE");
-  //fEnableCorrSCE = (EnableCalSpatialSCE||EnableCalEfieldSCE);     
   fEfield = ND::params().GetParameterI("pdUtils.SCE.Efield");
   
   if((fEnableSimSpatialSCE == true) || (fEnableSimEfieldSCE == true)){
     
-    //as far as I have understood this is for sim (MC?) and the file used shouled be another one
-    //however for the moment we let this one
-    //should ask Anselmo how to read the file. I guess doing it in a constructor is not appropiate
+    //read input file
     std::string fInputFilename = std::string(getenv("PIONANALYSISROOT"))+"/data/SCE_DataDriven_180kV_v3.root";
     infile = new TFile(fInputFilename.c_str(), "OPEN" );
 
-    //should ask Anselmo about the exit(1). There should exist another option
+    //check it exits
     if(!infile){
       std::cout << "Can't open file " << fInputFilename << std::endl;
       exit(1);
@@ -76,12 +74,11 @@ pdspacecharge::pdSpaceCharge::pdSpaceCharge(){
   
   if((fEnableCalSpatialSCE == true) || (fEnableCalEfieldSCE == true)){
 
-    //as far as I have understood this is for data and this is the used file
-    //however I'm pretty sure there should be another way of doing it more cleaner than
-    //opening a TFile in a constructor
+    //read input file
     std::string fCalInputFilename = std::string(getenv("PIONANALYSISROOT"))+"/data/SCE_DataDriven_180kV_v3.root";
     infile = new TFile(fCalInputFilename.c_str(), "OPEN" );
 
+    //check it exists
     if(!infile){
       std::cout << "Can't open file " << fCalInputFilename << std::endl;
       exit(1);
@@ -139,8 +136,7 @@ pdspacecharge::pdSpaceCharge::pdSpaceCharge(){
 pdspacecharge::pdSpaceCharge::~pdSpaceCharge(){
 //********************************************************************
 
-//I'm pretty sure I have to do something here like destroying histograms and that stuff
-//but I'll ask Anselmo
+  if(infile)infile->Delete();
 }
 
 //********************************************************************
