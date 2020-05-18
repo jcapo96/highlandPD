@@ -82,12 +82,10 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
     }
   }
 
-  for(int i = 0; i < 3; i++)
+  for (int i = 0; i < 3; i++){
     HitPosition[i].clear();
-
-  for (int i = 0; i < (int)part.HitPosition[0].size(); i++){
-    for (int j = 0; j < 3; j++){
-      HitPosition[j].push_back(HitPosition[j].at(i));
+    for (int j = 0; j < (int)part.HitPosition[i].size(); j++){
+      HitPosition[i].push_back(part.HitPosition[i].at(j));
     }
   }
 
@@ -164,6 +162,8 @@ void AnaParticlePD::Print() const{
   std::cout << "CNN score:               " << CNNscore[0] << " " << CNNscore[1] << " " << CNNscore[2] << std::endl;
   
   std::cout << "RangeMomentum            " << RangeMomentum[0] << " " << RangeMomentum[1] << std::endl;
+
+  std::cout << "Store hits               " << HitPosition[2].size() << std::endl;
 
     
 }

@@ -833,7 +833,6 @@ void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePartic
     part->Daughters.push_back(dautrk);
   }
 
-
   // The daughter showers
   for (UInt_t i=0;i<reco_daughter_allShower_ID->size();i++){
     AnaParticlePD* dausho = MakeParticle();
@@ -924,7 +923,8 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   part->AveragedQdx=0;
   Int_t ncontrib=0;
   for (UInt_t plane=2;plane<3;plane++){   // only the last slice 
-    for (UInt_t j=0;j<reco_beam_dEdX->size();j++){
+    UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_beam_dEdX->size());
+    for (UInt_t j=0;j<nHits;j++){
       part->AveragedEdx += (*reco_beam_dEdX)[j];
       part->AveragedQdx += (*reco_beam_dQdX)[j];
       part->dEdx[plane][j] = (*reco_beam_dEdX)[j];
@@ -950,16 +950,13 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   
   // TODO: Associating space points to hits in a plane for the moment. All space points in the pionana tree are in a single array regardless of the plane
   // while reco_beam_calibrated_dEdX->size() corresponds to a single plane, reco_beam_spacePts_X->size() has all planes together
+  TVector3 point;
 
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE_SELTRK,   (int)reco_beam_spacePts_X->size());
   for (UInt_t j = 0; j < nHits; j++){
-    TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
+    point.SetXYZ((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
     part->HitPosition[2].push_back(point);
-    //part->HitPosition[2].at(j).SetX((*reco_beam_spacePts_X)[j]);
-    //part->HitPosition[2].at(j).SetY((*reco_beam_spacePts_Y)[j]);
-    //part->HitPosition[2].at(j).SetZ((*reco_beam_spacePts_Z)[j]);
   }
-  if(part->HitPosition[2].size()>0)std::cout << part->HitPosition[2].at(0).X() << std::endl; 
     
   // --------- reco_beam_PFP ------------------------
 
@@ -1075,6 +1072,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   //part->isBeamPart = pdAnaUtils::isBeamLike(part,beam);
   part->isBeamPart = reco_beam_passes_beam_cuts;
   //std::cout << part->isBeamPart << " " << pdAnaUtils::isBeamLike(part,beam) << std::endl;
+
 }
 
 //*****************************************************************************
@@ -1180,9 +1178,6 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   for (UInt_t j=0;j<nHits;j++){
     TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
     part->HitPosition[2].push_back(point);
-    //part->HitPosition[2].at(j).SetX((*reco_daughter_spacePts_X)[itrk][j]);
-    //part->HitPosition[2].at(j).SetY((*reco_daughter_spacePts_Y)[itrk][j]);
-    //part->HitPosition[2].at(j).SetZ((*reco_daughter_spacePts_Z)[itrk][j]);
   }
    
   part->Chi2Proton = (*reco_daughter_allTrack_Chi2_proton)[itrk];
@@ -1272,9 +1267,6 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
   for (UInt_t j = 0 ; j < nHits ; j++){
     TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
     part->HitPosition[2].push_back(point);
-    //part->HitPosition[2].at(j).SetX((*reco_daughter_shower_spacePts_X)[itrk][j]);
-    //part->HitPosition[2].at(j).SetY((*reco_daughter_shower_spacePts_Y)[itrk][j]);
-    //part->HitPosition[2].at(j).SetZ((*reco_daughter_shower_spacePts_Z)[itrk][j]);
   }
 
 
