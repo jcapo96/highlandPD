@@ -50,6 +50,9 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   
   for (int i=0; i<2; i++)
     RangeMomentum[i] = kFloatUnassigned;    
+
+  for (int i = 0; i < 3; i++)
+    HitPosition[i].clear();
 }
 
 //********************************************************************
@@ -79,11 +82,14 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
     }
   }
 
-  //for (int i = 0; i < (int)part.HitPosition[0].size(); i++){
-  //  for (int j = 0; j < 3; j++){
-  //    HitPosition[j].push_back(HitPosition[j].at(i));
-  //  }
-  //}
+  for(int i = 0; i < 3; i++)
+    HitPosition[i].clear();
+
+  for (int i = 0; i < (int)part.HitPosition[0].size(); i++){
+    for (int j = 0; j < 3; j++){
+      HitPosition[j].push_back(HitPosition[j].at(i));
+    }
+  }
 
   for (int i=0; i<3; i++) {
     PIDA[i]=part.PIDA[i];
