@@ -164,13 +164,12 @@ bool pdspacecharge::pdSpaceCharge::EnableCalEfieldSCE() const{
 }
 
 //********************************************************************
-std::vector<double> pdspacecharge::pdSpaceCharge::GetPosOffsets(std::vector<double> const& tmp_point) const{
+TVector3 pdspacecharge::pdSpaceCharge::GetPosOffsets(TVector3 const& tmp_point) const{
 //********************************************************************  
-  std::vector<double> thePosOffsets;
-  std::vector<double> point = tmp_point;
+  TVector3 thePosOffsets;
+  TVector3 point = tmp_point;
   if(IsTooFarFromBoundaries(point)){
-    thePosOffsets.resize(3,0.0);
-    for(int i = 0; i < (int)thePosOffsets.size(); i++)point.push_back(-thePosOffsets[i]);
+    for(int i = 0; i < 3; i++)point(i)=-thePosOffsets[i];
     return point;
   }
    if(!IsInsideBoundaries(point) && !IsTooFarFromBoundaries(point))point = PretendAtBoundary(point);
@@ -183,19 +182,18 @@ std::vector<double> pdspacecharge::pdSpaceCharge::GetPosOffsets(std::vector<doub
      thePosOffsets = GetOffsetsVoxel(point, SCEhistograms.at(6), SCEhistograms.at(7), SCEhistograms.at(8));
      thePosOffsets[0] = -1.0*thePosOffsets[0];
    }
-       
+
    return { thePosOffsets[0], thePosOffsets[1], thePosOffsets[2] };
 }
 
 //********************************************************************  
-std::vector<double> pdspacecharge::pdSpaceCharge::GetCalPosOffsets(std::vector<double> const& tmp_point, int const& TPCid) const{
+TVector3 pdspacecharge::pdSpaceCharge::GetCalPosOffsets(TVector3 const& tmp_point, int const& TPCid) const{
 //********************************************************************  
-  std::vector<double> thePosOffsets;
-  std::vector<double> point = tmp_point;
+  TVector3 thePosOffsets;
+  TVector3 point = tmp_point;
    
   if(IsTooFarFromBoundaries(point)){
-    thePosOffsets.resize(3,0.0);
-    for(int i = 0; i < (int)thePosOffsets.size(); i++)point.push_back(-thePosOffsets[i]);
+    for(int i = 0; i < 3; i++)point(i)=-thePosOffsets[i];
     return point;
   }
   if(!IsInsideBoundaries(point)&&!IsTooFarFromBoundaries(point)){ 
@@ -219,7 +217,7 @@ std::vector<double> pdspacecharge::pdSpaceCharge::GetCalPosOffsets(std::vector<d
 
 
 //********************************************************************
-std::vector<double> pdspacecharge::pdSpaceCharge::GetOffsetsVoxel(std::vector<double> const& point, TH3F* hX, TH3F* hY, TH3F* hZ) const{
+TVector3 pdspacecharge::pdSpaceCharge::GetOffsetsVoxel(TVector3 const& point, TH3F* hX, TH3F* hY, TH3F* hZ) const{
 //********************************************************************
   return {hX->Interpolate(point[0],point[1],point[2]),
           hY->Interpolate(point[0],point[1],point[2]),
@@ -227,14 +225,13 @@ std::vector<double> pdspacecharge::pdSpaceCharge::GetOffsetsVoxel(std::vector<do
 }
 
 //********************************************************************
-std::vector<double> pdspacecharge::pdSpaceCharge::GetEfieldOffsets(std::vector<double> const& tmp_point) const{
+TVector3 pdspacecharge::pdSpaceCharge::GetEfieldOffsets(TVector3 const& tmp_point) const{
 //********************************************************************
-  std::vector<double> theEfieldOffsets;
-  std::vector<double> point = tmp_point;
+  TVector3 theEfieldOffsets;
+  TVector3 point = tmp_point;
 
   if(IsTooFarFromBoundaries(point)){
-    theEfieldOffsets.resize(3,0.0);
-    for(int i = 0; i < (int)theEfieldOffsets.size(); i++)point.push_back(-theEfieldOffsets[i]);
+    for(int i = 0; i < 3; i++)point(i) = -theEfieldOffsets[i];
     return point;
   }
   if(!IsInsideBoundaries(point) && !IsTooFarFromBoundaries(point)) point = PretendAtBoundary(point);
@@ -246,13 +243,12 @@ std::vector<double> pdspacecharge::pdSpaceCharge::GetEfieldOffsets(std::vector<d
 }
 
 //********************************************************************
-std::vector<double> pdspacecharge::pdSpaceCharge::GetCalEfieldOffsets(std::vector<double> const& tmp_point, int const& TPCid) const{
+TVector3 pdspacecharge::pdSpaceCharge::GetCalEfieldOffsets(TVector3 const& tmp_point, int const& TPCid) const{
 //********************************************************************
-  std::vector<double> theEfieldOffsets;
-  std::vector<double> point = tmp_point;
+  TVector3 theEfieldOffsets;
+  TVector3 point = tmp_point;
   if(IsTooFarFromBoundaries(point)) {
-    theEfieldOffsets.resize(3,0.0);
-    for(int i = 0; i < (int)theEfieldOffsets.size(); i++)point.push_back(-theEfieldOffsets[i]);
+    for(int i = 0; i < 3; i++)point(i) = -theEfieldOffsets[i];
     return point;
   }
   if(!IsInsideBoundaries(point)&&!IsTooFarFromBoundaries(point)) point = PretendAtBoundary(point);
@@ -297,7 +293,7 @@ double pdspacecharge::pdSpaceCharge::TransformZ(double zVal) const{
 }
 
 //********************************************************************
-bool pdspacecharge::pdSpaceCharge::IsInsideBoundaries(std::vector<double> const& point) const{
+bool pdspacecharge::pdSpaceCharge::IsInsideBoundaries(TVector3 const& point) const{
 //********************************************************************
   return !((TMath::Abs(point[0]) <= 0.0)  || (TMath::Abs(point[0]) >= 360.0)
 	   || (point[1]          <= 5.2)  || (point[1]             >= 604.0)
@@ -306,7 +302,7 @@ bool pdspacecharge::pdSpaceCharge::IsInsideBoundaries(std::vector<double> const&
 } 
 
 //********************************************************************
-bool pdspacecharge::pdSpaceCharge::IsTooFarFromBoundaries(std::vector<double> const& point) const{
+bool pdspacecharge::pdSpaceCharge::IsTooFarFromBoundaries(TVector3 const& point) const{
 //********************************************************************  
   return((TMath::Abs(point[0]) < -20.0) || (TMath::Abs(point[0])  >= 360.0)
 	 || (point[1]          < -14.8) || (point[1]              >  624.0)
@@ -315,10 +311,10 @@ bool pdspacecharge::pdSpaceCharge::IsTooFarFromBoundaries(std::vector<double> co
 }
  
 //********************************************************************
-std::vector<double> pdspacecharge::pdSpaceCharge::PretendAtBoundary(std::vector<double> const& point) const{
+TVector3 pdspacecharge::pdSpaceCharge::PretendAtBoundary(TVector3 const& point) const{
 //********************************************************************
-  std::vector<double> rpoint;
-  for(int i = 0; i < (int)point.size(); i++)rpoint.push_back(point[i]);
+  TVector3 rpoint;
+  for(int i = 0; i < 3; i++)rpoint(i) = point[i];
    
   if      (TMath::Abs(point[0]) ==    0.0    ) rpoint[0] = -0.00001;
   else if (TMath::Abs(point[0]) <     0.00001) rpoint[0] = TMath::Sign(point[0],1)*0.00001; 
@@ -327,7 +323,7 @@ std::vector<double> pdspacecharge::pdSpaceCharge::PretendAtBoundary(std::vector<
   if      (point[1] <=   5.2)                  rpoint[1] =   5.20001;
   else if (point[1] >= 604.0)                  rpoint[1] = 603.99999;
   
-  if      (point[2] <=   -0.5)                 rpoint[2] =   -0.49999;
+  if      (point[2] <=  -0.5)                  rpoint[2] =  -0.49999;
   else if (point[2] >= 695.3)                  rpoint[2] = 695.29999;
   
   return rpoint;

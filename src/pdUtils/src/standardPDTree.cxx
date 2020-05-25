@@ -332,7 +332,7 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
   for (int i = 0; i < 3; i++){
     if(part->HitPosition[i].empty()){
       for (int j = 0; j < (int)NMAXHITSPERPLANE_SELTRK; j++){
-	output.FillMatrixVar(seltrk_hit_x    ,(Float_t)-999, i, j);
+	output.FillMatrixVar(seltrk_hit_x    ,(Float_t)-999., i, j);
 	output.FillMatrixVar(seltrk_hit_y    ,(Float_t)-999., i, j);
 	output.FillMatrixVar(seltrk_hit_z    ,(Float_t)-999., i, j);
 	output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)-999., i, j);

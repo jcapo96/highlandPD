@@ -33,11 +33,10 @@ void HitPositionSCECorrection::Apply(AnaSpillC& spillC){
 
       //correcting just plane[2]
       for (Int_t j = 0; j < std::min((Int_t)NMAXHITSPERPLANE_SELTRK,part->NHitsPerPlane[i]); j++){
-	std::vector<double> point  = {part->HitPosition[2].at(j).X(),part->HitPosition[2].at(j).Y(),part->HitPosition[2].at(j).Z()};
-	std::vector<double> offset = sce.GetPosOffsets(point);
-	part->HitPosition[2].at(j).SetX(part->HitPosition[2].at(j).X()-offset[0]);
-	part->HitPosition[2].at(j).SetY(part->HitPosition[2].at(j).Y()-offset[1]);
-	part->HitPosition[2].at(j).SetZ(part->HitPosition[2].at(j).Z()-offset[2]);
+	TVector3 offset = sce.GetPosOffsets(part->HitPosition[2].at(j));
+	part->HitPosition[2].at(j).SetX(part->HitPosition[2].at(j).X()-offset.X());
+	part->HitPosition[2].at(j).SetY(part->HitPosition[2].at(j).Y()-offset.Y());
+	part->HitPosition[2].at(j).SetZ(part->HitPosition[2].at(j).Z()-offset.Z());
       }
     }
   }
