@@ -6,6 +6,7 @@
 
 #include "TFile.h"
 #include "TH3.h"
+#include "TVector3.h"
 
 namespace pdspacecharge {
   class pdSpaceCharge {
@@ -20,15 +21,15 @@ namespace pdspacecharge {
     bool EnableCalEfieldSCE() const;
     bool EnableCorrSCE() const {return (EnableCalSpatialSCE()||EnableCalEfieldSCE()) ;}
     
-    std::vector<double> GetPosOffsets      (std::vector<double> const& point) const;
-    std::vector<double> GetEfieldOffsets   (std::vector<double> const& point) const;
-    std::vector<double> GetCalPosOffsets   (std::vector<double> const& point, int const& TPCid) const;
-    std::vector<double> GetCalEfieldOffsets(std::vector<double> const& point, int const& TPCid) const;
+    TVector3 GetPosOffsets      (TVector3 const& point) const;
+    TVector3 GetEfieldOffsets   (TVector3 const& point) const;
+    TVector3 GetCalPosOffsets   (TVector3 const& point, int const& TPCid) const;
+    TVector3 GetCalEfieldOffsets(TVector3 const& point, int const& TPCid) const;
     
   private:
   protected:
          
-    std::vector<double> GetOffsetsVoxel(std::vector<double> const& point, TH3F* hX, TH3F* hY, TH3F* hZ) const;
+    TVector3 GetOffsetsVoxel(TVector3 const& point, TH3F* hX, TH3F* hY, TH3F* hZ) const;
     
     std::vector<TH3F*> SCEhistograms = std::vector<TH3F*>(12); //Histograms are Dx, Dy, Dz, dEx/E0, dEy/E0, dEz/E0 (positive; repeat for negative)
     std::vector<TH3F*> CalSCEhistograms = std::vector<TH3F*>(12); 
@@ -37,9 +38,9 @@ namespace pdspacecharge {
     double TransformY(double yVal) const;
     double TransformZ(double zVal) const;
 
-    bool IsInsideBoundaries(std::vector<double> const& point) const;
-    bool IsTooFarFromBoundaries(std::vector<double> const& point) const;
-    std::vector<double> PretendAtBoundary(std::vector<double> const& point) const;
+    bool IsInsideBoundaries(TVector3 const& point) const;
+    bool IsTooFarFromBoundaries(TVector3 const& point) const;
+    TVector3 PretendAtBoundary(TVector3 const& point) const;
     
     bool fEnableSimSpatialSCE;
     bool fEnableSimEfieldSCE;

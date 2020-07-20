@@ -179,7 +179,7 @@ void stoppingProtonAnalysis::DefineCorrections(){
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledBeamMomSmearing")) corr().AddCorrection("BeamMomSmearing",   new BeamMomSmearingCorrection());
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledCryoWallBeamMom")) corr().AddCorrection("CryoWallBeamMom",   new CryoWallBeamMomCorrection());
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData")) corr().AddCorrection("broken track data", new BrokenTrackDataCorrection());   
-  //if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledHitPositionSCE"))  corr().AddCorrection("hit positionnSCE",   new HitPositionSCECorrection());
+  if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledHitPositionSCE"))  corr().AddCorrection("hit positionnSCE",   new HitPositionSCECorrection());
 
 }
 
