@@ -99,14 +99,13 @@ namespace pdAnaUtils{
   AnaTrueParticlePD* GetTrueParticle(AnaEventB* event, Int_t ID);
   AnaTrueParticlePD* GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID);
 
-
   // retreieve the BI particle
   AnaParticlePD* GetBeamParticle(const AnaEventC& event);
 
   // retreieve the true BI particle
   AnaTrueParticlePD* GetTrueBeamParticle(const AnaEventC& event);
 
-  // Fill te counters for several type of true beam daughters
+  // Fill the counters for several type of true beam daughters
   void FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters);
 
   //checks if the beam particle selected by Pandora has been correctly selected. Basic implementation for the moment
@@ -120,6 +119,7 @@ namespace pdAnaUtils{
   PossibleParticleCands2 GetPIDCandidates( const AnaBeamPD& beam, double nominal_momentum );
   PossibleParticleCands2 GetPIDCandidates_CERNCalib( const AnaBeamPD& beam, double nominal_momentum );
 
+  // Compute the track length using the hit positions
   Float_t ComputeTrackLengthFromHitPosition(const AnaParticlePD* part); 
 }
 

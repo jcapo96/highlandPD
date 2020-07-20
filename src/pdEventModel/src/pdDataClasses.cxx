@@ -17,9 +17,9 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   isBeamPart    = false;
   isPandora = false;
 
-
   FitPDG        = kFloatUnassigned;
-    for (Int_t i=0;i<3;i++){
+
+  for (Int_t i=0;i<3;i++){
     NHitsPerPlane[i] = kIntUnassigned;
     for (UInt_t j=0;j<NMAXHITSPERPLANE;j++){
       dEdx[i][j]=kFloatUnassigned;
@@ -28,31 +28,24 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
       dQdx_corr[i][j]=kFloatUnassigned;
       ResidualRange[i][j]=kFloatUnassigned;
     }
-  }  
 
-
-
-  for (int i=0; i<3; i++) {
     PIDA[i]=kFloatUnassigned;
     ReconPDG[i]=kIntUnassigned;
     for (int j=0; j<10; j++) {
       PID[i][j]=kFloatUnassigned;
       CALO[i][j]=kFloatUnassigned;
     }
-  }
 
+    CNNscore[i]=kFloatUnassigned;
+    HitPosition[i].clear();
+  }  
 
   Chi2Proton=kFloatUnassigned;
   Chi2ndf=kIntUnassigned;
 
-  for (int i=0; i<3; i++)
-    CNNscore[i]=kFloatUnassigned;
-  
   for (int i=0; i<2; i++)
     RangeMomentum[i] = kFloatUnassigned;    
 
-  for (int i = 0; i < 3; i++)
-    HitPosition[i].clear();
 }
 
 //********************************************************************
@@ -72,6 +65,7 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   FitPDG         = part.FitPDG;
 
   for (Int_t i=0;i<3;i++){
+
     NHitsPerPlane[i] = part.NHitsPerPlane[i];
     for (Int_t j=0;j<std::min((Int_t)NMAXHITSPERPLANE,NHitsPerPlane[i]);j++){
       dEdx[i][j]=part.dEdx[i][j];
@@ -80,32 +74,27 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
       dQdx_corr[i][j]=part.dQdx_corr[i][j];
       ResidualRange[i][j]=part.ResidualRange[i][j];
     }
-  }
 
-  for (int i = 0; i < 3; i++){
     HitPosition[i].clear();
     for (int j = 0; j < (int)part.HitPosition[i].size(); j++){
       HitPosition[i].push_back(part.HitPosition[i].at(j));
     }
-  }
 
-  for (int i=0; i<3; i++) {
     PIDA[i]=part.PIDA[i];
     ReconPDG[i]=part.ReconPDG[i];
-
+    
     for (int j=0; j<10; j++) {
       PID[i][j]=part.PID[i][j];
       CALO[i][j]=part.CALO[i][j];
     }
+
+    CNNscore[i]=part.CNNscore[i];
   }
+
 
   Chi2Proton = part.Chi2Proton;
   Chi2ndf    = part.Chi2ndf;
 
-  for (int i=0; i<3; i++)
-    CNNscore[i]=part.CNNscore[i];
-  
-  
   for (int i=0; i<2; i++)
     RangeMomentum[i] = part.RangeMomentum[i];  
 }
@@ -143,16 +132,16 @@ void AnaParticlePD::Print() const{
   for (int i=0;i<10;i++) std::cout << PID[2][i] << " ";
   std::cout << std::endl;
 
-  std::cout << "CALO[0]:                  ";
+  std::cout << "CALO[0]:                 ";
   for (int i=0;i<10;i++) std::cout << CALO[0][i] << " ";
   std::cout << std::endl;
 
-  std::cout << "CALO[1]:                  ";
+  std::cout << "CALO[1]:                 ";
   for (int i=0;i<10;i++) std::cout << CALO[1][i] << " ";
   std::cout << std::endl;
 
 
-  std::cout << "CALO[2]:                  ";
+  std::cout << "CALO[2]:                 ";
   for (int i=0;i<10;i++) std::cout << CALO[2][i] << " ";
   std::cout << std::endl;
 
@@ -161,9 +150,9 @@ void AnaParticlePD::Print() const{
 
   std::cout << "CNN score:               " << CNNscore[0] << " " << CNNscore[1] << " " << CNNscore[2] << std::endl;
   
-  std::cout << "RangeMomentum            " << RangeMomentum[0] << " " << RangeMomentum[1] << std::endl;
+  std::cout << "RangeMomentum:           " << RangeMomentum[0] << " " << RangeMomentum[1] << std::endl;
 
-  std::cout << "Store hits               " << HitPosition[2].size() << std::endl;
+  std::cout << "Stored hits in plane 2:  " << HitPosition[2].size() << std::endl;
 
     
 }

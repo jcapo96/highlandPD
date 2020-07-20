@@ -804,7 +804,8 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueBeamParticle(const AnaEventC& event){
 //***************************************************************
 Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part){
 //***************************************************************
-  double length = 0.;
+
+  Float_t length = 0.;
 
   //check if hit vector is empty
   if(part->HitPosition[2].empty()){
@@ -812,8 +813,10 @@ Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part)
     return -1;
   }
 
+  // Initial position
   TVector3 disp(part->HitPosition[2].at(0).X(),part->HitPosition[2].at(0).Y(),part->HitPosition[2].at(0).Z());
 
+  // Add subsequent hits
   for(int i = 1; i < (int)part->HitPosition[2].size(); ++i){
     if (part->HitPosition[2].at(i).X() == -999) break;
     TVector3 pos(part->HitPosition[2].at(i).X(),part->HitPosition[2].at(i).Y(),part->HitPosition[2].at(i).Z());
