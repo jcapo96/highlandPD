@@ -247,8 +247,8 @@ void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& outpu
   output.FillMatrixVarFromArray(trk_pos,   part->PositionStart,4);
   output.FillMatrixVarFromArray(trk_endpos,part->PositionEnd,4);
   output.FillMatrixVarFromArray(trk_dir,   part->DirectionStart,3);
-  output.FillVectorVar(trk_mom_muon,       part->RangeMomentum[0]);
-  output.FillVectorVar(trk_mom_prot,       part->RangeMomentum[1]);
+  output.FillVectorVar(trk_mom_prot,       part->RangeMomentum[0]);
+  output.FillVectorVar(trk_mom_muon,       part->RangeMomentum[1]);
   output.FillVectorVar(trk_dedx,           part->AveragedEdx);
   output.FillVectorVar(trk_length,         part->Length);
   output.FillVectorVar(trk_ndau,           (Int_t)part->Daughters.size());
@@ -305,10 +305,10 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
 
   if (!part) return;
 
-  output.FillVar(seltrk_mom_muon,          (Float_t)part->RangeMomentum[0]);
-  output.FillVar(seltrk_mom_prot,          (Float_t)part->RangeMomentum[1]);
-  output.FillVar(seltrk_mom_muon_alt,      (Float_t)part->RangeMomentum_alt[0]);
-  output.FillVar(seltrk_mom_prot_alt,      (Float_t)part->RangeMomentum_alt[1]);
+  output.FillVar(seltrk_mom_prot,          (Float_t)part->RangeMomentum[0]);
+  output.FillVar(seltrk_mom_muon,          (Float_t)part->RangeMomentum[1]);
+  output.FillVar(seltrk_mom_prot_alt,      (Float_t)part->RangeMomentum_alt[0]);
+  output.FillVar(seltrk_mom_muon_alt,      (Float_t)part->RangeMomentum_alt[1]);
 
   output.FillVar(seltrk_dedx,              part->AveragedEdx);
   output.FillVar(seltrk_dqdx,              part->AveragedQdx);
@@ -375,8 +375,8 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
 
   if (!dau) return;
   
-  output.FillVectorVar(seltrk_dau_mom_muon,        dau->RangeMomentum[0]);
-  output.FillVectorVar(seltrk_dau_mom_prot,        dau->RangeMomentum[1]);
+  output.FillVectorVar(seltrk_dau_mom_prot,        dau->RangeMomentum[0]);
+  output.FillVectorVar(seltrk_dau_mom_muon,        dau->RangeMomentum[1]);
   output.FillMatrixVarFromArray(seltrk_dau_pos,    dau->PositionStart,4);
   output.FillMatrixVarFromArray(seltrk_dau_dir,    dau->DirectionStart,3); 
   output.FillMatrixVarFromArray(seltrk_dau_endpos, dau->PositionEnd,4);
