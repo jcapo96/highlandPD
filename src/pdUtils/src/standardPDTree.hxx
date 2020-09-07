@@ -91,7 +91,8 @@ namespace standardPDTree{
     seltrk_nhitsperplane,
 
     // selected track daughters reco info
-    seltrk_dau_mom,
+    seltrk_dau_mom_muon,
+    seltrk_dau_mom_prot,
     seltrk_dau_pos,
     seltrk_dau_dir,
     seltrk_dau_endpos,

@@ -146,7 +146,7 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersTrue(OutputManager& 
 //********************************************************************
 
   AddVarMaxSize4MF(output, seltrk_dau_truepos,     "daugthers true position",    seltrk_ndau,nmax);
-  AddVarMaxSize4MF(output, seltrk_dau_trueendpos,  "daugthers true position",    seltrk_ndau,nmax);
+  AddVarMaxSize4MF(output, seltrk_dau_trueendpos,  "daugthers true end position",seltrk_ndau,nmax);
   AddVarMaxSizeVI(output,  seltrk_dau_trueproc,    "daugthers true process",     seltrk_ndau,nmax);
   AddVarMaxSizeVI(output,  seltrk_dau_trueendproc, "daughters true end process", seltrk_ndau,nmax);
   AddVarMaxSizeVF(output,  seltrk_dau_truemom,     "daughters true momentum",    seltrk_ndau,nmax);
@@ -158,14 +158,15 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersTrue(OutputManager& 
 void standardPDTree::AddStandardVariables_CandidateDaughtersReco(OutputManager& output, UInt_t nmax){
 //********************************************************************
   
-  AddVarMaxSizeVF(output,  seltrk_dau_mom,        "daughters momentum",     seltrk_ndau,nmax);
-  AddVarMaxSize4MF(output, seltrk_dau_pos,        "daughters position",     seltrk_ndau,nmax); 
-  AddVarMaxSize3MF(output, seltrk_dau_dir,        "daughters direction",    seltrk_ndau,nmax);
-  AddVarMaxSize4MF(output, seltrk_dau_endpos,     "daughters position",     seltrk_ndau,nmax); 
-  AddVarMaxSize3MF(output, seltrk_dau_enddir,     "daughters direction",    seltrk_ndau,nmax);
-  AddVarMaxSizeVF( output, seltrk_dau_length,     "daguhters length",       seltrk_ndau,nmax);
-  AddVarMaxSizeVI( output, seltrk_dau_nhits,      "daguhters #hits",        seltrk_ndau,nmax);
-  AddVarMaxSizeVI( output, seltrk_dau_nhits2,     "daguhters hits in plane 2",seltrk_ndau,nmax);
+  AddVarMaxSizeVF(output,  seltrk_dau_mom_muon,   "daughters momentum (muon)",   seltrk_ndau,nmax);
+  AddVarMaxSizeVF(output,  seltrk_dau_mom_prot,   "daughters momentum (proton)", seltrk_ndau,nmax);
+  AddVarMaxSize4MF(output, seltrk_dau_pos,        "daughters position",          seltrk_ndau,nmax); 
+  AddVarMaxSize3MF(output, seltrk_dau_dir,        "daughters direction",         seltrk_ndau,nmax);
+  AddVarMaxSize4MF(output, seltrk_dau_endpos,     "daughters position",          seltrk_ndau,nmax); 
+  AddVarMaxSize3MF(output, seltrk_dau_enddir,     "daughters direction",         seltrk_ndau,nmax);
+  AddVarMaxSizeVF( output, seltrk_dau_length,     "daguhters length",            seltrk_ndau,nmax);
+  AddVarMaxSizeVI( output, seltrk_dau_nhits,      "daguhters #hits",             seltrk_ndau,nmax);
+  AddVarMaxSizeVI( output, seltrk_dau_nhits2,     "daguhters hits in plane 2",   seltrk_ndau,nmax);
 
   AddVarMF(output, seltrk_dau_hit_dedx,     "daughters dEdx per hit",       seltrk_ndau,-nmax,NMAXHITSPERPLANE);
   AddVarMF(output, seltrk_dau_hit_dqdx_raw, "daughters raw dQdx per hit",   seltrk_ndau,-nmax,NMAXHITSPERPLANE);
@@ -303,7 +304,7 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
 
   output.FillVar(seltrk_mom_muon,          (Float_t)part->RangeMomentum[0]);
   output.FillVar(seltrk_mom_prot,          (Float_t)part->RangeMomentum[1]);
-  
+
   output.FillVar(seltrk_dedx,              part->AveragedEdx);
   output.FillVar(seltrk_dqdx,              part->AveragedQdx);
 
@@ -368,7 +369,8 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
 
   if (!dau) return;
   
-  output.FillVectorVar(seltrk_dau_mom,             dau->RangeMomentum[0]);
+  output.FillVectorVar(seltrk_dau_mom_muon,        dau->RangeMomentum[0]);
+  output.FillVectorVar(seltrk_dau_mom_prot,        dau->RangeMomentum[1]);
   output.FillMatrixVarFromArray(seltrk_dau_pos,    dau->PositionStart,4);
   output.FillMatrixVarFromArray(seltrk_dau_dir,    dau->DirectionStart,3); 
   output.FillMatrixVarFromArray(seltrk_dau_endpos, dau->PositionEnd,4);
