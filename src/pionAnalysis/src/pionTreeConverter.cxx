@@ -54,13 +54,33 @@ bool pionTreeConverter::Initialize(){
 
 
    // Set object pointer
+   reco_beam_calo_startDirX = 0;
+   reco_beam_calo_startDirY = 0;
+   reco_beam_calo_startDirZ = 0;
+   reco_beam_calo_endDirX = 0;
+   reco_beam_calo_endDirY = 0;
+   reco_beam_calo_endDirZ = 0;
    reco_beam_dQdX = 0;
    reco_beam_dEdX = 0;
    reco_beam_calibrated_dEdX = 0;
    reco_beam_resRange = 0;
    reco_beam_TrkPitch = 0;
    reco_beam_calo_wire = 0;
+   reco_beam_calo_wire_z = 0;
    reco_beam_calo_tick = 0;
+   reco_beam_calo_TPC = 0;
+   reco_beam_dQdX_no_SCE = 0;
+   reco_beam_dEdX_no_SCE = 0;
+   reco_beam_calibrated_dEdX_no_SCE = 0;
+   reco_beam_resRange_no_SCE = 0;
+   reco_beam_TrkPitch_no_SCE = 0;
+   reco_beam_calo_wire_no_SCE = 0;
+   reco_beam_calo_wire_z_no_SCE = 0;
+   reco_beam_calo_tick_no_SCE = 0;
+   reco_beam_calo_TPC_no_SCE = 0;
+   reco_beam_hit_true_ID = 0;
+   reco_beam_hit_true_slice = 0;
+   reco_beam_hit_true_origin = 0;
    reco_beam_allTrack_resRange = 0;
    reco_beam_allTrack_calibrated_dEdX = 0;
    reco_daughter_PFP_true_byHits_PDG = 0;
@@ -96,9 +116,18 @@ bool pionTreeConverter::Initialize(){
    reco_daughter_allTrack_calibrated_dEdX_SCE = 0;
    reco_daughter_allTrack_Chi2_proton = 0;
    reco_daughter_allTrack_Chi2_ndof = 0;
+   reco_daughter_allTrack_Chi2_proton_plane0 = 0;
+   reco_daughter_allTrack_Chi2_proton_plane1 = 0;
+   reco_daughter_allTrack_Chi2_ndof_plane0 = 0;
+   reco_daughter_allTrack_Chi2_ndof_plane1 = 0;
+   reco_daughter_allTrack_calibrated_dEdX_SCE_plane0 = 0;
+   reco_daughter_allTrack_calibrated_dEdX_SCE_plane1 = 0;
+   reco_daughter_allTrack_resRange_plane0 = 0;
+   reco_daughter_allTrack_resRange_plane1 = 0;
    reco_daughter_allTrack_Theta = 0;
    reco_daughter_allTrack_Phi = 0;
    reco_daughter_allTrack_len = 0;
+   reco_daughter_allTrack_alt_len = 0;
    reco_daughter_allTrack_startX = 0;
    reco_daughter_allTrack_startY = 0;
    reco_daughter_allTrack_startZ = 0;
@@ -112,8 +141,13 @@ bool pionTreeConverter::Initialize(){
    reco_daughter_allShower_startX = 0;
    reco_daughter_allShower_startY = 0;
    reco_daughter_allShower_startZ = 0;
+   reco_daughter_allShower_dirX = 0;
+   reco_daughter_allShower_dirY = 0;
+   reco_daughter_allShower_dirZ = 0;
+   reco_daughter_allShower_energy = 0;
    reco_daughter_PFP_ID = 0;
    reco_daughter_PFP_nHits = 0;
+   reco_daughter_PFP_nHits_collection = 0;
    reco_daughter_PFP_trackScore = 0;
    reco_daughter_PFP_emScore = 0;
    reco_daughter_PFP_michelScore = 0;
@@ -125,6 +159,8 @@ bool pionTreeConverter::Initialize(){
    true_beam_elastic_X = 0;
    true_beam_elastic_Y = 0;
    true_beam_elastic_Z = 0;
+   true_beam_elastic_deltaE = 0;
+   true_beam_elastic_IDE_edep = 0;
    true_beam_reco_byHits_PFP_ID = 0;
    true_beam_reco_byHits_PFP_nHits = 0;
    true_beam_reco_byHits_allTrack_ID = 0;
@@ -195,6 +231,11 @@ bool pionTreeConverter::Initialize(){
    reco_beam_true_byHits_endProcess = 0;
    reco_beam_true_byHits_process = 0;
    true_beam_processes = 0;
+   true_beam_process_slice = 0;
+   true_beam_process_dSlice = 0;
+   true_beam_process_matched = 0;
+   data_BI_TOF = 0;
+   data_BI_TOF_Chan = 0;
    data_BI_PDG_candidates = 0;
    quality_reco_view_0_wire = 0;
    quality_reco_view_1_wire = 0;
@@ -207,17 +248,21 @@ bool pionTreeConverter::Initialize(){
    reco_beam_cosmic_candidate_upper_hits = 0;
    reco_beam_cosmic_candidate_ID = 0;
    cosmic_has_beam_IDE = 0;
+   reco_daughter_allTrack_momByRange_proton = 0;
+   reco_daughter_allTrack_momByRange_muon = 0;
+   reco_daughter_allTrack_momByRange_alt_proton = 0;
+   reco_daughter_allTrack_momByRange_alt_muon = 0;
    reco_beam_incidentEnergies = 0;
    true_beam_incidentEnergies = 0;
-   reco_beam_spacePts_X = 0;
-   reco_beam_spacePts_Y = 0;
-   reco_beam_spacePts_Z = 0;
-   reco_daughter_spacePts_X = 0;
-   reco_daughter_spacePts_Y = 0;
-   reco_daughter_spacePts_Z = 0;
-   reco_daughter_shower_spacePts_X = 0;
-   reco_daughter_shower_spacePts_Y = 0;
-   reco_daughter_shower_spacePts_Z = 0;
+   true_beam_slices = 0;
+   true_beam_slices_found = 0;
+   true_beam_slices_nIDEs = 0;
+   true_beam_slices_deltaE = 0;
+   new_true_beam_incidentEnergies = 0;
+   g4rw_primary_weights = 0;
+   g4rw_primary_plus_sigma_weight = 0;
+   g4rw_primary_minus_sigma_weight = 0;
+   g4rw_primary_var = 0;
 
   
   // Set branch addresses and branch pointers
@@ -237,6 +282,19 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_beam_endY", &reco_beam_endY, &b_reco_beam_endY);
    fChain->SetBranchAddress("reco_beam_endZ", &reco_beam_endZ, &b_reco_beam_endZ);
    fChain->SetBranchAddress("reco_beam_len", &reco_beam_len, &b_reco_beam_len);
+   fChain->SetBranchAddress("reco_beam_alt_len", &reco_beam_alt_len, &b_reco_beam_alt_len);
+   fChain->SetBranchAddress("reco_beam_calo_startX", &reco_beam_calo_startX, &b_reco_beam_calo_startX);
+   fChain->SetBranchAddress("reco_beam_calo_startY", &reco_beam_calo_startY, &b_reco_beam_calo_startY);
+   fChain->SetBranchAddress("reco_beam_calo_startZ", &reco_beam_calo_startZ, &b_reco_beam_calo_startZ);
+   fChain->SetBranchAddress("reco_beam_calo_endX", &reco_beam_calo_endX, &b_reco_beam_calo_endX);
+   fChain->SetBranchAddress("reco_beam_calo_endY", &reco_beam_calo_endY, &b_reco_beam_calo_endY);
+   fChain->SetBranchAddress("reco_beam_calo_endZ", &reco_beam_calo_endZ, &b_reco_beam_calo_endZ);
+   fChain->SetBranchAddress("reco_beam_calo_startDirX", &reco_beam_calo_startDirX, &b_reco_beam_calo_startDirX);
+   fChain->SetBranchAddress("reco_beam_calo_startDirY", &reco_beam_calo_startDirY, &b_reco_beam_calo_startDirY);
+   fChain->SetBranchAddress("reco_beam_calo_startDirZ", &reco_beam_calo_startDirZ, &b_reco_beam_calo_startDirZ);
+   fChain->SetBranchAddress("reco_beam_calo_endDirX", &reco_beam_calo_endDirX, &b_reco_beam_calo_endDirX);
+   fChain->SetBranchAddress("reco_beam_calo_endDirY", &reco_beam_calo_endDirY, &b_reco_beam_calo_endDirY);
+   fChain->SetBranchAddress("reco_beam_calo_endDirZ", &reco_beam_calo_endDirZ, &b_reco_beam_calo_endDirZ);
    fChain->SetBranchAddress("reco_beam_trackDirX", &reco_beam_trackDirX, &b_reco_beam_trackDirX);
    fChain->SetBranchAddress("reco_beam_trackDirY", &reco_beam_trackDirY, &b_reco_beam_trackDirY);
    fChain->SetBranchAddress("reco_beam_trackDirZ", &reco_beam_trackDirZ, &b_reco_beam_trackDirZ);
@@ -253,7 +311,21 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_beam_resRange", &reco_beam_resRange, &b_reco_beam_resRange);
    fChain->SetBranchAddress("reco_beam_TrkPitch", &reco_beam_TrkPitch, &b_reco_beam_TrkPitch);
    fChain->SetBranchAddress("reco_beam_calo_wire", &reco_beam_calo_wire, &b_reco_beam_calo_wire);
+   fChain->SetBranchAddress("reco_beam_calo_wire_z", &reco_beam_calo_wire_z, &b_reco_beam_calo_wire_z);
    fChain->SetBranchAddress("reco_beam_calo_tick", &reco_beam_calo_tick, &b_reco_beam_calo_tick);
+   fChain->SetBranchAddress("reco_beam_calo_TPC", &reco_beam_calo_TPC, &b_reco_beam_calo_TPC);
+   fChain->SetBranchAddress("reco_beam_dQdX_no_SCE", &reco_beam_dQdX_no_SCE, &b_reco_beam_dQdX_no_SCE);
+   fChain->SetBranchAddress("reco_beam_dEdX_no_SCE", &reco_beam_dEdX_no_SCE, &b_reco_beam_dEdX_no_SCE);
+   fChain->SetBranchAddress("reco_beam_calibrated_dEdX_no_SCE", &reco_beam_calibrated_dEdX_no_SCE, &b_reco_beam_calibrated_dEdX_no_SCE);
+   fChain->SetBranchAddress("reco_beam_resRange_no_SCE", &reco_beam_resRange_no_SCE, &b_reco_beam_resRange_no_SCE);
+   fChain->SetBranchAddress("reco_beam_TrkPitch_no_SCE", &reco_beam_TrkPitch_no_SCE, &b_reco_beam_TrkPitch_no_SCE);
+   fChain->SetBranchAddress("reco_beam_calo_wire_no_SCE", &reco_beam_calo_wire_no_SCE, &b_reco_beam_calo_wire_no_SCE);
+   fChain->SetBranchAddress("reco_beam_calo_wire_z_no_SCE", &reco_beam_calo_wire_z_no_SCE, &b_reco_beam_calo_wire_z_no_SCE);
+   fChain->SetBranchAddress("reco_beam_calo_tick_no_SCE", &reco_beam_calo_tick_no_SCE, &b_reco_beam_calo_tick_no_SCE);
+   fChain->SetBranchAddress("reco_beam_calo_TPC_no_SCE", &reco_beam_calo_TPC_no_SCE, &b_reco_beam_calo_TPC_no_SCE);
+   fChain->SetBranchAddress("reco_beam_hit_true_ID", &reco_beam_hit_true_ID, &b_reco_beam_hit_true_ID);
+   fChain->SetBranchAddress("reco_beam_hit_true_slice", &reco_beam_hit_true_slice, &b_reco_beam_hit_true_slice);
+   fChain->SetBranchAddress("reco_beam_hit_true_origin", &reco_beam_hit_true_origin, &b_reco_beam_hit_true_origin);
    fChain->SetBranchAddress("reco_beam_nTrackDaughters", &reco_beam_nTrackDaughters, &b_reco_beam_nTrackDaughters);
    fChain->SetBranchAddress("reco_beam_nShowerDaughters", &reco_beam_nShowerDaughters, &b_reco_beam_nShowerDaughters);
    fChain->SetBranchAddress("reco_beam_flipped", &reco_beam_flipped, &b_reco_beam_flipped);
@@ -308,7 +380,7 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_daughter_PFP_true_byHits_startE", &reco_daughter_PFP_true_byHits_startE, &b_reco_daughter_PFP_true_byHits_startE);
    fChain->SetBranchAddress("reco_daughter_PFP_true_byHits_endProcess", &reco_daughter_PFP_true_byHits_endProcess, &b_reco_daughter_PFP_true_byHits_endProcess);
    fChain->SetBranchAddress("reco_daughter_PFP_true_byHits_purity", &reco_daughter_PFP_true_byHits_purity, &b_reco_daughter_PFP_true_byHits_purity);
-   fChain->SetBranchAddress("reco_daughter_allTrack_ID", &reco_daughter_allTrack_ID, &b_reco_daughter_allTrack_ID);   
+   fChain->SetBranchAddress("reco_daughter_allTrack_ID", &reco_daughter_allTrack_ID, &b_reco_daughter_allTrack_ID);
    fChain->SetBranchAddress("reco_daughter_allTrack_dEdX", &reco_daughter_allTrack_dEdX, &b_reco_daughter_allTrack_dEdX);
    fChain->SetBranchAddress("reco_daughter_allTrack_dQdX", &reco_daughter_allTrack_dQdX, &b_reco_daughter_allTrack_dQdX);
    fChain->SetBranchAddress("reco_daughter_allTrack_resRange", &reco_daughter_allTrack_resRange, &b_reco_daughter_allTrack_resRange);
@@ -319,9 +391,18 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_daughter_allTrack_calibrated_dEdX_SCE", &reco_daughter_allTrack_calibrated_dEdX_SCE, &b_reco_daughter_allTrack_calibrated_dEdX_SCE);
    fChain->SetBranchAddress("reco_daughter_allTrack_Chi2_proton", &reco_daughter_allTrack_Chi2_proton, &b_reco_daughter_allTrack_Chi2_proton);
    fChain->SetBranchAddress("reco_daughter_allTrack_Chi2_ndof", &reco_daughter_allTrack_Chi2_ndof, &b_reco_daughter_allTrack_Chi2_ndof);
+   fChain->SetBranchAddress("reco_daughter_allTrack_Chi2_proton_plane0", &reco_daughter_allTrack_Chi2_proton_plane0, &b_reco_daughter_allTrack_Chi2_proton_plane0);
+   fChain->SetBranchAddress("reco_daughter_allTrack_Chi2_proton_plane1", &reco_daughter_allTrack_Chi2_proton_plane1, &b_reco_daughter_allTrack_Chi2_proton_plane1);
+   fChain->SetBranchAddress("reco_daughter_allTrack_Chi2_ndof_plane0", &reco_daughter_allTrack_Chi2_ndof_plane0, &b_reco_daughter_allTrack_Chi2_ndof_plane0);
+   fChain->SetBranchAddress("reco_daughter_allTrack_Chi2_ndof_plane1", &reco_daughter_allTrack_Chi2_ndof_plane1, &b_reco_daughter_allTrack_Chi2_ndof_plane1);
+   fChain->SetBranchAddress("reco_daughter_allTrack_calibrated_dEdX_SCE_plane0", &reco_daughter_allTrack_calibrated_dEdX_SCE_plane0, &b_reco_daughter_allTrack_calibrated_dEdX_SCE_plane0);
+   fChain->SetBranchAddress("reco_daughter_allTrack_calibrated_dEdX_SCE_plane1", &reco_daughter_allTrack_calibrated_dEdX_SCE_plane1, &b_reco_daughter_allTrack_calibrated_dEdX_SCE_plane1);
+   fChain->SetBranchAddress("reco_daughter_allTrack_resRange_plane0", &reco_daughter_allTrack_resRange_plane0, &b_reco_daughter_allTrack_resRange_plane0);
+   fChain->SetBranchAddress("reco_daughter_allTrack_resRange_plane1", &reco_daughter_allTrack_resRange_plane1, &b_reco_daughter_allTrack_resRange_plane1);
    fChain->SetBranchAddress("reco_daughter_allTrack_Theta", &reco_daughter_allTrack_Theta, &b_reco_daughter_allTrack_Theta);
    fChain->SetBranchAddress("reco_daughter_allTrack_Phi", &reco_daughter_allTrack_Phi, &b_reco_daughter_allTrack_Phi);
    fChain->SetBranchAddress("reco_daughter_allTrack_len", &reco_daughter_allTrack_len, &b_reco_daughter_allTrack_len);
+   fChain->SetBranchAddress("reco_daughter_allTrack_alt_len", &reco_daughter_allTrack_alt_len, &b_reco_daughter_allTrack_alt_len);
    fChain->SetBranchAddress("reco_daughter_allTrack_startX", &reco_daughter_allTrack_startX, &b_reco_daughter_allTrack_startX);
    fChain->SetBranchAddress("reco_daughter_allTrack_startY", &reco_daughter_allTrack_startY, &b_reco_daughter_allTrack_startY);
    fChain->SetBranchAddress("reco_daughter_allTrack_startZ", &reco_daughter_allTrack_startZ, &b_reco_daughter_allTrack_startZ);
@@ -335,8 +416,13 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_daughter_allShower_startX", &reco_daughter_allShower_startX, &b_reco_daughter_allShower_startX);
    fChain->SetBranchAddress("reco_daughter_allShower_startY", &reco_daughter_allShower_startY, &b_reco_daughter_allShower_startY);
    fChain->SetBranchAddress("reco_daughter_allShower_startZ", &reco_daughter_allShower_startZ, &b_reco_daughter_allShower_startZ);
+   fChain->SetBranchAddress("reco_daughter_allShower_dirX", &reco_daughter_allShower_dirX, &b_reco_daughter_allShower_dirX);
+   fChain->SetBranchAddress("reco_daughter_allShower_dirY", &reco_daughter_allShower_dirY, &b_reco_daughter_allShower_dirY);
+   fChain->SetBranchAddress("reco_daughter_allShower_dirZ", &reco_daughter_allShower_dirZ, &b_reco_daughter_allShower_dirZ);
+   fChain->SetBranchAddress("reco_daughter_allShower_energy", &reco_daughter_allShower_energy, &b_reco_daughter_allShower_energy);
    fChain->SetBranchAddress("reco_daughter_PFP_ID", &reco_daughter_PFP_ID, &b_reco_daughter_PFP_ID);
    fChain->SetBranchAddress("reco_daughter_PFP_nHits", &reco_daughter_PFP_nHits, &b_reco_daughter_PFP_nHits);
+   fChain->SetBranchAddress("reco_daughter_PFP_nHits_collection", &reco_daughter_PFP_nHits_collection, &b_reco_daughter_PFP_nHits_collection);
    fChain->SetBranchAddress("reco_daughter_PFP_trackScore", &reco_daughter_PFP_trackScore, &b_reco_daughter_PFP_trackScore);
    fChain->SetBranchAddress("reco_daughter_PFP_emScore", &reco_daughter_PFP_emScore, &b_reco_daughter_PFP_emScore);
    fChain->SetBranchAddress("reco_daughter_PFP_michelScore", &reco_daughter_PFP_michelScore, &b_reco_daughter_PFP_michelScore);
@@ -368,6 +454,8 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("true_beam_elastic_X", &true_beam_elastic_X, &b_true_beam_elastic_X);
    fChain->SetBranchAddress("true_beam_elastic_Y", &true_beam_elastic_Y, &b_true_beam_elastic_Y);
    fChain->SetBranchAddress("true_beam_elastic_Z", &true_beam_elastic_Z, &b_true_beam_elastic_Z);
+   fChain->SetBranchAddress("true_beam_elastic_deltaE", &true_beam_elastic_deltaE, &b_true_beam_elastic_deltaE);
+   fChain->SetBranchAddress("true_beam_elastic_IDE_edep", &true_beam_elastic_IDE_edep, &b_true_beam_elastic_IDE_edep);
    fChain->SetBranchAddress("true_beam_IDE_totalDep", &true_beam_IDE_totalDep, &b_true_beam_IDE_totalDep);
    fChain->SetBranchAddress("true_beam_IDE_found_in_recoVtx", &true_beam_IDE_found_in_recoVtx, &b_true_beam_IDE_found_in_recoVtx);
    fChain->SetBranchAddress("true_beam_nHits", &true_beam_nHits, &b_true_beam_nHits);
@@ -457,7 +545,12 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_beam_true_byHits_matched", &reco_beam_true_byHits_matched, &b_reco_beam_true_byHits_matched);
    fChain->SetBranchAddress("reco_beam_true_byHits_purity", &reco_beam_true_byHits_purity, &b_reco_beam_true_byHits_purity);
    fChain->SetBranchAddress("true_beam_processes", &true_beam_processes, &b_true_beam_processes);
+   fChain->SetBranchAddress("true_beam_process_slice", &true_beam_process_slice, &b_true_beam_process_slice);
+   fChain->SetBranchAddress("true_beam_process_dSlice", &true_beam_process_dSlice, &b_true_beam_process_dSlice);
+   fChain->SetBranchAddress("true_beam_process_matched", &true_beam_process_matched, &b_true_beam_process_matched);
    fChain->SetBranchAddress("data_BI_P", &data_BI_P, &b_data_BI_P);
+   fChain->SetBranchAddress("data_BI_TOF", &data_BI_TOF, &b_data_BI_TOF);
+   fChain->SetBranchAddress("data_BI_TOF_Chan", &data_BI_TOF_Chan, &b_data_BI_TOF_Chan);
    fChain->SetBranchAddress("data_BI_X", &data_BI_X, &b_data_BI_X);
    fChain->SetBranchAddress("data_BI_Y", &data_BI_Y, &b_data_BI_Y);
    fChain->SetBranchAddress("data_BI_Z", &data_BI_Z, &b_data_BI_Z);
@@ -496,6 +589,14 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("beam_has_cosmic_IDE", &beam_has_cosmic_IDE, &b_beam_has_cosmic_IDE);
    fChain->SetBranchAddress("cosmic_has_beam_IDE", &cosmic_has_beam_IDE, &b_cosmic_has_beam_IDE);
    fChain->SetBranchAddress("n_cosmics_with_beam_IDE", &n_cosmics_with_beam_IDE, &b_n_cosmics_with_beam_IDE);
+   fChain->SetBranchAddress("reco_daughter_allTrack_momByRange_proton", &reco_daughter_allTrack_momByRange_proton, &b_reco_daughter_allTrack_momByRange_proton);
+   fChain->SetBranchAddress("reco_daughter_allTrack_momByRange_muon", &reco_daughter_allTrack_momByRange_muon, &b_reco_daughter_allTrack_momByRange_muon);
+   fChain->SetBranchAddress("reco_beam_momByRange_proton", &reco_beam_momByRange_proton, &b_reco_beam_momByRange_proton);
+   fChain->SetBranchAddress("reco_beam_momByRange_muon", &reco_beam_momByRange_muon, &b_reco_beam_momByRange_muon);
+   fChain->SetBranchAddress("reco_daughter_allTrack_momByRange_alt_proton", &reco_daughter_allTrack_momByRange_alt_proton, &b_reco_daughter_allTrack_momByRange_alt_proton);
+   fChain->SetBranchAddress("reco_daughter_allTrack_momByRange_alt_muon", &reco_daughter_allTrack_momByRange_alt_muon, &b_reco_daughter_allTrack_momByRange_alt_muon);
+   fChain->SetBranchAddress("reco_beam_momByRange_alt_proton", &reco_beam_momByRange_alt_proton, &b_reco_beam_momByRange_alt_proton);
+   fChain->SetBranchAddress("reco_beam_momByRange_alt_muon", &reco_beam_momByRange_alt_muon, &b_reco_beam_momByRange_alt_muon);
    fChain->SetBranchAddress("reco_beam_true_byE_endPx", &reco_beam_true_byE_endPx, &b_reco_beam_true_byE_endPx);
    fChain->SetBranchAddress("reco_beam_true_byE_endPy", &reco_beam_true_byE_endPy, &b_reco_beam_true_byE_endPy);
    fChain->SetBranchAddress("reco_beam_true_byE_endPz", &reco_beam_true_byE_endPz, &b_reco_beam_true_byE_endPz);
@@ -520,15 +621,16 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_beam_interactingEnergy", &reco_beam_interactingEnergy, &b_reco_beam_interactingEnergy);
    fChain->SetBranchAddress("true_beam_incidentEnergies", &true_beam_incidentEnergies, &b_true_beam_incidentEnergies);
    fChain->SetBranchAddress("true_beam_interactingEnergy", &true_beam_interactingEnergy, &b_true_beam_interactingEnergy);
-   fChain->SetBranchAddress("reco_beam_spacePts_X", &reco_beam_spacePts_X, &b_reco_beam_spacePts_X);
-   fChain->SetBranchAddress("reco_beam_spacePts_Y", &reco_beam_spacePts_Y, &b_reco_beam_spacePts_Y);
-   fChain->SetBranchAddress("reco_beam_spacePts_Z", &reco_beam_spacePts_Z, &b_reco_beam_spacePts_Z);
-   fChain->SetBranchAddress("reco_daughter_spacePts_X", &reco_daughter_spacePts_X, &b_reco_daughter_spacePts_X);
-   fChain->SetBranchAddress("reco_daughter_spacePts_Y", &reco_daughter_spacePts_Y, &b_reco_daughter_spacePts_Y);
-   fChain->SetBranchAddress("reco_daughter_spacePts_Z", &reco_daughter_spacePts_Z, &b_reco_daughter_spacePts_Z);
-   fChain->SetBranchAddress("reco_daughter_shower_spacePts_X", &reco_daughter_shower_spacePts_X, &b_reco_daughter_shower_spacePts_X);
-   fChain->SetBranchAddress("reco_daughter_shower_spacePts_Y", &reco_daughter_shower_spacePts_Y, &b_reco_daughter_shower_spacePts_Y);
-   fChain->SetBranchAddress("reco_daughter_shower_spacePts_Z", &reco_daughter_shower_spacePts_Z, &b_reco_daughter_shower_spacePts_Z);
+   fChain->SetBranchAddress("true_beam_slices", &true_beam_slices, &b_true_beam_slices);
+   fChain->SetBranchAddress("true_beam_slices_found", &true_beam_slices_found, &b_true_beam_slices_found);
+   fChain->SetBranchAddress("true_beam_slices_nIDEs", &true_beam_slices_nIDEs, &b_true_beam_slices_nIDEs);
+   fChain->SetBranchAddress("true_beam_slices_deltaE", &true_beam_slices_deltaE, &b_true_beam_slices_deltaE);
+   fChain->SetBranchAddress("new_true_beam_incidentEnergies", &new_true_beam_incidentEnergies, &b_new_true_beam_incidentEnergies);
+   fChain->SetBranchAddress("new_true_beam_interactingEnergy", &new_true_beam_interactingEnergy, &b_new_true_beam_interactingEnergy);
+   fChain->SetBranchAddress("g4rw_primary_weights", &g4rw_primary_weights, &b_g4rw_primary_weights);
+   fChain->SetBranchAddress("g4rw_primary_plus_sigma_weight", &g4rw_primary_plus_sigma_weight, &b_g4rw_primary_plus_sigma_weight);
+   fChain->SetBranchAddress("g4rw_primary_minus_sigma_weight", &g4rw_primary_minus_sigma_weight, &b_g4rw_primary_minus_sigma_weight);
+   fChain->SetBranchAddress("g4rw_primary_var", &g4rw_primary_var, &b_g4rw_primary_var);
 
 
    //   fChain->SetBranchStatus("*", 0);
@@ -718,6 +820,9 @@ void pionTreeConverter::FillDQInfo(AnaDataQuality* dq){
 void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam){
 //*****************************************************************************
 
+  // Missing: 
+  // - data_BI_TOF_Chan 
+
     beam->GoodSpill = true;
 
     //Fill beam info
@@ -728,6 +833,8 @@ void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticl
     beam->nFibers[2] = data_BI_nFibersP3;
     for(int i = 0; i < (int)data_BI_PDG_candidates->size(); i++)
       beam->PDGs.push_back(data_BI_PDG_candidates->at(i));
+
+    beam->TOF = (*data_BI_TOF)[0];
     
     // Create the BeamParticle object
     beam->BeamParticle = MakeParticle();
@@ -743,6 +850,8 @@ void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticl
     beam->BeamParticle->Momentum = data_BI_P;
 
     // ------------- True info for MC ----------------
+
+    // TODO
     if (_isMC){
       beam->BeamParticle->TrueObject = pdAnaUtils::GetTrueParticle(trueParticles, true_beam_ID);
     }
@@ -897,27 +1006,27 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   part->PositionEnd[0]  = reco_beam_endX;
   part->PositionEnd[1]  = reco_beam_endY;
   part->PositionEnd[2]  = reco_beam_endZ;
-
+  
   part->PositionStart[0]  = reco_beam_startX;
   part->PositionStart[1]  = reco_beam_startY;
   part->PositionStart[2]  = reco_beam_startZ;
-
+  
+  
   part->DirectionEnd[0] = reco_beam_trackDirX;
   part->DirectionEnd[1] = reco_beam_trackDirY;
   part->DirectionEnd[2] = reco_beam_trackDirZ;
-
+  
   part->DirectionStart[0] = reco_beam_trackDirX; 
   part->DirectionStart[1] = reco_beam_trackDirY;
   part->DirectionStart[2] = reco_beam_trackDirZ;
-
+    
   part->Length = reco_beam_len;
 
   // Not available in input tree
   //  part->Momentum = ;
 
-  // Not available in input tree
-  //  part->RangeMomentum[0] = reco_daughter_allTrack_momByRange_proton;
-  //  part->RangeMomentum[1] = reco_daughter_allTrack_momByRange_muon;
+  part->RangeMomentum[0] = reco_beam_momByRange_proton;
+  part->RangeMomentum[1] = reco_beam_momByRange_muon;
 
   part->AveragedEdx=0;
   part->AveragedQdx=0;
@@ -952,12 +1061,13 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   // while reco_beam_calibrated_dEdX->size() corresponds to a single plane, reco_beam_spacePts_X->size() has all planes together
   TVector3 point;
 
+  /*
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE_SELTRK,   (int)reco_beam_spacePts_X->size());
   for (UInt_t j = 0; j < nHits; j++){
     point.SetXYZ((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
     part->HitPosition[2].push_back(point);
   }
-    
+  */
   // --------- reco_beam_PFP ------------------------
 
   part->CNNscore[0] = reco_beam_PFP_trackScore_collection;
@@ -968,8 +1078,6 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   
   part->Chi2Proton = reco_beam_Chi2_proton;
   part->Chi2ndf    = reco_beam_Chi2_ndof;
-
-
 
   /*
     part->NHits = 0;
@@ -1068,7 +1176,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
    Double_t        true_beam_interactingEnergy;
 
 */   
-  
+
   //part->isBeamPart = pdAnaUtils::isBeamLike(part,beam);
   part->isBeamPart = reco_beam_passes_beam_cuts;
   //std::cout << part->isBeamPart << " " << pdAnaUtils::isBeamLike(part,beam) << std::endl;
@@ -1129,8 +1237,8 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   //  part->Momentum = trkmomrange_pmtrajfit[itrk];
 
   //  Not available in input tree
-  //  part->RangeMomentum[0] = (*reco_daughter_allTrack_momByRange_proton)[itrk];
-  //  part->RangeMomentum[1] = (*reco_daughter_allTrack_momByRange_muon)[itrk];
+  part->RangeMomentum[0] = (*reco_daughter_allTrack_momByRange_proton)[itrk];
+  part->RangeMomentum[1] = (*reco_daughter_allTrack_momByRange_muon)[itrk];
 
   Float_t dedx, dqdx, dedx_cal, resRange;
   part->AveragedEdx=0;
@@ -1172,14 +1280,15 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   part->NHitsPerPlane[0] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
   part->NHitsPerPlane[1] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
   part->NHitsPerPlane[2] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
-  
+
   // TODO: Associating space points to hits in a plane for the moment
+  /*
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_daughter_spacePts_X->size());
   for (UInt_t j=0;j<nHits;j++){
     TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
     part->HitPosition[2].push_back(point);
   }
-   
+  */
   part->Chi2Proton = (*reco_daughter_allTrack_Chi2_proton)[itrk];
   part->Chi2ndf    = (*reco_daughter_allTrack_Chi2_ndof)[itrk];
 
@@ -1261,14 +1370,14 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
 
   part->Length = (*reco_daughter_allShower_len)[itrk];
 
-
   // TODO: Associating space points to hits in a plane for the moment
+  /*
   UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_daughter_shower_spacePts_X->size());
   for (UInt_t j = 0 ; j < nHits ; j++){
     TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
     part->HitPosition[2].push_back(point);
   }
-
+  */
 
 
   // --------- reco_daughter_PFP ------------------------
