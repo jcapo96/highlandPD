@@ -68,12 +68,12 @@ bool CandidateIsBeamCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
   //Get the beam from the event
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-  
+
   bool candidateIsBeam=false;
   if (useIsBeamLike)      
     candidateIsBeam = pdAnaUtils::isBeamLike(part,beam);
   else
-    candidateIsBeam = part->isBeamPart;
+    candidateIsBeam = (bool)part->isBeamPart;
   
   return candidateIsBeam;
 }
