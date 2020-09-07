@@ -54,9 +54,12 @@ namespace standardPDTree{
     // selected track reco info
     seltrk_mom_muon,
     seltrk_mom_prot,
+    seltrk_mom_muon_alt,
+    seltrk_mom_prot_alt,
     seltrk_costheta,
     seltrk_nhits,
     seltrk_length,
+    seltrk_length_alt,
     seltrk_length_raw,
     seltrk_ndau,
     seltrk_dqdx,

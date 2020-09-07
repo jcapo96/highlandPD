@@ -59,11 +59,14 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
   AddVarF(    output, seltrk_costheta,       "candidate reconstructed cos(theta)");
   AddVarI(    output, seltrk_nhits,          "candidate number of hits");
   AddVarF(    output, seltrk_length,         "candidate length");
+  AddVarF(    output, seltrk_length_alt,     "candidate alternate length");
   AddVarF(    output, seltrk_length_raw,     "candidate length");
   AddVarFixVI(output, seltrk_nhitsperplane,  "candidate number of hits per plane",3);
 
   AddVarF(    output, seltrk_mom_muon,       "candidate momentum muon");
   AddVarF(    output, seltrk_mom_prot,       "candidate momentum proton");
+  AddVarF(    output, seltrk_mom_muon_alt,   "candidate alternate momentum muon");
+  AddVarF(    output, seltrk_mom_prot_alt,   "candidate alternate momentum proton");
   AddVarF(    output, seltrk_dqdx,           "candidate average dQdx");
   AddVarF(    output, seltrk_dedx,           "candidate average dEdx");
   AddVarF(    output, seltrk_dedx_raw,       "candidate average dEdx");
@@ -304,12 +307,15 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
 
   output.FillVar(seltrk_mom_muon,          (Float_t)part->RangeMomentum[0]);
   output.FillVar(seltrk_mom_prot,          (Float_t)part->RangeMomentum[1]);
+  output.FillVar(seltrk_mom_muon_alt,      (Float_t)part->RangeMomentum_alt[0]);
+  output.FillVar(seltrk_mom_prot_alt,      (Float_t)part->RangeMomentum_alt[1]);
 
   output.FillVar(seltrk_dedx,              part->AveragedEdx);
   output.FillVar(seltrk_dqdx,              part->AveragedQdx);
 
   output.FillVar(seltrk_dedx_raw,              static_cast<const AnaParticlePD*>(part->Original)->AveragedEdx);
   output.FillVar(seltrk_nhits,                 part->NHits);
+  output.FillVar(seltrk_length_alt,            part->Length_alt);
   output.FillVar(seltrk_length,                pdAnaUtils::ComputeTrackLengthFromHitPosition(part));
   output.FillVar(seltrk_length_raw,            part->Original->Length);
   output.FillVar(seltrk_costheta,              part->DirectionStart[2]);

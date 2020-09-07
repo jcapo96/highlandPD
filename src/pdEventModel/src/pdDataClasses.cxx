@@ -43,9 +43,13 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   Chi2Proton=kFloatUnassigned;
   Chi2ndf=kIntUnassigned;
 
-  for (int i=0; i<2; i++)
-    RangeMomentum[i] = kFloatUnassigned;    
-
+  for (int i=0; i<2; i++){
+    RangeMomentum[i] = kFloatUnassigned;
+    RangeMomentum_alt[i] = kFloatUnassigned;    
+  }
+    
+  Length_alt = kFloatUnassigned;
+  
 }
 
 //********************************************************************
@@ -95,8 +99,13 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   Chi2Proton = part.Chi2Proton;
   Chi2ndf    = part.Chi2ndf;
 
-  for (int i=0; i<2; i++)
+  for (int i=0; i<2; i++){
     RangeMomentum[i] = part.RangeMomentum[i];  
+    RangeMomentum_alt[i] = part.RangeMomentum_alt[i];  
+  }
+    
+  Length_alt = part.Length_alt;
+
 }
 
 //********************************************************************

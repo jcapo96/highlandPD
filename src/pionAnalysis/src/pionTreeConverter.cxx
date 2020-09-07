@@ -1021,12 +1021,16 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   part->DirectionStart[2] = reco_beam_trackDirZ;
     
   part->Length = reco_beam_len;
+  part->Length_alt = reco_beam_alt_len;
 
   // Not available in input tree
   //  part->Momentum = ;
 
   part->RangeMomentum[0] = reco_beam_momByRange_proton;
   part->RangeMomentum[1] = reco_beam_momByRange_muon;
+
+  part->RangeMomentum_alt[0] = reco_beam_momByRange_alt_proton;
+  part->RangeMomentum_alt[1] = reco_beam_momByRange_alt_muon;
 
   part->AveragedEdx=0;
   part->AveragedQdx=0;
@@ -1232,13 +1236,16 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   */
 
   part->Length = (*reco_daughter_allTrack_len)[itrk];
+  part->Length_alt = (*reco_daughter_allTrack_alt_len)[itrk];
 
   //  Not available in input tree
   //  part->Momentum = trkmomrange_pmtrajfit[itrk];
 
-  //  Not available in input tree
   part->RangeMomentum[0] = (*reco_daughter_allTrack_momByRange_proton)[itrk];
   part->RangeMomentum[1] = (*reco_daughter_allTrack_momByRange_muon)[itrk];
+
+  part->RangeMomentum_alt[0] = (*reco_daughter_allTrack_momByRange_alt_proton)[itrk];
+  part->RangeMomentum_alt[1] = (*reco_daughter_allTrack_momByRange_alt_muon)[itrk];
 
   Float_t dedx, dqdx, dedx_cal, resRange;
   part->AveragedEdx=0;

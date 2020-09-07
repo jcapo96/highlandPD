@@ -81,6 +81,10 @@ public:
   
   /// Momentum by range for muon and proton hypotheses
   Float_t RangeMomentum[2];
+  Float_t RangeMomentum_alt[2];
+
+  Float_t Length_alt;
+
 };
 
 /// AnaTrueParticle
