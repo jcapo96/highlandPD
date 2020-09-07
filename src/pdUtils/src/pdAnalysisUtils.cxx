@@ -115,8 +115,8 @@ Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
   //corresponding to a Muon KE of 5 GeV**********//
 
   if (trkrange < 0 || std::isnan(trkrange)) {
-    std::cout << "TrackMomentumCalculator   " 
-              << "Invalid track range " << trkrange << " return -1" << std::endl;
+    //    std::cout << "TrackMomentumCalculator   " 
+    //              << "Invalid track range " << trkrange << " return -1" << std::endl;
     return -1.;
   }
 
@@ -209,13 +209,15 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 //********************************************************************
 
 
-  int nhits=part.NHitsPerPlane[0];
+  Int_t plane=2;
+
+  int nhits=part.NHitsPerPlane[plane];
   double kinetic=0;
   double res=0;
   for (int i=0;i<nhits;i++){
-    double dedxi = part.dEdx_corr[0][i];
-//    double dedxi = part.dEdx[0][i];
-    double Residualrangei = part.ResidualRange[0][i];
+    double dedxi = part.dEdx_corr[plane][i];
+//    double dedxi = part.dEdx[plane][i];
+    double Residualrangei = part.ResidualRange[plane][i];
     kinetic = kinetic + dedxi * (Residualrangei - res);
     res = Residualrangei;
   }
