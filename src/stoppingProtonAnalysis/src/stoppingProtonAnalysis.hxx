@@ -101,6 +101,9 @@ public:
     seltrk_pida,
     seltrk_pida2,
 
+    beam_pdgs,
+    beam_npdgs,
+    
     true_signal,
     
     enumStandardMicroTreesLast_stoppingProtonAnalysis

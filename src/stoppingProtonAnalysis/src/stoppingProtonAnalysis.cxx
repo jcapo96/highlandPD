@@ -275,6 +275,15 @@ void stoppingProtonAnalysis::DefineMicroTrees(bool addBase){
 
   AddVarFixVF(  output(), seltrk_pida2,     "pida2", 3);
   //  AddVarFixVI(  output(), seltrk_pdg,       "recon pdg", 3);
+
+
+  //new variables added for reproducing Jake/Fraceska plots
+  AddVar3VF(    output(), seltrk_CNNscore,        "candidate reconstructed CNN score");
+  AddVarF(      output(), seltrk_chi2_prot,       "candidate chi2 proton");
+  AddVarF(      output(), seltrk_chi2_ndf,        "candidate chi2 ndf");
+
+  AddVarMaxSizeVI(  output(), beam_pdgs,  "beam PID information",  beam_npdgs,10);
+
 }
 
 //********************************************************************
@@ -342,6 +351,13 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
     output().FillVar(seltrk_broken,                (Int_t)(box().MainTrack->NDOF==8888));
     output().FillVar(seltrk_kinetic,               pdAnaUtils::ComputeKineticEnergy(*box().MainTrack));              
 
+
+    //Jake/Franceska variable    
+    output().FillVectorVarFromArray(seltrk_CNNscore,       box().MainTrack->CNNscore,3);
+    output().FillVar(seltrk_chi2_prot, box().MainTrack->Chi2Proton);
+    output().FillVar(seltrk_chi2_ndf,  box().MainTrack->Chi2ndf);
+
+    
     // This is the PIDA computed from the hits, and not the one precomputed in the Analysis Tree
     if (box().MainTrack->Original){
       if (box().MainTrack->Original->Original){
@@ -360,8 +376,8 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
     output().FillVar(seltrk_length_z0,             box().MainTrack->Length + diflength);
     
     //    output().FillVar(seltrk_mom_muon_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 13));
-    //    output().FillVar(seltrk_mom_prot_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 2212));
-
+    output().FillVar(seltrk_mom_prot_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 2212));
+    
     output().FillVectorVarFromArray(seltrk_pida2,  box().MainTrack->PIDA,3);
     //    output().FillVectorVarFromArray(seltrk_pdg,    box().MainTrack->ReconPDG,3);
 
@@ -382,6 +398,18 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
       }
       output().FillVar(seltrk_csdarange_tpc_muon,     pdAnaUtils::ComputeCSDARange(1000*((Float_t)beam->BeamMomentumInTPC), 13));
       output().FillVar(seltrk_csdarange_tpc_prot,     pdAnaUtils::ComputeCSDARange(1000*((Float_t)beam->BeamMomentumInTPC), 2212));
+
+      AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(beamPart->TrueObject);
+      if (!trueBeamPart){
+        for(int i = 0; i < (int)beam->PDGs.size(); i++){
+          output().FillVectorVar(beam_pdgs,  beam->PDGs[i]);
+          output().IncrementCounter(beam_npdgs);
+        }
+      }
+      else{
+        output().FillVectorVar(beam_pdgs,  trueBeamPart->PDG);
+        output().IncrementCounter(beam_npdgs);
+      }
     }
 
     //    output().FillVar(seltrk_mom_muon2,         pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length/10., 13));
