@@ -77,19 +77,10 @@ bool BeamProtonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)boxB;
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
 
-  // Use the true beam particle to discriminate between data and MC
-  AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
+  for(int i = 0; i < (int)beam->PDGs.size(); i++){
+    if (beam->PDGs[i] == 2212) return true;
+  }
 
-  if (trueBeamPart){
-    // for MC
-    if (trueBeamPart->PDG==2212) return true;
-  }
-  else{
-    // for real DATA
-    for(int i = 0; i < (int)beam->PDGs.size(); i++){
-      if (beam->PDGs[i] == 2212) return true;
-    }
-  }
   return false;
 
   /*(void)boxB;
