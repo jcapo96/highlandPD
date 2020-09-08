@@ -862,11 +862,17 @@ void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticl
     beam->nFibers[0] = data_BI_nFibersP1;
     beam->nFibers[1] = data_BI_nFibersP2;
     beam->nFibers[2] = data_BI_nFibersP3;
-    for(int i = 0; i < (int)data_BI_PDG_candidates->size(); i++)
-      beam->PDGs.push_back(data_BI_PDG_candidates->at(i));
-
-    beam->TOF = (*data_BI_TOF)[0];
     
+    beam->TOF = (*data_BI_TOF)[0];
+
+
+
+    /* Not available in input tree
+       int CerenkovStatus[2];
+       double CerenkovTime[2];
+       double CerenkovPressure[2];
+    */
+           
     // Create the BeamParticle object
     beam->BeamParticle = MakeParticle();
         
@@ -887,6 +893,31 @@ void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticl
       beam->BeamParticle->TrueObject = pdAnaUtils::GetTrueParticle(trueParticles, true_beam_ID);
     }
 
+
+    // This information is not available in the input trees at the moment but it is needed for the beam_pdgs
+    beam->CerenkovStatus[0]=0;
+    beam->CerenkovStatus[1]=0;
+    
+    if (!_isMC){
+      // For real data the beam PDGs are available in the input tree
+      for(int i = 0; i < (int)data_BI_PDG_candidates->size(); i++)
+        beam->PDGs.push_back(data_BI_PDG_candidates->at(i));
+    }
+    else{
+      // TODO
+      // For MC the beam pdgs are not available. To recompute them we need the Cherenkov info. For electrons,
+      //  beam->CerenkovStatus[1], that is the low_pressure_status, should be 1. For the moment we use the truth 
+      if (abs(static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject)->PDG)==11)
+        beam->CerenkovStatus[1]=1;
+      
+      double nominal_momentum = 1.;
+      const auto& thePIDCands = pdAnaUtils::GetPIDCandidates_CERNCalib(*beam, nominal_momentum );
+
+      std::vector< int > thePIDs = thePIDCands.getPDGCodes();
+      for(UInt_t i = 0; i < thePIDs.size(); i++)
+        beam->PDGs.push_back(thePIDs[i]);
+
+    }    
 }
 
 //*****************************************************************************
