@@ -179,7 +179,7 @@ void stoppingProtonAnalysis::DefineCorrections(){
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledBeamMomSmearing")) corr().AddCorrection("BeamMomSmearing",   new BeamMomSmearingCorrection());
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledCryoWallBeamMom")) corr().AddCorrection("CryoWallBeamMom",   new CryoWallBeamMomCorrection());
   if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData")) corr().AddCorrection("broken track data", new BrokenTrackDataCorrection());   
-  if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledHitPositionSCE"))  corr().AddCorrection("hit positionnSCE",   new HitPositionSCECorrection());
+  if (ND::params().GetParameterI("stoppingProtonAnalysis.Corrections.EnabledHitPositionSCE"))  corr().AddCorrection("hit positionnSCE",  new HitPositionSCECorrection());
 
 }
 
@@ -399,15 +399,9 @@ void stoppingProtonAnalysis::FillMicroTrees(bool addBase){
       output().FillVar(seltrk_csdarange_tpc_muon,     pdAnaUtils::ComputeCSDARange(1000*((Float_t)beam->BeamMomentumInTPC), 13));
       output().FillVar(seltrk_csdarange_tpc_prot,     pdAnaUtils::ComputeCSDARange(1000*((Float_t)beam->BeamMomentumInTPC), 2212));
 
-      AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(beamPart->TrueObject);
-      if (!trueBeamPart){
-        for(int i = 0; i < (int)beam->PDGs.size(); i++){
-          output().FillVectorVar(beam_pdgs,  beam->PDGs[i]);
-          output().IncrementCounter(beam_npdgs);
-        }
-      }
-      else{
-        output().FillVectorVar(beam_pdgs,  trueBeamPart->PDG);
+
+      for(int i = 0; i < (int)beam->PDGs.size(); i++){
+        output().FillVectorVar(beam_pdgs,  beam->PDGs[i]);
         output().IncrementCounter(beam_npdgs);
       }
     }
