@@ -25,7 +25,7 @@ void pionSelection::DefineSteps(){
   AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());              // in pdBaseAnalysis/src/pandoraPreselection  
   AddStep(StepBase::kCut,    "candidate is track",         new CandidateIsTrackCut());
   AddStep(StepBase::kCut,    "pion track end",             new PionEndsAPA3Cut());
-  AddStep(StepBase::kCut,    "seltrk chi2 cut",            new PionPassChi2Cut());
+  //AddStep(StepBase::kCut,    "seltrk chi2 cut",            new PionPassChi2Cut());
   AddStep(StepBase::kAction, "compute daughter distance",  new ComputeDaughterDistanceAction());  
   AddStep(StepBase::kCut,    "no pion daughter",           new NoPionDaughterCut());
 
@@ -126,10 +126,35 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
   (void)event;
+  Float_t cut_CNNTrackScore = 0.3;
+  double cut_dEdx = 3.8;
+  
+  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  if (!box.MainTrack) return false;
+
+  // Look for pion daughters (track hypothesis)
+  bool noPion = true;
+  for(UInt_t i = 0; i < box.MainTrack->Daughters.size()/2; i++){
+    AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
+    if(daughter->UniqueID       != -999 &&
+       daughter->CNNscore[0]    > cut_CNNTrackScore &&
+       daughter->truncLibo_dEdx <= cut_dEdx){
+      noPion = false;
+      break;
+    }
+  }
+  return noPion;  
+}
+
+/*//**************************************************
+bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+
+  (void)event;
   Float_t cut_daughter_track_distance = 10;
   Float_t cut_CNNTrackScore = 0.35;
   Float_t cut_chi2 = 50;
-  
+   
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
   if (!box.MainTrack) return false;
 
@@ -146,7 +171,7 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     }
   }
   return noPion;  
-}
+}*/
 
 //**************************************************
 bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
@@ -154,11 +179,8 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   (void)event;
 
-  Float_t cut_daughter_shower_distance_low  = 2.;
-  Float_t cut_daughter_shower_distance_high = 100.;
-  int cut_nHits_shower_low  = 12;
-  int cut_nHits_shower_high = 1000;
-  Float_t cut_CNNTrackScore = 0.35;
+  int cut_nHits_shower_low  = 40;
+  Float_t cut_CNNTrackScore = 0.3;
   
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
   if (!box.MainTrack) return false;
@@ -167,12 +189,9 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   bool cex = false;
   for(UInt_t i = box.MainTrack->Daughters.size()/2; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-    if(daughter->UniqueID != -999 &&
-       daughter->CNNscore[0]           < cut_CNNTrackScore &&
-       box.DaughterDistanceToVertex[i] > cut_daughter_shower_distance_low &&
-       box.DaughterDistanceToVertex[i] < cut_daughter_shower_distance_high &&
-       daughter->NHits                 > cut_nHits_shower_low &&
-       daughter->NHits                 < cut_nHits_shower_high){
+    if(daughter->CNNscore[0] < cut_CNNTrackScore &&
+       daughter->NHits       > cut_nHits_shower_low &&
+       daughter->CNNscore[0] != -999){
       cex = true;
       break;
     }

@@ -28,6 +28,7 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
       dQdx_corr[i][j]=kFloatUnassigned;
       ResidualRange[i][j]=kFloatUnassigned;
     }
+    truncLibo_dEdx=kFloatUnassigned;
 
     PIDA[i]=kFloatUnassigned;
     ReconPDG[i]=kIntUnassigned;
@@ -78,6 +79,7 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
       dQdx_corr[i][j]=part.dQdx_corr[i][j];
       ResidualRange[i][j]=part.ResidualRange[i][j];
     }
+    truncLibo_dEdx = part.truncLibo_dEdx;
 
     HitPosition[i].clear();
     for (int j = 0; j < (int)part.HitPosition[i].size(); j++){

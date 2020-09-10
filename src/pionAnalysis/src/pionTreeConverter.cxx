@@ -1368,7 +1368,6 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
         dedx_cal = (*reco_daughter_allTrack_calibrated_dEdX)[itrk][j];
         resRange = (*reco_daughter_allTrack_resRange)[itrk][j];
       }
-
       part->AveragedEdx += dedx;
       part->AveragedQdx += dqdx;
       part->dEdx[plane][j]         = dedx;
@@ -1377,6 +1376,7 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
       part->ResidualRange[plane][j]= resRange;
       ncontrib++;
     }
+    part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk]);
   }
 
   if (ncontrib!=0){

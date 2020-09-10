@@ -18,6 +18,7 @@ void pandoraPreselection::DefineSteps(){
   // the step sequence is broken if cut is not passed (default is "false")
   AddStep(StepBase::kAction, "find Pandora track",         new FindPandoraTrackAction());  
   AddStep(StepBase::kCut,    "candidate exists",           new CandidateExistsCut());
+  //AddStep(StepBase::kCut,    "beam quality",               new BeamQualityCut());
   AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());
 
   // No preselection for the moment
@@ -58,6 +59,27 @@ bool CandidateExistsCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   if (!box.MainTrack) return false;
   else return true;
 }
+
+/*//**************************************************
+bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+
+  // Cast the candidate
+  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);
+  AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);
+  //Get the beam from the event
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+
+  //cast the true particle
+  AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(static_cast<AnaParticlePD*>(beam->BeamParticle)->TrueObject);
+
+  //that cut only applies to data
+  if(trueBeamPart)return true;
+  else{
+    if(beam->nMomenta == 1 && beam->nTracks && 1)return true;
+    else return false;
+  }
+}*/
 
 //**************************************************
 bool CandidateIsBeamCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{

@@ -52,6 +52,7 @@ public:
   /// dEdx for each wire in each plane
   Float_t dEdx[3][NMAXHITSPERPLANE];
   Float_t dEdx_corr[3][NMAXHITSPERPLANE];
+  Float_t truncLibo_dEdx;
 
   /// dQdx for each wire in each plane
   Float_t dQdx[3][NMAXHITSPERPLANE];  

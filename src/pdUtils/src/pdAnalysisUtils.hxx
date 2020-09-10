@@ -121,6 +121,9 @@ namespace pdAnaUtils{
 
   // Compute the track length using the hit positions
   Float_t ComputeTrackLengthFromHitPosition(const AnaParticlePD* part); 
+
+  // Compute the truncated mean of an std vector
+  Float_t ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> part); 
 }
 
 #endif
