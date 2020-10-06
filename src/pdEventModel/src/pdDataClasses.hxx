@@ -5,6 +5,40 @@
 #include "ParticleId.hxx"
 
 
+
+class AnaWireID{
+public:
+  
+  Int_t Plane;
+  Int_t TPC;
+  Int_t Criostat;
+};
+
+
+
+
+
+class AnaHitPD{
+public:
+  AnaHitPD(double integral){
+    fIntegral = integral;
+  }
+  
+  
+  Float_t PeakAmplitude() const {return fPeakAmplitude;}
+  Float_t PeakTime() const {return fPeakTime;}
+  AnaWireID  WireID()const {return fWireID;}
+  Float_t Integral()const {return fIntegral;}
+  
+public:
+  
+  AnaWireID fWireID;    
+  Float_t fIntegral;
+  Float_t fPeakTime;
+  Float_t fPeakAmplitude;
+};
+
+
 /// AnaParticle
 class AnaParticlePD: public AnaParticle{
 public :
