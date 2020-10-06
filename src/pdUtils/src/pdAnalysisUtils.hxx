@@ -75,11 +75,14 @@ namespace pdAnaUtils{
   Float_t ComputeKineticEnergy(const AnaParticlePD &part);
 
   /// Compute dedx from dqdx
-  Float_t ComputeDeDxFromDqDx(Float_t dqdx);
+  Float_t ComputeDeDxFromDqDx(Float_t dqdx, Int_t plane, Float_t x=0, Float_t y=0, Float_t z=0 );
 
   /// Compute dqdx from dedx
-  Float_t ComputeDqDxFromDeDx(Float_t dedx);
+  Float_t ComputeDqDxFromDeDx(Float_t dedx, Int_t plane);
 
+  /// Compute the total electric field at a given position
+  Float_t ComputeTotalEField( Float_t x=0, Float_t y=0, Float_t z=0 );
+  
   /// Extrapolate the length of a track to a given Z
   Float_t* ExtrapolateToZ(const AnaParticlePD* part, Float_t z, Float_t* posz);
 

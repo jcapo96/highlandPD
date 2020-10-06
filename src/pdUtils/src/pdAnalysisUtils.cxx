@@ -2,7 +2,7 @@
 #include "TSpline.h"
 #include "CategoryManager.hxx"
 #include "standardPDTree.hxx"
-
+#include <TH3F.h>
 
 //data for range-momentum conversion, muons
 //http://pdg.lbl.gov/2012/AtomicNuclearProperties/MUON_ELOSS_TABLES/muonloss_289.pdf divided by LAr density for cm
@@ -52,6 +52,18 @@ templates[ 321 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_ka"  );
 templates[ 13 ]   = (TProfile*)dEdX_template_file->Get( "dedx_range_mu"  );
 templates[ 2212 ] = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 */
+
+
+TFile* E_field_file = new TFile( (std::string(getenv("PIONANALYSISROOT"))+"/data/SCE_DataDriven_180kV_v3.root").c_str(), "OPEN" );
+
+TH3F* ex_neg = (TH3F*)E_field_file->Get("Reco_ElecField_X_Neg");
+TH3F* ey_neg = (TH3F*)E_field_file->Get("Reco_ElecField_Y_Neg");
+TH3F* ez_neg = (TH3F*)E_field_file->Get("Reco_ElecField_Z_Neg");
+TH3F* ex_pos = (TH3F*)E_field_file->Get("Reco_ElecField_X_Pos");
+TH3F* ey_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Y_Pos");
+TH3F* ez_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Z_Pos");
+
+
 
 //*****************************************************************************
 Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
@@ -227,47 +239,88 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 }
 
 //********************************************************************
-Float_t pdAnaUtils::ComputeDeDxFromDqDx(Float_t dqdx_adc) {
+Float_t pdAnaUtils::ComputeDeDxFromDqDx(Float_t dqdx_adc, Int_t plane, Float_t x, Float_t y, Float_t z) {
 //********************************************************************
+
+  // Formula found for example at https://arxiv.org/abs/1306.1712v1
+  
+  
+  // Paremeters from /cvmfs/dune.opensciencegrid.org/products/dune/protoduneana/v09_01_00/job/ProtoDUNECalibration.fcl
   
   /***************modified box model parameters and function*****************/
   double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia) 
   double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
   double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
   double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm. In MeV/e
-  double Efield1=0.50;//kV/cm protoDUNE electric filed
-  double beta = betap/(Rho*Efield1); // cm/MeV
+  //  double Efield1=0.50;//kV/cm protoDUNE electric filed
 
-  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
-  double dqdx = dqdx_adc/calib_factor;
-  
+  // TODO: hit position not available
+  double Efield1 = ComputeTotalEField(x,y,z);//kV/cm protoDUNE electric filed
+  std::cout << x << " " << y << " " << z << " " << Efield1 << std::endl;
+  //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
+  //  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.86e-3}; //right cali constant for the run 5387. This converts from ADC to e
+  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
+  //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
+    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
+
+   
   // dq/dx should be in e/cm
   // dE/dx is returned in MeV/cm
+
+  double dqdx = dqdx_adc/calib_factor[plane]*norm_factor[plane];
+  double beta = betap/(Rho*Efield1); // cm/MeV
   
   return (exp(dqdx*beta*Wion)-alpha)/beta;
 }
 
 //********************************************************************
-Float_t pdAnaUtils::ComputeDqDxFromDeDx(Float_t dedx) {
+Float_t pdAnaUtils::ComputeDqDxFromDeDx(Float_t dedx, Int_t plane) {
 //********************************************************************
+
+  // Paremeters from /cvmfs/dune.opensciencegrid.org/products/dune/protoduneana/v09_01_00/job/ProtoDUNECalibration.fcl
   
   /***************modified box model parameters and function*****************/
   double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia) 
   double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
   double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
-  double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm
-  double Efield1=0.50;//kV/cm protoDUNE electric filed
-  double beta = betap/(Rho*Efield1);
+  double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm. In MeV/e
+  //  double Efield1=0.50;//kV/cm protoDUNE electric filed
 
-  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
+  // TODO: hit position not available
+  double Efield1 = ComputeTotalEField(-50,450,40);//kV/cm protoDUNE electric filed
+
+  std::cout << Efield1 << std::endl;
+  //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
+  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.86e-3}; //right cali constant for the run 5387. This converts from ADC to e
+  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
+
+   
+  // dq/dx should be in e/cm
+  // dE/dx is returned in MeV/cm
+
+  double beta = betap/(Rho*Efield1); // cm/MeV
   
-  // dq/dx is returned in ADC
-  // dE/dx should be in MeV/cm
-  
-  return  log(dedx*beta + alpha)/(beta*Wion)*calib_factor;
+  return  log(dedx*beta + alpha)/(beta*Wion)*calib_factor[plane]/norm_factor[plane];
 }
 
+//********************************************************************
+Float_t pdAnaUtils::ComputeTotalEField( Float_t x, Float_t y, Float_t z ){
+//********************************************************************
 
+  if( x >= 0 ){
+    Float_t ex = 0.5 + 0.5 * ex_pos->GetBinContent( ex_pos->FindBin( x, y, z ) );
+    Float_t ey =       0.5 * ey_pos->GetBinContent( ey_pos->FindBin( x, y, z ) );
+    Float_t ez =       0.5 * ez_pos->GetBinContent( ez_pos->FindBin( x, y, z ) );
+    return sqrt( (ex*ex) + (ey*ey) + (ez*ez) );
+  }
+  else if( x < 0 ){
+    Float_t ex = 0.5 + 0.5 * ex_neg->GetBinContent( ex_neg->FindBin( x, y, z ) );
+    Float_t ey =       0.5 * ey_neg->GetBinContent( ey_neg->FindBin( x, y, z ) );
+    Float_t ez =       0.5 * ez_neg->GetBinContent( ez_neg->FindBin( x, y, z ) );
+    return sqrt( (ex*ex) + (ey*ey) + (ez*ez) );
+  }
+  else return 0.5;
+}
 
 //********************************************************************
 Float_t* pdAnaUtils::ExtrapolateToZ(const AnaParticlePD* part, Float_t z, Float_t* posz) {
