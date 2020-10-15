@@ -9,6 +9,40 @@ const Double_t kDoubleUnassigned = -999.;
 const Int_t    kIntUnassigned = -999;
 const Float_t  kFloatUnassigned = -999.;
 
+
+//********************************************************************
+AnaHitPD::AnaHitPD(){
+//********************************************************************
+  fWireID.Plane  = kIntUnassigned; 
+  fIntegral      = kFloatUnassigned;     
+  fPeakTime      = kFloatUnassigned;     
+  fPeakAmplitude = kFloatUnassigned;
+}
+
+//********************************************************************
+AnaHitPD::AnaHitPD(const AnaHitPD& hit){
+//********************************************************************
+  fWireID.Plane  = hit.fWireID.Plane; 
+  fIntegral      = hit.fIntegral;     
+  fPeakTime      = hit.fPeakTime;     
+  fPeakAmplitude = hit.fPeakAmplitude;
+}
+
+//********************************************************************
+void AnaHitPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaHitPD --------- " << std::endl;
+
+  
+  std::cout << "WireID.Plane:  " << fWireID.Plane  << std::endl;
+  std::cout << "Integral:      " << fIntegral      << std::endl; 
+  std::cout << "PeakTime:      " << fPeakTime      << std::endl;
+  std::cout << "PeakAmplitude: " << fPeakAmplitude << std::endl;
+
+}
+
+
 //********************************************************************
 AnaParticlePD::AnaParticlePD():AnaParticle(){
 //********************************************************************
@@ -50,6 +84,10 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   }
     
   Length_alt = kFloatUnassigned;
+
+  for (int i=0; i<3; i++){
+    Hits[i].clear();
+  }
   
 }
 
@@ -105,9 +143,13 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
     RangeMomentum[i] = part.RangeMomentum[i];  
     RangeMomentum_alt[i] = part.RangeMomentum_alt[i];  
   }
-    
+
+
   Length_alt = part.Length_alt;
 
+  for (int i=0; i<3; i++){
+    Hits[i] = part.Hits[i];
+  }
 }
 
 //********************************************************************

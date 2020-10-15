@@ -20,15 +20,34 @@ public:
 
 class AnaHitPD{
 public:
+  AnaHitPD();
+  virtual ~AnaHitPD(){}
+  
+  AnaHitPD(Int_t wire, Float_t integ, Float_t peakT, Float_t peakAmp){
+    fWireID.Plane =wire;
+    fIntegral = integ;
+    fPeakTime = peakT;
+    fPeakAmplitude = peakAmp;
+  }
+    
   AnaHitPD(double integral){
     fIntegral = integral;
   }
+
+  
+  /// Dump the object to screen.
+  virtual void Print() const;
   
   
   Float_t PeakAmplitude() const {return fPeakAmplitude;}
   Float_t PeakTime() const {return fPeakTime;}
   AnaWireID  WireID()const {return fWireID;}
   Float_t Integral()const {return fIntegral;}
+
+  //protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaHitPD(const AnaHitPD& part);
   
 public:
   
@@ -94,6 +113,9 @@ public:
 
   ///Hit position
   std::vector<TVector3> HitPosition[3];
+
+  /// Vector of hits for eac plane
+  std::vector<AnaHitPD> Hits[3];
 
   /// Particle ID hypothesis used in the fit (if any)
   Int_t FitPDG;
