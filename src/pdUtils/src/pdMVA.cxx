@@ -15,7 +15,8 @@ bool operator < (const hl::MVAPIDResult & a, const hl::MVAPIDResult & b)
 
 
 //**********************************************************
-mvapid::MVAAlg::MVAAlg(): fCaloAlg("CalorimetryAlg"), fReader(""){
+//mvapid::MVAAlg::MVAAlg(): fCaloAlg("CalorimetryAlg"),fReader(""){
+mvapid::MVAAlg::MVAAlg(): fReader(""){
 //**********************************************************
 
   /*
@@ -37,11 +38,27 @@ mvapid::MVAAlg::MVAAlg(): fCaloAlg("CalorimetryAlg"), fReader(""){
 
   // TODO
   //  fMVAMethods.push_back("ANN");
-  fMVAMethods.push_back("BDT");
+  /*
+  fMVAMethods.push_back("electron");
+  fMVAMethods.push_back("muon");
+  fMVAMethods.push_back("proton");
+  fMVAMethods.push_back("photon");
+  fMVAMethods.push_back("pich");
+
   //  fMVAMethods = pset.get<std::vector<std::string>>("MVAMethods");
   //  std::vector<std::string> weightFileBnames;// = pset.get<std::vector<std::string>>("WeightFiles");
-  fWeightFiles.push_back("TMVAClassification_BDTG.weights.nue.xml");
+  //  fWeightFiles.push_back("electron_all_ANN.weights.xml");
+  fWeightFiles.push_back("electron_all_BDT.weights.xml");
+  fWeightFiles.push_back("muon_all_BDT.weights.xml");
+  fWeightFiles.push_back("proton_all_BDT.weights.xml");
+  fWeightFiles.push_back("photon_all_BDT.weights.xml");
+  fWeightFiles.push_back("pich_all_BDT.weights.xml");
+  */
 
+  fMVAMethods.push_back("electron");
+  fWeightFiles.push_back("cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoneBeamAndCosmicsMCC11.pb");
+
+  
   //  weightFileBnames.push_back("weights/MuEMVA_ANN.weights.xml");
   //  weightFileBnames.push_back("weights/MuEMVA_BDT.weights.xml");
   //    fWeightFiles.push_back("weights/MuEMVA_ANN.weights.xml");
@@ -201,6 +218,7 @@ void mvapid::MVAAlg::RunPID(AnaEventB& evt, std::vector<hl::MVAPIDResult>& resul
   
   this->PrepareEvent(evt, clockData);
 
+  
   for (auto trackIter = fTracks.begin(); trackIter != fTracks.end(); ++trackIter) {
     mvapid::MVAAlg::SortedObj sortedObj;
 
@@ -237,8 +255,12 @@ void mvapid::MVAAlg::RunPID(AnaEventB& evt, std::vector<hl::MVAPIDResult>& resul
       fResHolder.dEdxEndRatio = dEdxEnd / dEdxPenultimate;
     fResHolder.length = sortedObj.length;
 
+    std::cout << "---------------------" << std::endl;
+    static_cast<AnaParticlePD*>((*trackIter)->fPart)->Print();
     for (auto methodIter = fMVAMethods.begin(); methodIter != fMVAMethods.end(); ++methodIter) {
       fResHolder.mvaOutput[*methodIter] = fReader.EvaluateMVA(*methodIter);
+      std::cout << "MVA output " << *methodIter << " " << fResHolder.mvaOutput[*methodIter] << " " << static_cast<AnaParticlePD*>((*trackIter)->fPart)->CNNscore[0]<< std::endl;
+      
     }
     result.push_back(fResHolder);
     //    util::CreateAssn(evt, result, *trackIter, trackAssns);
@@ -296,8 +318,8 @@ void mvapid::MVAAlg::RunPID(AnaEventB& evt, std::vector<hl::MVAPIDResult>& resul
 void mvapid::MVAAlg::PrepareEvent(const AnaEventB& evt, const detinfo::DetectorClocksData& clockData){
 //**********************************************************
   
-  //  fHits.clear();
-  //  fSpacePoints.clear();
+  fHits.clear();
+  fSpacePoints.clear();
   fTracks.clear();
   fShowers.clear();
   //  fSpacePointsToHits.clear();
@@ -307,7 +329,7 @@ void mvapid::MVAAlg::PrepareEvent(const AnaEventB& evt, const detinfo::DetectorC
   fShowersToHits.clear();
   fShowersToSpacePoints.clear();
 
-  //  fEventT0 = trigger_offset(clockData);
+  fEventT0 = calo::trigger_offset(clockData);
 
   // Get the array of parts from the event
   AnaParticleB** parts = static_cast<const AnaEventB*>(&evt)->Particles;
@@ -317,26 +339,32 @@ void mvapid::MVAAlg::PrepareEvent(const AnaEventB& evt, const detinfo::DetectorC
   for(int i = 0; i < nParts; i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
 
+    if (part->Hits[2].size() ==0) continue;
+    
     Track* track = new Track(*part);
     fTracks.push_back(track);
 
-    for (UInt_t j = 0; j < part->HitPosition[2].size(); j++){
+    for (UInt_t j = 0; j < part->Hits[2].size(); j++){
       SpacePoint* spacePoint = new SpacePoint(part->HitPosition[2][j]);      
+      fSpacePoints.push_back(spacePoint);
       fTracksToSpacePoints[track].push_back(spacePoint);
-      AnaHitPD* hit = new AnaHitPD(part->dEdx[2][j]);
+      AnaHitPD* hit = new AnaHitPD(part->Hits[2][j]);
+      fHits.push_back(hit);
       fHitsToSpacePoints[hit] = spacePoint;
+      fTracksToHits[track].push_back(hit);
     }
-
+    /*
     Shower* shower = new Shower(*part);
     fShowers.push_back(shower);
 
-    for (UInt_t j = 0; j < part->HitPosition[2].size(); j++){
+    for (UInt_t j = 0; j < part->Hits[2].size(); j++){
       SpacePoint* spacePoint = new SpacePoint(part->HitPosition[2][j]);      
-      fTracksToSpacePoints[track].push_back(spacePoint);
-      AnaHitPD* hit = new AnaHitPD(part->dEdx[2][j]);
-      fHitsToSpacePoints[hit] = spacePoint;
+      fShowersToSpacePoints[shower].push_back(spacePoint);
+      AnaHitPD& hit = part->Hits[2][j];
+      fHitsToSpacePoints[&hit] = spacePoint;
+      fShowersToHits[shower].push_back(&hit);
     }
-    
+    */
   }
 
   fVertex4Vect = anaUtils::ArrayToTLorentzVector(evt.TrueParticles[0]->Position);

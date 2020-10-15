@@ -42,28 +42,20 @@ namespace hl{
   
 }
 
-namespace detinfo{
-  class DetectorClocksData{
-
-  };
-  class DetectorPropertiesData{
-
-  };
-}
-
-
 class Track{
 public:
 
-  Track(const AnaParticleB& part){
+  Track(AnaParticleB& part){
     fID = part.UniqueID;
     fEnd = TVector3(part.PositionEnd[0],   part.PositionEnd[1],   part.PositionEnd[2]);
     fLoc = TVector3(part.PositionStart[0], part.PositionStart[1], part.PositionStart[2]);
+    fPart = &part;
   }
   
   Int_t fID;
   TVector3 fEnd;
   TVector3 fLoc;
+  AnaParticleB* fPart;
   
   Int_t ID(){return fID;}
 
@@ -225,8 +217,8 @@ namespace mvapid {
 
     std::vector<Track*> fTracks;
     std::vector<Shower*> fShowers;
-    //    std::vector<SpacePoint*> fSpacePoints;
-    //    std::vector<Hit*> fHits;
+    std::vector<SpacePoint*> fSpacePoints;
+    std::vector<AnaHitPD*> fHits;
 
     std::map<Track*, std::vector<AnaHitPD*> > fTracksToHits;
     std::map<Track*, std::vector<SpacePoint*> > fTracksToSpacePoints;
