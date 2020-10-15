@@ -18,13 +18,21 @@
 #include <vector>
 #include "pdDataClasses.hxx"
 
-namespace detinfo {
-  class DetectorClocksData;
-  class DetectorPropertiesData;
+namespace detinfo{
+  class DetectorClocksData{
+
+  };
+  class DetectorPropertiesData{
+
+  };
 }
 
-
 namespace calo {
+
+
+  Int_t trigger_offset(detinfo::DetectorClocksData const& data);
+  double sampling_rate(detinfo::DetectorClocksData const& data);
+
   class CalorimetryAlg {
   public:
     struct Config {
@@ -117,7 +125,7 @@ namespace calo {
 
     double BirksCorrection 	( 	double  	dQdX	) 	const;
     double ModBoxCorrection 	( 	double  	dQdX	) const;    
-  private:
+    //  private:
     //    art::ServiceHandle<geo::Geometry const> geom;
 
     double dEdx_from_dQdx_e(detinfo::DetectorClocksData const& clock_data,
@@ -126,8 +134,8 @@ namespace calo {
                             double time,
                             double T0 = 0) const;
 
-    std::vector<double> const fCalAmpConstants;
-    std::vector<double> const fCalAreaConstants;
+    std::vector<double> fCalAmpConstants;
+    std::vector<double> fCalAreaConstants;
     bool const fUseModBox;
     int const fLifeTimeForm;
     bool const fDoLifeTimeCorrection;

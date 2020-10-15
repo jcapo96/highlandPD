@@ -36,12 +36,26 @@ namespace calo {
   
   //--------------------------------------------------------------------
   CalorimetryAlg::CalorimetryAlg()
-    : fCalAmpConstants{std::vector<double>()}
-    , fCalAreaConstants{std::vector<double>()}
-    , fUseModBox{0}
+    : //fCalAmpConstants{std::vector<double>()}
+    //, fCalAreaConstants{std::vector<double>()}
+     fUseModBox{false}
     , fLifeTimeForm{0}
-    , fDoLifeTimeCorrection{true}
+    , fDoLifeTimeCorrection{false}
   {
+
+
+    fCalAmpConstants.push_back(0.582554e-3);
+    fCalAmpConstants.push_back(1.16594e-3);
+
+    //    fCalAreaConstants.push_back(0.544391e-2);
+    //    fCalAreaConstants.push_back(2.0376e-2);
+
+    fCalAreaConstants.push_back(1e-3);
+    fCalAreaConstants.push_back(1e-3);
+    fCalAreaConstants.push_back(1e-3);
+
+    std::cout << "anselmo -1: " << fCalAreaConstants[2]  << std::endl;
+    
     if (fLifeTimeForm != 0 and fLifeTimeForm != 1) {
       /*
       throw cet::exception("CalorimetryAlg")
@@ -104,6 +118,8 @@ namespace calo {
                             double const pitch,
                             double const T0) const
   {
+
+    std::cout << "anselmo 3: " << hit.Integral()  << " " << pitch << " " <<  hit.PeakTime() << " " << hit.WireID().Plane << " " <<  T0 << std::endl;
     return dEdx_AREA(
       clock_data, det_prop, hit.Integral() / pitch, hit.PeakTime(), hit.WireID().Plane, T0);
   }
@@ -131,8 +147,11 @@ namespace calo {
                             unsigned int const plane,
                             double const T0) const
   {
+
     double const fADCtoEl = fCalAreaConstants[plane];
     double const dQdx_e = dQdx / fADCtoEl; // Conversion from ADC/cm to e/cm
+
+
     return dEdx_from_dQdx_e(clock_data, det_prop, dQdx_e, time, T0);
   }
 
@@ -226,6 +245,8 @@ double calo::CalorimetryAlg::BirksCorrection 	( 	double  	dQdx	) 	const
    double const E_field = Efield; // Electric Field in the drift region in KV/cm
    K3t /= rho;                      // KV/MeV
    double const dEdx = dQdx / (A3t / Wion - K3t / E_field * dQdx); // MeV/cm
+
+   std::cout << "dedx = " << dEdx << std::endl;
    
    return dEdx;
  }
