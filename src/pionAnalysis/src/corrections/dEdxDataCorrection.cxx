@@ -43,14 +43,14 @@ void dEdxDataCorrection::Apply(AnaSpillC& spillC){
 
       if (!original) continue; //?
 
-      for (Int_t i=2;i<3;i++){
-        for (Int_t j=0;j<std::min((Int_t)NMAXHITSPERPLANE,part->NHitsPerPlane[i]);j++){
-          if (part->dQdx[i][j]<0.1) continue;  // Protection against crazy values
-	  if (j < original->HitPosition[i].size()){
-	    part->dQdx[i][j] = ComputeCalibratedDqDx(original->dQdx[i][j],original->HitPosition[i].at(j).X());
-	    part->dEdx[i][j] = pdAnaUtils::ComputeDeDxFromDqDx(part->dQdx[i][j]);
+      for (Int_t plane=2;plane<3;plane++){
+        for (Int_t j=0;j<std::min((Int_t)NMAXHITSPERPLANE,part->NHitsPerPlane[plane]);j++){
+          if (part->dQdx[plane][j]<0.1) continue;  // Protection against crazy values
+	  if (j < original->HitPosition[plane].size()){
+	    part->dQdx[plane][j] = ComputeCalibratedDqDx(original->dQdx[plane][j],original->HitPosition[plane].at(j).X());
+	    part->dEdx[plane][j] = pdAnaUtils::ComputeDeDxFromDqDx(part->dQdx[plane][j], plane);
 	  }
-          //          std::cout << part->dQdx[i][j] << " " << original->dQdx[i][j] << " " << part->dEdx[i][j] << " " << original->dEdx[i][j] << " " << part->HitX[i][j] << std::endl; 
+          //          std::cout << part->dQdx[plane][j] << " " << original->dQdx[plane][j] << " " << part->dEdx[plane][j] << " " << original->dEdx[plane][j] << " " << part->HitX[plane][j] << std::endl; 
         }
       }
     }
