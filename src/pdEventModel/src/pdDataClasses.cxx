@@ -17,6 +17,7 @@ AnaHitPD::AnaHitPD(){
   fIntegral      = kFloatUnassigned;     
   fPeakTime      = kFloatUnassigned;     
   fPeakAmplitude = kFloatUnassigned;
+  Position = TVector3(0,0,0);
 }
 
 //********************************************************************
@@ -26,6 +27,7 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   fIntegral      = hit.fIntegral;     
   fPeakTime      = hit.fPeakTime;     
   fPeakAmplitude = hit.fPeakAmplitude;
+  Position = hit.Position;
 }
 
 //********************************************************************
@@ -39,6 +41,7 @@ void AnaHitPD::Print() const{
   std::cout << "Integral:      " << fIntegral      << std::endl; 
   std::cout << "PeakTime:      " << fPeakTime      << std::endl;
   std::cout << "PeakAmplitude: " << fPeakAmplitude << std::endl;
+  std::cout << "Position:      " << "( " << Position.X() << ", " << Position.Y() << ", " << Position.Z() << ")" << std::endl;
 
 }
 

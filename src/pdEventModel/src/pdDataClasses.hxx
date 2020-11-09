@@ -23,11 +23,12 @@ public:
   AnaHitPD();
   virtual ~AnaHitPD(){}
   
-  AnaHitPD(Int_t wire, Float_t integ, Float_t peakT, Float_t peakAmp){
+  AnaHitPD(Int_t wire, Float_t integ, Float_t peakT, Float_t peakAmp, TVector3 pos){
     fWireID.Plane =wire;
     fIntegral = integ;
     fPeakTime = peakT;
     fPeakAmplitude = peakAmp;
+    Position = pos;
   }
     
   AnaHitPD(double integral){
@@ -55,6 +56,7 @@ public:
   Float_t fIntegral;
   Float_t fPeakTime;
   Float_t fPeakAmplitude;
+  TVector3 Position;
 };
 
 
