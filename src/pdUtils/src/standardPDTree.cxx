@@ -337,34 +337,37 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
   if (!part) return;
    
   for (int i = 0; i < 3; i++){
-    if(part->HitPosition[i].empty()){
+    if(part->Hits[i].empty()){
       for (int j = 0; j < (int)NMAXHITSPERPLANE_SELTRK; j++){
-	output.FillMatrixVar(seltrk_hit_x    ,(Float_t)-999., i, j);
-	output.FillMatrixVar(seltrk_hit_y    ,(Float_t)-999., i, j);
-	output.FillMatrixVar(seltrk_hit_z    ,(Float_t)-999., i, j);
-	output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)-999., i, j);
-	output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)-999., i, j);
-	output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_x    ,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_y    ,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_z    ,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)-999., i, j);
       }
     }
     else{
-      for (int j = 0; j < (int)part->HitPosition[i].size(); j++){
-	output.FillMatrixVar(seltrk_hit_x    ,(Float_t)part->HitPosition[i].at(j).X(), i, j);
-	output.FillMatrixVar(seltrk_hit_y    ,(Float_t)part->HitPosition[i].at(j).Y(), i, j);
-	output.FillMatrixVar(seltrk_hit_z    ,(Float_t)part->HitPosition[i].at(j).Z(), i, j);
-	output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->HitPosition[i].at(j).X(), i, j);
-	output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->HitPosition[i].at(j).Y(), i, j);
-	output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->HitPosition[i].at(j).Z(), i, j);
+      for (int j = 0; j < (int)part->Hits[i].size(); j++){
+        output.FillMatrixVar(seltrk_hit_x    ,(Float_t)part->Hits[i][j].Position.X(), i, j);
+        output.FillMatrixVar(seltrk_hit_y    ,(Float_t)part->Hits[i][j].Position.Y(), i, j);
+        output.FillMatrixVar(seltrk_hit_z    ,(Float_t)part->Hits[i][j].Position.Z(), i, j);
+        output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.X(), i, j);
+        output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.Y(), i, j);
+        output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.Z(), i, j);
       }
     }
-    output.FillMatrixVarFromArray(seltrk_hit_dedx,      part->dEdx[i],              i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dedx_cor,  part->dEdx_corr[i],         i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dqdx,      part->dQdx[i],              i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dqdx_cor,  part->dQdx_corr[i],         i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_resrange,  part->ResidualRange[i],     i, NMAXHITSPERPLANE);
+
+    for (int j = 0; j < (int)part->Hits[i].size(); j++){
+      output.FillMatrixVar(seltrk_hit_dedx,      part->Hits[i][j].dEdx,              i, j);
+      output.FillMatrixVar(seltrk_hit_dedx_cor,  part->Hits[i][j].dEdx_corr,         i, j);
+      output.FillMatrixVar(seltrk_hit_dqdx,      part->Hits[i][j].dQdx,              i, j);
+      output.FillMatrixVar(seltrk_hit_dqdx_cor,  part->Hits[i][j].dQdx_corr,         i, j);
+      output.FillMatrixVar(seltrk_hit_resrange,  part->Hits[i][j].ResidualRange,     i, j);
+      output.FillMatrixVar(seltrk_hit_dedx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].dEdx, i, j);
+      output.FillMatrixVar(seltrk_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].dQdx, i, j);
+    }
     output.FillVectorVarFromArray(seltrk_nhitsperplane, part->NHitsPerPlane,3);
-    output.FillMatrixVarFromArray(seltrk_hit_dedx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->dEdx[i], i, NMAXHITSPERPLANE);
-    output.FillMatrixVarFromArray(seltrk_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->dQdx[i], i, NMAXHITSPERPLANE);
   }
   
 }
@@ -385,11 +388,11 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
   output.FillVectorVar(seltrk_dau_nhits2,          dau->NHitsPerPlane[2] );
   output.FillVectorVar(seltrk_dau_nhits,           dau->NHits);
   
-  
-  output.FillMatrixVarFromArray(seltrk_dau_hit_dedx,      dau->dEdx[2],          NMAXHITSPERPLANE);
-  output.FillMatrixVarFromArray(seltrk_dau_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(dau->Original->Original->Original)->dQdx[2],   NMAXHITSPERPLANE);  
-  output.FillMatrixVarFromArray(seltrk_dau_hit_resrange,  dau->ResidualRange[2], NMAXHITSPERPLANE);
-
+  for (UInt_t j = 0; j < dau->Hits[2].size(); j++){  
+    output.FillMatrixVar(seltrk_dau_hit_dedx,      dau->Hits[2][j].dEdx, -1, j);
+    output.FillMatrixVar(seltrk_dau_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(dau->Original->Original->Original)->Hits[2][j].dQdx, -1, j);  
+    output.FillMatrixVar(seltrk_dau_hit_resrange,  dau->Hits[2][j].ResidualRange, -1, j);
+  }
 }
 
 //********************************************************************
