@@ -3,6 +3,10 @@
 #include "CategoryManager.hxx"
 #include "standardPDTree.hxx"
 #include <TH3F.h>
+#include <TH2F.h>
+
+
+bool debug = false;
 
 //data for range-momentum conversion, muons
 //http://pdg.lbl.gov/2012/AtomicNuclearProperties/MUON_ELOSS_TABLES/muonloss_289.pdf divided by LAr density for cm
@@ -63,6 +67,20 @@ TH3F* ex_pos = (TH3F*)E_field_file->Get("Reco_ElecField_X_Pos");
 TH3F* ey_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Y_Pos");
 TH3F* ez_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Z_Pos");
 
+
+std::string X_correction_name = std::string(getenv("PIONANALYSISROOT"))+"/data/Xcalo_r5387.root";
+std::string YZ_correction_name = std::string(getenv("PIONANALYSISROOT"))+"/data/YZcalo_r5387.root";
+
+
+TFile* X_correction_file  = new TFile( X_correction_name.c_str(), "OPEN" );
+TFile* YZ_correction_file = new TFile( YZ_correction_name.c_str(), "OPEN" );
+
+UInt_t planeID=2;
+std::string hist_name = "dqdx_X_correction_hist_" + std::to_string(planeID);
+TH1F* X_correction_hist = (TH1F*)X_correction_file->Get( hist_name.c_str() );
+
+TH2F* YZ_neg = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_negativeX_hist_2");
+TH2F* YZ_pos = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_positiveX_hist_2");
 
 
 //*****************************************************************************
@@ -204,10 +222,10 @@ Float_t pdAnaUtils::ComputePIDA(const AnaParticlePD &track) {
   Float_t PIDA=0;
   Int_t ncontrib=0;
   for (Int_t i=0;i<3;i++){
-    for (Int_t j=0;j<track.NHitsPerPlane[i];j++){
-      if (track.ResidualRange[i][j]<cut && track.ResidualRange[i][j]>0){
+    for (UInt_t j=0;j<track.Hits[i].size();j++){
+      if (track.Hits[i][j].ResidualRange<cut && track.Hits[i][j].ResidualRange>0){
         ncontrib++;
-        PIDA += track.dEdx[i][j]*pow(track.ResidualRange[i][j],0.42);
+        PIDA += track.Hits[i][j].dEdx*pow(track.Hits[i][j].ResidualRange,0.42);
       }
     }
   }
@@ -223,13 +241,13 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 
   Int_t plane=2;
 
-  int nhits=part.NHitsPerPlane[plane];
+  int nhits=part.Hits[plane].size();
   double kinetic=0;
   double res=0;
-  for (int i=0;i<nhits;i++){
-    double dedxi = part.dEdx_corr[plane][i];
+  for (int j=0;j<nhits;j++){
+    double dedxi = part.Hits[plane][j].dEdx_corr;
 //    double dedxi = part.dEdx[plane][i];
-    double Residualrangei = part.ResidualRange[plane][i];
+    double Residualrangei = part.Hits[plane][j].ResidualRange;
     kinetic = kinetic + dedxi * (Residualrangei - res);
     res = Residualrangei;
   }
@@ -255,8 +273,8 @@ Float_t pdAnaUtils::ComputeDeDxFromDqDx(Float_t dqdx_adc, Int_t plane, Float_t x
   //  double Efield1=0.50;//kV/cm protoDUNE electric filed
 
   // TODO: hit position not available
-  double Efield1 = ComputeTotalEField(x,y,z);//kV/cm protoDUNE electric filed
-  std::cout << x << " " << y << " " << z << " " << Efield1 << std::endl;
+  double Efield1 = ComputeTotalEField(0,0,0);//kV/cm protoDUNE electric filed
+  //  std::cout << x << " " << y << " " << z << " " << Efield1 << std::endl;
   //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
   //  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.86e-3}; //right cali constant for the run 5387. This converts from ADC to e
   double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
@@ -269,7 +287,13 @@ Float_t pdAnaUtils::ComputeDeDxFromDqDx(Float_t dqdx_adc, Int_t plane, Float_t x
 
   double dqdx = dqdx_adc/calib_factor[plane]*norm_factor[plane];
   double beta = betap/(Rho*Efield1); // cm/MeV
-  
+
+  if (debug){
+    std::cout << "  --> dqdx_adc, dqdx_e (pdAnaUtils)= " << dqdx_adc << ", " << dqdx << std::endl;
+    
+    std::cout << beta << " " << Wion << " " << alpha << std::endl;
+    std::cout << "  --> dedx (pdAnaUtils)= " << (exp(dqdx*beta*Wion)-alpha)/beta << std::endl;
+  }
   return (exp(dqdx*beta*Wion)-alpha)/beta;
 }
 
@@ -289,7 +313,8 @@ Float_t pdAnaUtils::ComputeDqDxFromDeDx(Float_t dedx, Int_t plane) {
   // TODO: hit position not available
   double Efield1 = ComputeTotalEField(-50,450,40);//kV/cm protoDUNE electric filed
 
-  std::cout << Efield1 << std::endl;
+  if (debug)
+    std::cout << Efield1 << std::endl;
   //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
   double calib_factor[3] = {4.81e-3, 4.81e-3, 4.86e-3}; //right cali constant for the run 5387. This converts from ADC to e
   double norm_factor[3] = {1.0078, 1.0082, 0.9947};
@@ -374,10 +399,10 @@ void pdAnaUtils::ComputeBinnedDeDx(const AnaParticlePD* part, Float_t max_resran
       //      std::cout << "k = " << k << std::endl;
       for (Int_t j=0;j<std::min((Int_t)part->NHitsPerPlane[i],(Int_t)NMAXHITSPERPLANE);j++){
         // a protection against crazy values
-        if (part->ResidualRange[i][j]<0.01 || part->dEdx[i][j]<0.01 || part->dEdx[i][j]>100) continue;
-        if (part->ResidualRange[i][j]<cut_max && part->ResidualRange[i][j]>cut_min){
+        if (part->Hits[i][j].ResidualRange<0.01 || part->Hits[i][j].dEdx<0.01 || part->Hits[i][j].dEdx>100) continue;
+        if (part->Hits[i][j].ResidualRange<cut_max && part->Hits[i][j].ResidualRange>cut_min){
           ncontrib++;
-          avg_dedx[i][k] +=part->dEdx[i][j];
+          avg_dedx[i][k] +=part->Hits[i][j].dEdx;
         }
       }      
       if (ncontrib>0)
@@ -438,23 +463,23 @@ void pdAnaUtils::AddParticles(AnaParticlePD* part1, AnaParticlePD* part2){
     Int_t last_hit=0;
     for (Int_t j=0;j<std::min((Int_t)NMAXHITSPERPLANE,part2->NHitsPerPlane[i]);j++){
       Int_t offset = 0;
-      part1->dEdx[i]         [j+offset]=part2->dEdx[i][j];
-      part1->dQdx[i]         [j+offset]=part2->dQdx[i][j];
-      part1->dEdx_corr[i]    [j+offset]=part2->dEdx_corr[i][j];
-      part1->dQdx_corr[i]    [j+offset]=part2->dQdx_corr[i][j];
-      part1->HitPosition[i].at(j+offset).SetX(part2->HitPosition[i].at(j).X());
-      part1->ResidualRange[i][j+offset]=part2->ResidualRange[i][j];
+      part1->Hits[i][j+offset].dEdx           = part2->Hits[i][j].dEdx;          
+      part1->Hits[i][j+offset].dQdx           = part2->Hits[i][j].dQdx;          
+      part1->Hits[i][j+offset].dEdx_corr      = part2->Hits[i][j].dEdx_corr;     
+      part1->Hits[i][j+offset].dQdx_corr      = part2->Hits[i][j].dQdx_corr;     
+      part1->Hits[i][j+offset].ResidualRange  = part2->Hits[i][j].ResidualRange; 
+      part1->Hits[i][j+offset].Position.SetX(   part2->Hits[i][j].Position.X());
       last_hit=j;
     }
 
     for (Int_t j=0;j<std::min((Int_t)part1->NHitsPerPlane[i],(Int_t)NMAXHITSPERPLANE-part2->NHitsPerPlane[i]);j++){
       Int_t offset = part1->NHitsPerPlane[i];
-      part1->dEdx[i]         [j+offset]=part1c->dEdx[i][j];
-      part1->dQdx[i]         [j+offset]=part1c->dQdx[i][j];
-      part1->dEdx_corr[i]    [j+offset]=part1c->dEdx_corr[i][j];
-      part1->dQdx_corr[i]    [j+offset]=part1c->dQdx_corr[i][j];
-      part1->HitPosition[i].at(j+offset).SetX(part1c->HitPosition[i].at(j).X());
-      part1->ResidualRange[i][j+offset]=part1c->ResidualRange[i][j]+part2->ResidualRange[i][last_hit];
+      part1->Hits[i][j+offset].dEdx           = part1c->Hits[i][j].dEdx;          
+      part1->Hits[i][j+offset].dQdx           = part1c->Hits[i][j].dQdx;          
+      part1->Hits[i][j+offset].dEdx_corr      = part1c->Hits[i][j].dEdx_corr;     
+      part1->Hits[i][j+offset].dQdx_corr      = part1c->Hits[i][j].dQdx_corr;     
+      part1->Hits[i][j+offset].Position.SetX(   part1c->Hits[i][j].Position.X());   
+      part1->Hits[i][j+offset].ResidualRange  = part1c->Hits[i][j].ResidualRange+part2->Hits[i][last_hit].ResidualRange;
     }    
   }
 
@@ -598,12 +623,12 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
     return std::make_pair(9999., -1);
   
   //Ignore first and last point
-  for( Int_t i = 1; i < part.NHitsPerPlane[plane]-1; ++i ){
+  for( Int_t i = 1; i < part.Hits[plane].size()-1; ++i ){
     //Skip large pulse heights
-    if( part.dEdx_corr[plane][i] > 1000. )
+    if( part.Hits[plane][i].dEdx_corr > 1000. )
       continue;
 
-    int bin = profile->FindBin( part.ResidualRange[plane][i] );
+    int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
 
     if( bin >= 1 && bin <= profile->GetNbinsX() ){
       
@@ -618,12 +643,12 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
         template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
       }
 
-      double dedx_res = 0.04231 + 0.0001783 * part.dEdx_corr[plane][i] * part.dEdx_corr[plane][i];      
-      dedx_res *= part.dEdx_corr[plane][i]; 
+      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx_corr * part.Hits[plane][i].dEdx_corr;      
+      dedx_res *= part.Hits[plane][i].dEdx_corr; 
       
       
       //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
-      pid_chi2 += ( pow( (part.dEdx_corr[plane][i] - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
+      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx_corr - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
             
       ++npt;      
     }	
@@ -863,18 +888,18 @@ Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part)
   Float_t length = 0.;
 
   //check if hit vector is empty
-  if(part->HitPosition[2].empty()){
+  if(part->Hits[2].empty()){
     //std::cout << "HitPosition vector empty! Returning -1" << std::endl;
     return -1;
   }
 
   // Initial position
-  TVector3 disp(part->HitPosition[2].at(0).X(),part->HitPosition[2].at(0).Y(),part->HitPosition[2].at(0).Z());
+  TVector3 disp(part->Hits[2][0].Position.X(),part->Hits[2][0].Position.Y(),part->Hits[2][0].Position.Z());
 
   // Add subsequent hits
-  for(int i = 1; i < (int)part->HitPosition[2].size(); ++i){
-    if (part->HitPosition[2].at(i).X() == -999) break;
-    TVector3 pos(part->HitPosition[2].at(i).X(),part->HitPosition[2].at(i).Y(),part->HitPosition[2].at(i).Z());
+  for(int i = 1; i < (int)part->Hits[2].size(); ++i){
+    if (part->Hits[2][i].Position.X() == -999) break;
+    TVector3 pos(part->Hits[2][i].Position.X(),part->Hits[2][i].Position.Y(),part->Hits[2][i].Position.Z());
     disp -= pos;
     length += disp.Mag();
     disp = pos;
@@ -915,4 +940,124 @@ Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high
   }
   
   return accumulated/counter;
+}
+
+
+
+//***************************************************************
+Float_t pdAnaUtils::ComputeCalibrateddQdX(Float_t prim_dqdx, const TVector3& pos){
+//***************************************************************
+
+  Float_t hit_x = pos.X();
+  Float_t hit_y = pos.Y();
+  Float_t hit_z = pos.Z();
+	
+  if( hit_y < 0. || hit_y > 600. ) return prim_dqdx;
+  if( hit_z < 0. || hit_z > 695. ) return prim_dqdx;
+	
+  Int_t X_bin = X_correction_hist->FindBin( hit_x );
+  if (X_bin<1) X_bin = 1;
+  if (X_bin>148) X_bin = 148;
+
+
+  Float_t X_correction = X_correction_hist->GetBinContent(X_bin);
+	
+  double YZ_correction = (
+                          ( hit_x < 0 )
+                          ? YZ_neg->GetBinContent( YZ_neg->FindBin( hit_z, hit_y ) ) 
+                          : YZ_pos->GetBinContent( YZ_pos->FindBin( hit_z, hit_y ) )  
+                          );
+
+  //  Float_t norm_factor = 0.983; // for plane 2
+  Float_t norm_factor = 0.9947; // for plane 2
+  //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
+  double calib_factor =4.57e-3; //right cali constant for the run 5387. This converts from ADC to e
+  
+  if (debug){
+    std::cout << " hit position: " << hit_x << " " << hit_y << " " << hit_z << std::endl;
+    std::cout << " prim_dqdx,  X_correction , YZ_correction , norm_factor = "
+              << prim_dqdx << " " <<  X_correction << " " <<  YZ_correction << " " <<  norm_factor << std::endl;	
+  }
+  
+  Float_t corrected_dq_dx = prim_dqdx * X_correction * YZ_correction * norm_factor;	
+  Float_t scaled_corrected_dq_dx = corrected_dq_dx / calib_factor;		
+
+  
+  return scaled_corrected_dq_dx;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::Compute3DWirePitch(Int_t planeKey, const TVector3& dir){
+//***************************************************************
+
+  std::map<int, double> fNormToWiresY;
+  std::map<int, double> fNormToWiresZ;
+
+  fNormToWiresY.clear();
+  fNormToWiresZ.clear();
+
+  int plane;
+
+  // Numbers from PionAnalyzer_module output
+  double dirY_0 = 0.812012;
+  double dirZ_0 = 0.58364;
+
+  int NTPC=12;
+  plane=0;
+  for (int t=0;t<NTPC;t++){
+    for (int p=0;p<3;p++){
+
+      double dirY=0;
+      double dirZ=0;
+
+      if (p==0){
+        if (t%2 == 0) dirZ = -dirZ_0;
+        else          dirZ =  dirZ_0;
+        dirY = dirY_0;
+      }
+      else if (p==1){
+        if (t%2 == 0) dirZ = -dirZ_0;
+        else          dirZ =  dirZ_0;
+        dirY = -dirY_0;
+      }
+      else if (p==2){
+        if (t%2 == 0) dirY =  -1;
+        else          dirY =   1;
+        dirZ = 0;
+      }
+       
+      fNormToWiresY.insert(std::make_pair(plane, -dirZ)); //y component of normal
+      fNormToWiresZ.insert(std::make_pair(plane,  dirY)); //z component of normal
+
+
+      //      std::cout << plane << " --> " << fNormToWiresY[plane] << " " << fNormToWiresZ[plane]  << std::endl;
+      
+      plane++;
+    }
+  }
+
+
+  
+  Float_t wirePitch = 0.4792;
+      
+  //Pitch to use in dEdx calculation
+  Float_t yzPitch = wirePitch;   // TODO
+  //      geom->WirePitch(hit->WireID().Plane,
+  //                      hit->WireID().TPC); //pitch not taking into account angle of track or shower
+  Float_t xComponent, pitch3D;
+          
+  //This assumes equal numbers of TPCs in each cryostat and equal numbers of planes in each TPC
+  
+  if (fNormToWiresY.count(planeKey) && fNormToWiresZ.count(planeKey)) {
+    TVector3 normToWires(0.0, fNormToWiresY.at(planeKey), fNormToWiresZ.at(planeKey));
+    yzPitch = wirePitch/fabs(dir.Dot(normToWires));
+    //        geom->WirePitch(hit->WireID().Plane, hit->WireID().TPC) / fabs(dir.Dot(normToWires));
+  }
+  
+  xComponent = yzPitch * dir[0] / sqrt(dir[1] * dir[1] + dir[2] * dir[2]);
+  pitch3D = sqrt(xComponent * xComponent + yzPitch * yzPitch);///2254.*2742.;
+
+  //  std::cout << yzPitch << " " << xComponent << " " << pitch3D << " " << dir.X() << " " << dir.Y() << " " << dir.Z() << std::endl;
+  
+  return pitch3D;
 }

@@ -127,6 +127,13 @@ namespace pdAnaUtils{
 
   // Compute the truncated mean of an std vector
   Float_t ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> part); 
+
+  // Calibrated dQdx
+  Float_t ComputeCalibrateddQdX(Float_t prim_dqdx, const TVector3& pos);
+
+  // Compute the wire pitch taking into account the direction of the particle
+  Float_t Compute3DWirePitch(Int_t planeKey, const TVector3& dir);
+
 }
 
 #endif
