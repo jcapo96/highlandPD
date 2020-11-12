@@ -21,6 +21,8 @@ void pandoraPreselection::DefineSteps(){
   //AddStep(StepBase::kCut,    "beam quality",               new BeamQualityCut());
   AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());
 
+  SetBranchAlias(0,"pandora");
+  
   // No preselection for the moment
   SetPreSelectionAccumLevel(-1);
 }
