@@ -97,6 +97,8 @@ protected:
   Int_t _previousRefEventID;
 
   bool _useSCE;
+
+  bool _byHits;
   
  protected:
 
@@ -113,7 +115,6 @@ protected:
   Bool_t _isMC;
   std::string _softwareVersion;
 
-   // Declaration of leaf types
    // Declaration of leaf types
    Int_t           run;
    Int_t           subrun;
@@ -134,12 +135,12 @@ protected:
    Double_t        reco_beam_calo_endX;
    Double_t        reco_beam_calo_endY;
    Double_t        reco_beam_calo_endZ;
-   std::vector<double>  *reco_beam_calo_startDirX;
-   std::vector<double>  *reco_beam_calo_startDirY;
-   std::vector<double>  *reco_beam_calo_startDirZ;
-   std::vector<double>  *reco_beam_calo_endDirX;
-   std::vector<double>  *reco_beam_calo_endDirY;
-   std::vector<double>  *reco_beam_calo_endDirZ;
+   vector<double>  *reco_beam_calo_startDirX;
+   vector<double>  *reco_beam_calo_startDirY;
+   vector<double>  *reco_beam_calo_startDirZ;
+   vector<double>  *reco_beam_calo_endDirX;
+   vector<double>  *reco_beam_calo_endDirY;
+   vector<double>  *reco_beam_calo_endDirZ;
    Double_t        reco_beam_trackDirX;
    Double_t        reco_beam_trackDirY;
    Double_t        reco_beam_trackDirZ;
@@ -150,27 +151,27 @@ protected:
    Double_t        reco_beam_vtxY;
    Double_t        reco_beam_vtxZ;
    Int_t           reco_beam_trackID;
-   std::vector<double>  *reco_beam_dQdX;
-   std::vector<double>  *reco_beam_dEdX;
-   std::vector<double>  *reco_beam_calibrated_dEdX;
-   std::vector<double>  *reco_beam_resRange;
-   std::vector<double>  *reco_beam_TrkPitch;
-   std::vector<double>  *reco_beam_calo_wire;
-   std::vector<double>  *reco_beam_calo_wire_z;
-   std::vector<double>  *reco_beam_calo_tick;
-   std::vector<int>     *reco_beam_calo_TPC;
-   std::vector<double>  *reco_beam_dQdX_no_SCE;
-   std::vector<double>  *reco_beam_dEdX_no_SCE;
-   std::vector<double>  *reco_beam_calibrated_dEdX_no_SCE;
-   std::vector<double>  *reco_beam_resRange_no_SCE;
-   std::vector<double>  *reco_beam_TrkPitch_no_SCE;
-   std::vector<double>  *reco_beam_calo_wire_no_SCE;
-   std::vector<double>  *reco_beam_calo_wire_z_no_SCE;
-   std::vector<double>  *reco_beam_calo_tick_no_SCE;
-   std::vector<int>     *reco_beam_calo_TPC_no_SCE;
-   std::vector<int>     *reco_beam_hit_true_ID;
-   std::vector<int>     *reco_beam_hit_true_slice;
-   std::vector<int>     *reco_beam_hit_true_origin;
+   vector<double>  *reco_beam_dQdX;
+   vector<double>  *reco_beam_dEdX;
+   vector<double>  *reco_beam_calibrated_dEdX;
+   vector<double>  *reco_beam_resRange;
+   vector<double>  *reco_beam_TrkPitch;
+   vector<double>  *reco_beam_calo_wire;
+   vector<double>  *reco_beam_calo_wire_z;
+   vector<double>  *reco_beam_calo_tick;
+   vector<int>     *reco_beam_calo_TPC;
+   vector<double>  *reco_beam_dQdX_no_SCE;
+   vector<double>  *reco_beam_dEdX_no_SCE;
+   vector<double>  *reco_beam_calibrated_dEdX_no_SCE;
+   vector<double>  *reco_beam_resRange_no_SCE;
+   vector<double>  *reco_beam_TrkPitch_no_SCE;
+   vector<double>  *reco_beam_calo_wire_no_SCE;
+   vector<double>  *reco_beam_calo_wire_z_no_SCE;
+   vector<double>  *reco_beam_calo_tick_no_SCE;
+   vector<int>     *reco_beam_calo_TPC_no_SCE;
+   vector<int>     *reco_beam_hit_true_ID;
+   vector<int>     *reco_beam_hit_true_slice;
+   vector<int>     *reco_beam_hit_true_origin;
    Int_t           reco_beam_nTrackDaughters;
    Int_t           reco_beam_nShowerDaughters;
    Bool_t          reco_beam_flipped;
@@ -199,12 +200,12 @@ protected:
    Double_t        reco_beam_allTrack_trackEndDirX;
    Double_t        reco_beam_allTrack_trackEndDirY;
    Double_t        reco_beam_allTrack_trackEndDirZ;
-   std::vector<double>  *reco_beam_allTrack_resRange;
-   std::vector<double>  *reco_beam_allTrack_calibrated_dEdX;
+   vector<double>  *reco_beam_allTrack_resRange;
+   vector<double>  *reco_beam_allTrack_calibrated_dEdX;
    Double_t        reco_beam_allTrack_Chi2_proton;
    Int_t           reco_beam_allTrack_Chi2_ndof;
-   std::vector<int>     *reco_daughter_PFP_true_byHits_PDG;
-   std::vector<int>     *reco_daughter_PFP_true_byHits_ID;
+   vector<int>     *reco_daughter_PFP_true_byHits_PDG;
+   vector<int>     *reco_daughter_PFP_true_byHits_ID;
    vector<int>     *reco_daughter_PFP_true_byHits_origin;
    vector<int>     *reco_daughter_PFP_true_byHits_parID;
    vector<int>     *reco_daughter_PFP_true_byHits_parPDG;
@@ -225,6 +226,11 @@ protected:
    vector<double>  *reco_daughter_PFP_true_byHits_startE;
    vector<string>  *reco_daughter_PFP_true_byHits_endProcess;
    vector<double>  *reco_daughter_PFP_true_byHits_purity;
+   vector<double>  *reco_daughter_PFP_true_byHits_completeness;
+   vector<int>     *reco_daughter_PFP_true_byE_PDG;
+   vector<double>  *reco_daughter_PFP_true_byE_len;
+   vector<double>  *reco_daughter_PFP_true_byE_completeness;
+   vector<double>  *reco_daughter_PFP_true_byE_purity;
    vector<int>     *reco_daughter_allTrack_ID;
    vector<vector<double> > *reco_daughter_allTrack_dEdX;
    vector<vector<double> > *reco_daughter_allTrack_dQdX;
@@ -314,8 +320,6 @@ protected:
    Int_t           true_daughter_nPiMinus;
    Int_t           true_daughter_nNucleus;
    Int_t           reco_beam_vertex_slice;
-   vector<vector<double> > *reco_beam_vertex_dRs;
-   vector<int>     *reco_beam_vertex_hits_slices;
    vector<int>     *true_beam_daughter_PDG;
    vector<int>     *true_beam_daughter_ID;
    vector<double>  *true_beam_daughter_len;
@@ -352,6 +356,12 @@ protected:
    vector<int>     *true_beam_Pi0_decay_parID;
    vector<int>     *true_beam_Pi0_decay_PDG;
    vector<double>  *true_beam_Pi0_decay_startP;
+   vector<double>  *true_beam_Pi0_decay_startPx;
+   vector<double>  *true_beam_Pi0_decay_startPy;
+   vector<double>  *true_beam_Pi0_decay_startPz;
+   vector<double>  *true_beam_Pi0_decay_startX;
+   vector<double>  *true_beam_Pi0_decay_startY;
+   vector<double>  *true_beam_Pi0_decay_startZ;
    vector<double>  *true_beam_Pi0_decay_len;
    vector<int>     *true_beam_Pi0_decay_nHits;
    vector<vector<int> > *true_beam_Pi0_decay_reco_byHits_PFP_ID;
@@ -470,13 +480,29 @@ protected:
    vector<int>     *true_beam_slices_found;
    vector<int>     *true_beam_slices_nIDEs;
    vector<double>  *true_beam_slices_deltaE;
-   vector<double>  *new_true_beam_incidentEnergies;
-   Double_t        new_true_beam_interactingEnergy;
+   Double_t        em_energy;
+   vector<double>  *true_beam_traj_X;
+   vector<double>  *true_beam_traj_Y;
+   vector<double>  *true_beam_traj_Z;
+   vector<double>  *true_beam_traj_KE;
    vector<double>  *g4rw_primary_weights;
    vector<double>  *g4rw_primary_plus_sigma_weight;
    vector<double>  *g4rw_primary_minus_sigma_weight;
    vector<string>  *g4rw_primary_var;
+   vector<double>  *g4rw_alt_primary_plus_sigma_weight;
+   vector<double>  *g4rw_alt_primary_minus_sigma_weight;
+   Int_t           new_branch;
+   vector<double>  *reco_beam_spacePts_X;
+   vector<double>  *reco_beam_spacePts_Y;
+   vector<double>  *reco_beam_spacePts_Z;
+   vector<vector<double> > *reco_daughter_spacePts_X;
+   vector<vector<double> > *reco_daughter_spacePts_Y;
+   vector<vector<double> > *reco_daughter_spacePts_Z;
+   vector<vector<double> > *reco_daughter_shower_spacePts_X;
+   vector<vector<double> > *reco_daughter_shower_spacePts_Y;
+   vector<vector<double> > *reco_daughter_shower_spacePts_Z;
 
+  
    // List of branches
    TBranch        *b_run;   //!
    TBranch        *b_subrun;   //!
@@ -588,6 +614,11 @@ protected:
    TBranch        *b_reco_daughter_PFP_true_byHits_startE;   //!
    TBranch        *b_reco_daughter_PFP_true_byHits_endProcess;   //!
    TBranch        *b_reco_daughter_PFP_true_byHits_purity;   //!
+   TBranch        *b_reco_daughter_PFP_true_byHits_completeness;   //!
+   TBranch        *b_reco_daughter_PFP_true_byE_PDG;   //!
+   TBranch        *b_reco_daughter_PFP_true_byE_len;   //!
+   TBranch        *b_reco_daughter_PFP_true_byE_completeness;   //!
+   TBranch        *b_reco_daughter_PFP_true_byE_purity;   //!
    TBranch        *b_reco_daughter_allTrack_ID;   //!
    TBranch        *b_reco_daughter_allTrack_dEdX;   //!
    TBranch        *b_reco_daughter_allTrack_dQdX;   //!
@@ -677,8 +708,6 @@ protected:
    TBranch        *b_true_daughter_nPiMinus;   //!
    TBranch        *b_true_daughter_nNucleus;   //!
    TBranch        *b_reco_beam_vertex_slice;   //!
-   TBranch        *b_reco_beam_vertex_dRs;   //!
-   TBranch        *b_reco_beam_vertex_hits_slices;   //!
    TBranch        *b_true_beam_daughter_PDG;   //!
    TBranch        *b_true_beam_daughter_ID;   //!
    TBranch        *b_true_beam_daughter_len;   //!
@@ -715,6 +744,12 @@ protected:
    TBranch        *b_true_beam_Pi0_decay_parID;   //!
    TBranch        *b_true_beam_Pi0_decay_PDG;   //!
    TBranch        *b_true_beam_Pi0_decay_startP;   //!
+   TBranch        *b_true_beam_Pi0_decay_startPx;   //!
+   TBranch        *b_true_beam_Pi0_decay_startPy;   //!
+   TBranch        *b_true_beam_Pi0_decay_startPz;   //!
+   TBranch        *b_true_beam_Pi0_decay_startX;   //!
+   TBranch        *b_true_beam_Pi0_decay_startY;   //!
+   TBranch        *b_true_beam_Pi0_decay_startZ;   //!
    TBranch        *b_true_beam_Pi0_decay_len;   //!
    TBranch        *b_true_beam_Pi0_decay_nHits;   //!
    TBranch        *b_true_beam_Pi0_decay_reco_byHits_PFP_ID;   //!
@@ -833,13 +868,28 @@ protected:
    TBranch        *b_true_beam_slices_found;   //!
    TBranch        *b_true_beam_slices_nIDEs;   //!
    TBranch        *b_true_beam_slices_deltaE;   //!
-   TBranch        *b_new_true_beam_incidentEnergies;   //!
-   TBranch        *b_new_true_beam_interactingEnergy;   //!
+   TBranch        *b_em_energy;   //!
+   TBranch        *b_true_beam_traj_X;   //!
+   TBranch        *b_true_beam_traj_Y;   //!
+   TBranch        *b_true_beam_traj_Z;   //!
+   TBranch        *b_true_beam_traj_KE;   //!
    TBranch        *b_g4rw_primary_weights;   //!
    TBranch        *b_g4rw_primary_plus_sigma_weight;   //!
    TBranch        *b_g4rw_primary_minus_sigma_weight;   //!
    TBranch        *b_g4rw_primary_var;   //!
-
+   TBranch        *b_g4rw_alt_primary_plus_sigma_weight;   //!
+   TBranch        *b_g4rw_alt_primary_minus_sigma_weight;   //!
+   TBranch        *b_new_branch;   //!
+   TBranch        *b_reco_beam_spacePts_X;   //!
+   TBranch        *b_reco_beam_spacePts_Y;   //!
+   TBranch        *b_reco_beam_spacePts_Z;   //!
+   TBranch        *b_reco_daughter_spacePts_X;   //!
+   TBranch        *b_reco_daughter_spacePts_Y;   //!
+   TBranch        *b_reco_daughter_spacePts_Z;   //!
+   TBranch        *b_reco_daughter_shower_spacePts_X;   //!
+   TBranch        *b_reco_daughter_shower_spacePts_Y;   //!
+   TBranch        *b_reco_daughter_shower_spacePts_Z;   //!
+  
   // Header's
   Int_t EventTime;
   Int_t TriggerWord;

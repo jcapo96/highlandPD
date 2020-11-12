@@ -4,6 +4,7 @@
 #include "HighlandAnalysisUtils.hxx"
 #include "Parameters.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "CalorimetryAlg.hxx"
 
 /*
 
@@ -52,7 +53,7 @@
    vector<string>  *g4rw_primary_var;
 */
 
-bool byHits = true;
+
 
 //********************************************************************
 pionTreeConverter::pionTreeConverter():InputConverter("pionana/beamana"){
@@ -68,6 +69,9 @@ pionTreeConverter::pionTreeConverter():InputConverter("pionana/beamana"){
   _previousSubrunID = -1;
   _previousRefEventID = -1;
 
+
+  _byHits = true;
+  
 }
 
 //********************************************************************
@@ -82,7 +86,6 @@ bool pionTreeConverter::Initialize(){
   eventsTree = GetChain(folder+"/beamana");
 
   fChain = eventsTree;
-
 
    // Set object pointer
    reco_beam_calo_startDirX = 0;
@@ -136,6 +139,11 @@ bool pionTreeConverter::Initialize(){
    reco_daughter_PFP_true_byHits_startE = 0;
    reco_daughter_PFP_true_byHits_endProcess = 0;
    reco_daughter_PFP_true_byHits_purity = 0;
+   reco_daughter_PFP_true_byHits_completeness = 0;
+   reco_daughter_PFP_true_byE_PDG = 0;
+   reco_daughter_PFP_true_byE_len = 0;
+   reco_daughter_PFP_true_byE_completeness = 0;
+   reco_daughter_PFP_true_byE_purity = 0;
    reco_daughter_allTrack_ID = 0;
    reco_daughter_allTrack_dEdX = 0;
    reco_daughter_allTrack_dQdX = 0;
@@ -195,8 +203,6 @@ bool pionTreeConverter::Initialize(){
    true_beam_reco_byHits_PFP_ID = 0;
    true_beam_reco_byHits_PFP_nHits = 0;
    true_beam_reco_byHits_allTrack_ID = 0;
-   reco_beam_vertex_dRs = 0;
-   reco_beam_vertex_hits_slices = 0;
    true_beam_daughter_PDG = 0;
    true_beam_daughter_ID = 0;
    true_beam_daughter_len = 0;
@@ -233,6 +239,12 @@ bool pionTreeConverter::Initialize(){
    true_beam_Pi0_decay_parID = 0;
    true_beam_Pi0_decay_PDG = 0;
    true_beam_Pi0_decay_startP = 0;
+   true_beam_Pi0_decay_startPx = 0;
+   true_beam_Pi0_decay_startPy = 0;
+   true_beam_Pi0_decay_startPz = 0;
+   true_beam_Pi0_decay_startX = 0;
+   true_beam_Pi0_decay_startY = 0;
+   true_beam_Pi0_decay_startZ = 0;
    true_beam_Pi0_decay_len = 0;
    true_beam_Pi0_decay_nHits = 0;
    true_beam_Pi0_decay_reco_byHits_PFP_ID = 0;
@@ -289,13 +301,26 @@ bool pionTreeConverter::Initialize(){
    true_beam_slices_found = 0;
    true_beam_slices_nIDEs = 0;
    true_beam_slices_deltaE = 0;
-   new_true_beam_incidentEnergies = 0;
+   true_beam_traj_X = 0;
+   true_beam_traj_Y = 0;
+   true_beam_traj_Z = 0;
+   true_beam_traj_KE = 0;
    g4rw_primary_weights = 0;
    g4rw_primary_plus_sigma_weight = 0;
    g4rw_primary_minus_sigma_weight = 0;
    g4rw_primary_var = 0;
+   g4rw_alt_primary_plus_sigma_weight = 0;
+   g4rw_alt_primary_minus_sigma_weight = 0;
+   reco_beam_spacePts_X = 0;
+   reco_beam_spacePts_Y = 0;
+   reco_beam_spacePts_Z = 0;
+   reco_daughter_spacePts_X = 0;
+   reco_daughter_spacePts_Y = 0;
+   reco_daughter_spacePts_Z = 0;
+   reco_daughter_shower_spacePts_X = 0;
+   reco_daughter_shower_spacePts_Y = 0;
+   reco_daughter_shower_spacePts_Z = 0;
 
-  
   // Set branch addresses and branch pointers
 
   if (!fChain) return false;
@@ -411,6 +436,11 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_daughter_PFP_true_byHits_startE", &reco_daughter_PFP_true_byHits_startE, &b_reco_daughter_PFP_true_byHits_startE);
    fChain->SetBranchAddress("reco_daughter_PFP_true_byHits_endProcess", &reco_daughter_PFP_true_byHits_endProcess, &b_reco_daughter_PFP_true_byHits_endProcess);
    fChain->SetBranchAddress("reco_daughter_PFP_true_byHits_purity", &reco_daughter_PFP_true_byHits_purity, &b_reco_daughter_PFP_true_byHits_purity);
+   fChain->SetBranchAddress("reco_daughter_PFP_true_byHits_completeness", &reco_daughter_PFP_true_byHits_completeness, &b_reco_daughter_PFP_true_byHits_completeness);
+   fChain->SetBranchAddress("reco_daughter_PFP_true_byE_PDG", &reco_daughter_PFP_true_byE_PDG, &b_reco_daughter_PFP_true_byE_PDG);
+   fChain->SetBranchAddress("reco_daughter_PFP_true_byE_len", &reco_daughter_PFP_true_byE_len, &b_reco_daughter_PFP_true_byE_len);
+   fChain->SetBranchAddress("reco_daughter_PFP_true_byE_completeness", &reco_daughter_PFP_true_byE_completeness, &b_reco_daughter_PFP_true_byE_completeness);
+   fChain->SetBranchAddress("reco_daughter_PFP_true_byE_purity", &reco_daughter_PFP_true_byE_purity, &b_reco_daughter_PFP_true_byE_purity);
    fChain->SetBranchAddress("reco_daughter_allTrack_ID", &reco_daughter_allTrack_ID, &b_reco_daughter_allTrack_ID);
    fChain->SetBranchAddress("reco_daughter_allTrack_dEdX", &reco_daughter_allTrack_dEdX, &b_reco_daughter_allTrack_dEdX);
    fChain->SetBranchAddress("reco_daughter_allTrack_dQdX", &reco_daughter_allTrack_dQdX, &b_reco_daughter_allTrack_dQdX);
@@ -500,8 +530,6 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("true_daughter_nPiMinus", &true_daughter_nPiMinus, &b_true_daughter_nPiMinus);
    fChain->SetBranchAddress("true_daughter_nNucleus", &true_daughter_nNucleus, &b_true_daughter_nNucleus);
    fChain->SetBranchAddress("reco_beam_vertex_slice", &reco_beam_vertex_slice, &b_reco_beam_vertex_slice);
-   fChain->SetBranchAddress("reco_beam_vertex_dRs", &reco_beam_vertex_dRs, &b_reco_beam_vertex_dRs);
-   fChain->SetBranchAddress("reco_beam_vertex_hits_slices", &reco_beam_vertex_hits_slices, &b_reco_beam_vertex_hits_slices);
    fChain->SetBranchAddress("true_beam_daughter_PDG", &true_beam_daughter_PDG, &b_true_beam_daughter_PDG);
    fChain->SetBranchAddress("true_beam_daughter_ID", &true_beam_daughter_ID, &b_true_beam_daughter_ID);
    fChain->SetBranchAddress("true_beam_daughter_len", &true_beam_daughter_len, &b_true_beam_daughter_len);
@@ -538,6 +566,12 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("true_beam_Pi0_decay_parID", &true_beam_Pi0_decay_parID, &b_true_beam_Pi0_decay_parID);
    fChain->SetBranchAddress("true_beam_Pi0_decay_PDG", &true_beam_Pi0_decay_PDG, &b_true_beam_Pi0_decay_PDG);
    fChain->SetBranchAddress("true_beam_Pi0_decay_startP", &true_beam_Pi0_decay_startP, &b_true_beam_Pi0_decay_startP);
+   fChain->SetBranchAddress("true_beam_Pi0_decay_startPx", &true_beam_Pi0_decay_startPx, &b_true_beam_Pi0_decay_startPx);
+   fChain->SetBranchAddress("true_beam_Pi0_decay_startPy", &true_beam_Pi0_decay_startPy, &b_true_beam_Pi0_decay_startPy);
+   fChain->SetBranchAddress("true_beam_Pi0_decay_startPz", &true_beam_Pi0_decay_startPz, &b_true_beam_Pi0_decay_startPz);
+   fChain->SetBranchAddress("true_beam_Pi0_decay_startX", &true_beam_Pi0_decay_startX, &b_true_beam_Pi0_decay_startX);
+   fChain->SetBranchAddress("true_beam_Pi0_decay_startY", &true_beam_Pi0_decay_startY, &b_true_beam_Pi0_decay_startY);
+   fChain->SetBranchAddress("true_beam_Pi0_decay_startZ", &true_beam_Pi0_decay_startZ, &b_true_beam_Pi0_decay_startZ);
    fChain->SetBranchAddress("true_beam_Pi0_decay_len", &true_beam_Pi0_decay_len, &b_true_beam_Pi0_decay_len);
    fChain->SetBranchAddress("true_beam_Pi0_decay_nHits", &true_beam_Pi0_decay_nHits, &b_true_beam_Pi0_decay_nHits);
    fChain->SetBranchAddress("true_beam_Pi0_decay_reco_byHits_PFP_ID", &true_beam_Pi0_decay_reco_byHits_PFP_ID, &b_true_beam_Pi0_decay_reco_byHits_PFP_ID);
@@ -656,13 +690,27 @@ bool pionTreeConverter::Initialize(){
    fChain->SetBranchAddress("true_beam_slices_found", &true_beam_slices_found, &b_true_beam_slices_found);
    fChain->SetBranchAddress("true_beam_slices_nIDEs", &true_beam_slices_nIDEs, &b_true_beam_slices_nIDEs);
    fChain->SetBranchAddress("true_beam_slices_deltaE", &true_beam_slices_deltaE, &b_true_beam_slices_deltaE);
-   fChain->SetBranchAddress("new_true_beam_incidentEnergies", &new_true_beam_incidentEnergies, &b_new_true_beam_incidentEnergies);
-   fChain->SetBranchAddress("new_true_beam_interactingEnergy", &new_true_beam_interactingEnergy, &b_new_true_beam_interactingEnergy);
+   fChain->SetBranchAddress("em_energy", &em_energy, &b_em_energy);
+   fChain->SetBranchAddress("true_beam_traj_X", &true_beam_traj_X, &b_true_beam_traj_X);
+   fChain->SetBranchAddress("true_beam_traj_Y", &true_beam_traj_Y, &b_true_beam_traj_Y);
+   fChain->SetBranchAddress("true_beam_traj_Z", &true_beam_traj_Z, &b_true_beam_traj_Z);
+   fChain->SetBranchAddress("true_beam_traj_KE", &true_beam_traj_KE, &b_true_beam_traj_KE);
    fChain->SetBranchAddress("g4rw_primary_weights", &g4rw_primary_weights, &b_g4rw_primary_weights);
    fChain->SetBranchAddress("g4rw_primary_plus_sigma_weight", &g4rw_primary_plus_sigma_weight, &b_g4rw_primary_plus_sigma_weight);
    fChain->SetBranchAddress("g4rw_primary_minus_sigma_weight", &g4rw_primary_minus_sigma_weight, &b_g4rw_primary_minus_sigma_weight);
    fChain->SetBranchAddress("g4rw_primary_var", &g4rw_primary_var, &b_g4rw_primary_var);
-
+   fChain->SetBranchAddress("g4rw_alt_primary_plus_sigma_weight", &g4rw_alt_primary_plus_sigma_weight, &b_g4rw_alt_primary_plus_sigma_weight);
+   fChain->SetBranchAddress("g4rw_alt_primary_minus_sigma_weight", &g4rw_alt_primary_minus_sigma_weight, &b_g4rw_alt_primary_minus_sigma_weight);
+   fChain->SetBranchAddress("new_branch", &new_branch, &b_new_branch);
+   fChain->SetBranchAddress("reco_beam_spacePts_X", &reco_beam_spacePts_X, &b_reco_beam_spacePts_X);
+   fChain->SetBranchAddress("reco_beam_spacePts_Y", &reco_beam_spacePts_Y, &b_reco_beam_spacePts_Y);
+   fChain->SetBranchAddress("reco_beam_spacePts_Z", &reco_beam_spacePts_Z, &b_reco_beam_spacePts_Z);
+   fChain->SetBranchAddress("reco_daughter_spacePts_X", &reco_daughter_spacePts_X, &b_reco_daughter_spacePts_X);
+   fChain->SetBranchAddress("reco_daughter_spacePts_Y", &reco_daughter_spacePts_Y, &b_reco_daughter_spacePts_Y);
+   fChain->SetBranchAddress("reco_daughter_spacePts_Z", &reco_daughter_spacePts_Z, &b_reco_daughter_spacePts_Z);
+   fChain->SetBranchAddress("reco_daughter_shower_spacePts_X", &reco_daughter_shower_spacePts_X, &b_reco_daughter_shower_spacePts_X);
+   fChain->SetBranchAddress("reco_daughter_shower_spacePts_Y", &reco_daughter_shower_spacePts_Y, &b_reco_daughter_shower_spacePts_Y);
+   fChain->SetBranchAddress("reco_daughter_shower_spacePts_Z", &reco_daughter_shower_spacePts_Z, &b_reco_daughter_shower_spacePts_Z);
 
    //   fChain->SetBranchStatus("*", 0);
    
@@ -722,7 +770,7 @@ bool pionTreeConverter::AddFileToTChain(const std::string& inputString){
   _previousRefEventID   = event;
   
   // Set the data/MC mode and return false when mixing data and MC files
-  _isMC = MC; 
+  _isMC = (bool)MC;
   if (!header().SetIsMC(_isMC)) return false;
 
   _softwareVersion = "v08_40";
@@ -815,6 +863,9 @@ void pionTreeConverter::FillInfo(AnaSpill* spill){
   info.IsMC   = MC;
   //  info.EventTime = evttime;
 
+  //TODO
+  _isMC = MC;
+  
   spill->DataQuality = MakeDataQuality();
   spill->Beam = MakeBeam();
 
@@ -987,7 +1038,7 @@ void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePartic
   bunch->Weight = 1;
   bunch->Particles.clear();
   bunch->Vertices.clear();
-
+  
   // The beam particle
   AnaParticlePD* part = MakeParticle();
   FillBeamParticleInfo(trueParticles, part, beam);  
@@ -1132,23 +1183,36 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   part->RangeMomentum_alt[0] = reco_beam_momByRange_alt_proton;
   part->RangeMomentum_alt[1] = reco_beam_momByRange_alt_muon;
 
+
+  // TODO: Associating space points to hits in a plane for the moment. All space points in the pionana tree are in a single array regardless of the plane
+  // while reco_beam_calibrated_dEdX->size() corresponds to a single plane, reco_beam_spacePts_X->size() has all planes together
+  TVector3 point;
+
   part->AveragedEdx=0;
   part->AveragedQdx=0;
   Int_t ncontrib=0;
   for (UInt_t plane=2;plane<3;plane++){   // only the last slice 
     UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_beam_dEdX->size());
     for (UInt_t j=0;j<nHits;j++){
+
+      // Add hits
+      point.SetXYZ((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
+      AnaHitPD hit(plane,0,0,0, point);
+
+      hit.dEdx          = (*reco_beam_dEdX)[j];
+      hit.dQdx          = (*reco_beam_dQdX)[j];
+      hit.dEdx_corr     = (*reco_beam_calibrated_dEdX)[j];      
+      hit.ResidualRange = (*reco_beam_resRange)[j];
+           
+      part->Hits[plane].push_back(hit);
+
+
       part->AveragedEdx += (*reco_beam_dEdX)[j];
-      part->AveragedQdx += (*reco_beam_dQdX)[j];
-      part->dEdx[plane][j] = (*reco_beam_dEdX)[j];
-      part->dQdx[plane][j] = (*reco_beam_dQdX)[j];
-
-      if (j < reco_beam_calibrated_dEdX->size())
-        part->dEdx_corr[plane][j] = (*reco_beam_calibrated_dEdX)[j];
-
-      part->ResidualRange[plane][j]= (*reco_beam_resRange)[j];
+      part->AveragedQdx += (*reco_beam_dQdX)[j];     
+      
       ncontrib++;
     }
+    part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_beam_calibrated_dEdX));
   }
 
   if (ncontrib!=0){
@@ -1157,21 +1221,11 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   }
 
   //TODO
-  part->NHitsPerPlane[0] = (Int_t)reco_beam_dEdX->size();
-  part->NHitsPerPlane[1] = (Int_t)reco_beam_dEdX->size();
-  part->NHitsPerPlane[2] = (Int_t)reco_beam_dEdX->size();
+  part->NHitsPerPlane[0] = (Int_t)reco_beam_calibrated_dEdX->size();
+  part->NHitsPerPlane[1] = (Int_t)reco_beam_calibrated_dEdX->size();
+  part->NHitsPerPlane[2] = (Int_t)reco_beam_calibrated_dEdX->size();
   
-  // TODO: Associating space points to hits in a plane for the moment. All space points in the pionana tree are in a single array regardless of the plane
-  // while reco_beam_calibrated_dEdX->size() corresponds to a single plane, reco_beam_spacePts_X->size() has all planes together
-  TVector3 point;
 
-  /*
-  UInt_t nHits = std::min((int)NMAXHITSPERPLANE_SELTRK,   (int)reco_beam_spacePts_X->size());
-  for (UInt_t j = 0; j < nHits; j++){
-    point.SetXYZ((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
-    part->HitPosition[2].push_back(point);
-  }
-  */
   // --------- reco_beam_PFP ------------------------
 
   part->CNNscore[0] = reco_beam_PFP_trackScore_collection;
@@ -1206,7 +1260,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   if (_isMC){
 
     // Search for the true-reco association within the vector of TrueParticles
-    //    if (byHits)
+    //    if (_byHits)
     //      part->TrueObject = pdAnaUtils::GetTrueParticle(reco_beam_true_byHits_ID,trueParticles);
     //    else
     //      part->TrueObject = pdAnaUtils::GetTrueParticle(reco_beam_true_byE_ID,   trueParticles);
@@ -1370,13 +1424,23 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
       }
       part->AveragedEdx += dedx;
       part->AveragedQdx += dqdx;
-      part->dEdx[plane][j]         = dedx;
-      part->dQdx[plane][j]         = dqdx;
-      part->dEdx_corr[plane][j]    = dedx_cal;
-      part->ResidualRange[plane][j]= resRange;
+
+      // Add hits
+      TVector3 point;
+      point.SetXYZ((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
+      AnaHitPD hit(2,0,0,0, point);
+
+      hit.dEdx         = dedx;
+      hit.dQdx         = dqdx;
+      hit.dEdx_corr    = dedx_cal;
+      hit.ResidualRange= resRange;
+
+      part->Hits[plane].push_back(hit);
+
       ncontrib++;
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk]);
+
   }
 
   if (ncontrib!=0){
@@ -1389,14 +1453,6 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
   part->NHitsPerPlane[1] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
   part->NHitsPerPlane[2] = (Int_t)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size();
 
-  // TODO: Associating space points to hits in a plane for the moment
-  /*
-  UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)reco_daughter_spacePts_X->size());
-  for (UInt_t j=0;j<nHits;j++){
-    TVector3 point((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
-    part->HitPosition[2].push_back(point);
-  }
-  */
   part->Chi2Proton = (*reco_daughter_allTrack_Chi2_proton)[itrk];
   part->Chi2ndf    = (*reco_daughter_allTrack_Chi2_ndof)[itrk];
 
@@ -1558,7 +1614,7 @@ void pionTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
 //*****************************************************************************
 
 
-  if (byHits){
+  if (_byHits){
     truePart->ID  = reco_beam_true_byHits_ID;
     truePart->PDG = reco_beam_true_byHits_PDG;
 
