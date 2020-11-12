@@ -14,6 +14,7 @@
 #include "dEdxVariation.hxx"
 #include "LengthVariation.hxx"
 #include "BeamCompositionWeight.hxx"
+#include "LifetimeVariation.hxx"
 
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
@@ -195,9 +196,10 @@ void pionAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   // Define additional systematics (pionAnalysys/src/systematics)
-  evar().AddEventVariation(kdEdx,   "dEdx",     new dEdxVariation());
-  evar().AddEventVariation(kLength, "Length",   new LengthVariation());
-  eweight().AddEventWeight(kBeam,   "beamComp", new BeamCompositionWeight());
+  evar().AddEventVariation(kdEdx,    "dEdx",     new dEdxVariation());
+  evar().AddEventVariation(kLength,  "Length",   new LengthVariation());
+  evar().AddEventVariation(kLifetime,"Lifetime", new LifetimeVariation());
+  eweight().AddEventWeight(kBeam,    "beamComp", new BeamCompositionWeight());
 }
 
 //********************************************************************
@@ -212,9 +214,11 @@ void pionAnalysis::DefineConfigurations(){
   baseAnalysis::DefineConfigurations();
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
+
   if (_enableAllSystConfig){
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdx"))             conf().EnableEventVariation(kdEdx,         all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime"))         conf().EnableEventVariation(kLifetime,     all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
   }
 }
@@ -265,7 +269,10 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddVar3VF(       output(), seltrk_CNNscore,        "candidate reconstructed CNN score");
   AddToyVarF(      output(), seltrk_chi2_prot,       "candidate chi2 proton");
   AddToyVarF(      output(), seltrk_chi2_ndf,        "candidate chi2 ndf");
+  AddToyVarF(      output(), seltrk_hit0_dedx,       "candidate dedx variated");
+  AddToyVarF(      output(), seltrk_truncLibo_dEdx,  "candidate truncated libo variated");
 
+  
   seltrk_ndau = standardPDTree::seltrk_ndau;
   AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,NMAXSAVEDDAUGHTERS);
@@ -410,6 +417,9 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
   if (box().MainTrack){
     output().FillToyVar(seltrk_chi2_prot, box().MainTrack->Chi2Proton);
     output().FillToyVar(seltrk_chi2_ndf,  box().MainTrack->Chi2ndf);
+    output().FillToyVar(seltrk_truncLibo_dEdx,  box().MainTrack->truncLibo_dEdx);
+    if (!box().MainTrack->Hits[2].empty())
+      output().FillToyVar(seltrk_hit0_dedx, box().MainTrack->Hits[2][0].dEdx_corr);
   }  
 }
 

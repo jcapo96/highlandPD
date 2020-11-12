@@ -81,6 +81,8 @@ public:
     seltrk_CNNscore,
     seltrk_chi2_prot,
     seltrk_chi2_ndf,
+    seltrk_hit0_dedx,
+    seltrk_truncLibo_dEdx,
 
     seltrk_dau_CNNscore,
     seltrk_dau_chi2_prot,
@@ -100,7 +102,8 @@ public:
   enum enumSyst_pionAnalysis{
     kdEdx=0,
     kLength,
-    kBeam,
+    kLifetime,
+    kBeam,    
     enumSystLast_pionAnalysis
   };
   
