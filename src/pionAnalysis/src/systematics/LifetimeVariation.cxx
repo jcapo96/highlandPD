@@ -20,10 +20,6 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
 
-
-  detinfo::DetectorClocksData clock_data;
-  detinfo::DetectorPropertiesData det_prop;
-  
   double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
   //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
   double norm_factor[3] = {1.0078, 1.0082, 0.9946};
@@ -56,34 +52,23 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     //    Float_t pitch3D = pdAnaUtils::Compute3DWirePitch(plane, dir);
 
 
+    std::vector<double> dedx_vector;
+    
     // Apply the variation to the evnt model quantities
     for (Int_t i=2;i<3;i++){
       for (Int_t j=0;j<part->Hits[i].size();j++){
 
         AnaHitPD& hit = part->Hits[i][j];
 
-        //        if (part->dQdx[i][j] < 1) continue;
                 
         // dq/dx should be in e/cm
         // dE/dx is returned in MeV/cm
         
-        double dQdx_e_corr = part->dQdx_corr[i][j]/calib_factor[2]*norm_factor[2];
-        double dQdx_e      = part->dQdx[i][j]     /calib_factor[2]*norm_factor[2];
-
-        /*
-        part->dEdx_corr[i][j]   = fCalo.dEdx_from_dQdx_e(clock_data,
-                                                         det_prop,
-                                                         dQdx_e_corr,
-                                                         hit.PeakTime(),
-                                                         fEventT0);
-        */
-
-        part->dEdx_corr[i][j] = part->dEdx[i][j] = fCalo.dEdx_from_dQdx_e(clock_data,
-                                                                          det_prop,
-                                                                          dQdx_e,
-                                                                          hit.PeakTime(),
-                                                                          fEventT0);
-
+        double dQdx_e      = part->Hits[i][j].dQdx/calib_factor[2]*norm_factor[2];
+        part->Hits[i][j].dEdx_corr = part->Hits[i][j].dEdx = fCalo.dEdx_from_dQdx_e(dQdx_e,
+                                                                                    hit.PeakTime(),
+                                                                                    fEventT0);
+        dedx_vector.push_back(part->Hits[i][j].dEdx_corr);
       }
     }
 
@@ -91,6 +76,8 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     std::pair<double, int> chi2pid = pdAnaUtils::Chi2PID(*part, NULL);
     part->Chi2Proton  = chi2pid.first;
     part->Chi2ndf     = chi2pid.second;
+    part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,dedx_vector);
+
   }
 }
 
@@ -99,7 +86,6 @@ bool LifetimeVariation::UndoSystematic(AnaEventC& event){
   //********************************************************************
 
 
-  return true;
   // Get the SystBox for this event
   SystBoxB* box = GetSystBox(event);
 
@@ -109,13 +95,14 @@ bool LifetimeVariation::UndoSystematic(AnaEventC& event){
     if (!original)   continue;
 
     for (Int_t i=0;i<3;i++){
-      for (Int_t j=0;j<part->NHitsPerPlane[i];j++){
-        part->dEdx[i][j]      = original->dEdx[i][j];
-        part->dEdx_corr[i][j] = original->dEdx_corr[i][j];
-        part->Chi2Proton      = original->Chi2Proton;
-        part->Chi2ndf         = original->Chi2ndf;
+      for (UInt_t j=0;j<part->Hits[i].size();j++){
+        part->Hits[i][j].dEdx      = original->Hits[i][j].dEdx;
+        part->Hits[i][j].dEdx_corr = original->Hits[i][j].dEdx_corr;
       }
     }
+    part->Chi2Proton      = original->Chi2Proton;
+    part->Chi2ndf         = original->Chi2ndf;
+    part->truncLibo_dEdx  = original->truncLibo_dEdx;
   }
 
   // Don't reset the spill to corrected
