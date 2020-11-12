@@ -42,9 +42,9 @@ void dEdxVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
     // Apply the variation to the evnt model quantities
     for (Int_t i=0;i<3;i++){
-      for (Int_t j=0;j<part->NHitsPerPlane[i];j++){
-        part->dEdx[i][j]      = original->dEdx[i][j]      *(1 +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]/mean_corr);
-        part->dEdx_corr[i][j] = original->dEdx_corr[i][j] *(1 +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]/mean_corr);
+      for (UInt_t j=0;j<part->Hits[i].size();j++){
+        part->Hits[i][i].dEdx      = original->Hits[i][i].dEdx      *(1 +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]/mean_corr);
+        part->Hits[i][i].dEdx_corr = original->Hits[i][i].dEdx_corr *(1 +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]/mean_corr);
         // A variation on the residual range and the track length is also expected. Should this be done here or in a different systematic ?
       }
     }
@@ -69,9 +69,9 @@ bool dEdxVariation::UndoSystematic(AnaEventC& event){
     if (!original)   continue;
 
     for (Int_t i=0;i<3;i++){
-      for (Int_t j=0;j<part->NHitsPerPlane[i];j++){
-        part->dEdx[i][j]      = original->dEdx[i][j];
-        part->dEdx_corr[i][j] = original->dEdx_corr[i][j];
+      for (UInt_t j=0;j<part->Hits[i].size();j++){
+        part->Hits[i][i].dEdx      = original->Hits[i][i].dEdx;
+        part->Hits[i][i].dEdx_corr = original->Hits[i][i].dEdx_corr;
         part->Chi2Proton      = original->Chi2Proton;
         part->Chi2ndf         = original->Chi2ndf;
       }

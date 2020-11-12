@@ -45,8 +45,8 @@ void dEdxCorrection::Apply(AnaSpillC& spillC){
       if (!GetBinValues(abs(truePart->PDG), mean_corr,  mean_var,  mean_index))  return;
       
       for (Int_t i=0;i<3;i++){
-        for (Int_t j=0;j<part->NHitsPerPlane[i];j++){
-          part->dEdx[i][j] = original->dEdx[i][j] * mean_corr;
+        for (UInt_t j=0;j<part->Hits[i].size();j++){
+          part->Hits[i][i].dEdx = original->Hits[i][i].dEdx * mean_corr;
         }
       }
     }
