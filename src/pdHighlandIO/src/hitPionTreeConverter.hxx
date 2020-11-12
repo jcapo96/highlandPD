@@ -4,8 +4,8 @@
    A. Cervera February 2020
 */
 
-#ifndef pionTreeConverter_h
-#define pionTreeConverter_h
+#ifndef hitPionTreeConverter_h
+#define hitPionTreeConverter_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -34,12 +34,12 @@ const unsigned int NMAXTRUEPARTS = 1000;
 const unsigned int NMAXTRACKS    = 50;
 const unsigned int NMAXVTXS      = 50; 
 */
-class pionTreeConverter: public InputConverter{
+class hitPionTreeConverter: public InputConverter{
 
  public:
 
-  pionTreeConverter();
-  virtual ~pionTreeConverter();
+  hitPionTreeConverter();
+  virtual ~hitPionTreeConverter();
 
   virtual bool Initialize();
   virtual Int_t GetSpill(Long64_t& entry, AnaSpillC*& spill);
@@ -97,6 +97,8 @@ protected:
   Int_t _previousRefEventID;
 
   bool _useSCE;
+
+  bool _byHits;
   
  protected:
 

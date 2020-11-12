@@ -1,4 +1,4 @@
-#include "pionTreeConverter.hxx"
+#include "hitPionTreeConverter.hxx"
 #include "InputManager.hxx"
 #include "BasicUtils.hxx"
 #include "HighlandAnalysisUtils.hxx"
@@ -53,10 +53,10 @@
    vector<string>  *g4rw_primary_var;
 */
 
-bool byHits = true;
+
 
 //********************************************************************
-pionTreeConverter::pionTreeConverter():InputConverter("pionana/beamana"){
+hitPionTreeConverter::hitPionTreeConverter():InputConverter("pionana/beamana"){
 //********************************************************************
 
   _spill = NULL;
@@ -69,10 +69,13 @@ pionTreeConverter::pionTreeConverter():InputConverter("pionana/beamana"){
   _previousSubrunID = -1;
   _previousRefEventID = -1;
 
+
+  _byHits = true;
+  
 }
 
 //********************************************************************
-bool pionTreeConverter::Initialize(){
+bool hitPionTreeConverter::Initialize(){
 //********************************************************************
 
   _useSCE = (bool)(ND::params().GetParameterI("pionAnalysis.TreeConverter.UseSCE"));
@@ -726,7 +729,7 @@ bool pionTreeConverter::Initialize(){
 }
 
 //********************************************************************
-pionTreeConverter::~pionTreeConverter(){
+hitPionTreeConverter::~hitPionTreeConverter(){
 //********************************************************************
 
   if (!fChain) return;
@@ -735,10 +738,10 @@ pionTreeConverter::~pionTreeConverter(){
 }
 
 //****************************************************************************
-bool pionTreeConverter::AddFileToTChain(const std::string& inputString){
+bool hitPionTreeConverter::AddFileToTChain(const std::string& inputString){
 //****************************************************************************
 
-  std::cout << "pionTreeConverter::AddFileToTChain(). Adding file: " << inputString << std::endl;
+  std::cout << "hitPionTreeConverter::AddFileToTChain(). Adding file: " << inputString << std::endl;
 
   /*
   TChain BasicHeaderForFile("HeaderDir/BasicHeader");
@@ -762,7 +765,7 @@ bool pionTreeConverter::AddFileToTChain(const std::string& inputString){
   // Make sure the current file has not the same run and subrun number as the previous
   if (_previousRunID==run &&  _previousSubrunID==subrun && _previousRefEventID>= event){
     std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "pionTreeConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
+    std::cout << "hitPionTreeConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
     std::cout << "                                           and no higher event number !!!" << std::endl;
     std::cout << "   - this file:     " << inputString << std::endl;
     std::cout << "   - previous file: " << _previousFile << std::endl;
@@ -789,7 +792,7 @@ bool pionTreeConverter::AddFileToTChain(const std::string& inputString){
 
 
 //*****************************************************************************
-Int_t pionTreeConverter::ReadEntries(Long64_t& entry) {
+Int_t hitPionTreeConverter::ReadEntries(Long64_t& entry) {
 //*****************************************************************************
   
   Int_t entry_temp = eventsTree->GetEntry(entry);
@@ -808,7 +811,7 @@ Int_t pionTreeConverter::ReadEntries(Long64_t& entry) {
 }
 
 //*****************************************************************************
-Int_t pionTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
+Int_t hitPionTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 //*****************************************************************************
 
   static std::string currentfilename("");
@@ -849,7 +852,7 @@ Int_t pionTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 }
 
 //********************************************************************
-void pionTreeConverter::IncrementPOTBySpill() {
+void hitPionTreeConverter::IncrementPOTBySpill() {
 //********************************************************************
   
 //  bool bySpillInMC = false;
@@ -860,7 +863,7 @@ void pionTreeConverter::IncrementPOTBySpill() {
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillInfo(AnaSpill* spill){
+void hitPionTreeConverter::FillInfo(AnaSpill* spill){
 //*****************************************************************************
   spill->EventInfo = MakeEventInfo();
   AnaEventInfo& info = *static_cast<AnaEventInfo*>(spill->EventInfo);
@@ -900,14 +903,14 @@ void pionTreeConverter::FillInfo(AnaSpill* spill){
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillDQInfo(AnaDataQuality* dq){
+void hitPionTreeConverter::FillDQInfo(AnaDataQuality* dq){
 //*****************************************************************************
 
     dq->GoodDaq   = true;
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam){
+void hitPionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam){
 //*****************************************************************************
 
   // Missing: 
@@ -980,7 +983,7 @@ void pionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticl
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillTriggerInfo(AnaTrigger* trigger){
+void hitPionTreeConverter::FillTriggerInfo(AnaTrigger* trigger){
 //*****************************************************************************
 
   (void)trigger;
@@ -988,7 +991,7 @@ void pionTreeConverter::FillTriggerInfo(AnaTrigger* trigger){
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueInfo(AnaSpill* spill){
+void hitPionTreeConverter::FillTrueInfo(AnaSpill* spill){
 //*****************************************************************************
 
   // Fill the true vertices vector
@@ -1039,7 +1042,7 @@ void pionTreeConverter::FillTrueInfo(AnaSpill* spill){
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam){
+void hitPionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam){
 //*****************************************************************************
 
   bunch->Bunch  = 1;
@@ -1083,7 +1086,7 @@ void pionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePartic
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* trueVertex){
+void hitPionTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* trueVertex){
 //*****************************************************************************
 
   (void)ivertex;
@@ -1107,7 +1110,7 @@ void pionTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* trueVer
 
 
 //*****************************************************************************
-void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles,
+void hitPionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles,
                                              AnaParticlePD* part, AnaBeamPD* beam){
 //*****************************************************************************
 
@@ -1268,7 +1271,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
   if (_isMC){
 
     // Search for the true-reco association within the vector of TrueParticles
-    //    if (byHits)
+    //    if (_byHits)
     //      part->TrueObject = pdAnaUtils::GetTrueParticle(reco_beam_true_byHits_ID,trueParticles);
     //    else
     //      part->TrueObject = pdAnaUtils::GetTrueParticle(reco_beam_true_byE_ID,   trueParticles);
@@ -1350,7 +1353,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles,
+void hitPionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticleB*>& trueParticles,
                                                       Int_t itrk, AnaParticlePD* part){
 //*****************************************************************************
 
@@ -1531,7 +1534,7 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles,
+void hitPionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles,
                                                        Int_t itrk, AnaParticlePD* part){
 //*****************************************************************************
 
@@ -1618,11 +1621,11 @@ void pionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePartic
 
 
 //*****************************************************************************
-void pionTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
+void hitPionTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
 //*****************************************************************************
 
 
-  if (byHits){
+  if (_byHits){
     truePart->ID  = reco_beam_true_byHits_ID;
     truePart->PDG = reco_beam_true_byHits_PDG;
 
@@ -1681,7 +1684,7 @@ void pionTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
 
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
+void hitPionTreeConverter::FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* truePart){
 //*****************************************************************************
 
   truePart->ID = true_beam_ID;
@@ -1782,7 +1785,7 @@ void pionTreeConverter::FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* truePart
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueBeamDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart, AnaTrueParticlePD* parent){
+void hitPionTreeConverter::FillTrueBeamDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart, AnaTrueParticlePD* parent){
 //*****************************************************************************
 
 
@@ -1857,7 +1860,7 @@ void pionTreeConverter::FillTrueBeamDaughterTrueParticleInfo(Int_t ipart, AnaTru
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart, AnaTrueParticlePD* parent){
+void hitPionTreeConverter::FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart, AnaTrueParticlePD* parent){
 //*****************************************************************************
 
 
@@ -1875,7 +1878,7 @@ void pionTreeConverter::FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, A
 }
 
 //*****************************************************************************
-void pionTreeConverter::FillDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart){
+void hitPionTreeConverter::FillDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart){
 //*****************************************************************************
   
   truePart->ID =   (*reco_daughter_PFP_true_byHits_ID)[ipart];
