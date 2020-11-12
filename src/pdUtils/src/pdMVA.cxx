@@ -329,7 +329,7 @@ void mvapid::MVAAlg::PrepareEvent(const AnaEventB& evt, const detinfo::DetectorC
   fShowersToHits.clear();
   fShowersToSpacePoints.clear();
 
-  fEventT0 = calo::trigger_offset(clockData);
+  fEventT0 = calo::trigger_offset();
 
   // Get the array of parts from the event
   AnaParticleB** parts = static_cast<const AnaEventB*>(&evt)->Particles;
@@ -345,7 +345,7 @@ void mvapid::MVAAlg::PrepareEvent(const AnaEventB& evt, const detinfo::DetectorC
     fTracks.push_back(track);
 
     for (UInt_t j = 0; j < part->Hits[2].size(); j++){
-      SpacePoint* spacePoint = new SpacePoint(part->HitPosition[2][j]);      
+      SpacePoint* spacePoint = new SpacePoint(part->Hits[2][j].Position);      
       fSpacePoints.push_back(spacePoint);
       fTracksToSpacePoints[track].push_back(spacePoint);
       AnaHitPD* hit = new AnaHitPD(part->Hits[2][j]);
@@ -713,7 +713,7 @@ double mvapid::MVAAlg::CalcSegmentdEdxDist(const detinfo::DetectorClocksData& cl
     xComponent = yzPitch * dir[0] / sqrt(dir[1] * dir[1] + dir[2] * dir[2]);
     pitch3D = sqrt(xComponent * xComponent + yzPitch * yzPitch);
 
-    double dEdx = fCaloAlg.dEdx_AREA(clock_data, det_prop, *hit, pitch3D, fEventT0);
+    double dEdx = fCaloAlg.dEdx_AREA(*hit, pitch3D, fEventT0);
     if (dEdx < 50.) {
       ++nHits;
       totaldEdx += dEdx;
