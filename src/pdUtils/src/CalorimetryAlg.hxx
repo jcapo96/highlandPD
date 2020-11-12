@@ -30,8 +30,8 @@ namespace detinfo{
 namespace calo {
 
 
-  Int_t trigger_offset(detinfo::DetectorClocksData const& data);
-  double sampling_rate(detinfo::DetectorClocksData const& data);
+  Int_t trigger_offset();
+  double sampling_rate();
 
   class CalorimetryAlg {
   public:
@@ -59,49 +59,42 @@ namespace calo {
       */
     };
 
-    CalorimetryAlg(const std::string& pset):fUseModBox(false), fLifeTimeForm(0),fDoLifeTimeCorrection(false){}
+    CalorimetryAlg(const std::string& pset):fUseModBox(true), fLifeTimeForm(0),fDoLifeTimeCorrection(false){
+
+      fElectronLifetime = 35000; // from PionAnalyzer_module output
+
+    }
     //      : CalorimetryAlg(fhicl::Table<Config>(pset, {})())
     //    {}
 
     //    CalorimetryAlg(const Config& config);
         CalorimetryAlg();
 
-    double dEdx_AMP(detinfo::DetectorClocksData const& clock_data,
-                    detinfo::DetectorPropertiesData const& det_prop,
-                    AnaHitPD const& hit,
+    double dEdx_AMP(AnaHitPD const& hit,
                     double pitch,
                     double T0 = 0) const;
-    double dEdx_AMP(detinfo::DetectorClocksData const& clock_data,
-                    detinfo::DetectorPropertiesData const& det_prop,
-                    double dQ,
+    double dEdx_AMP(double dQ,
                     double time,
                     double pitch,
                     unsigned int plane,
                     double T0 = 0) const;
-    double dEdx_AMP(detinfo::DetectorClocksData const& clock_data,
-                    detinfo::DetectorPropertiesData const& det_prop,
-                    double dQdx,
+    double dEdx_AMP(double dQdx,
                     double time,
                     unsigned int plane,
                     double T0 = 0) const;
 
     // FIXME: How may of these are actually used?
-    double dEdx_AREA(detinfo::DetectorClocksData const& clock_data,
-                     detinfo::DetectorPropertiesData const& det_prop,
-                     AnaHitPD const& hit,
+    double dEdx_AREA(AnaHitPD const& hit,
                      double pitch,
                      double T0 = 0) const;
-    double dEdx_AREA(detinfo::DetectorClocksData const& clock_data,
-                     detinfo::DetectorPropertiesData const& det_prop,
-                     double dQ,
+    double dEdx_AREA(double dQ,
                      double time,
                      double pitch,
                      unsigned int plane,
                      double T0 = 0) const;
-    double dEdx_AREA(detinfo::DetectorClocksData const& clock_data,
-                     detinfo::DetectorPropertiesData const& det_prop,
-                     double dQdx,
+    double dEdx_AREA(double dQdx,
                      double time,
+                     const TVector3& pos,
                      unsigned int plane,
                      double T0 = 0) const;
 
@@ -117,9 +110,7 @@ namespace calo {
       return area / fCalAreaConstants[plane];
     }
 
-    double LifetimeCorrection(detinfo::DetectorClocksData const& clock_data,
-                              detinfo::DetectorPropertiesData const& det_prop,
-                              double time,
+    double LifetimeCorrection(double time,
                               double T0 = 0) const;
 
 
@@ -128,18 +119,26 @@ namespace calo {
     //  private:
     //    art::ServiceHandle<geo::Geometry const> geom;
 
-    double dEdx_from_dQdx_e(detinfo::DetectorClocksData const& clock_data,
-                            detinfo::DetectorPropertiesData const& det_prop,
-                            double dQdx_e,
+    double dEdx_from_dQdx_e(double dQdx_e,
                             double time,
                             double T0 = 0) const;
 
+    double dEdx_from_dQdx(double dQdx,
+                          double time,
+                          double T0 = 0) const;
+
+
+    void SetElectronLifetime(double lifetime){fElectronLifetime=lifetime;}
+    
     std::vector<double> fCalAmpConstants;
     std::vector<double> fCalAreaConstants;
     bool const fUseModBox;
     int const fLifeTimeForm;
     bool const fDoLifeTimeCorrection;
 
+    double fElectronLifetime;
+
+    
   }; // class CalorimetryAlg
 } // namespace calo
 #endif // UTIL_CALORIMETRYALG_H

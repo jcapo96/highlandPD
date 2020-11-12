@@ -20,16 +20,21 @@
 
 #include "pdAnalysisUtils.hxx" 
 
+
+
+
 namespace calo {
 
+bool debug=false;
+  
   // From PionAnalizer_module otput
-  Int_t trigger_offset(detinfo::DetectorClocksData const& data)
+  Int_t trigger_offset()
   {
     return 500;//data.TPCClock().Ticks(data.TriggerOffsetTPC() * -1.);
   }
 
   // From PionAnalizer_module otput
-  double sampling_rate(detinfo::DetectorClocksData const& data)
+  double sampling_rate()
   {
     return 500;//data.TPCClock().TickPeriod() * 1.e3;
   }
@@ -38,9 +43,9 @@ namespace calo {
   CalorimetryAlg::CalorimetryAlg()
     : //fCalAmpConstants{std::vector<double>()}
     //, fCalAreaConstants{std::vector<double>()}
-     fUseModBox{false}
+     fUseModBox{true}
     , fLifeTimeForm{0}
-    , fDoLifeTimeCorrection{false}
+    , fDoLifeTimeCorrection{true}
   {
 
 
@@ -54,8 +59,6 @@ namespace calo {
     fCalAreaConstants.push_back(1e-3);
     fCalAreaConstants.push_back(1e-3);
 
-    std::cout << "anselmo -1: " << fCalAreaConstants[2]  << std::endl;
-    
     if (fLifeTimeForm != 0 and fLifeTimeForm != 1) {
       /*
       throw cet::exception("CalorimetryAlg")
@@ -64,136 +67,166 @@ namespace calo {
            "constant.\n";
       */
     }
+
+    fElectronLifetime = 35000; // from PionAnalyzer_module output
   }
 
   //------------------------------------------------------------------------------------//
   // Functions to calculate the dEdX based on the AMPLITUDE of the pulse
   // ----------------------------------------------------------------------------------//
   double
-  CalorimetryAlg::dEdx_AMP(detinfo::DetectorClocksData const& clock_data,
-                           detinfo::DetectorPropertiesData const& det_prop,
-                           AnaHitPD const& hit,
+  CalorimetryAlg::dEdx_AMP(AnaHitPD const& hit,
                            double const pitch,
                            double const T0) const
   {
-    return dEdx_AMP(
-      clock_data, det_prop, hit.PeakAmplitude() / pitch, hit.PeakTime(), hit.WireID().Plane, T0);
+    return dEdx_AMP(hit.PeakAmplitude() / pitch, hit.PeakTime(), hit.WireID().Plane, T0);
   }
 
   // ----------------------------------------------------------------------------------//
   double
-  CalorimetryAlg::dEdx_AMP(detinfo::DetectorClocksData const& clock_data,
-                           detinfo::DetectorPropertiesData const& det_prop,
-                           double const dQ,
+  CalorimetryAlg::dEdx_AMP(double const dQ,
                            double const time,
                            double const pitch,
                            unsigned int const plane,
                            double const T0) const
   {
     double const dQdx = dQ / pitch; // in ADC/cm
-    return dEdx_AMP(clock_data, det_prop, dQdx, time, plane, T0);
+    return dEdx_AMP(dQdx, time, plane, T0);
   }
 
   // ----------------------------------------------------------------------------------//
   double
-  CalorimetryAlg::dEdx_AMP(detinfo::DetectorClocksData const& clock_data,
-                           detinfo::DetectorPropertiesData const& det_prop,
-                           double const dQdx,
+  CalorimetryAlg::dEdx_AMP(double const dQdx,
                            double const time,
                            unsigned int const plane,
                            double const T0) const
   {
     double const fADCtoEl = fCalAmpConstants[plane];
     double const dQdx_e = dQdx / fADCtoEl; // Conversion from ADC/cm to e/cm
-    return dEdx_from_dQdx_e(clock_data, det_prop, dQdx_e, time, T0);
+    return dEdx_from_dQdx_e(dQdx_e, time, T0);
   }
 
   //------------------------------------------------------------------------------------//
   // Functions to calculate the dEdX based on the AREA of the pulse
   // ----------------------------------------------------------------------------------//
+
   double
-  CalorimetryAlg::dEdx_AREA(detinfo::DetectorClocksData const& clock_data,
-                            detinfo::DetectorPropertiesData const& det_prop,
-                            AnaHitPD const& hit,
+  CalorimetryAlg::dEdx_AREA(AnaHitPD const& hit,
                             double const pitch,
                             double const T0) const
   {
 
-    std::cout << "anselmo 3: " << hit.Integral()  << " " << pitch << " " <<  hit.PeakTime() << " " << hit.WireID().Plane << " " <<  T0 << std::endl;
-    return dEdx_AREA(
-      clock_data, det_prop, hit.Integral() / pitch, hit.PeakTime(), hit.WireID().Plane, T0);
+    if (debug)
+      std::cout << "- dEdx_AREA (1): integral = " << hit.Integral()  << ", pitch = " << pitch << ", peakTime = " <<  hit.PeakTime() << ", plane = " << hit.WireID().Plane << ", T0 = " <<  T0 << std::endl;
+    return dEdx_AREA(hit.Integral() / pitch, hit.PeakTime(), hit.Position, hit.WireID().Plane, T0);
   }
 
   // ----------------------------------------------------------------------------------//
   double
-  CalorimetryAlg::dEdx_AREA(detinfo::DetectorClocksData const& clock_data,
-                            detinfo::DetectorPropertiesData const& det_prop,
-                            double const dQ,
+  CalorimetryAlg::dEdx_AREA(double const dQ,
                             double const time,
                             double const pitch,
                             unsigned int const plane,
                             double const T0) const
   {
     double const dQdx = dQ / pitch; // in ADC/cm
-    return dEdx_AREA(clock_data, det_prop, dQdx, time, plane, T0);
+    return dEdx_AREA(dQdx, time, plane, T0);
   }
 
   // ----------------------------------------------------------------------------------//
   double
-  CalorimetryAlg::dEdx_AREA(detinfo::DetectorClocksData const& clock_data,
-                            detinfo::DetectorPropertiesData const& det_prop,
-                            double const dQdx,
+  CalorimetryAlg::dEdx_AREA(double const dQdx,
                             double const time,
+                            const TVector3& pos,
                             unsigned int const plane,
                             double const T0) const
   {
 
-    double const fADCtoEl = fCalAreaConstants[plane];
-    double const dQdx_e = dQdx / fADCtoEl; // Conversion from ADC/cm to e/cm
+    double const fADCtoEl = 0.00615;//fCalAreaConstants[plane];
+    //    double const dQdx_e = dQdx / fADCtoEl; // Conversion from ADC/cm to e/cm
 
 
-    return dEdx_from_dQdx_e(clock_data, det_prop, dQdx_e, time, T0);
+    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
+    //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
+    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
+
+   
+    // dq/dx should be in e/cm
+    // dE/dx is returned in MeV/cm
+
+    double dQdx_e = dQdx;///calib_factor[2]*norm_factor[2];
+
+
+    
+    Float_t cal_dQdx_e = pdAnaUtils::ComputeCalibrateddQdX(dQdx_e, pos);
+
+    if (debug)
+      std::cout << "  - dEdx_AREA (2): dQdx = " << dQdx  << ", fADCtoEl = " << fADCtoEl << ", dQdx_e = " <<  dQdx_e << ", cal_dQdx = " << cal_dQdx_e << std::endl;
+
+    return dEdx_from_dQdx_e(cal_dQdx_e, time, T0);
   }
 
   // Apply Lifetime and recombination correction.
   double
-  CalorimetryAlg::dEdx_from_dQdx_e(detinfo::DetectorClocksData const& clock_data,
-                                   detinfo::DetectorPropertiesData const& det_prop,
-                                   double dQdx_e,
+  CalorimetryAlg::dEdx_from_dQdx_e(double dQdx_e,
                                    double const time,
                                    double const T0) const
   {
     if (fDoLifeTimeCorrection) {
-      dQdx_e *= LifetimeCorrection(clock_data, det_prop, time, T0); // (dQdx_e in e/cm)
+      dQdx_e *= LifetimeCorrection(time, T0); // (dQdx_e in e/cm)
     }
 
+    if (debug)
+      std::cout << "    - dEdx_from_dQdx_e: dQdx_e (lifetime corr)= " << dQdx_e << std::endl;
+    
     if (fUseModBox) { return ModBoxCorrection(dQdx_e); }
 
     return BirksCorrection(dQdx_e);
   }
 
+
+  // Apply Lifetime and recombination correction.
+  double
+  CalorimetryAlg::dEdx_from_dQdx(double dQdx,
+                                 double const time,
+                                 double const T0) const
+  {
+
+
+    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
+    //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
+    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
+
+    
+    double dQdx_e = dQdx/calib_factor[2]*norm_factor[2];
+
+    if (debug)
+      std::cout << "    - dEdx_from_dQdx: dQdx (ADC) =  " << dQdx << " dQdx (e) = " << dQdx_e << std::endl;
+    
+    return dEdx_from_dQdx_e(dQdx_e,time,T0);
+  }
+
+  
   //------------------------------------------------------------------------------------//
   // for the time being copying from Calorimetry.cxx - should be decided where
   // to keep it.
   // ----------------------------------------------------------------------------------//
   double
-  calo::CalorimetryAlg::LifetimeCorrection(detinfo::DetectorClocksData const& clock_data,
-                                           detinfo::DetectorPropertiesData const& det_prop,
-                                           double const time,
+  calo::CalorimetryAlg::LifetimeCorrection(double const time,
                                            double const T0) const
   {
-    float const t = time - trigger_offset(clock_data);
-    double const timetick = sampling_rate(clock_data) * 1.e-3; // time sample in microsec
+    float const t = time - trigger_offset();
+    double const timetick = sampling_rate() * 1.e-3; // time sample in microsec
     double const adjusted_time = t * timetick - T0 * 1e-3;     //  (in microsec)
-
-
-    double ElectronLifetime = 35000; // from PionAnalyzer_module output
     
     assert(fLifeTimeForm < 2);
     if (fLifeTimeForm == 0) {
       // Exponential form
-      double const tau = ElectronLifetime; //det_prop.ElectronLifetime();
-      return exp(adjusted_time / tau);
+      double const tau = fElectronLifetime; //det_prop.ElectronLifetime();
+      double corr = exp(adjusted_time / tau);
+      if (debug)
+        std::cout << "    - lifetime corr = " << corr << std::endl;
+      return corr;
     }
     /*
     // Exponential+constant form
@@ -207,10 +240,28 @@ namespace calo {
 
 double calo::CalorimetryAlg::ModBoxCorrection 	( 	double  	dQdx	) 	const
  {
+
+
+   // 
+
+   /*  https://arxiv.org/pdf/1306.1712.pdf
+       
+       dQ/dx = R_c x W_ion x dE/dx 
+
+
+
+
+       dE/dx= (exp(βWion·(dQ/dx))−α)/β.
+
+    */
+   
    // Modified Box model correction has better behavior than the Birks
    // correction at high values of dQ/dx.
-
-
+   
+   // dq/dx should be in e/cm
+   // dE/dx is returned in MeV/cm
+   
+   
    double kModBoxA        = 0.930;    
    double kModBoxB        = 0.212;    
    double kGeVToElectrons = 4.237e7;
@@ -223,6 +274,10 @@ double calo::CalorimetryAlg::ModBoxCorrection 	( 	double  	dQdx	) 	const
    double const Beta = kModBoxB / (rho * E_field);
    double Alpha = kModBoxA;
    double const dEdx = (exp(Beta * Wion * dQdx) - Alpha) / Beta;
+
+   if (debug){
+     std::cout << "  --> dqdx, dedx (modbox)= " << dQdx << " " << dEdx << std::endl;
+   }
    
    return dEdx;
  }
@@ -246,7 +301,8 @@ double calo::CalorimetryAlg::BirksCorrection 	( 	double  	dQdx	) 	const
    K3t /= rho;                      // KV/MeV
    double const dEdx = dQdx / (A3t / Wion - K3t / E_field * dQdx); // MeV/cm
 
-   std::cout << "dedx = " << dEdx << std::endl;
+   if (debug)
+     std::cout << "  --> dedx (birks) = " << dEdx << std::endl;
    
    return dEdx;
  }
