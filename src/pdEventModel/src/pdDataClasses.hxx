@@ -51,12 +51,24 @@ public:
   AnaHitPD(const AnaHitPD& part);
   
 public:
-  
+
   AnaWireID fWireID;    
   Float_t fIntegral;
   Float_t fPeakTime;
   Float_t fPeakAmplitude;
   TVector3 Position;
+
+  /// Residual range for each wire in each plane
+  Float_t ResidualRange;
+
+  /// dEdx for each wire in each plane
+  Float_t dEdx;
+  Float_t dEdx_corr;
+
+  /// dQdx for each wire in each plane
+  Float_t dQdx;  
+  Float_t dQdx_corr;  
+
 };
 
 
@@ -101,24 +113,11 @@ public:
   /// Number of hits in each wire plane
   Int_t NHitsPerPlane[3];
 
-  /// Residual range for each wire in each plane
-  Float_t ResidualRange[3][NMAXHITSPERPLANE];
-
-  /// dEdx for each wire in each plane
-  Float_t dEdx[3][NMAXHITSPERPLANE];
-  Float_t dEdx_corr[3][NMAXHITSPERPLANE];
-  Float_t truncLibo_dEdx;
-
-  /// dQdx for each wire in each plane
-  Float_t dQdx[3][NMAXHITSPERPLANE];  
-  Float_t dQdx_corr[3][NMAXHITSPERPLANE];  
-
-  ///Hit position
-  std::vector<TVector3> HitPosition[3];
-
   /// Vector of hits for eac plane
   std::vector<AnaHitPD> Hits[3];
 
+  Float_t truncLibo_dEdx;
+  
   /// Particle ID hypothesis used in the fit (if any)
   Int_t FitPDG;
   
