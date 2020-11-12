@@ -894,21 +894,27 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
       //but store only the first 300 hits
       if(l<(Int_t)NMAXHITSPERPLANE){
 
-        part->ResidualRange[plane][l] = calovector[k]->fResidualRange[l];
-        part->dEdx[plane][l]          = calovector[k]->fdEdx[l];
+
+        TVector3 point;
+        // TODO: PionAnalyzer_module uses trajectory points instead
+        point.SetXYZ(calovector[k]->fXYZ[l].X(),calovector[k]->fXYZ[l].Y(),calovector[k]->fXYZ[l].Z());
+        //        AnaHitPD hit(2,(*reco_beam_hit_integral), (*reco_beam_hit_peakTime)[j], (*reco_beam_hit_peakAmplitude)[j], point);
+        AnaHitPD hit(2,0,0,0, point);
+        part->Hits[2].push_back(hit);
+        
+        
+        part->Hits[plane][l].dEdx         = calovector[k]->fdEdx[l];
+        part->Hits[plane][l].dQdx         = calovector[k]->fdQdx[l];
+        part->Hits[plane][l].ResidualRange= calovector[k]->fResidualRange[l];
+
+                
         //        if (l<cali_dEdX_SCE.size())
         //          part->dEdx[plane][l] = cali_dEdX_SCE[l];
-        part->dQdx[plane][l]          = calovector[k]->fdQdx[l];
 
-        // TODO: PionAnalyzer_module uses trajectory points instead
-        if (calovector[k]->fdEdx.size()     == calovector[k]->fXYZ.size()){
-          part->HitPosition[plane].at(l).SetX(calovector[k]->fXYZ[l].X());
-          part->HitPosition[plane].at(l).SetY(calovector[k]->fXYZ[l].Y());
-          part->HitPosition[plane].at(l).SetX(calovector[k]->fXYZ[l].Z());
-        }
+
 #ifndef ISMC
-        part->dQdx_corr[plane][l]     = dqdxi_corr;
-        part->dEdx_corr[plane][l]     = dedxi_corr;
+        part->Hits[plane][l].dEdx_corr    = dedxi_corr;
+        part->Hits[plane][l].dQdx_corr    = dqdxi_corr;
 #endif
 
         // TODO
