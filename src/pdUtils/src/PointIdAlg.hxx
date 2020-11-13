@@ -48,12 +48,6 @@
 #include "tf_graph.h"
 
 
-
-bool fDownscaleFullView;
-bool fDriftWindow;
-bool 	patchFromDownsampledView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) {return true;} 
-bool 	patchFromOriginalView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) {return true;} 
-
 namespace detinfo {
   class DetectorClocksData;
   class DetectorPropertiesData;
@@ -184,6 +178,13 @@ public:
   /// test if two wire/drift coordinates point to the same patch
   bool isSamePatch(unsigned int wire1, float drift1, unsigned int wire2, float drift2) const;
 
+
+  bool fDownscaleFullView;
+  bool fDriftWindow;
+  bool 	patchFromDownsampledView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) {return true;} 
+  bool 	patchFromOriginalView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) {return true;} 
+
+  
 private:
   std::string fNNetModelFilePath;
   std::vector<std::string> fNNetOutputs;
