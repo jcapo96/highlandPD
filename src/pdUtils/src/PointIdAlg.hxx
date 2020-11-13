@@ -181,8 +181,8 @@ public:
 
   bool fDownscaleFullView;
   bool fDriftWindow;
-  bool 	patchFromDownsampledView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) {return true;} 
-  bool 	patchFromOriginalView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) {return true;} 
+  bool 	patchFromDownsampledView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) const {return true;} 
+  bool 	patchFromOriginalView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) const {return true;} 
 
   
 private:
