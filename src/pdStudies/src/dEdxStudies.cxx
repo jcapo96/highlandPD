@@ -304,7 +304,7 @@ void dEdxStudies::FillCategories(){
 void dEdxStudies::FilldEdxInfo(AnaParticlePD* part){
 //********************************************************************
 
-  bool debug = true;
+  bool debug = false;
   
   /*
     1. Original dEdX from tree
