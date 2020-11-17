@@ -889,7 +889,7 @@ void hitPionTreeConverter::FillInfo(AnaSpill* spill){
   FillTriggerInfo(&(spill->Trigger));
 
   // True vertex information
-  FillTrueInfo(spill);
+  if (_isMC) FillTrueInfo(spill);
 
   // beam related information (must be after true info)
   FillBeamInfo(spill->TrueParticles, static_cast<AnaBeamPD*>(spill->Beam));
@@ -934,7 +934,7 @@ void hitPionTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& truePart
        double CerenkovTime[2];
        double CerenkovPressure[2];
     */
-           
+
     // Create the BeamParticle object
     beam->BeamParticle = MakeParticle();
         
@@ -1064,6 +1064,7 @@ void hitPionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
     FillDaughterParticleTrackInfo(trueParticles, i, dautrk);
     bunch->Particles.push_back(dautrk);
     part->Daughters.push_back(dautrk);
+    part->DaughtersIDs.push_back((*reco_daughter_allTrack_ID)[i]);
   }
 
   // The daughter showers
@@ -1072,6 +1073,7 @@ void hitPionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
     FillDaughterParticleShowerInfo(trueParticles, i, dausho);
     bunch->Particles.push_back(dausho);
     part->Daughters.push_back(dausho);
+    part->DaughtersIDs.push_back((*reco_daughter_allShower_ID)[i]);
   }
 
   /*
@@ -1150,8 +1152,8 @@ void hitPionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& 
    reco_beam_incidentEnergies = 0;
 
 
-*/   
-   
+*/
+
   part->isPandora = true;
   part->UniqueID  = reco_beam_trackID;
 
