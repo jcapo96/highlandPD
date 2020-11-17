@@ -585,6 +585,7 @@ void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters
 
   AnaBeamPD* beam  = static_cast<AnaBeamPD*>(event.Beam); 
   AnaParticleB* beamPart = beam->BeamParticle;
+  if (!beamPart) return;
   AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(beamPart->TrueObject);  
   if (!trueBeamPart) return;
   
@@ -619,7 +620,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
   
   profile = ProtonTemplate;
   
-  if( part.NHitsPerPlane[plane] < 1 )
+  if( part.Hits[plane].size() < 1 )
     return std::make_pair(9999., -1);
   
   //Ignore first and last point
@@ -672,6 +673,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
 
   //cast the beam particle
   AnaParticlePD* beampart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+  if (!beampart) return false;
   
   Float_t beampos[3],beamdir[3], dist[3], dcos=0, cuts[7];      
 
