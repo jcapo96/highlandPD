@@ -119,7 +119,6 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   for (Int_t i=0;i<3;i++){
 
     NHitsPerPlane[i] = part.NHitsPerPlane[i];
-    truncLibo_dEdx = part.truncLibo_dEdx;
 
     PIDA[i]=part.PIDA[i];
     ReconPDG[i]=part.ReconPDG[i];
@@ -136,17 +135,20 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   Chi2Proton = part.Chi2Proton;
   Chi2ndf    = part.Chi2ndf;
 
+  truncLibo_dEdx = part.truncLibo_dEdx;
+  
   for (int i=0; i<2; i++){
-    RangeMomentum[i] = part.RangeMomentum[i];  
+    RangeMomentum[i]     = part.RangeMomentum[i];  
     RangeMomentum_alt[i] = part.RangeMomentum_alt[i];  
   }
 
 
   Length_alt = part.Length_alt;
-
+ 
   for (int i=0; i<3; i++){
     Hits[i] = part.Hits[i];
   }
+
 }
 
 //********************************************************************
