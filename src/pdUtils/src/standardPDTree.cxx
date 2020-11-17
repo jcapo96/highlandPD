@@ -194,6 +194,7 @@ void standardPDTree::FillStandardVariables_BeamTrue(OutputManager& output, AnaBe
 
   if (!beamB) return;  
   AnaBeam* beam = static_cast<AnaBeam*>(beamB);
+  if (!beam->BeamParticle) return;
   AnaTrueParticlePD* beamTruePart= static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);   
   if (!beamTruePart) return;
 
