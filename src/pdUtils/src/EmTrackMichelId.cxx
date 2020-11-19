@@ -61,6 +61,10 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
   auto wireHandle = evt.getValidHandle< std::vector<recob::Wire> >(fWireProducerLabel);
   */
 
+  detinfo::DetectorClocksData clockData;
+  detinfo::DetectorPropertiesData detProp;
+
+  
   std::vector<recob::Wire>* wireHandle;
   unsigned int cryo, tpc, view;
 
@@ -99,7 +103,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 view = pview.first;
                 if (!isViewSelected(view)) continue; // should not happen, hits were selected
 
-                //                fPointIdAlg.setWireDriftData(*wireHandle, view, tpc, cryo);   // anselmo
+                fPointIdAlg.setWireDriftData(clockData, detProp, *wireHandle, view, tpc, cryo);
 
                 // (1) do all hits in this plane ------------------------------------------------
                 for (size_t idx = 0; idx < pview.second.size(); idx += fBatchSize)
