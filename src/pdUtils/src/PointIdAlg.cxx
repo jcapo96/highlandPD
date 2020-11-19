@@ -5,9 +5,9 @@
 //              D.Smith,                                   from LArIAT, BU, 2017: real data dump
 
 #include "PointIdAlg.hxx"
-/*
-#include "tensorflow/core/public/session.h"
 
+// #include "tensorflow/core/public/session.h"  // anselmo
+/*
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -407,7 +407,7 @@ nnet::TrainingDataAlg::resizeView(detinfo::DetectorClocksData const& clock_data,
   return view;
 }
 // ------------------------------------------------------
-/*
+
 bool
 nnet::TrainingDataAlg::setWireEdepsAndLabels(std::vector<float> const& edeps,
                                              std::vector<int> const& pdgs,
@@ -450,6 +450,7 @@ nnet::TrainingDataAlg::setWireEdepsAndLabels(std::vector<float> const& edeps,
 
   return true;
 }
+
 // ------------------------------------------------------
 
 nnet::TrainingDataAlg::WireDrift
@@ -463,7 +464,7 @@ nnet::TrainingDataAlg::getProjection(detinfo::DetectorClocksData const& clockDat
   wd.Drift = 0;
   wd.TPC = -1;
   wd.Cryo = -1;
-
+  /*
   try {
     double vtx[3] = {tvec.X(), tvec.Y(), tvec.Z()};
     if (fGeometry->FindTPCAtPosition(vtx).isValid) {
@@ -492,10 +493,11 @@ nnet::TrainingDataAlg::getProjection(detinfo::DetectorClocksData const& clockDat
   catch (...) {
     mf::LogWarning("TrainingDataAlg") << "Vertex projection out of wire planes, skip MC vertex.";
   }
+  */
   return wd;
 }
 // ------------------------------------------------------
-
+/*
 bool
 nnet::TrainingDataAlg::isElectronEnd(
   const simb::MCParticle& particle,
@@ -735,10 +737,11 @@ nnet::TrainingDataAlg::collectVtxFlags(
     }
   }
 }
+
 // ------------------------------------------------------
 
 bool
-nnet::TrainingDataAlg::setDataEventData(const art::Event& event,
+nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
                                         detinfo::DetectorClocksData const& clockData,
                                         detinfo::DetectorPropertiesData const& detProp,
                                         unsigned int plane,
@@ -886,7 +889,7 @@ nnet::TrainingDataAlg::setDataEventData(const art::Event& event,
 }
 
 bool
-nnet::TrainingDataAlg::setEventData(const art::Event& event,
+nnet::TrainingDataAlg::setEventData(const AnaEvent& event,
                                     detinfo::DetectorClocksData const& clockData,
                                     detinfo::DetectorPropertiesData const& detProp,
                                     unsigned int plane,

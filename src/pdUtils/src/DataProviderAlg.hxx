@@ -91,15 +91,15 @@ public:
   DataProviderAlg() {};
    
   virtual ~DataProviderAlg();
-  
-  /*bool setWireDriftData(const detinfo::DetectorClocksData& clock_data,
+  /*
+  bool setWireDriftData(const detinfo::DetectorClocksData& clock_data,
 			const detinfo::DetectorPropertiesData& det_prop,
 			const std::vector<recob::Wire>&
 			wires, // once per plane: setup ADC buffer, collect & downscale ADC's
 			unsigned int plane,
 			unsigned int tpc,
 			unsigned int cryo);
-  
+  */
   std::vector<float> const&
   wireData(size_t widx) const
   {
@@ -120,13 +120,13 @@ public:
     
     if (ok)
       return patch;
-    throw cet::exception("img::DataProviderAlg") << "Patch filling failed." << std::endl;
+    //    throw cet::exception("img::DataProviderAlg") << "Patch filling failed." << std::endl;
   }
   
   float
   getPixelOrZero(int wire, int drift) const
   {
-    size_t didx = getDriftIndex(drift), widx = (size_t)wire;
+    size_t didx = getDriftIndex(drift), widx = (size_t)wire; 
     
     if ((widx < fAlgView.fWireDriftData.size()) && (didx < fAlgView.fNCachedDrifts)) {
       return fAlgView.fWireDriftData[widx][didx];
@@ -144,11 +144,11 @@ public:
   {
     return fAdcAreaOverThr;
   }
-  
+
   float poolMax(int wire, int drift, size_t r = 0) const;
-  
-  //float poolSum(int wire, int drift, size_t r = 0) const;
-  
+
+  //  float poolSum(int wire, int drift, size_t r = 0) const;
+
   unsigned int
   Cryo() const
   {
@@ -197,9 +197,10 @@ public:
 		     detinfo::DetectorPropertiesData const& det_prop,
 		     double tick) const
   {
-    return fCalorimetryAlg.LifetimeCorrection(clock_data, det_prop, tick);
+    //    return fCalorimetryAlg.LifetimeCorrection(clock_data, det_prop, tick);
+    return fCalorimetryAlg.LifetimeCorrection(tick);
   }
-  */
+
 protected:
   DataProviderAlgView fAlgView;
   EDownscaleMode fDownscaleMode;
@@ -209,12 +210,12 @@ protected:
   bool fDownscaleFullView = false;
   float fDriftWindowInv = 1/fDriftWindow;
   
-  /*std::vector<float> downscaleMax(std::size_t dst_size,
+  std::vector<float> downscaleMax(std::size_t dst_size,
 				  std::vector<float> const& adc,
 				  size_t tick0) const;
   std::vector<float> downscaleMaxMean(std::size_t dst_size,
 				      std::vector<float> const& adc,
-				      size_t tick0) const;*/
+				      size_t tick0) const;
   std::vector<float> downscaleMean(std::size_t dst_size,
 				   std::vector<float> const& adc,
 				   size_t tick0) const;
@@ -223,12 +224,12 @@ protected:
   {
     switch (fDownscaleMode) {
     case img::DataProviderAlg::kMean: return downscaleMean(dst_size, adc, tick0);
-      //case img::DataProviderAlg::kMaxMean: return downscaleMaxMean(dst_size, adc, tick0);
-      //case img::DataProviderAlg::kMax: return downscaleMax(dst_size, adc, tick0);
+    case img::DataProviderAlg::kMaxMean: return downscaleMaxMean(dst_size, adc, tick0);
+    case img::DataProviderAlg::kMax: return downscaleMax(dst_size, adc, tick0);
     }
     //throw cet::exception("img::DataProviderAlg") << "Downscale mode not supported." << std::endl;
   }
-  /*
+
   size_t
   getDriftIndex(float drift) const
   {
@@ -238,9 +239,10 @@ protected:
       return (size_t)drift;
   }
   
-  std::optional<std::vector<float>> setWireData(std::vector<float> const& adc,
+  //  std::optional<std::vector<float>> setWireData(std::vector<float> const& adc,   // anselmo
+  std::vector<float> setWireData(std::vector<float> const& adc,
 						size_t wireIdx) const;
-  */
+
   bool patchFromDownsampledView(size_t wire,
 				float drift,
 				size_t size_w,
@@ -275,19 +277,20 @@ private:
   float fAdcScale  = 127.0; 
   float fAdcOffset = -128.0; 
   float fAdcZero   = fAdcOffset + fAdcScale * (0 - fAdcMin); // level of zero ADC after scaling;
-  /*double fAdcSumOverThr, fAdcSumThr;
+  double fAdcSumOverThr, fAdcSumThr;
   size_t fAdcAreaOverThr;
-  
-  CLHEP::HepJamesRandom fRndEngine;
-  
+
+  //  CLHEP::HepJamesRandom fRndEngine;
+
   void applyBlur();
   std::vector<float> fBlurKernel; // blur not applied if empty
-  
+    /*  
   void addWhiteNoise();
   float fNoiseSigma; // noise not added if sigma=0
-  
+
   void addCoherentNoise();
-  float fCoherentSigma; // noise not added if sigma=0*/
+  float fCoherentSigma; // noise not added if sigma=0
+*/
 };
 // ------------------------------------------------------
 // ------------------------------------------------------

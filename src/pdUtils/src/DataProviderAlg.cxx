@@ -5,6 +5,7 @@
 //#include "larreco/RecoAlg/ImagePatternAlgs/DataProvider/DataProviderAlg.h"
 #include "DataProviderAlg.hxx"
 
+
 //#include "art/Framework/Services/Registry/ServiceHandle.h"
      
 //#include "larcore/CoreUtils/ServiceUtil.h" // lar::providerFrom<>()
@@ -136,7 +137,7 @@ img::DataProviderAlg::resizeView(detinfo::DetectorClocksData const& clock_data,
   return result;
 }
 // ------------------------------------------------------
-/*
+
 float
 img::DataProviderAlg::poolMax(int wire, int drift, size_t r) const
 {
@@ -189,8 +190,8 @@ img::DataProviderAlg::poolMax(int wire, int drift, size_t r) const
 //    return sum;
 //}
 // ------------------------------------------------------
-*/
- /*std::vector<float>
+
+ std::vector<float>
 img::DataProviderAlg::downscaleMax(std::size_t dst_size,
 				   std::vector<float> const& adc,
 				   size_t tick0) const
@@ -246,7 +247,7 @@ img::DataProviderAlg::downscaleMaxMean(std::size_t dst_size,
   }
   scaleAdcSamples(result);
   return result;
-  }*/
+}
 
 std::vector<float>
 img::DataProviderAlg::downscaleMean(std::size_t dst_size,
@@ -269,31 +270,33 @@ img::DataProviderAlg::downscaleMean(std::size_t dst_size,
   scaleAdcSamples(result);
   return result;
 }
-/*
-std::optional<std::vector<float>>
+
+//std::optional<std::vector<float>>  // anselmo
+std::vector<float>
 img::DataProviderAlg::setWireData(std::vector<float> const& adc, size_t wireIdx) const
 {
-  if (wireIdx >= fAlgView.fWireDriftData.size()) return std::nullopt;
+  if (wireIdx >= fAlgView.fWireDriftData.size()) return std::vector<float>();//std::nullopt;
   auto& wData = fAlgView.fWireDriftData[wireIdx];
   
   if (fDownscaleFullView) {
     if (!adc.empty()) { return downscale(wData.size(), adc, 0); }
     else {
-      return std::nullopt;
+      return std::vector<float>();//std::nullopt;
     }
   }
   else {
-    if (adc.empty()) { return std::nullopt; }
+    if (adc.empty()) { std::vector<float>();}//std::nullopt; }
     else if (adc.size() <= wData.size())
       return adc;
     else {
       return std::vector<float>(adc.begin(), adc.begin() + wData.size());
     }
   }
-  return std::make_optional(wData);
+  //  return std::make_optional(wData);
+  return wData;
 }
 // ------------------------------------------------------
-
+/*
 bool
 img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_data,
 				       detinfo::DetectorPropertiesData const& det_prop,
@@ -422,7 +425,7 @@ img::DataProviderAlg::scaleAdcSamples(std::vector<float>& values) const
   }// do the tail
 }
 // ------------------------------------------------------
-/*
+
 void
 img::DataProviderAlg::applyBlur()
 {
@@ -447,7 +450,7 @@ img::DataProviderAlg::applyBlur()
   }
 }
 // ------------------------------------------------------
-*/
+
 // MUST give the same result as get_patch() in scripts/utils.py
 bool
 img::DataProviderAlg::patchFromDownsampledView(size_t wire,
@@ -546,6 +549,7 @@ img::DataProviderAlg::addWhiteNoise()
     }
   }
 }
+
 // ------------------------------------------------------
 
 void
