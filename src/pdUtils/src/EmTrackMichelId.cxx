@@ -60,28 +60,32 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
 
   auto wireHandle = evt.getValidHandle< std::vector<recob::Wire> >(fWireProducerLabel);
   */
+
+  std::vector<recob::Wire>* wireHandle;
   unsigned int cryo, tpc, view;
 
   // ******************* get and sort hits ********************
-  /*
-  auto hitListHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
-  std::vector< art::Ptr<recob::Hit> > hitPtrList;
-  art::fill_ptr_vector(hitPtrList, hitListHandle);
 
-    EmTrackMichelId::cryo_tpc_view_keymap hitMap;
-        for (auto const& h : hitPtrList)
-        {
-                view = h->WireID().Plane;
-                if (!isViewSelected(view)) continue;
+  std::vector<AnaHitPD*>* hitListHandle;
+  std::vector<AnaHitPD*> hitPtrList;
+  //  auto hitListHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+  //  art::fill_ptr_vector(hitPtrList, hitListHandle);
 
-                cryo = h->WireID().Cryostat;
-                tpc = h->WireID().TPC;
-
-                hitMap[cryo][tpc][view].push_back(h.key());
-        }
+  EmTrackMichelId::cryo_tpc_view_keymap hitMap;
+  for (auto const& h : hitPtrList)
+    {
+      view = h->WireID().Plane;
+      if (!isViewSelected(view)) continue;
+      
+      cryo = h->WireID().Cryostat;
+      tpc = h->WireID().TPC;
+      
+      //      hitMap[cryo][tpc][view].push_back(h.key());
+      hitMap[cryo][tpc][view].push_back((size_t)h);
+    }
 
     // ********************* classify hits **********************
-    auto hitID = fMVAWriter.initOutputs<recob::Hit>(fHitModuleLabel, hitPtrList.size(), fPointIdAlg.outputLabels());
+  //    auto hitID = fMVAWriter.initOutputs<recob::Hit>(fHitModuleLabel, hitPtrList.size(), fPointIdAlg.outputLabels());
 
     std::vector< char > hitInFA(hitPtrList.size(), 0); // tag hits in fid. area as 1, use 0 for hits close to the projectrion edges
     for (auto const & pcryo : hitMap)
@@ -95,7 +99,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 view = pview.first;
                 if (!isViewSelected(view)) continue; // should not happen, hits were selected
 
-                fPointIdAlg.setWireDriftData(*wireHandle, view, tpc, cryo);
+                //                fPointIdAlg.setWireDriftData(*wireHandle, view, tpc, cryo);   // anselmo
 
                 // (1) do all hits in this plane ------------------------------------------------
                 for (size_t idx = 0; idx < pview.second.size(); idx += fBatchSize)
@@ -107,7 +111,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                         if (idx + k >= pview.second.size()) { break; } // careful about the tail
 
                         size_t h = pview.second[idx+k]; // h is the Ptr< recob::Hit >::key()
-                        const recob::Hit & hit = *(hitPtrList[h]);
+                        const AnaHitPD & hit = *(hitPtrList[h]);
                         points.emplace_back(hit.WireID().Wire, hit.PeakTime());
                         keys.push_back(h);
                     }
@@ -115,13 +119,14 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                     auto batch_out = fPointIdAlg.predictIdVectors(points);
                     if (points.size() != batch_out.size())
                     {
-                        throw cet::exception("EmTrackMichelId") << "hits processing failed" << std::endl;
+                      //                        throw cet::exception("EmTrackMichelId") << "hits processing failed" << std::endl;
+                      std::cout << "hits processing failed" << std::endl;
                     }
 
                     for (size_t k = 0; k < points.size(); ++k)
                     {
                         size_t h = keys[k];
-                        fMVAWriter.setOutput(hitID, h, batch_out[k]);
+                        //                        fMVAWriter.setOutput(hitID, h, batch_out[k]);
                         if (fPointIdAlg.isInsideFiducialRegion(points[k].first, points[k].second))
                         { hitInFA[h] = 1; }
                     }
@@ -129,7 +134,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
             }
         }
     }
-  */
+
   /*
 
   // (2) do clusters when hits are ready in all planes ----------------------------------------
