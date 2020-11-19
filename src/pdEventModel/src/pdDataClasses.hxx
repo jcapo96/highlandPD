@@ -8,10 +8,11 @@
 
 class AnaWireID{
 public:
-  
+
+  Int_t Wire;
   Int_t Plane;
   Int_t TPC;
-  Int_t Criostat;
+  Int_t Cryostat;
 };
 
 
