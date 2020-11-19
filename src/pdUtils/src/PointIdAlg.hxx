@@ -45,8 +45,6 @@ namespace simb {
   class MCParticle;
 }
 
-
-
 // ROOT & C++
 #include <memory>
 
