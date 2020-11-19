@@ -6,7 +6,7 @@
 
 #include "PointIdAlg.hxx"
 
-// #include "tensorflow/core/public/session.h"  // anselmo
+#include "tensorflow/core/public/session.h"  // anselmo
 /*
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -95,13 +95,13 @@ nnet::KerasModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 
 nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 {
-  /* anselmo
   g = tf::Graph::create(nnet::ModelInterface::findFile(modelFileName).c_str(),
                         {"cnn_output", "_netout"});
-  if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
+  //if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
+  if (!g) {std::cout << "TF model failed." << std::endl; exit(1);}
 
-  mf::LogInfo("TfModelInterface") << "TF model loaded.";
-  */
+  std::cout << "TF model loaded." << std::endl;
+  
 }
 // ------------------------------------------------------
 
@@ -114,7 +114,6 @@ nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& 
   if ((samples == -1) || (samples > (long long int)inps.size())) { samples = inps.size(); }
 
   long long int rows = inps.front().size(), cols = inps.front().front().size();
-  /* anselmo
   tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));
   auto input_map = _x.tensor<float, 4>();
   for (long long int s = 0; s < samples; ++s) {
@@ -128,7 +127,6 @@ nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& 
   }
 
   return g->run(_x);
-  */
   return std::vector<std::vector<float>>();
 }
 // ------------------------------------------------------
