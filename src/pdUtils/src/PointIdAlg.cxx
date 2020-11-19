@@ -7,8 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PointIdAlg.hxx"
-//#include "tensorflow/core/public/session.h"
-
+#include "tensorflow/core/public/session.h"
 /*
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -33,41 +32,45 @@
 // ------------------------------------------------------
 // -------------------ModelInterface---------------------
 // ------------------------------------------------------
-/*
+
 //******************************************************
 std::vector<std::vector<float>> nnet::ModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples){
 //******************************************************
   if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
     return std::vector<std::vector<float>>();
-
+    
   if ((samples == -1) || (samples > (int)inps.size())) { samples = inps.size(); }
-
+  
   std::vector<std::vector<float>> results;
   for (int i = 0; i < samples; ++i) {
     results.push_back(Run(inps[i]));
   }
   return results;
-}
-
+ }
+  
 //******************************************************
 std::string nnet::ModelInterface::findFile(const char* fileName) const {
 //******************************************************
 
-  /*
+  
   std::string fname_out;
-  cet::search_path sp("FW_SEARCH_PATH");
-  if (!sp.find_file(fileName, fname_out)) {
-    struct stat buffer;
-    if (stat(fileName, &buffer) == 0) { fname_out = fileName; }
-    else {
-      throw art::Exception(art::errors::NotFound) << "Could not find the model file " << fileName;
-    }
-  }
+  std::string path = "/data4/DUNE/migue/analysis/";
+  //cet::search_path sp("FW_SEARCH_PATH");
+  //if (!sp.find_file(fileName, fname_out)) {
+  //  struct stat buffer;
+  //  if (stat(fileName, &buffer) == 0) { fname_out = fileName; }
+  //  else {
+  //throw art::Exception(art::errors::NotFound) << "Could not find the model file " << fileName;
+  //    std::cout << "castaña, esto no va" << std::endl;
+  //  }
+  //  }
+  fname_out =  path + fileName;
+  std::cout << fname_out << std::endl;
   return fname_out;
-
+  
 }
-  */
-/*
+
+  /*   
 // ------------------------------------------------------
 // ----------------KerasModelInterface-------------------
 // ------------------------------------------------------
@@ -91,7 +94,7 @@ nnet::KerasModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
   delete sample;
   return out;
 }
-
+  */      
 // ------------------------------------------------------
 // -----------------TfModelInterface---------------------
 // ------------------------------------------------------
@@ -99,65 +102,81 @@ nnet::KerasModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 {
   g = tf::Graph::create(nnet::ModelInterface::findFile(modelFileName).c_str(),
-                        {"cnn_output", "_netout"});
-  //  if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
-
-  std::cout << "TF model loaded.";
+			{"cnn_output", "_netout"});
+  //if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
+  if (!g) { std::cout << "TF model failed." << std::endl; }
+  
+  std::cout << "TF model loaded." << std::endl;
 }
-// ------------------------------------------------------
-
+  // ------------------------------------------------------
+  
 std::vector<std::vector<float>>
-nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples)
-{
-  if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
-    return std::vector<std::vector<float>>();
-
-  if ((samples == -1) || (samples > (long long int)inps.size())) { samples = inps.size(); }
-
-  long long int rows = inps.front().size(), cols = inps.front().front().size();
-
-  tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));
-  auto input_map = _x.tensor<float, 4>();
-  for (long long int s = 0; s < samples; ++s) {
-    const auto& sample = inps[s];
-    for (long long int r = 0; r < rows; ++r) {
-      const auto& row = sample[r];
-      for (long long int c = 0; c < cols; ++c) {
-        input_map(s, r, c, 0) = row[c];
+nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples){
+    
+    if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
+      return std::vector<std::vector<float>>();
+    
+    if ((samples == -1) || (samples > (long long int)inps.size())) { samples = inps.size(); }
+    
+    long long int rows = inps.front().size(), cols = inps.front().front().size();
+    
+    tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));
+    auto input_map = _x.tensor<float, 4>();
+    for (long long int s = 0; s < samples; ++s) {
+      const auto& sample = inps[s];
+      for (long long int r = 0; r < rows; ++r) {
+	const auto& row = sample[r];
+	for (long long int c = 0; c < cols; ++c) {
+	  input_map(s, r, c, 0) = row[c];
+	}
       }
     }
-  }
-
-  return g->run(_x);
+    
+    return g->run(_x);
 }
 // ------------------------------------------------------
-
+    
 std::vector<float>
-nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
-{
+nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d){
+  
   long long int rows = inp2d.size(), cols = inp2d.front().size();
-
+  
   tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({1, rows, cols, 1}));
   auto input_map = _x.tensor<float, 4>();
   for (long long int r = 0; r < rows; ++r) {
     const auto& row = inp2d[r];
-    for (long long int c = 0; c < cols; ++c) {
-      input_map(0, r, c, 0) = row[c];
-    }
+	for (long long int c = 0; c < cols; ++c) {
+	  input_map(0, r, c, 0) = row[c];
+	}
   }
-
+  
   auto out = g->run(_x);
   if (!out.empty())
     return out.front();
   else
     return std::vector<float>();
 }
-
+  
 // ------------------------------------------------------
 // --------------------PointIdAlg------------------------
 // ------------------------------------------------------
 
-nnet::PointIdAlg::PointIdAlg(const Config& config)
+nnet::PointIdAlg::PointIdAlg(){
+  
+  fNNetModelFilePath = "cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoduneBeamAndCosmicsMCC11.pb";
+
+  if ((fNNetModelFilePath.length() > 3) &&
+      (fNNetModelFilePath.compare(fNNetModelFilePath.length() - 3, 3, ".pb") == 0)) {
+    fNNet = new nnet::TfModelInterface(fNNetModelFilePath.c_str());
+  }
+  else {
+    std::cout  << "File name extension not supported. Only .pb files are supported" << std::endl;
+  }
+
+  if (!fNNet) { std:: cout << "Loading model from file failed." << std::endl;exit(1);}
+}
+
+/*nnet::PointIdAlg::PointIdAlg(const Config& config)
   : img::DataProviderAlg(config)
   , fNNet(0)
   , fPatchSizeW(config.PatchSizeW())
@@ -187,13 +206,13 @@ nnet::PointIdAlg::PointIdAlg(const Config& config)
   resizePatch();
 }
 // ------------------------------------------------------
-
+*/
 nnet::PointIdAlg::~PointIdAlg()
 {
   deleteNNet();
 }
 // ------------------------------------------------------
-
+/*
 void
 nnet::PointIdAlg::resizePatch()
 {
@@ -202,14 +221,15 @@ nnet::PointIdAlg::resizePatch()
     r.resize(fPatchSizeD);
 }
 // ------------------------------------------------------
-
+*/
 float
 nnet::PointIdAlg::predictIdValue(unsigned int wire, float drift, size_t outIdx) const
 {
   float result = 0.;
 
   if (!bufferPatch(wire, drift)) {
-    mf::LogError("PointIdAlg") << "Patch buffering failed.";
+    //mf::LogError("PointIdAlg") << "Patch buffering failed.";
+    std::cout << "Patch buffering failed." << std::endl;
     return result;
   }
 
@@ -217,7 +237,8 @@ nnet::PointIdAlg::predictIdValue(unsigned int wire, float drift, size_t outIdx) 
     auto out = fNNet->Run(fWireDriftPatch);
     if (!out.empty()) { result = out[outIdx]; }
     else {
-      mf::LogError("PointIdAlg") << "Problem with applying model to input.";
+      //mf::LogError("PointIdAlg") << "Problem with applying model to input.";
+      std::cout << "Problem with applying model to input." << std::endl;
     }
   }
 
@@ -231,19 +252,21 @@ nnet::PointIdAlg::predictIdVector(unsigned int wire, float drift) const
   std::vector<float> result;
 
   if (!bufferPatch(wire, drift)) {
-    mf::LogError("PointIdAlg") << "Patch buffering failed.";
+    //mf::LogError("PointIdAlg") << "Patch buffering failed.";
+    std::cout << "Patch buffering failed." << std::endl;
     return result;
   }
 
   if (fNNet) {
     result = fNNet->Run(fWireDriftPatch);
-    if (result.empty()) { mf::LogError("PointIdAlg") << "Problem with applying model to input."; }
+    if (result.empty()) //{ mf::LogError("PointIdAlg") << "Problem with applying model to input."; }
+      { std::cout << "Problem with applying model to input." << std::endl; }
   }
 
   return result;
 }
 // ------------------------------------------------------
-
+/*
 std::vector<std::vector<float>>
 nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> points) const
 {
@@ -255,7 +278,8 @@ nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> p
     unsigned int wire = points[i].first;
     float drift = points[i].second;
     if (!bufferPatch(wire, drift, inps[i])) {
-      throw cet::exception("PointIdAlg") << "Patch buffering failed" << std::endl;
+      //throw cet::exception("PointIdAlg") << "Patch buffering failed" << std::endl;
+      std::cout << "Patch buffering failed" << std::endl;
     }
   }
 
@@ -303,7 +327,8 @@ nnet::PointIdAlg::flattenData2D(std::vector<std::vector<float>> const& patch)
 {
   std::vector<float> flat;
   if (patch.empty() || patch.front().empty()) {
-    mf::LogError("DataProviderAlg") << "Patch is empty.";
+    //mf::LogError("DataProviderAlg") << "Patch is empty.";
+    std::cout << "Patch is empty." << std::endl;
     return flat;
   }
 

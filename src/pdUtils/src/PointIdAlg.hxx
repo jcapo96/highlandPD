@@ -41,11 +41,13 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "larreco/RecoAlg/ImagePatternAlgs/DataProvider/DataProviderAlg.h"
 
+
 #include "nusimdata/SimulationBase/MCParticle.h"
 */
+#include "DataProviderAlg.hxx"
 
 #include "keras_model.h"
-#include "tf_graph.h"
+#include "tf_graph.hxx"
 
 
 namespace detinfo {
@@ -73,7 +75,7 @@ namespace nnet {
 /// may be used from UPS.
 class nnet::ModelInterface {
 public:
-  virtual ~ModelInterface() {}
+  virtual ~ModelInterface() {};
 
   virtual std::vector<float> Run(std::vector<std::vector<float>> const& inp2d) = 0;
   virtual std::vector<std::vector<float>> Run(
@@ -91,9 +93,8 @@ class nnet::KerasModelInterface : public nnet::ModelInterface {
 public:
   KerasModelInterface(const char* modelFileName);
 
-  //  std::vector<float> Run(std::vector<std::vector<float>> const& inp2d) override;
-    std::vector<float> Run(std::vector<std::vector<float>> const& inp2d);
-
+  std::vector<float> Run(std::vector<std::vector<float>> const& inp2d);
+  
 private:
   keras::KerasModel m; // network model
 };
@@ -104,9 +105,7 @@ public:
   TfModelInterface(const char* modelFileName);
 
   std::vector<std::vector<float>> Run(std::vector<std::vector<std::vector<float>>> const& inps,
-                                      //                                      int samples = -1) override;
-                                      int samples = -1);
-  //  std::vector<float> Run(std::vector<std::vector<float>> const& inp2d) override;
+  				      int samples = -1);
   std::vector<float> Run(std::vector<std::vector<float>> const& inp2d);
 
 private:
@@ -114,31 +113,31 @@ private:
 };
 // ------------------------------------------------------
 
-class nnet::PointIdAlg {//: public img::DataProviderAlg {
+class nnet::PointIdAlg : public img::DataProviderAlg {
 public:
   /*
-  struct Config : public img::DataProviderAlg::Config {
+    struct Config : public img::DataProviderAlg::Config {
     using Name = fhicl::Name;
     using Comment = fhicl::Comment;
 
     fhicl::Atom<std::string> NNetModelFile{Name("NNetModelFile"),
                                            Comment("Neural net model to apply.")};
-    fhicl::Sequence<std::string> NNetOutputs{Name("NNetOutputs"),
-                                             Comment("Labels of the network outputs.")};
+					   fhicl::Sequence<std::string> NNetOutputs{Name("NNetOutputs"),
+					   Comment("Labels of the network outputs.")};
+					   
+					   fhicl::Atom<unsigned int> PatchSizeW{Name("PatchSizeW"), Comment("How many wires in patch.")};
 
-    fhicl::Atom<unsigned int> PatchSizeW{Name("PatchSizeW"), Comment("How many wires in patch.")};
-
-    fhicl::Atom<unsigned int> PatchSizeD{Name("PatchSizeD"),
+					   fhicl::Atom<unsigned int> PatchSizeD{Name("PatchSizeD"),
                                          Comment("How many downsampled ADC entries in patch")};
-  };
+					 };
   */
   //  PointIdAlg(const fhicl::ParameterSet& pset) : PointIdAlg(fhicl::Table<Config>(pset, {})()) {}
-    PointIdAlg() {}
-
+  PointIdAlg();
+  
   //  PointIdAlg(const Config& config);
 
   //  ~PointIdAlg() override;
-    ~PointIdAlg();
+  ~PointIdAlg();
 
   /// network output labels
   std::vector<std::string> const&
@@ -179,15 +178,9 @@ public:
   bool isSamePatch(unsigned int wire1, float drift1, unsigned int wire2, float drift2) const;
 
 
-  bool fDownscaleFullView;
-  bool fDriftWindow;
-  bool 	patchFromDownsampledView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) const {return true;} 
-  bool 	patchFromOriginalView (size_t wire, float drift, size_t size_w, size_t size_d, std::vector< std::vector< float >> &patch) const {return true;} 
-
-  
 private:
   std::string fNNetModelFilePath;
-  std::vector<std::string> fNNetOutputs;
+  std::vector<std::string> fNNetOutputs{"track", "em", "none", "michel"};
   nnet::ModelInterface* fNNet;
 
   mutable std::vector<std::vector<float>> fWireDriftPatch; // patch data around the identified point
@@ -235,7 +228,7 @@ private:
 // ------------------------------------------------------
 // ------------------------------------------------------
 
-class nnet::TrainingDataAlg{// : public img::DataProviderAlg {
+class nnet::TrainingDataAlg: public img::DataProviderAlg {
 public:
   enum EMask {
     kNone = 0,
