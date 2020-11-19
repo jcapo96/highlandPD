@@ -55,16 +55,18 @@ nnet::EmTrackMichelId::EmTrackMichelId(){
 
 void nnet::EmTrackMichelId::produce(AnaEvent & evt)
 {
-  /*mf::LogVerbatim("EmTrackMichelId") << "next event: " << evt.run() << " / " << evt.id().event();
+  /*
+  mf::LogVerbatim("EmTrackMichelId") << "next event: " << evt.run() << " / " << evt.id().event();
 
   auto wireHandle = evt.getValidHandle< std::vector<recob::Wire> >(fWireProducerLabel);
+  */
+  unsigned int cryo, tpc, view;
 
-        unsigned int cryo, tpc, view;
-
-    // ******************* get and sort hits ********************
-        auto hitListHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
-        std::vector< art::Ptr<recob::Hit> > hitPtrList;
-        art::fill_ptr_vector(hitPtrList, hitListHandle);
+  // ******************* get and sort hits ********************
+  /*
+  auto hitListHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+  std::vector< art::Ptr<recob::Hit> > hitPtrList;
+  art::fill_ptr_vector(hitPtrList, hitListHandle);
 
     EmTrackMichelId::cryo_tpc_view_keymap hitMap;
         for (auto const& h : hitPtrList)
@@ -127,8 +129,10 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
             }
         }
     }
+  */
+  /*
 
-    // (2) do clusters when hits are ready in all planes ----------------------------------------
+  // (2) do clusters when hits are ready in all planes ----------------------------------------
     if (fDoClusters)
     {
         // **************** prepare for new clusters ****************
@@ -224,13 +228,19 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
         evt.put(std::move(clusters));
             evt.put(std::move(clu2hit));
         } // all clusters done ----------------------------------------------------------------------
-
+  */
     // (3) do tracks when all hits in all cryo/tpc/plane are done -------------------------------
     if (fDoTracks)
     {
+      /*
         auto trkListHandle = evt.getValidHandle< std::vector<recob::Track> >(fTrackModuleLabel);
         art::FindManyP< recob::Hit > hitsFromTracks(trkListHandle, evt, fTrackModuleLabel);
         std::vector< std::vector< art::Ptr<recob::Hit> > > trkHitPtrList(trkListHandle->size());
+      */
+      std::vector<recob::Track>*  trkListHandle;
+      std::vector<std::vector<AnaHitPD*> > hitsFromTracks;
+      std::vector<std::vector<AnaHitPD*> > trkHitPtrList;
+      
         for (size_t t = 0; t < trkListHandle->size(); ++t)
         {
             auto v = hitsFromTracks.at(t);
@@ -244,7 +254,8 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
             while (!isViewSelected(best_view))
             {
                 best_view = (best_view + 1) % 3;
-                if (++k > 3) { throw cet::exception("EmTrackMichelId") << "No views selected at all?" << std::endl; }
+                //                if (++k > 3) { throw cet::exception("EmTrackMichelId") << "No views selected at all?" << std::endl; }
+                if (++k > 3) { std::cout << "No views selected at all?" << std::endl; }
             }
 
             for (auto const & hptr : v)
@@ -252,7 +263,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 if (hptr->View() == best_view) trkHitPtrList[t].emplace_back(hptr);
             }
         }
-
+        /*
         auto trkID = fMVAWriter.initOutputs<recob::Track>(fTrackModuleLabel, trkHitPtrList.size(), fPointIdAlg.outputLabels());
         for (size_t t = 0; t < trkHitPtrList.size(); ++t) // t is the Ptr< recob::Track >::key()
         {
@@ -260,11 +271,12 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 [&](art::Ptr<recob::Hit> const & ptr) { return (float)hitInFA[ptr.key()]; });
             fMVAWriter.setOutput(trkID, t, vout);
         }
+        */
     }
     // tracks done ------------------------------------------------------------------------------
 
-        fMVAWriter.saveOutputs(evt);
-  */}
+    //        fMVAWriter.saveOutputs(evt);
+}
 // ------------------------------------------------------
 
 bool nnet::EmTrackMichelId::isViewSelected(int view) const
