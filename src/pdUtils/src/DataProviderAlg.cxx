@@ -91,7 +91,7 @@ namespace geo {
     
     if (fAdcMax <= fAdcMin) {
       throw cet::exception("img::DataProviderAlg") << "Misconfigured: AdcMax <= AdcMin" << std::endl;
-    }
+    }x
     if (fAdcScale == 0) {
       throw cet::exception("img::DataProviderAlg") << "Misconfigured: OutMax == OutMin" << std::endl;
     }
@@ -104,7 +104,7 @@ namespace geo {
 */
 img::DataProviderAlg::~DataProviderAlg() = default;
 // ------------------------------------------------------
-/*
+
 img::DataProviderAlgView
 img::DataProviderAlg::resizeView(detinfo::DetectorClocksData const& clock_data,
 				 detinfo::DetectorPropertiesData const& det_prop,
@@ -117,14 +117,15 @@ img::DataProviderAlg::resizeView(detinfo::DetectorClocksData const& clock_data,
   result.fNScaledDrifts = drifts / fDriftWindow;
   result.fNCachedDrifts = fDownscaleFullView ? result.fNScaledDrifts : drifts;
   
-  result.fWireChannels.resize(wires, raw::InvalidChannelID);
+  //  result.fWireChannels.resize(wires, raw::InvalidChannelID);
   
   result.fWireDriftData.resize(wires, std::vector<float>(result.fNCachedDrifts, fAdcZero));
   
   result.fLifetimeCorrFactors.resize(drifts);
   if (fCalibrateLifetime) {
     for (size_t t = 0; t < drifts; ++t) {
-      result.fLifetimeCorrFactors[t] = fCalorimetryAlg.LifetimeCorrection(clock_data, det_prop, t);
+      //      result.fLifetimeCorrFactors[t] = fCalorimetryAlg.LifetimeCorrection(clock_data, det_prop, t);
+            result.fLifetimeCorrFactors[t] = fCalorimetryAlg.LifetimeCorrection(t);
     }
   }
   else {

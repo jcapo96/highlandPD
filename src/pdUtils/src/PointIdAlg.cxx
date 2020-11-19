@@ -1,14 +1,13 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class:       PointIdAlg
 // Authors:     D.Stefan (Dorota.Stefan@ncbj.gov.pl),      from DUNE,   CERN/NCBJ, since May 2016
 //              R.Sulej (Robert.Sulej@cern.ch),            from DUNE,   FNAL/NCBJ, since May 2016
 //              P.Plonski,                                 from DUNE,   WUT,       since May 2016
 //              D.Smith,                                   from LArIAT, BU, 2017: real data dump
-////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PointIdAlg.hxx"
-#include "tensorflow/core/public/session.h"
 /*
+#include "tensorflow/core/public/session.h"
+
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -21,56 +20,51 @@
 #include "larevt/CalibrationDBI/Interface/ChannelStatusProvider.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "larsim/Simulation/LArG4Parameters.h"
+
+#include "CLHEP/Random/RandGauss.h"
 */
-
-//#include "CLHEP/Random/RandGauss.h"
-
 #include <sys/stat.h>
-
-
 
 // ------------------------------------------------------
 // -------------------ModelInterface---------------------
 // ------------------------------------------------------
 
-//******************************************************
-std::vector<std::vector<float>> nnet::ModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples){
-//******************************************************
+std::vector<std::vector<float>>
+nnet::ModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples)
+{
   if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
     return std::vector<std::vector<float>>();
-    
+
   if ((samples == -1) || (samples > (int)inps.size())) { samples = inps.size(); }
-  
+
   std::vector<std::vector<float>> results;
   for (int i = 0; i < samples; ++i) {
     results.push_back(Run(inps[i]));
   }
   return results;
- }
-  
-//******************************************************
-std::string nnet::ModelInterface::findFile(const char* fileName) const {
-//******************************************************
+}
 
-  
+std::string
+nnet::ModelInterface::findFile(const char* fileName) const
+{
   std::string fname_out;
   std::string path = "/data4/DUNE/migue/analysis/";
-  //cet::search_path sp("FW_SEARCH_PATH");
-  //if (!sp.find_file(fileName, fname_out)) {
-  //  struct stat buffer;
-  //  if (stat(fileName, &buffer) == 0) { fname_out = fileName; }
-  //  else {
-  //throw art::Exception(art::errors::NotFound) << "Could not find the model file " << fileName;
-  //    std::cout << "castaña, esto no va" << std::endl;
-  //  }
-  //  }
+  /*
+  cet::search_path sp("FW_SEARCH_PATH");
+  if (!sp.find_file(fileName, fname_out)) {
+    struct stat buffer;
+    if (stat(fileName, &buffer) == 0) { fname_out = fileName; }
+    else {
+      throw art::Exception(art::errors::NotFound) << "Could not find the model file " << fileName;
+    }
+  }
+  */
   fname_out =  path + fileName;
   std::cout << fname_out << std::endl;
   return fname_out;
-  
 }
 
-  /*   
+/*
 // ------------------------------------------------------
 // ----------------KerasModelInterface-------------------
 // ------------------------------------------------------
@@ -78,7 +72,7 @@ std::string nnet::ModelInterface::findFile(const char* fileName) const {
 nnet::KerasModelInterface::KerasModelInterface(const char* modelFileName)
   : m(nnet::ModelInterface::findFile(modelFileName).c_str())
 {
-  std::cout  << "Keras model loaded.";
+  mf::LogInfo("KerasModelInterface") << "Keras model loaded.";
 }
 // ------------------------------------------------------
 
@@ -94,72 +88,78 @@ nnet::KerasModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
   delete sample;
   return out;
 }
-  */      
+*/
 // ------------------------------------------------------
 // -----------------TfModelInterface---------------------
 // ------------------------------------------------------
 
 nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 {
+  /* anselmo
   g = tf::Graph::create(nnet::ModelInterface::findFile(modelFileName).c_str(),
-			{"cnn_output", "_netout"});
-  //if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
-  if (!g) { std::cout << "TF model failed." << std::endl; }
-  
-  std::cout << "TF model loaded." << std::endl;
-}
-  // ------------------------------------------------------
-  
-std::vector<std::vector<float>>
-nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples){
-    
-    if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
-      return std::vector<std::vector<float>>();
-    
-    if ((samples == -1) || (samples > (long long int)inps.size())) { samples = inps.size(); }
-    
-    long long int rows = inps.front().size(), cols = inps.front().front().size();
-    
-    tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));
-    auto input_map = _x.tensor<float, 4>();
-    for (long long int s = 0; s < samples; ++s) {
-      const auto& sample = inps[s];
-      for (long long int r = 0; r < rows; ++r) {
-	const auto& row = sample[r];
-	for (long long int c = 0; c < cols; ++c) {
-	  input_map(s, r, c, 0) = row[c];
-	}
-      }
-    }
-    
-    return g->run(_x);
+                        {"cnn_output", "_netout"});
+  if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
+
+  mf::LogInfo("TfModelInterface") << "TF model loaded.";
+  */
 }
 // ------------------------------------------------------
-    
+
+std::vector<std::vector<float>>
+nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples)
+{
+  if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
+    return std::vector<std::vector<float>>();
+
+  if ((samples == -1) || (samples > (long long int)inps.size())) { samples = inps.size(); }
+
+  long long int rows = inps.front().size(), cols = inps.front().front().size();
+  /* anselmo
+  tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));
+  auto input_map = _x.tensor<float, 4>();
+  for (long long int s = 0; s < samples; ++s) {
+    const auto& sample = inps[s];
+    for (long long int r = 0; r < rows; ++r) {
+      const auto& row = sample[r];
+      for (long long int c = 0; c < cols; ++c) {
+        input_map(s, r, c, 0) = row[c];
+      }
+    }
+  }
+
+  return g->run(_x);
+  */
+  return std::vector<std::vector<float>>();
+}
+// ------------------------------------------------------
+
 std::vector<float>
-nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d){
-  
+nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
+{
   long long int rows = inp2d.size(), cols = inp2d.front().size();
-  
+  /*
   tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({1, rows, cols, 1}));
   auto input_map = _x.tensor<float, 4>();
   for (long long int r = 0; r < rows; ++r) {
     const auto& row = inp2d[r];
-	for (long long int c = 0; c < cols; ++c) {
-	  input_map(0, r, c, 0) = row[c];
-	}
+    for (long long int c = 0; c < cols; ++c) {
+      input_map(0, r, c, 0) = row[c];
+    }
   }
-  
+
   auto out = g->run(_x);
   if (!out.empty())
     return out.front();
   else
     return std::vector<float>();
+  */
+  return std::vector<float>();
 }
-  
+
 // ------------------------------------------------------
 // --------------------PointIdAlg------------------------
 // ------------------------------------------------------
+
 
 nnet::PointIdAlg::PointIdAlg(){
   
@@ -176,7 +176,8 @@ nnet::PointIdAlg::PointIdAlg(){
   if (!fNNet) { std:: cout << "Loading model from file failed." << std::endl;exit(1);}
 }
 
-/*nnet::PointIdAlg::PointIdAlg(const Config& config)
+/*
+nnet::PointIdAlg::PointIdAlg(const Config& config)
   : img::DataProviderAlg(config)
   , fNNet(0)
   , fPatchSizeW(config.PatchSizeW())
@@ -205,14 +206,15 @@ nnet::PointIdAlg::PointIdAlg(){
 
   resizePatch();
 }
-// ------------------------------------------------------
 */
+// ------------------------------------------------------
+
 nnet::PointIdAlg::~PointIdAlg()
 {
   deleteNNet();
 }
 // ------------------------------------------------------
-/*
+
 void
 nnet::PointIdAlg::resizePatch()
 {
@@ -221,14 +223,14 @@ nnet::PointIdAlg::resizePatch()
     r.resize(fPatchSizeD);
 }
 // ------------------------------------------------------
-*/
+
 float
 nnet::PointIdAlg::predictIdValue(unsigned int wire, float drift, size_t outIdx) const
 {
   float result = 0.;
 
   if (!bufferPatch(wire, drift)) {
-    //mf::LogError("PointIdAlg") << "Patch buffering failed.";
+    //    mf::LogError("PointIdAlg") << "Patch buffering failed.";
     std::cout << "Patch buffering failed." << std::endl;
     return result;
   }
@@ -237,7 +239,7 @@ nnet::PointIdAlg::predictIdValue(unsigned int wire, float drift, size_t outIdx) 
     auto out = fNNet->Run(fWireDriftPatch);
     if (!out.empty()) { result = out[outIdx]; }
     else {
-      //mf::LogError("PointIdAlg") << "Problem with applying model to input.";
+      //      mf::LogError("PointIdAlg") << "Problem with applying model to input.";
       std::cout << "Problem with applying model to input." << std::endl;
     }
   }
@@ -252,7 +254,7 @@ nnet::PointIdAlg::predictIdVector(unsigned int wire, float drift) const
   std::vector<float> result;
 
   if (!bufferPatch(wire, drift)) {
-    //mf::LogError("PointIdAlg") << "Patch buffering failed.";
+    //    mf::LogError("PointIdAlg") << "Patch buffering failed.";
     std::cout << "Patch buffering failed." << std::endl;
     return result;
   }
@@ -266,7 +268,7 @@ nnet::PointIdAlg::predictIdVector(unsigned int wire, float drift) const
   return result;
 }
 // ------------------------------------------------------
-/*
+
 std::vector<std::vector<float>>
 nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> points) const
 {
@@ -278,7 +280,7 @@ nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> p
     unsigned int wire = points[i].first;
     float drift = points[i].second;
     if (!bufferPatch(wire, drift, inps[i])) {
-      //throw cet::exception("PointIdAlg") << "Patch buffering failed" << std::endl;
+      //      throw cet::exception("PointIdAlg") << "Patch buffering failed" << std::endl;
       std::cout << "Patch buffering failed" << std::endl;
     }
   }
@@ -327,7 +329,7 @@ nnet::PointIdAlg::flattenData2D(std::vector<std::vector<float>> const& patch)
 {
   std::vector<float> flat;
   if (patch.empty() || patch.front().empty()) {
-    //mf::LogError("DataProviderAlg") << "Patch is empty.";
+    //    mf::LogError("DataProviderAlg") << "Patch is empty.";
     std::cout << "Patch is empty." << std::endl;
     return flat;
   }
@@ -352,8 +354,8 @@ nnet::PointIdAlg::isInsideFiducialRegion(unsigned int wire, float drift) const
   size_t marginD = fPatchSizeD / 8;
 
   size_t scaledDrift = (size_t)(drift / fDriftWindow);
-  if ((wire >= marginW) && (wire < fNWires - marginW) && (scaledDrift >= marginD) &&
-      (scaledDrift < fNScaledDrifts - marginD))
+  if ((wire >= marginW) && (wire < fAlgView.fNWires - marginW) && (scaledDrift >= marginD) &&
+      (scaledDrift < fAlgView.fNScaledDrifts - marginD))
     return true;
   else
     return false;
@@ -363,7 +365,7 @@ nnet::PointIdAlg::isInsideFiducialRegion(unsigned int wire, float drift) const
 // ------------------------------------------------------
 // ------------------TrainingDataAlg---------------------
 // ------------------------------------------------------
-
+/*
 nnet::TrainingDataAlg::TrainingDataAlg(const Config& config)
   : img::DataProviderAlg(config)
   , fEdepTot(0)
@@ -377,33 +379,35 @@ nnet::TrainingDataAlg::TrainingDataAlg(const Config& config)
 {
   fSaveSimInfo = !fSimulationProducerLabel.label().empty();
 }
+*/
 // ------------------------------------------------------
 
 nnet::TrainingDataAlg::~TrainingDataAlg() = default;
 // ------------------------------------------------------
 
-void
-nnet::TrainingDataAlg::resizeView(detinfo::DetectorClocksData const& clockData,
-                                  detinfo::DetectorPropertiesData const& detProp,
+img::DataProviderAlgView
+nnet::TrainingDataAlg::resizeView(detinfo::DetectorClocksData const& clock_data,
+                                  detinfo::DetectorPropertiesData const& det_prop,
                                   size_t wires,
                                   size_t drifts)
 {
-  img::DataProviderAlg::resizeView(clockData, detProp, wires, drifts);
+  auto view = img::DataProviderAlg::resizeView(clock_data, det_prop, wires, drifts);
 
   fWireDriftEdep.resize(wires);
   for (auto& w : fWireDriftEdep) {
-    w.resize(fNCachedDrifts);
+    w.resize(view.fNCachedDrifts);
     std::fill(w.begin(), w.end(), 0.0F);
   }
 
   fWireDriftPdg.resize(wires);
   for (auto& w : fWireDriftPdg) {
-    w.resize(fNCachedDrifts);
+    w.resize(view.fNCachedDrifts);
     std::fill(w.begin(), w.end(), 0);
   }
+  return view;
 }
 // ------------------------------------------------------
-
+/*
 bool
 nnet::TrainingDataAlg::setWireEdepsAndLabels(std::vector<float> const& edeps,
                                              std::vector<int> const& pdgs,
@@ -414,12 +418,12 @@ nnet::TrainingDataAlg::setWireEdepsAndLabels(std::vector<float> const& edeps,
   size_t dstep = 1;
   if (fDownscaleFullView) { dstep = fDriftWindow; }
 
-  if (edeps.size() / dstep > fNCachedDrifts) { return false; }
+  if (edeps.size() / dstep > fAlgView.fNCachedDrifts) { return false; }
 
   auto& wEdep = fWireDriftEdep[wireIdx];
   auto& wPdg = fWireDriftPdg[wireIdx];
 
-  for (size_t i = 0; i < fNCachedDrifts; ++i) {
+  for (size_t i = 0; i < fAlgView.fNCachedDrifts; ++i) {
     size_t i0 = i * dstep;
     size_t i1 = (i + 1) * dstep;
 
@@ -589,7 +593,6 @@ nnet::TrainingDataAlg::collectVtxFlags(
 
     double ekStart = 1000. * (particle.E() - particle.Mass());
     double ekEnd = 1000. * (particle.EndE() - particle.Mass());
-
     int pdg = abs(particle.PdgCode());
     int flagsStart = nnet::TrainingDataAlg::kNone;
     int flagsEnd = nnet::TrainingDataAlg::kNone;
@@ -698,13 +701,13 @@ nnet::TrainingDataAlg::collectVtxFlags(
     if (flagsStart != nnet::TrainingDataAlg::kNone) {
       auto wd = getProjection(clockData, detProp, particle.Position(), plane);
 
-      if ((wd.TPC == (int)fTPC) && (wd.Cryo == (int)fCryo)) {
+      if ((wd.TPC == TPC()) && (wd.Cryo == Cryo())) {
         wireToDriftToVtxFlags[wd.Wire][wd.Drift] |= flagsStart;
       }
     }
     if (flagsEnd != nnet::TrainingDataAlg::kNone) {
       auto wd = getProjection(clockData, detProp, particle.EndPosition(), plane);
-      if ((wd.TPC == (int)fTPC) && (wd.Cryo == (int)fCryo)) {
+      if ((wd.TPC == TPC()) && (wd.Cryo == Cryo())) {
         wireToDriftToVtxFlags[wd.Wire][wd.Drift] |= flagsEnd;
       }
     }
@@ -717,13 +720,13 @@ nnet::TrainingDataAlg::collectVtxFlags(
         for (auto const& couple1 : thisTrajectoryProcessMap1) {
           if ((truetraj.KeyToProcess(couple1.second)).find("Elastic") != std::string::npos) {
             auto wd = getProjection(clockData, detProp, truetraj.at(couple1.first).first, plane);
-            if ((wd.TPC == (int)fTPC) && (wd.Cryo == (int)fCryo)) {
+            if ((wd.TPC == TPC()) && (wd.Cryo == Cryo())) {
               wireToDriftToVtxFlags[wd.Wire][wd.Drift] |= nnet::TrainingDataAlg::kElastic;
             }
           }
           if ((truetraj.KeyToProcess(couple1.second)).find("Inelastic") != std::string::npos) {
             auto wd = getProjection(clockData, detProp, truetraj.at(couple1.first).first, plane);
-            if ((wd.TPC == (int)fTPC) && (wd.Cryo == (int)fCryo)) {
+            if ((wd.TPC == TPC()) && (wd.Cryo == Cryo())) {
               wireToDriftToVtxFlags[wd.Wire][wd.Drift] |= nnet::TrainingDataAlg::kInelastic;
             }
           }
@@ -771,8 +774,8 @@ nnet::TrainingDataAlg::setDataEventData(const art::Event& event,
   // Loop over wires (sorry about hard coded value) to fill in 1) pdg and 2) charge depo
   for (size_t widx = 0; widx < 240; ++widx) {
 
-    std::vector<float> labels_deposit(fNDrifts, 0); // full-drift-length buffers
-    std::vector<int> labels_pdg(fNDrifts, 0);
+    std::vector<float> labels_deposit(fAlgView.fNDrifts, 0); // full-drift-length buffers
+    std::vector<int> labels_pdg(fAlgView.fNDrifts, 0);
 
     // First, the charge depo
     for (size_t subwidx = 0; subwidx < Wirelist.size(); ++subwidx) {
@@ -923,13 +926,13 @@ nnet::TrainingDataAlg::setEventData(const art::Event& event,
   fEdepTot = 0;
 
   std::map<int, int> trackToPDG;
-  for (size_t widx = 0; widx < fNWires; ++widx) {
-    auto wireChannelNumber = fWireChannels[widx];
+  for (size_t widx = 0; widx < fAlgView.fNWires; ++widx) {
+    auto wireChannelNumber = fAlgView.fWireChannels[widx];
     if (wireChannelNumber == raw::InvalidChannelID) continue;
 
-    std::vector<float> labels_deposit(fNDrifts, 0);        // full-drift-length buffers,
-    std::vector<int> labels_pdg(labels_deposit.size(), 0); // both of the same size,
-    int labels_size = labels_deposit.size();               // cached as int for comparisons below
+    std::vector<float> labels_deposit(fAlgView.fNDrifts, 0); // full-drift-length buffers,
+    std::vector<int> labels_pdg(labels_deposit.size(), 0);   // both of the same size,
+    int labels_size = labels_deposit.size();                 // cached as int for comparisons below
 
     std::map<int, std::map<int, double>> timeToTrackToCharge;
     for (auto const& channel : *simChannelHandle) {
@@ -1025,15 +1028,13 @@ nnet::TrainingDataAlg::setEventData(const art::Event& event,
       int drift = drift_flags.first, flags = drift_flags.second;
       if ((drift >= 0) && (drift < labels_size)) { labels_pdg[drift] |= flags; }
     }
-
     setWireEdepsAndLabels(labels_deposit, labels_pdg, widx);
-
   } // for each Wire
 
   return true;
 }
 // ------------------------------------------------------
-
+*/
 bool
 nnet::TrainingDataAlg::findCrop(float max_e_cut,
                                 unsigned int& w0,
@@ -1117,4 +1118,3 @@ nnet::TrainingDataAlg::findCrop(float max_e_cut,
     return false;
 }
 // ------------------------------------------------------
-*/

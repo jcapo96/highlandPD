@@ -1,4 +1,3 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class:       PointIdAlg
 // Authors:     D.Stefan (Dorota.Stefan@ncbj.gov.pl),         from DUNE, CERN/NCBJ, since May 2016
 //              R.Sulej (Robert.Sulej@cern.ch),               from DUNE, FNAL/NCBJ, since May 2016
@@ -10,45 +9,32 @@
 //      Run CNN or MLP trained to classify a point in 2D projection. Various features can be
 //      recognized, depending on the net model/weights used.
 //
-////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef PointIdAlg_h
 #define PointIdAlg_h
 
-
-#include "Math/GenVector/Cartesian3D.h"
-#include "Math/GenVector/DisplacementVector3D.h"
-#include "Math/Vector3Dfwd.h"
-#include "TGraph2D.h"
-#include "TLorentzVector.h"
-#include "TMVA/Reader.h"
-#include "TVector3.h"
-#include "pdDataClasses.hxx"
-#include <unordered_map>
-
-#include "CalorimetryAlg.hxx"
-
-
+/*
 // Framework includes
-//#include "art/Framework/Principal/Handle.h"
-//#include "canvas/Persistency/Common/FindManyP.h"
-//#include "canvas/Utilities/InputTag.h"
+#include "art/Framework/Principal/Handle.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Utilities/InputTag.h"
 
 // LArSoft includes
-/*
+
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
-#include "larreco/RecoAlg/ImagePatternAlgs/DataProvider/DataProviderAlg.h"
-
-
+#include "larrecodnn/ImagePatternAlgs/Keras/keras_model.h"
+#include "larrecodnn/ImagePatternAlgs/Tensorflow/TF/tf_graph.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 */
+
 #include "DataProviderAlg.hxx"
 
 #include "keras_model.h"
 #include "tf_graph.hxx"
 
+#include <unordered_map>
 
 namespace detinfo {
   class DetectorClocksData;
@@ -58,6 +44,8 @@ namespace detinfo {
 namespace simb {
   class MCParticle;
 }
+
+
 
 // ROOT & C++
 #include <memory>
@@ -70,12 +58,9 @@ namespace nnet {
   class TrainingDataAlg;
 }
 
-/// Interface class for various classifier models. Now MLP (NetMaker) and CNN (Keras with
-/// simple cpp interface) are supported. Will add interface to Protobuf as soon as Tensorflow
-/// may be used from UPS.
 class nnet::ModelInterface {
 public:
-  virtual ~ModelInterface() {};
+  virtual ~ModelInterface() {}
 
   virtual std::vector<float> Run(std::vector<std::vector<float>> const& inp2d) = 0;
   virtual std::vector<std::vector<float>> Run(
@@ -83,8 +68,6 @@ public:
     int samples = -1);
 
 protected:
-  ModelInterface() {}
-
   std::string findFile(const char* fileName) const;
 };
 // ------------------------------------------------------
@@ -93,8 +76,9 @@ class nnet::KerasModelInterface : public nnet::ModelInterface {
 public:
   KerasModelInterface(const char* modelFileName);
 
-  std::vector<float> Run(std::vector<std::vector<float>> const& inp2d);
-  
+  //  std::vector<float> Run(std::vector<std::vector<float>> const& inp2d) override;
+    std::vector<float> Run(std::vector<std::vector<float>> const& inp2d);
+
 private:
   keras::KerasModel m; // network model
 };
@@ -105,7 +89,9 @@ public:
   TfModelInterface(const char* modelFileName);
 
   std::vector<std::vector<float>> Run(std::vector<std::vector<std::vector<float>>> const& inps,
-  				      int samples = -1);
+                                      //                                      int samples = -1) override;
+                                      int samples = -1);
+  //  std::vector<float> Run(std::vector<std::vector<float>> const& inp2d) override;
   std::vector<float> Run(std::vector<std::vector<float>> const& inp2d);
 
 private:
@@ -116,40 +102,37 @@ private:
 class nnet::PointIdAlg : public img::DataProviderAlg {
 public:
   /*
-    struct Config : public img::DataProviderAlg::Config {
+  struct Config : public img::DataProviderAlg::Config {
     using Name = fhicl::Name;
     using Comment = fhicl::Comment;
 
     fhicl::Atom<std::string> NNetModelFile{Name("NNetModelFile"),
                                            Comment("Neural net model to apply.")};
-					   fhicl::Sequence<std::string> NNetOutputs{Name("NNetOutputs"),
-					   Comment("Labels of the network outputs.")};
-					   
-					   fhicl::Atom<unsigned int> PatchSizeW{Name("PatchSizeW"), Comment("How many wires in patch.")};
+    fhicl::Sequence<std::string> NNetOutputs{Name("NNetOutputs"),
+                                             Comment("Labels of the network outputs.")};
+    fhicl::Atom<unsigned int> PatchSizeW{Name("PatchSizeW"), Comment("How many wires in patch.")};
 
-					   fhicl::Atom<unsigned int> PatchSizeD{Name("PatchSizeD"),
+    fhicl::Atom<unsigned int> PatchSizeD{Name("PatchSizeD"),
                                          Comment("How many downsampled ADC entries in patch")};
-					 };
+  };
   */
   //  PointIdAlg(const fhicl::ParameterSet& pset) : PointIdAlg(fhicl::Table<Config>(pset, {})()) {}
-  PointIdAlg();
-  
+
   //  PointIdAlg(const Config& config);
 
+  PointIdAlg();
+  
   //  ~PointIdAlg() override;
   ~PointIdAlg();
 
-  /// network output labels
   std::vector<std::string> const&
   outputLabels() const
   {
     return fNNetOutputs;
   }
 
-  /// calculate single-value prediction (2-class probability) for [wire, drift] point
   float predictIdValue(unsigned int wire, float drift, size_t outIdx = 0) const;
 
-  /// calculate multi-class probabilities for [wire, drift] point
   std::vector<float> predictIdVector(unsigned int wire, float drift) const;
 
   std::vector<std::vector<float>> predictIdVectors(
@@ -170,17 +153,13 @@ public:
 
   bool isInsideFiducialRegion(unsigned int wire, float drift) const;
 
-  /// test if wire/drift coordinates point to the current patch (so maybe the cnn output
-  /// does not need to be recalculated)
   bool isCurrentPatch(unsigned int wire, float drift) const;
 
-  /// test if two wire/drift coordinates point to the same patch
   bool isSamePatch(unsigned int wire1, float drift1, unsigned int wire2, float drift2) const;
-
 
 private:
   std::string fNNetModelFilePath;
-  std::vector<std::string> fNNetOutputs{"track", "em", "none", "michel"};
+  std::vector<std::string> fNNetOutputs;
   nnet::ModelInterface* fNNet;
 
   mutable std::vector<std::vector<float>> fWireDriftPatch; // patch data around the identified point
@@ -228,7 +207,7 @@ private:
 // ------------------------------------------------------
 // ------------------------------------------------------
 
-class nnet::TrainingDataAlg: public img::DataProviderAlg {
+class nnet::TrainingDataAlg : public img::DataProviderAlg {
 public:
   enum EMask {
     kNone = 0,
@@ -281,14 +260,15 @@ public:
       Comment("ADC pulse peak delay in ticks (non-zero for not deconvoluted waveforms).")};
   };
   */
-  //  TrainingDataAlg(const fhicl::ParameterSet& pset)
-  //    : TrainingDataAlg(fhicl::Table<Config>(pset, {})())
-  //  {}
+  /*
+  TrainingDataAlg(const fhicl::ParameterSet& pset)
+    : TrainingDataAlg(fhicl::Table<Config>(pset, {})())
+  {}
 
+  TrainingDataAlg(const Config& config);
+  */
   TrainingDataAlg();
-
-  //  TrainingDataAlg(const Config& config);
-
+  
   //  ~TrainingDataAlg() override;
     ~TrainingDataAlg();
 
@@ -301,7 +281,7 @@ public:
   }
 
   bool setEventData(
-    const AnaEventB& event, // collect & downscale ADC's, charge deposits, pdg labels
+    const AnaEvent& event, // collect & downscale ADC's, charge deposits, pdg labels
     detinfo::DetectorClocksData const& clockData,
     detinfo::DetectorPropertiesData const& detProp,
     unsigned int plane,
@@ -309,7 +289,7 @@ public:
     unsigned int cryo);
 
   bool setDataEventData(
-    const AnaEventB& event, // collect & downscale ADC's, charge deposits, pdg labels
+    const AnaEvent& event, // collect & downscale ADC's, charge deposits, pdg labels
     detinfo::DetectorClocksData const& clockData,
     detinfo::DetectorPropertiesData const& detProp,
     unsigned int plane,
@@ -339,19 +319,19 @@ public:
   }
 
 protected:
-  void resizeView(detinfo::DetectorClocksData const& clockData,
-                  detinfo::DetectorPropertiesData const& detProp,
-                  size_t wires,
-                  //                  size_t drifts) override;
-                  size_t drifts);
+  img::DataProviderAlgView resizeView(detinfo::DetectorClocksData const& clock_data,
+                                      detinfo::DetectorPropertiesData const& det_prop,
+                                      size_t wires,
+                                      //                                      size_t drifts) override;
+                                                                            size_t drifts);
 
 private:
   struct WireDrift // used to find MCParticle start/end 2D projections
   {
     size_t Wire;
     int Drift;
-    int TPC;
-    int Cryo;
+    unsigned int TPC;
+    unsigned int Cryo;
   };
 
   WireDrift getProjection(detinfo::DetectorClocksData const& clockData,
@@ -378,8 +358,8 @@ private:
     float dy = particle.EndY() - particle.Vy();
     float dz = particle.EndZ() - particle.Vz();
     return dx * dx + dy * dy + dz * dz;
-    */
-  }
+
+    */  }
   bool isElectronEnd(const simb::MCParticle& particle,
                      const std::unordered_map<int, const simb::MCParticle*>& particleMap) const;
 
@@ -389,11 +369,19 @@ private:
   double fEdepTot; // [GeV]
   std::vector<std::vector<float>> fWireDriftEdep;
   std::vector<std::vector<int>> fWireDriftPdg;
+  /*
+  art::InputTag fWireProducerLabel;
+  art::InputTag fHitProducerLabel;
+  art::InputTag fTrackModuleLabel;
+  art::InputTag fSimulationProducerLabel;
+  */
 
   std::string fWireProducerLabel;
   std::string fHitProducerLabel;
   std::string fTrackModuleLabel;
   std::string fSimulationProducerLabel;
+
+
   bool fSaveVtxFlags;
   bool fSaveSimInfo;
 

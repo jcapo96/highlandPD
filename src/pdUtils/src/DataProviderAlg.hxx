@@ -252,14 +252,14 @@ protected:
 			     size_t size_d,
 			     std::vector<std::vector<float>>& patch) const;
   
-  /*virtual DataProviderAlgView resizeView(detinfo::DetectorClocksData const& clock_data,
+  virtual DataProviderAlgView resizeView(detinfo::DetectorClocksData const& clock_data,
 					 detinfo::DetectorPropertiesData const& det_prop,
 					 size_t wires,
 					 size_t drifts);
-   
+
   // Calorimetry needed to equalize ADC amplitude along drift:
   calo::CalorimetryAlg fCalorimetryAlg;
-  
+  /*   
   // Geometry and detector properties:
   geo::GeometryCore const* fGeometry;
   */
