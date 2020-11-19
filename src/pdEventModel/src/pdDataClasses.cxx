@@ -19,7 +19,10 @@ AnaHitPD::AnaHitPD(){
   fPeakTime      = kFloatUnassigned;     
   fPeakAmplitude = kFloatUnassigned;
   Position       = TVector3(0,0,0);
+  fChannel       = kIntUnassigned;
+  fView          = kIntUnassigned; 
 
+  
   dEdx          = kFloatUnassigned;
   dQdx          = kFloatUnassigned;
   dEdx_corr     = kFloatUnassigned;
@@ -36,7 +39,9 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   fPeakTime      = hit.fPeakTime;     
   fPeakAmplitude = hit.fPeakAmplitude;
   Position       = hit.Position;
-
+  fChannel       = hit.fChannel;
+  fView          = hit.fView;
+  
   dEdx           = hit.dEdx;
   dQdx           = hit.dQdx;
   dEdx_corr      = hit.dEdx_corr;
