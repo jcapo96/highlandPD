@@ -296,7 +296,7 @@ img::DataProviderAlg::setWireData(std::vector<float> const& adc, size_t wireIdx)
   return wData;
 }
 // ------------------------------------------------------
-/*
+
 bool
 img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_data,
 				       detinfo::DetectorPropertiesData const& det_prop,
@@ -305,8 +305,10 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
 				       unsigned int tpc,
 				       unsigned int cryo)
 {
-  mf::LogInfo("DataProviderAlg") << "Create image for cryo:" << cryo << " tpc:" << tpc
-				 << " plane:" << plane;
+  //  mf::LogInfo("DataProviderAlg") << "Create image for cryo:" << cryo << " tpc:" << tpc
+  //				 << " plane:" << plane;
+  std::cout  << "Create image for cryo:" << cryo << " tpc:" << tpc
+             << " plane:" << plane << std::endl;
   
   fCryo = cryo;
   fTPC = tpc;
@@ -315,18 +317,19 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
   fAdcSumOverThr = 0;
   fAdcAreaOverThr = 0;
   
-  size_t nwires = fGeometry->Nwires(plane, tpc, cryo);
-  size_t ndrifts = det_prop.NumberTimeSamples();
+  size_t nwires = 0;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
+  size_t ndrifts = 0;//det_prop.NumberTimeSamples();    anselmo
   
   fAlgView = resizeView(clock_data, det_prop, nwires, ndrifts);
-   
+
+  /*
   auto const& channelStatus =
     art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider();
   
   bool allWrong = true;
   for (auto const& wire : wires) {
     auto wireChannelNumber = wire.Channel();
-    if (!channelStatus.IsGood(wireChannelNumber)) { continue; }
+    //    if (!channelStatus.IsGood(wireChannelNumber)) { continue; }   //anselmo
   
     size_t w_idx = 0;
     for (auto const& id : fGeometry->ChannelToWire(wireChannelNumber)) {
@@ -365,11 +368,11 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
   applyBlur();
   addWhiteNoise();
   addCoherentNoise();
-  
+  */  
   return true;
 }
 // ------------------------------------------------------
-*/
+
 float
 img::DataProviderAlg::scaleAdcSample(float val) const
 {

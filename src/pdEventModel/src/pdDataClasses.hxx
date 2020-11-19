@@ -45,6 +45,9 @@ public:
   AnaWireID  WireID()const {return fWireID;}
   Float_t Integral()const {return fIntegral;}
 
+  UInt_t Channel()const {return fChannel;}
+  Int_t View()const {return fView;}
+
   //protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
@@ -57,6 +60,9 @@ public:
   Float_t fPeakTime;
   Float_t fPeakAmplitude;
   TVector3 Position;
+
+  UInt_t fChannel;
+  Int_t  fView;
 
   /// Residual range for each wire in each plane
   Float_t ResidualRange;

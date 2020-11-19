@@ -32,7 +32,51 @@ namespace detinfo {
   class DetectorClocksData;
   class DetectorPropertiesData;
 }
+
+namespace recob{
+  class Wire{
+  public:
     
+    Wire(){}
+
+    std::vector<Float_t> fSignal;
+    UInt_t fChannel;
+
+    UInt_t Channel(){return fChannel;}
+    std::vector<Float_t> Signal(){return fSignal;}
+    
+
+  };
+
+
+  class Track{
+  public:
+    
+    Track(AnaParticleB& part){
+      fID = part.UniqueID;
+      fEnd = TVector3(part.PositionEnd[0],   part.PositionEnd[1],   part.PositionEnd[2]);
+      fLoc = TVector3(part.PositionStart[0], part.PositionStart[1], part.PositionStart[2]);
+      fPart = &part;
+    }
+    
+    Int_t fID;
+    TVector3 fEnd;
+    TVector3 fLoc;
+    AnaParticleB* fPart;
+    Float_t fLength;
+    
+    Int_t ID(){return fID;}
+    Float_t Length(){return fLength;}
+    
+    
+  };
+
+}
+
+
+
+
+
 namespace img {
   class DataProviderAlg;
   struct DataProviderAlgView {
@@ -91,7 +135,7 @@ public:
   DataProviderAlg() {};
    
   virtual ~DataProviderAlg();
-  /*
+
   bool setWireDriftData(const detinfo::DetectorClocksData& clock_data,
 			const detinfo::DetectorPropertiesData& det_prop,
 			const std::vector<recob::Wire>&
@@ -99,7 +143,7 @@ public:
 			unsigned int plane,
 			unsigned int tpc,
 			unsigned int cryo);
-  */
+
   std::vector<float> const&
   wireData(size_t widx) const
   {
