@@ -6,7 +6,7 @@
 
 #include "pdDataClasses.hxx"
 
-#include "pionTreeConverter.hxx"
+#include "hitpionTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 #include "LArSoftTreeConverter.hxx"
 #include "pandoraPreselection.hxx"
@@ -55,7 +55,7 @@ void dEdxStudies::DefineInputConverters(){
 //********************************************************************
 
   // add a single converter (a copy of the one in highland/baseAnalysis)
-  input().AddConverter("pionana",        new pionTreeConverter());
+  input().AddConverter("pionana",        new hitPionTreeConverter());
   input().AddConverter("minitree",       new HighlandMiniTreeConverter());
   input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
@@ -203,7 +203,7 @@ void dEdxStudies::FillMicroTrees(bool addBase){
 
   //  std::vector<hl::MVAPIDResult> result;
   //  fMVA.RunPID(GetEvent(),result);
-
+  _cnn.produce(GetEvent());
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
