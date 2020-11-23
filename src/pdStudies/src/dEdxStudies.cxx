@@ -6,7 +6,7 @@
 
 #include "pdDataClasses.hxx"
 
-#include "hitpionTreeConverter.hxx"
+#include "hitPionTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 #include "LArSoftTreeConverter.hxx"
 #include "pandoraPreselection.hxx"
