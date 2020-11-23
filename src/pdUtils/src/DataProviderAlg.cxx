@@ -103,6 +103,91 @@ namespace geo {
   }
 // ------------------------------------------------------
 */
+
+
+
+img::DataProviderAlg::DataProviderAlg()
+  : fAlgView{}
+  , fDownscaleMode(img::DataProviderAlg::kMax)
+  , fDriftWindow(10)
+    //  , fCalorimetryAlg(config.CalorimetryAlg())
+    //  , fGeometry(art::ServiceHandle<geo::Geometry const>().get())
+  , fAdcSumOverThr(0)
+  , fAdcSumThr(10)
+  , // set fixed threshold of 10 ADC counts for counting the sum
+  fAdcAreaOverThr(0)
+    //  , fNoiseSigma(0)
+    //  , fCoherentSigma(0)
+  {
+    fCalibrateLifetime = true;
+    fCalibrateAmpl = false;
+    
+    //    fAmplCalibConst.resize(fGeometry->MaxPlanes());
+    fAmplCalibConst.resize(3);
+    if (fCalibrateAmpl) {
+      std::cout << "Using calibration constants:" << std::endl;
+      for (size_t p = 0; p < fAmplCalibConst.size(); ++p) {
+	try {
+          fAmplCalibConst[p] = 1.2e-3 * fCalorimetryAlg.ElectronsFromADCPeak(1.0, p);
+          std::cout << "   plane:" << p << " const:" << 1.0 / fAmplCalibConst[p] << std::endl;
+        }
+	catch (...) {
+          fAmplCalibConst[p] = 1.0;
+        }
+      }
+    }
+    else {
+      std::cout << "No plane-to-plane calibration." << std::endl;
+      for (size_t p = 0; p < fAmplCalibConst.size(); ++p) {
+        fAmplCalibConst[p] = 1.0;
+      }
+    }
+
+    fDriftWindow = 6;
+    fDownscaleFullView = false;
+    fDriftWindowInv = 1/fDriftWindow;
+    
+    std::string mode_str = "mean";
+    std::cout  << "Downscale mode is: " << mode_str << std::endl;
+    if (mode_str == "maxpool") {
+      //fnDownscale = [this](std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) { downscaleMax(dst, adc, tick0); };
+      fDownscaleMode = img::DataProviderAlg::kMax;
+    }
+    else if (mode_str == "maxmean") {
+      //fnDownscale = [this](std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) { downscaleMaxMean(dst, adc, tick0); };
+      fDownscaleMode = img::DataProviderAlg::kMaxMean;
+    }
+    else if (mode_str == "mean") {
+      //fnDownscale = [this](std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) { downscaleMean(dst, adc, tick0); };
+      fDownscaleMode = img::DataProviderAlg::kMean;
+    }
+    else {
+      std::cout << "Downscale mode string not recognized, set to max pooling." << std::endl;
+      //fnDownscale = [this](std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) { downscaleMax(dst, adc, tick0); };
+      fDownscaleMode = img::DataProviderAlg::kMax;
+    }
+    
+    fAdcMax = 1000;  // anselmo
+    fAdcMin = 0;
+    //    fAdcOffset = config.OutMin();
+    //    fAdcScale = (config.OutMax() - fAdcOffset) / (fAdcMax - fAdcMin);
+    fAdcZero = fAdcOffset + fAdcScale * (0 - fAdcMin); // level of zero ADC after scaling
+    
+    if (fAdcMax <= fAdcMin) {
+      std::cout << "Misconfigured: AdcMax <= AdcMin" << std::endl;
+    }
+    if (fAdcScale == 0) {
+      std::cout << "Misconfigured: OutMax == OutMin" << std::endl;
+    }
+    /*
+    fBlurKernel = config.BlurKernel();
+    fNoiseSigma = config.NoiseSigma();
+    fCoherentSigma = config.CoherentSigma();
+    */
+  }
+
+
+// ------------------------------------------------------
 img::DataProviderAlg::~DataProviderAlg() = default;
 // ------------------------------------------------------
 
@@ -245,6 +330,7 @@ img::DataProviderAlg::downscaleMaxMean(std::size_t dst_size,
     
     result[i] = max_adc / n;
   }
+
   scaleAdcSamples(result);
   return result;
 }
@@ -300,7 +386,7 @@ img::DataProviderAlg::setWireData(std::vector<float> const& adc, size_t wireIdx)
 bool
 img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_data,
 				       detinfo::DetectorPropertiesData const& det_prop,
-				       const std::vector<recob::Wire>& wires,
+				       const std::vector<my_recob::Wire>& wires,
 				       unsigned int plane,
 				       unsigned int tpc,
 				       unsigned int cryo)

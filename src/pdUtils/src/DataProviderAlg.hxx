@@ -33,7 +33,7 @@ namespace detinfo {
   class DetectorPropertiesData;
 }
 
-namespace recob{
+namespace my_recob{
   class Wire{
   public:
     
@@ -132,13 +132,13 @@ public:
    
   DataProviderAlg(const Config& config);*/
 
-  DataProviderAlg() {};
+  DataProviderAlg();
    
   virtual ~DataProviderAlg();
 
   bool setWireDriftData(const detinfo::DetectorClocksData& clock_data,
 			const detinfo::DetectorPropertiesData& det_prop,
-			const std::vector<recob::Wire>&
+			const std::vector<my_recob::Wire>&
 			wires, // once per plane: setup ADC buffer, collect & downscale ADC's
 			unsigned int plane,
 			unsigned int tpc,
@@ -247,7 +247,7 @@ public:
 
 protected:
   DataProviderAlgView fAlgView;
-  EDownscaleMode fDownscaleMode;
+  EDownscaleMode fDownscaleMode = kMean;
   //std::function<void (std::vector<float> &, std::vector<float> const &, size_t)> fnDownscale;
   
   size_t fDriftWindow = 6;

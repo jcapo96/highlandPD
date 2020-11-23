@@ -15,21 +15,21 @@
             config.get_PSet().get<std::string>("module_label"), "",
             art::ServiceHandle<art::TriggerNamesService const>()->getProcessName())
 {
-    fMVAWriter.produces_using< recob::Hit >();
+    fMVAWriter.produces_using< my_recob::Hit >();
 
     if (!fClusterModuleLabel.label().empty())
     {
-        produces< std::vector<recob::Cluster> >();
-            produces< art::Assns<recob::Cluster, recob::Hit> >();
+        produces< std::vector<my_recob::Cluster> >();
+            produces< art::Assns<my_recob::Cluster, my_recob::Hit> >();
 
-        fMVAWriter.produces_using< recob::Cluster >();
+        fMVAWriter.produces_using< my_recob::Cluster >();
         fDoClusters = true;
     }
     else { fDoClusters = false; }
 
     if (!fTrackModuleLabel.label().empty())
     {
-        fMVAWriter.produces_using< recob::Track >();
+        fMVAWriter.produces_using< my_recob::Track >();
         fDoTracks = true;
     }
     else { fDoTracks = false; }
@@ -42,6 +42,8 @@ nnet::EmTrackMichelId::EmTrackMichelId(){
   fClusterModuleLabel = "pandora";
   fTrackModuleLabel = "";
 
+  fBatchSize=1;
+  
   if (!fClusterModuleLabel.empty())fDoClusters = true;
   else fDoClusters = false;
 
@@ -55,25 +57,38 @@ nnet::EmTrackMichelId::EmTrackMichelId(){
 
 void nnet::EmTrackMichelId::produce(AnaEvent & evt)
 {
+
+
+  std::cout << "next event: " << evt.EventInfo.Run << " / " << evt.EventInfo.Event << std::endl;
   /*
   mf::LogVerbatim("EmTrackMichelId") << "next event: " << evt.run() << " / " << evt.id().event();
 
-  auto wireHandle = evt.getValidHandle< std::vector<recob::Wire> >(fWireProducerLabel);
+  auto wireHandle = evt.getValidHandle< std::vector<my_recob::Wire> >(fWireProducerLabel);
   */
 
   detinfo::DetectorClocksData clockData;
   detinfo::DetectorPropertiesData detProp;
 
   
-  std::vector<recob::Wire>* wireHandle;
+  std::vector<my_recob::Wire>* wireHandle;
   unsigned int cryo, tpc, view;
-
+  
   // ******************* get and sort hits ********************
 
-  std::vector<AnaHitPD*>* hitListHandle;
+  std::vector<AnaHitPD*> hitListHandle;
   std::vector<AnaHitPD*> hitPtrList;
-  //  auto hitListHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+  //  auto hitListHandle = evt.getValidHandle< std::vector<my_recob::Hit> >(fHitModuleLabel);
   //  art::fill_ptr_vector(hitPtrList, hitListHandle);
+
+  std::cout << "anselmo 0: nparts = " << evt.nParticles << std::endl;
+  for (UInt_t i=0;i<evt.nParticles;i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(evt.Particles[i]);
+    for (UInt_t j=0;j<part->Hits[2].size();j++){
+      hitListHandle.push_back(&(part->Hits[2][j]));
+      hitPtrList.push_back(&(part->Hits[2][j]));
+    }
+  }
+  std::cout << "anselmo 1: nhits = " << hitPtrList.size() << std::endl;
 
   EmTrackMichelId::cryo_tpc_view_keymap hitMap;
   for (auto const& h : hitPtrList)
@@ -85,11 +100,13 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
       tpc = h->WireID().TPC;
       
       //      hitMap[cryo][tpc][view].push_back(h.key());
-      hitMap[cryo][tpc][view].push_back((size_t)h);
+      //      hitMap[cryo][tpc][view].push_back((size_t)h);
+      // anselmo
+      hitMap[cryo][tpc][view].push_back(h);
     }
 
     // ********************* classify hits **********************
-  //    auto hitID = fMVAWriter.initOutputs<recob::Hit>(fHitModuleLabel, hitPtrList.size(), fPointIdAlg.outputLabels());
+  //    auto hitID = fMVAWriter.initOutputs<my_recob::Hit>(fHitModuleLabel, hitPtrList.size(), fPointIdAlg.outputLabels());
 
     std::vector< char > hitInFA(hitPtrList.size(), 0); // tag hits in fid. area as 1, use 0 for hits close to the projectrion edges
     for (auto const & pcryo : hitMap)
@@ -112,21 +129,23 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                     std::vector< size_t > keys;
                     for (size_t k = 0; k < fBatchSize; ++k)
                     {
+
                         if (idx + k >= pview.second.size()) { break; } // careful about the tail
-
-                        size_t h = pview.second[idx+k]; // h is the Ptr< recob::Hit >::key()
-                        const AnaHitPD & hit = *(hitPtrList[h]);
+                        // anselmo:  use directly the pointer, not using the key
+                        //                        size_t h = pview.second[idx+k]; // h is the Ptr< my_recob::Hit >::key()
+                        size_t h = (size_t)(pview.second[idx+k]);
+                        //                        const AnaHitPD & hit = *(hitPtrList[h]);
+                        const AnaHitPD & hit = *(pview.second[idx+k]);
                         points.emplace_back(hit.WireID().Wire, hit.PeakTime());
-                        keys.push_back(h);
+                        //                        keys.push_back(h);
+                        keys.push_back((size_t)h);
                     }
-
                     auto batch_out = fPointIdAlg.predictIdVectors(points);
                     if (points.size() != batch_out.size())
                     {
                       //                        throw cet::exception("EmTrackMichelId") << "hits processing failed" << std::endl;
                       std::cout << "hits processing failed" << std::endl;
                     }
-
                     for (size_t k = 0; k < points.size(); ++k)
                     {
                         size_t h = keys[k];
@@ -145,12 +164,12 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
     if (fDoClusters)
     {
         // **************** prepare for new clusters ****************
-            auto clusters = std::make_unique< std::vector< recob::Cluster > >();
-            auto clu2hit = std::make_unique< art::Assns< recob::Cluster, recob::Hit > >();
+            auto clusters = std::make_unique< std::vector< my_recob::Cluster > >();
+            auto clu2hit = std::make_unique< art::Assns< my_recob::Cluster, my_recob::Hit > >();
 
         // ************** get and sort input clusters ***************
-        auto cluListHandle = evt.getValidHandle< std::vector<recob::Cluster> >(fClusterModuleLabel);
-            std::vector< art::Ptr<recob::Cluster> > cluPtrList;
+        auto cluListHandle = evt.getValidHandle< std::vector<my_recob::Cluster> >(fClusterModuleLabel);
+            std::vector< art::Ptr<my_recob::Cluster> > cluPtrList;
             art::fill_ptr_vector(cluPtrList, cluListHandle);
 
         EmTrackMichelId::cryo_tpc_view_keymap cluMap;
@@ -165,10 +184,10 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 cluMap[cryo][tpc][view].push_back(c.key());
             }
 
-        auto cluID = fMVAWriter.initOutputs<recob::Cluster>(fNewClustersTag, fPointIdAlg.outputLabels());
+        auto cluID = fMVAWriter.initOutputs<my_recob::Cluster>(fNewClustersTag, fPointIdAlg.outputLabels());
 
         unsigned int cidx = 0; // new clusters index
-        art::FindManyP< recob::Hit > hitsFromClusters(cluListHandle, evt, fClusterModuleLabel);
+        art::FindManyP< my_recob::Hit > hitsFromClusters(cluListHandle, evt, fClusterModuleLabel);
         std::vector< bool > hitUsed(hitPtrList.size(), false); // tag hits used in clusters
         for (auto const & pcryo : cluMap)
         {
@@ -181,7 +200,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                     view = pview.first;
                     if (!isViewSelected(view)) continue; // should not happen, clusters were pre-selected
 
-                    for (size_t c : pview.second) // c is the Ptr< recob::Cluster >::key()
+                    for (size_t c : pview.second) // c is the Ptr< my_recob::Cluster >::key()
                     {
                                 auto v = hitsFromClusters.at(c);
                                 if (v.empty()) continue;
@@ -192,15 +211,15 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                             hitUsed[hit.key()] = true;
                         }
 
-                        auto vout = fMVAWriter.getOutput<recob::Hit>(v,
-                            [&](art::Ptr<recob::Hit> const & ptr) { return (float)hitInFA[ptr.key()]; });
+                        auto vout = fMVAWriter.getOutput<my_recob::Hit>(v,
+                            [&](art::Ptr<my_recob::Hit> const & ptr) { return (float)hitInFA[ptr.key()]; });
 
                             float pvalue = vout[0] / (vout[0] + vout[1]);
                             mf::LogVerbatim("EmTrackMichelId") << "cluster in tpc:" << tpc << " view:" << view
                             << " size:" << v.size() << " p:" << pvalue;
 
                                 clusters->emplace_back(
-                                    recob::Cluster(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+                                    my_recob::Cluster(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
                                             v.size(), 0.0F, 0.0F, cidx, (geo::View_t)view, v.front()->WireID().planeID()));
                             util::CreateAssn(*this, evt, *clusters, v, *clu2hit);
                             cidx++;
@@ -209,20 +228,20 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                     }
 
                     // (2b) make single-hit clusters --------------------------------------------
-                    for (size_t h : hitMap[cryo][tpc][view]) // h is the Ptr< recob::Hit >::key()
+                    for (size_t h : hitMap[cryo][tpc][view]) // h is the Ptr< my_recob::Hit >::key()
                     {
                         if (hitUsed[h]) continue;
 
-                        auto vout = fMVAWriter.getOutput<recob::Hit>(h);
+                        auto vout = fMVAWriter.getOutput<my_recob::Hit>(h);
                                 float pvalue = vout[0] / (vout[0] + vout[1]);
 
                                 mf::LogVerbatim("EmTrackMichelId") << "single hit in tpc:" << tpc << " view:" << view
                                         << " wire:" << hitPtrList[h]->WireID().Wire << " drift:" << hitPtrList[h]->PeakTime() << " p:" << pvalue;
 
-                                art::PtrVector< recob::Hit > cluster_hits;
+                                art::PtrVector< my_recob::Hit > cluster_hits;
                                 cluster_hits.push_back(hitPtrList[h]);
                                 clusters->emplace_back(
-                                        recob::Cluster(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+                                        my_recob::Cluster(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
                                             1, 0.0F, 0.0F, cidx, (geo::View_t)view, hitPtrList[h]->WireID().planeID()));
                                 util::CreateAssn(*this, evt, *clusters, cluster_hits, *clu2hit);
                                 cidx++;
@@ -242,11 +261,11 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
     if (fDoTracks)
     {
       /*
-        auto trkListHandle = evt.getValidHandle< std::vector<recob::Track> >(fTrackModuleLabel);
-        art::FindManyP< recob::Hit > hitsFromTracks(trkListHandle, evt, fTrackModuleLabel);
-        std::vector< std::vector< art::Ptr<recob::Hit> > > trkHitPtrList(trkListHandle->size());
+        auto trkListHandle = evt.getValidHandle< std::vector<my_recob::Track> >(fTrackModuleLabel);
+        art::FindManyP< my_recob::Hit > hitsFromTracks(trkListHandle, evt, fTrackModuleLabel);
+        std::vector< std::vector< art::Ptr<my_recob::Hit> > > trkHitPtrList(trkListHandle->size());
       */
-      std::vector<recob::Track>*  trkListHandle;
+      std::vector<my_recob::Track>*  trkListHandle;
       std::vector<std::vector<AnaHitPD*> > hitsFromTracks;
       std::vector<std::vector<AnaHitPD*> > trkHitPtrList;
       
@@ -273,11 +292,11 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
             }
         }
         /*
-        auto trkID = fMVAWriter.initOutputs<recob::Track>(fTrackModuleLabel, trkHitPtrList.size(), fPointIdAlg.outputLabels());
-        for (size_t t = 0; t < trkHitPtrList.size(); ++t) // t is the Ptr< recob::Track >::key()
+        auto trkID = fMVAWriter.initOutputs<my_recob::Track>(fTrackModuleLabel, trkHitPtrList.size(), fPointIdAlg.outputLabels());
+        for (size_t t = 0; t < trkHitPtrList.size(); ++t) // t is the Ptr< my_recob::Track >::key()
         {
-            auto vout = fMVAWriter.getOutput<recob::Hit>(trkHitPtrList[t],
-                [&](art::Ptr<recob::Hit> const & ptr) { return (float)hitInFA[ptr.key()]; });
+            auto vout = fMVAWriter.getOutput<my_recob::Hit>(trkHitPtrList[t],
+                [&](art::Ptr<my_recob::Hit> const & ptr) { return (float)hitInFA[ptr.key()]; });
             fMVAWriter.setOutput(trkID, t, vout);
         }
         */

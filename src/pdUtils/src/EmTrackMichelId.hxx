@@ -52,7 +52,8 @@ namespace nnet {
   public:
     
     // these types to be replaced with use of feature proposed in redmine #12602
-    typedef std::unordered_map< unsigned int, std::vector< size_t > > view_keymap;
+    //    typedef std::unordered_map< unsigned int, std::vector< size_t > > view_keymap;
+    typedef std::unordered_map< unsigned int, std::vector< AnaHitPD* > > view_keymap;
     typedef std::unordered_map< unsigned int, view_keymap > tpc_view_keymap;
     typedef std::unordered_map< unsigned int, tpc_view_keymap > cryo_tpc_view_keymap;
     
@@ -100,11 +101,11 @@ namespace nnet {
     
     EmTrackMichelId();
     
-  private:
+
     void produce(AnaEvent & e); //override;
     
     bool isViewSelected(int view) const;
-    
+  private:    
     size_t fBatchSize;
     PointIdAlg fPointIdAlg;
     //anab::MVAWriter<4> fMVAWriter; // <-------------- using 4-output CNN model

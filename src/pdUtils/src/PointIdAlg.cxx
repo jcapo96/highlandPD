@@ -6,7 +6,7 @@
 
 #include "PointIdAlg.hxx"
 
-#include "tensorflow/core/public/session.h"  // anselmo
+//#include "tensorflow/core/public/session.h"  // anselmo
 /*
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -95,11 +95,12 @@ nnet::KerasModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 
 nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 {
+  /* anselmo
   g = tf::Graph::create(nnet::ModelInterface::findFile(modelFileName).c_str(),
                         {"cnn_output", "_netout"});
   //if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
   if (!g) {std::cout << "TF model failed." << std::endl; exit(1);}
-
+  */
   std::cout << "TF model loaded." << std::endl;
   
 }
@@ -108,6 +109,7 @@ nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 std::vector<std::vector<float>>
 nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples)
 {
+  /*
   if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
     return std::vector<std::vector<float>>();
 
@@ -127,6 +129,8 @@ nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& 
   }
 
   return g->run(_x);
+  */
+
   return std::vector<std::vector<float>>();
 }
 // ------------------------------------------------------
@@ -160,9 +164,21 @@ nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 
 
 nnet::PointIdAlg::PointIdAlg(){
+
+
+  // anselmo: Taken from https://internal.dunescience.org/doxygen/standard__reco__dune10kt_8fcl_source.html
+  fPatchSizeW = 44;   
+  fPatchSizeD = 48;
   
   fNNetModelFilePath = "cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoduneBeamAndCosmicsMCC11.pb";
 
+  deleteNNet();
+  /*
+  if ((fNNetModelFilePath.length() > 5) &&
+      (fNNetModelFilePath.compare(fNNetModelFilePath.length() - 5, 5, ".nnet") == 0)) {
+    fNNet = new nnet::KerasModelInterface(fNNetModelFilePath.c_str());
+  }
+  */    
   if ((fNNetModelFilePath.length() > 3) &&
       (fNNetModelFilePath.compare(fNNetModelFilePath.length() - 3, 3, ".pb") == 0)) {
     fNNet = new nnet::TfModelInterface(fNNetModelFilePath.c_str());
@@ -172,6 +188,8 @@ nnet::PointIdAlg::PointIdAlg(){
   }
 
   if (!fNNet) { std:: cout << "Loading model from file failed." << std::endl;exit(1);}
+
+  resizePatch();
 }
 
 /*
@@ -250,7 +268,6 @@ std::vector<float>
 nnet::PointIdAlg::predictIdVector(unsigned int wire, float drift) const
 {
   std::vector<float> result;
-
   if (!bufferPatch(wire, drift)) {
     //    mf::LogError("PointIdAlg") << "Patch buffering failed.";
     std::cout << "Patch buffering failed." << std::endl;
@@ -271,9 +288,8 @@ std::vector<std::vector<float>>
 nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> points) const
 {
   if (points.empty() || !fNNet) { return std::vector<std::vector<float>>(); }
-
   std::vector<std::vector<std::vector<float>>> inps(
-    points.size(), std::vector<std::vector<float>>(fPatchSizeW, std::vector<float>(fPatchSizeD)));
+                                                    points.size(), std::vector<std::vector<float>>(fPatchSizeW, std::vector<float>(fPatchSizeD)));
   for (size_t i = 0; i < points.size(); ++i) {
     unsigned int wire = points[i].first;
     float drift = points[i].second;
@@ -282,7 +298,6 @@ nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> p
       std::cout << "Patch buffering failed" << std::endl;
     }
   }
-
   return fNNet->Run(inps);
 }
 // ------------------------------------------------------
@@ -750,8 +765,8 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
 {
 
   
-  std::vector<recob::Wire> wireHandle;
-  std::vector<recob::Wire*> Wirelist;
+  std::vector<my_recob::Wire> wireHandle;
+  std::vector<my_recob::Wire*> Wirelist;
 
   //  if (event.getByLabel(fWireProducerLabel, wireHandle)) art::fill_ptr_vector(Wirelist, wireHandle);
 
@@ -768,14 +783,14 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
   //  if (event.getByLabel(fHitProducerLabel, HitHandle)) art::fill_ptr_vector(Hitlist, HitHandle);
 
   // Track info
-  std::vector<recob::Track> TrackHandle;
-  std::vector<recob::Track> Tracklist;
+  std::vector<my_recob::Track> TrackHandle;
+  std::vector<my_recob::Track> Tracklist;
 
   //  if (event.getByLabel(fTrackModuleLabel, TrackHandle))
   //    art::fill_ptr_vector(Tracklist, TrackHandle);
 
-  //  art::FindManyP<recob::Track> ass_trk_hits(HitHandle, event, fTrackModuleLabel);
-  std::vector<std::vector<recob::Track*> >ass_trk_hits;
+  //  art::FindManyP<my_recob::Track> ass_trk_hits(HitHandle, event, fTrackModuleLabel);
+  std::vector<std::vector<my_recob::Track*> >ass_trk_hits;
   
   // Loop over wires (sorry about hard coded value) to fill in 1) pdg and 2) charge depo
   for (size_t widx = 0; widx < 240; ++widx) {
@@ -904,8 +919,8 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
                                         unsigned int cryo)
 {
 
-  art::Handle<std::vector<recob::Wire>> wireHandle;
-  std::vector<art::Ptr<recob::Wire>> Wirelist;
+  art::Handle<std::vector<my_recob::Wire>> wireHandle;
+  std::vector<art::Ptr<my_recob::Wire>> Wirelist;
 
   if (event.getByLabel(fWireProducerLabel, wireHandle)) art::fill_ptr_vector(Wirelist, wireHandle);
 
@@ -915,19 +930,19 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
   }
 
   // Hit info
-  art::Handle<std::vector<recob::Hit>> HitHandle;
-  std::vector<art::Ptr<recob::Hit>> Hitlist;
+  art::Handle<std::vector<my_recob::Hit>> HitHandle;
+  std::vector<art::Ptr<my_recob::Hit>> Hitlist;
 
   if (event.getByLabel(fHitProducerLabel, HitHandle)) art::fill_ptr_vector(Hitlist, HitHandle);
 
   // Track info
-  art::Handle<std::vector<recob::Track>> TrackHandle;
-  std::vector<art::Ptr<recob::Track>> Tracklist;
+  art::Handle<std::vector<my_recob::Track>> TrackHandle;
+  std::vector<art::Ptr<my_recob::Track>> Tracklist;
 
   if (event.getByLabel(fTrackModuleLabel, TrackHandle))
     art::fill_ptr_vector(Tracklist, TrackHandle);
 
-  art::FindManyP<recob::Track> ass_trk_hits(HitHandle, event, fTrackModuleLabel);
+  art::FindManyP<my_recob::Track> ass_trk_hits(HitHandle, event, fTrackModuleLabel);
 
   // Loop over wires (sorry about hard coded value) to fill in 1) pdg and 2) charge depo
   for (size_t widx = 0; widx < 240; ++widx) {
@@ -1053,8 +1068,8 @@ nnet::TrainingDataAlg::setEventData(const AnaEvent& event,
                                     unsigned int tpc,
                                     unsigned int cryo)
 {
-  art::ValidHandle<std::vector<recob::Wire>> wireHandle =
-    event.getValidHandle<std::vector<recob::Wire>>(fWireProducerLabel);
+  art::ValidHandle<std::vector<my_recob::Wire>> wireHandle =
+    event.getValidHandle<std::vector<my_recob::Wire>>(fWireProducerLabel);
 
   if (!setWireDriftData(clockData, detProp, *wireHandle, plane, tpc, cryo)) {
     mf::LogError("TrainingDataAlg") << "Wire data not set.";
