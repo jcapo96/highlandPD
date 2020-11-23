@@ -9,6 +9,8 @@
 class AnaWireID{
 public:
 
+  AnaWireID(){Wire=Plane=TPC=Cryostat=0;}
+  
   Int_t Wire;
   Int_t Plane;
   Int_t TPC;
