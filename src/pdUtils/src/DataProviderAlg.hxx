@@ -273,12 +273,12 @@ public:
 
 protected:
   DataProviderAlgView fAlgView;
-  EDownscaleMode fDownscaleMode = kMean;
+  EDownscaleMode fDownscaleMode;
   //std::function<void (std::vector<float> &, std::vector<float> const &, size_t)> fnDownscale;
   
-  size_t fDriftWindow = 6;
-  bool fDownscaleFullView = false;
-  float fDriftWindowInv = 1/fDriftWindow;
+  size_t fDriftWindow;
+  bool fDownscaleFullView;
+  float fDriftWindowInv;
   
   std::vector<float> downscaleMax(std::size_t dst_size,
 				  std::vector<float> const& adc,
@@ -341,12 +341,7 @@ private:
   std::vector<float> fAmplCalibConst;
   bool fCalibrateAmpl, fCalibrateLifetime;
   unsigned int fCryo = 9999, fTPC = 9999, fPlane = 9999;
-  //from https://internal.dunescience.org/doxygen/sp__fd__adcdump__job__example_8fcl_source.html
-  float fAdcMax    = 250.0;
-  float fAdcMin    = -5.0;
-  float fAdcScale  = 127.0; 
-  float fAdcOffset = -128.0; 
-  float fAdcZero   = fAdcOffset + fAdcScale * (0 - fAdcMin); // level of zero ADC after scaling;
+  float fAdcMax, fAdcMin, fAdcScale, fAdcOffset, fAdcZero;
   double fAdcSumOverThr, fAdcSumThr;
   size_t fAdcAreaOverThr;
 

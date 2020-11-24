@@ -166,12 +166,17 @@ img::DataProviderAlg::DataProviderAlg()
       //fnDownscale = [this](std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) { downscaleMax(dst, adc, tick0); };
       fDownscaleMode = img::DataProviderAlg::kMax;
     }
-    
-    fAdcMax = 1000;  // anselmo
-    fAdcMin = 0;
-    //    fAdcOffset = config.OutMin();
-    //    fAdcScale = (config.OutMax() - fAdcOffset) / (fAdcMax - fAdcMin);
-    fAdcZero = fAdcOffset + fAdcScale * (0 - fAdcMin); // level of zero ADC after scaling
+
+
+    //from https://internal.dunescience.org/doxygen/sp__fd__adcdump__job__example_8fcl_source.html
+    fAdcMax    = 250.0;
+    fAdcMin    = -5.0;
+    Float_t OutMax  = 127.0; 
+    Float_t OutMin = -128.0; 
+    fAdcOffset = OutMin;
+    fAdcScale = (OutMax - fAdcOffset) / (fAdcMax - fAdcMin);
+    fAdcZero   = fAdcOffset + fAdcScale * (0 - fAdcMin); // level of zero ADC after scaling;
+
     
     if (fAdcMax <= fAdcMin) {
       std::cout << "Misconfigured: AdcMax <= AdcMin" << std::endl;
