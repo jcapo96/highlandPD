@@ -27,6 +27,7 @@
  
 // ROOT & C++
 #include <memory>
+#include <set>
 
 namespace detinfo {
   class DetectorClocksData;
@@ -73,7 +74,32 @@ namespace my_recob{
 
 }
 
+namespace channel {
+  class ChannelStatusProvider{
+  public:
+    //{kDISCONNECTED=0, kDEAD=1, kLOWNOISE=2, kNOISY=3, kGOOD=4, kUNKNOWN=5};
+    bool IsPresent(unsigned int channel) const { return fStatus == 0 ? false : true; }
+    
+    bool IsBad(unsigned int channel) const 
+    { return fBadChannels.count(channel) > 0; }
+    
+    bool IsNoisy(unsigned int channel) const 
+    { return fNoisyChannels.count(channel) > 0; }
+    
+    bool IsGood(unsigned int channel) const {
+      return IsPresent(channel) && !IsBad(channel) && !IsNoisy(channel);
+    }
 
+    ChannelStatusProvider(){};
+    ~ChannelStatusProvider(){};
+  
+  private:
+    std::set<unsigned int> fBadChannels;
+    std::set<unsigned int> fNoisyChannels;
+    unsigned int fStatus;
+  };
+  
+}
 
 
 

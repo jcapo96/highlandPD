@@ -408,10 +408,9 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
   
   fAlgView = resizeView(clock_data, det_prop, nwires, ndrifts);
 
-  /*
-  auto const& channelStatus =
-    art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider();
   
+  const channel::ChannelStatusProvider &channelStatus();
+  /*
   bool allWrong = true;
   for (auto const& wire : wires) {
     auto wireChannelNumber = wire.Channel();
@@ -424,12 +423,12 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
   
 	auto adc = wire.Signal();
 	if (adc.size() < ndrifts) {
-	  mf::LogWarning("DataProviderAlg") << "Wire ADC vector size lower than NumberTimeSamples.";
+	  //mf::LogWarning("DataProviderAlg") << "Wire ADC vector size lower than NumberTimeSamples.";
 	  continue; // not critical, maybe other wires are OK, so continue
 	}
         auto wire_data = setWireData(adc, w_idx);
         if (!wire_data) {
-	  mf::LogWarning("DataProviderAlg") << "Wire data not set.";
+	  //mf::LogWarning("DataProviderAlg") << "Wire data not set.";
 	  continue; // also not critical, try to set other wires
 	}
         fAlgView.fWireDriftData[w_idx] = *wire_data;
@@ -446,15 +445,15 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
     }
   }
   if (allWrong) {
-    mf::LogError("DataProviderAlg")
-      << "Wires data not set in the cryo:" << cryo << " tpc:" << tpc << " plane:" << plane;
+    //mf::LogError("DataProviderAlg")
+    std::cout  << "Wires data not set in the cryo:" << cryo << " tpc:" << tpc << " plane:" << plane << std::endl;
     return false;
   }
-  
-  applyBlur();
-  addWhiteNoise();
-  addCoherentNoise();
-  */  
+  */
+  //applyBlur();
+  //addWhiteNoise();
+  //addCoherentNoise();
+    
   return true;
 }
 // ------------------------------------------------------
