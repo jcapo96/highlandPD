@@ -10,6 +10,8 @@ class AnaWireID{
 public:
 
   AnaWireID(){Wire=Plane=TPC=Cryostat=0;}
+  AnaWireID(const AnaWireID& wireID);
+  virtual ~AnaWireID(){}
   
   Int_t Wire;
   Int_t Plane;

@@ -11,6 +11,16 @@ const Float_t  kFloatUnassigned = -999.;
 
 
 //********************************************************************
+AnaWireID::AnaWireID(const AnaWireID& wireID){
+//********************************************************************
+
+  Wire       = wireID.Wire;
+  Plane      = wireID.Plane;
+  TPC        = wireID.TPC;
+  Cryostat  = wireID.Cryostat;
+}
+
+//********************************************************************
 AnaHitPD::AnaHitPD(){
 //********************************************************************
 
@@ -34,7 +44,8 @@ AnaHitPD::AnaHitPD(){
 AnaHitPD::AnaHitPD(const AnaHitPD& hit){
 //********************************************************************
 
-  fWireID.Plane  = hit.fWireID.Plane; 
+  fWireID.Plane  = hit.fWireID.Plane;
+  fWireID.Wire   = hit.fWireID.Wire; 
   fIntegral      = hit.fIntegral;     
   fPeakTime      = hit.fPeakTime;     
   fPeakAmplitude = hit.fPeakAmplitude;
@@ -55,8 +66,9 @@ void AnaHitPD::Print() const{
 
   std::cout << "-------- AnaHitPD --------- " << std::endl;
 
-  
   std::cout << "WireID.Plane:  " << fWireID.Plane  << std::endl;
+  std::cout << "WireID.Wire:   " << fWireID.Wire  << std::endl;
+  std::cout << "View:          " << fView << std::endl;
   std::cout << "Integral:      " << fIntegral      << std::endl; 
   std::cout << "PeakTime:      " << fPeakTime      << std::endl;
   std::cout << "PeakAmplitude: " << fPeakAmplitude << std::endl;
