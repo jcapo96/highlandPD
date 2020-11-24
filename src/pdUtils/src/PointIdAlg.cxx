@@ -162,16 +162,18 @@ nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 // --------------------PointIdAlg------------------------
 // ------------------------------------------------------
 
-
-nnet::PointIdAlg::PointIdAlg(){
-
-
   // anselmo: Taken from https://internal.dunescience.org/doxygen/standard__reco__dune10kt_8fcl_source.html
-  fPatchSizeW = 44;   
-  fPatchSizeD = 48;
-  
+nnet::PointIdAlg::PointIdAlg()
+  : // img::DataProviderAlg(config)
+  fNNet(0)
+  , fPatchSizeW(44)
+  , fPatchSizeD(48)
+  , fCurrentWireIdx(99999)
+  , fCurrentScaledDrift(99999)
+{
   fNNetModelFilePath = "cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoduneBeamAndCosmicsMCC11.pb";
-
+  //  fNNetOutputs = "";
+  
   deleteNNet();
   /*
   if ((fNNetModelFilePath.length() > 5) &&
@@ -192,37 +194,6 @@ nnet::PointIdAlg::PointIdAlg(){
   resizePatch();
 }
 
-/*
-nnet::PointIdAlg::PointIdAlg(const Config& config)
-  : img::DataProviderAlg(config)
-  , fNNet(0)
-  , fPatchSizeW(config.PatchSizeW())
-  , fPatchSizeD(config.PatchSizeD())
-  , fCurrentWireIdx(99999)
-  , fCurrentScaledDrift(99999)
-{
-  fNNetModelFilePath = config.NNetModelFile();
-  fNNetOutputs = config.NNetOutputs();
-
-  deleteNNet();
-
-  if ((fNNetModelFilePath.length() > 5) &&
-      (fNNetModelFilePath.compare(fNNetModelFilePath.length() - 5, 5, ".nnet") == 0)) {
-    fNNet = new nnet::KerasModelInterface(fNNetModelFilePath.c_str());
-  }
-  else if ((fNNetModelFilePath.length() > 3) &&
-           (fNNetModelFilePath.compare(fNNetModelFilePath.length() - 3, 3, ".pb") == 0)) {
-    fNNet = new nnet::TfModelInterface(fNNetModelFilePath.c_str());
-  }
-  else {
-    mf::LogError("PointIdAlg") << "File name extension not supported.";
-  }
-
-  if (!fNNet) { throw cet::exception("nnet::PointIdAlg") << "Loading model from file failed."; }
-
-  resizePatch();
-}
-*/
 // ------------------------------------------------------
 
 nnet::PointIdAlg::~PointIdAlg()
@@ -765,8 +736,8 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
 {
 
   
-  std::vector<my_recob::Wire> wireHandle;
-  std::vector<my_recob::Wire*> Wirelist;
+  std::vector<my_recob::Wire> wireHandle;// art::Handle<std::vector<my_recob::Wire>> wireHandle; 
+  std::vector<my_recob::Wire*> Wirelist; // std::vector<art::Ptr<my_recob::Wire>> Wirelist;      
 
   //  if (event.getByLabel(fWireProducerLabel, wireHandle)) art::fill_ptr_vector(Wirelist, wireHandle);
 
@@ -777,14 +748,14 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
   }
 
   // Hit info
-  std::vector<AnaHitPD*> HitHandle;
-  std::vector<AnaHitPD*> Hitlist;
+  std::vector<AnaHitPD*> HitHandle;  // art::Handle<std::vector<my_recob::Hit>> HitHandle;    
+  std::vector<AnaHitPD*> Hitlist;    // std::vector<art::Ptr<my_recob::Hit>> Hitlist;         
 
   //  if (event.getByLabel(fHitProducerLabel, HitHandle)) art::fill_ptr_vector(Hitlist, HitHandle);
 
   // Track info
-  std::vector<my_recob::Track> TrackHandle;
-  std::vector<my_recob::Track> Tracklist;
+  std::vector<my_recob::Track> TrackHandle;// art::Handle<std::vector<my_recob::Track>> TrackHandle;
+  std::vector<my_recob::Track> Tracklist;  // std::vector<art::Ptr<my_recob::Track>> Tracklist;  
 
   //  if (event.getByLabel(fTrackModuleLabel, TrackHandle))
   //    art::fill_ptr_vector(Tracklist, TrackHandle);
@@ -909,155 +880,6 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
 
 
 // ------------------------------------------------------
-/*
-bool
-nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
-                                        detinfo::DetectorClocksData const& clockData,
-                                        detinfo::DetectorPropertiesData const& detProp,
-                                        unsigned int plane,
-                                        unsigned int tpc,
-                                        unsigned int cryo)
-{
-
-  art::Handle<std::vector<my_recob::Wire>> wireHandle;
-  std::vector<art::Ptr<my_recob::Wire>> Wirelist;
-
-  if (event.getByLabel(fWireProducerLabel, wireHandle)) art::fill_ptr_vector(Wirelist, wireHandle);
-
-  if (!setWireDriftData(clockData, detProp, *wireHandle, plane, tpc, cryo)) {
-    mf::LogError("TrainingDataAlg") << "Wire data not set.";
-    return false;
-  }
-
-  // Hit info
-  art::Handle<std::vector<my_recob::Hit>> HitHandle;
-  std::vector<art::Ptr<my_recob::Hit>> Hitlist;
-
-  if (event.getByLabel(fHitProducerLabel, HitHandle)) art::fill_ptr_vector(Hitlist, HitHandle);
-
-  // Track info
-  art::Handle<std::vector<my_recob::Track>> TrackHandle;
-  std::vector<art::Ptr<my_recob::Track>> Tracklist;
-
-  if (event.getByLabel(fTrackModuleLabel, TrackHandle))
-    art::fill_ptr_vector(Tracklist, TrackHandle);
-
-  art::FindManyP<my_recob::Track> ass_trk_hits(HitHandle, event, fTrackModuleLabel);
-
-  // Loop over wires (sorry about hard coded value) to fill in 1) pdg and 2) charge depo
-  for (size_t widx = 0; widx < 240; ++widx) {
-
-    std::vector<float> labels_deposit(fAlgView.fNDrifts, 0); // full-drift-length buffers
-    std::vector<int> labels_pdg(fAlgView.fNDrifts, 0);
-
-    // First, the charge depo
-    for (size_t subwidx = 0; subwidx < Wirelist.size(); ++subwidx) {
-      if (widx + 240 == Wirelist[subwidx]->Channel()) {
-        labels_deposit = Wirelist[subwidx]->Signal();
-        break;
-      }
-    }
-
-    // Second, the pdg code
-    // This code finds the angle of the track and records
-    //  events based on its angle to try to get an isometric sample
-    //  instead of just a bunch of straight tracks
-
-    // Meta code:
-    // For each hit:
-    //  find farthest hit from point
-    //  then find farthest hit from THAT one
-    //  should be start and end of track, then just use trig
-
-    for (size_t iHit = 0; iHit < Hitlist.size(); ++iHit) {
-
-      if (Hitlist[iHit]->Channel() != widx + 240) { continue; }
-      if (Hitlist[iHit]->View() != 1) { continue; }
-
-      // Make sure there is a track association
-      if (ass_trk_hits.at(iHit).size() == 0) { continue; }
-
-      // Not sure about this
-      // Cutting on length to not just get a bunch of shower stubs
-      // Might add a lot of bias though
-      if (ass_trk_hits.at(iHit)[0]->Length() < 5) { continue; }
-
-      // Search for farest hit from this one
-      int far_index = 0;
-      double far_dist = 0;
-
-      for (size_t jHit = 0; jHit < Hitlist.size(); ++jHit) {
-        if (jHit == iHit) { continue; }
-        if (Hitlist[jHit]->View() != 1) { continue; }
-
-        if (ass_trk_hits.at(jHit).size() == 0) { continue; }
-        if (ass_trk_hits.at(jHit)[0]->ID() != ass_trk_hits.at(iHit)[0]->ID()) { continue; }
-
-        double dist = sqrt((Hitlist[iHit]->Channel() - Hitlist[jHit]->Channel()) *
-                             (Hitlist[iHit]->Channel() - Hitlist[jHit]->Channel()) +
-                           (Hitlist[iHit]->PeakTime() - Hitlist[jHit]->PeakTime()) *
-                             (Hitlist[iHit]->PeakTime() - Hitlist[jHit]->PeakTime()));
-
-        if (far_dist < dist) {
-          far_dist = dist;
-          far_index = jHit;
-        }
-      }
-
-      // Search for the other end of the track
-      int other_end = 0;
-      int other_dist = 0;
-
-      for (size_t jHit = 0; jHit < Hitlist.size(); ++jHit) {
-        if (jHit == iHit or int(jHit) == far_index) { continue; }
-        if (Hitlist[jHit]->View() != 1) { continue; }
-
-        if (ass_trk_hits.at(jHit).size() == 0) { continue; }
-        if (ass_trk_hits.at(jHit)[0]->ID() != ass_trk_hits.at(iHit)[0]->ID()) { continue; }
-
-        double dist = sqrt((Hitlist[far_index]->Channel() - Hitlist[jHit]->Channel()) *
-                             (Hitlist[far_index]->Channel() - Hitlist[jHit]->Channel()) +
-                           (Hitlist[far_index]->PeakTime() - Hitlist[jHit]->PeakTime()) *
-                             (Hitlist[far_index]->PeakTime() - Hitlist[jHit]->PeakTime()));
-
-        if (other_dist < dist) {
-          other_dist = dist;
-          other_end = jHit;
-        }
-      }
-
-      // We have the end points now
-      double del_wire = double(Hitlist[other_end]->Channel() - Hitlist[far_index]->Channel());
-      double del_time = double(Hitlist[other_end]->PeakTime() - Hitlist[far_index]->PeakTime());
-      double hypo = sqrt(del_wire * del_wire + del_time * del_time);
-
-      if (hypo == 0) { continue; } // Should never happen, but doing it anyway
-
-      double cosser = TMath::Abs(del_wire / hypo);
-      double norm_ang = TMath::ACos(cosser) * 2 / TMath::Pi();
-
-      // Using fEventsPerBin to keep track of number of hits per angle (normalized to 0 to 1)
-
-      int binner = int(norm_ang * fEventsPerBin.size());
-      if (binner >= (int)fEventsPerBin.size()) {
-        binner = fEventsPerBin.size() - 1;
-      } // Dealing with rounding errors
-
-      // So we should get a total of 5000 * 100 = 50,000 if we use the whole set
-      if (fEventsPerBin[binner] > 5000) { continue; }
-      fEventsPerBin[binner]++;
-
-      // If survives everything, saves the pdg
-      labels_pdg[Hitlist[iHit]->PeakTime()] = 211; // Same as pion for now
-    }
-
-    setWireEdepsAndLabels(labels_deposit, labels_pdg, widx);
-
-  } // for each Wire
-
-  return true;
-}
-*/
 
 /*
 bool
