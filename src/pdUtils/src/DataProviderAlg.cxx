@@ -120,18 +120,18 @@ img::DataProviderAlg::DataProviderAlg()
     //  , fCoherentSigma(0)
   {
     fCalibrateLifetime = true;
-    fCalibrateAmpl = false;
+    fCalibrateAmpl = true;
     
     //    fAmplCalibConst.resize(fGeometry->MaxPlanes());
     fAmplCalibConst.resize(3);
     if (fCalibrateAmpl) {
       std::cout << "Using calibration constants:" << std::endl;
       for (size_t p = 0; p < fAmplCalibConst.size(); ++p) {
-	try {
+        try {
           fAmplCalibConst[p] = 1.2e-3 * fCalorimetryAlg.ElectronsFromADCPeak(1.0, p);
           std::cout << "   plane:" << p << " const:" << 1.0 / fAmplCalibConst[p] << std::endl;
         }
-	catch (...) {
+        catch (...) {
           fAmplCalibConst[p] = 1.0;
         }
       }
