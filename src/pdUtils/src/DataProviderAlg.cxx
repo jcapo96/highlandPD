@@ -453,7 +453,6 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
       }
     }
   }
-      std::cout << "anselmo 6" << std::endl;
   if (allWrong) {
     //mf::LogError("DataProviderAlg")
     std::cout  << "Wires data not set in the cryo:" << cryo << " tpc:" << tpc << " plane:" << plane << std::endl;
