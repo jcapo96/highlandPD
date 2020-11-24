@@ -109,13 +109,14 @@ nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 std::vector<std::vector<float>>
 nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples)
 {
-  /*
+
   if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
     return std::vector<std::vector<float>>();
 
   if ((samples == -1) || (samples > (long long int)inps.size())) { samples = inps.size(); }
 
   long long int rows = inps.front().size(), cols = inps.front().front().size();
+  /*
   tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));
   auto input_map = _x.tensor<float, 4>();
   for (long long int s = 0; s < samples; ++s) {

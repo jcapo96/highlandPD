@@ -35,21 +35,28 @@
     else { fDoTracks = false; }
     }*/
 
-nnet::EmTrackMichelId::EmTrackMichelId(){
-  
-  fWireProducerLabel = "wclsdatasp:gaus";
-  fHitModuleLabel = "hitpdune";
-  fClusterModuleLabel = "pandora";
-  fTrackModuleLabel = "";
+nnet::EmTrackMichelId::EmTrackMichelId():
+//        EDProducer{config},
+        fBatchSize(1),
+        //        fPointIdAlg(config().PointIdAlg()),
+        //        fMVAWriter(producesCollector(), "emtrkmichel"),
+        fWireProducerLabel("wclsdatasp:gaus"),
+        fHitModuleLabel("hitpdune"),
+        fClusterModuleLabel("pandora"),
+        fTrackModuleLabel("dummy")  // anselmo
+//        fViews(config().Views())  // anselmo
+//        fNewClustersTag()
+{
 
-  fBatchSize=1;
+
+  fViews.clear();  //anselmo
   
   if (!fClusterModuleLabel.empty())fDoClusters = true;
   else fDoClusters = false;
 
   if (!fTrackModuleLabel.empty())fDoTracks = true;
   else fDoTracks = false;
-  
+
   //fNewClustersTag;? // input tag for the clusters produced by this module
 
 }
@@ -70,7 +77,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
   detinfo::DetectorPropertiesData detProp;
 
   
-  std::vector<my_recob::Wire>* wireHandle;
+  std::vector<my_recob::Wire> wireHandle;
   unsigned int cryo, tpc, view;
   
   // ******************* get and sort hits ********************
@@ -80,7 +87,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
   //  auto hitListHandle = evt.getValidHandle< std::vector<my_recob::Hit> >(fHitModuleLabel);
   //  art::fill_ptr_vector(hitPtrList, hitListHandle);
 
-  std::cout << "anselmo 0: nparts = " << evt.nParticles << std::endl;
+  std::cout << "anselmo 0: nparts = " << evt.nParticles << std::endl;  
   for (UInt_t i=0;i<evt.nParticles;i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(evt.Particles[i]);
     for (UInt_t j=0;j<part->Hits[2].size();j++){
@@ -120,7 +127,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 view = pview.first;
                 if (!isViewSelected(view)) continue; // should not happen, hits were selected
 
-                fPointIdAlg.setWireDriftData(clockData, detProp, *wireHandle, view, tpc, cryo);
+                fPointIdAlg.setWireDriftData(clockData, detProp, wireHandle, view, tpc, cryo);
 
                 // (1) do all hits in this plane ------------------------------------------------
                 for (size_t idx = 0; idx < pview.second.size(); idx += fBatchSize)
@@ -265,19 +272,27 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
         art::FindManyP< my_recob::Hit > hitsFromTracks(trkListHandle, evt, fTrackModuleLabel);
         std::vector< std::vector< art::Ptr<my_recob::Hit> > > trkHitPtrList(trkListHandle->size());
       */
-      std::vector<my_recob::Track>*  trkListHandle;
-      std::vector<std::vector<AnaHitPD*> > hitsFromTracks;
-      std::vector<std::vector<AnaHitPD*> > trkHitPtrList;
+      std::vector<my_recob::Track>  trkListHandle;
+      std::vector<std::vector<AnaHitPD> > hitsFromTracks;
+      std::vector<std::vector<AnaHitPD> > trkHitPtrList;
+
+
+      for (UInt_t i=0;i<evt.nParticles;i++){
+        AnaParticlePD* part = static_cast<AnaParticlePD*>(evt.Particles[i]);
+        my_recob::Track track(*part);
+        trkListHandle.push_back(track);
+        hitsFromTracks.push_back(part->Hits[2]);        
+      }
+      trkHitPtrList.resize(trkListHandle.size());
       
-        for (size_t t = 0; t < trkListHandle->size(); ++t)
+        for (size_t t = 0; t < trkListHandle.size(); ++t)
         {
             auto v = hitsFromTracks.at(t);
             size_t nh[3] = { 0, 0, 0 };
-            for (auto const & hptr : v) { ++nh[hptr->View()]; }
+            for (auto const & hptr : v) { ++nh[hptr.View()]; }
             size_t best_view = 2; // collection
             if ((nh[0] >= nh[1]) && (nh[0] > 2 * nh[2])) best_view = 0; // ind1
             if ((nh[1] >= nh[0]) && (nh[1] > 2 * nh[2])) best_view = 1; // ind2
-
             size_t k = 0;
             while (!isViewSelected(best_view))
             {
@@ -285,10 +300,9 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 //                if (++k > 3) { throw cet::exception("EmTrackMichelId") << "No views selected at all?" << std::endl; }
                 if (++k > 3) { std::cout << "No views selected at all?" << std::endl; }
             }
-
             for (auto const & hptr : v)
             {
-                if (hptr->View() == best_view) trkHitPtrList[t].emplace_back(hptr);
+                if (hptr.View() == best_view) trkHitPtrList[t].emplace_back(hptr);
             }
         }
         /*

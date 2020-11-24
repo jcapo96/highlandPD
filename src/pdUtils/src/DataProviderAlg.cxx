@@ -408,53 +408,58 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
   fAdcSumOverThr = 0;
   fAdcAreaOverThr = 0;
   
-  size_t nwires = 0;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
-  size_t ndrifts = 0;//det_prop.NumberTimeSamples();    anselmo
+  size_t nwires = 480;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
+  size_t ndrifts = 6000;//det_prop.NumberTimeSamples();    anselmo
   
   fAlgView = resizeView(clock_data, det_prop, nwires, ndrifts);
 
-  
-  const channel::ChannelStatusProvider &channelStatus();
-  /*
+  //    auto const& channelStatus =
+  //    art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider();  
+  const channel::ChannelStatusProvider channelStatus;
   bool allWrong = true;
-  for (auto const& wire : wires) {
+  for (auto const& wire : wires) {  // loop over my_recob::Wire
     auto wireChannelNumber = wire.Channel();
-    //    if (!channelStatus.IsGood(wireChannelNumber)) { continue; }   //anselmo
-  
+    if (!channelStatus.IsGood(wireChannelNumber)) { continue; }
     size_t w_idx = 0;
-    for (auto const& id : fGeometry->ChannelToWire(wireChannelNumber)) {
+    //    for (auto const& id : fGeometry->ChannelToWire(wireChannelNumber)) {  // anselmo CannelToWire returns std::vector<geo::WireID>
+    std::vector<AnaWireID> wireIDs;
+    for (auto const& id : wireIDs) {
       if ((id.Plane == plane) && (id.TPC == tpc) && (id.Cryostat == cryo)) {
-	w_idx = id.Wire;
-  
-	auto adc = wire.Signal();
-	if (adc.size() < ndrifts) {
-	  //mf::LogWarning("DataProviderAlg") << "Wire ADC vector size lower than NumberTimeSamples.";
-	  continue; // not critical, maybe other wires are OK, so continue
-	}
+        w_idx = id.Wire;
+        auto adc = wire.Signal();
+        if (adc.size() < ndrifts) {
+          //mf::LogWarning("DataProviderAlg") << "Wire ADC vector size lower than NumberTimeSamples.";
+          std::cout << "Wire ADC vector size lower than NumberTimeSamples." << std::endl;
+          continue; // not critical, maybe other wires are OK, so continue
+        }
         auto wire_data = setWireData(adc, w_idx);
-        if (!wire_data) {
-	  //mf::LogWarning("DataProviderAlg") << "Wire data not set.";
-	  continue; // also not critical, try to set other wires
-	}
-        fAlgView.fWireDriftData[w_idx] = *wire_data;
+        //    if (!wire_data) {
+        if (wire_data.empty()) {  // anselmo
+          //mf::LogWarning("DataProviderAlg") << "Wire data not set.";
+          std::cout << "Wire data not set." << std::endl;
+          continue; // also not critical, try to set other wires
+        }
+        //    fAlgView.fWireDriftData[w_idx] = *wire_data;
+        fAlgView.fWireDriftData[w_idx] = wire_data;  // anselmo
         for (auto v : adc) {
-	  if (v >= fAdcSumThr) {
-	    fAdcSumOverThr += v;
-	    fAdcAreaOverThr++;
-	  }
-	}
-	
-	fAlgView.fWireChannels[w_idx] = wireChannelNumber;
+          if (v >= fAdcSumThr) {
+            fAdcSumOverThr += v;
+            fAdcAreaOverThr++;
+          }
+        }
+        
+        fAlgView.fWireChannels[w_idx] = wireChannelNumber;
         allWrong = false;
       }
     }
   }
+      std::cout << "anselmo 6" << std::endl;
   if (allWrong) {
     //mf::LogError("DataProviderAlg")
     std::cout  << "Wires data not set in the cryo:" << cryo << " tpc:" << tpc << " plane:" << plane << std::endl;
     return false;
   }
-  */
+
   //applyBlur();
   //addWhiteNoise();
   //addCoherentNoise();

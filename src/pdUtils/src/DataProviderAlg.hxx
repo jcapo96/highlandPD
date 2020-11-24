@@ -43,8 +43,8 @@ namespace my_recob{
     std::vector<Float_t> fSignal;
     UInt_t fChannel;
 
-    UInt_t Channel(){return fChannel;}
-    std::vector<Float_t> Signal(){return fSignal;}
+    UInt_t Channel() const {return fChannel;}
+    std::vector<Float_t> Signal() const {return fSignal;}
     
 
   };
