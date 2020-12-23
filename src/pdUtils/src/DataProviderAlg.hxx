@@ -29,6 +29,9 @@
 #include <memory>
 #include <set>
 
+
+const int debug_level=0;
+
 namespace detinfo {
   class DetectorClocksData;
   class DetectorPropertiesData;
@@ -87,7 +90,8 @@ namespace channel {
     { return fNoisyChannels.count(channel) > 0; }
     
     bool IsGood(unsigned int channel) const {
-      return IsPresent(channel) && !IsBad(channel) && !IsNoisy(channel);
+      //      return IsPresent(channel) && !IsBad(channel) && !IsNoisy(channel);  // anselmo
+      return true;
     }
 
     ChannelStatusProvider(){};
@@ -162,6 +166,9 @@ public:
    
   virtual ~DataProviderAlg();
 
+  // anselmo
+  std::vector<AnaWireID> ChannelToWire(UInt_t wireChannelNumber);
+  
   bool setWireDriftData(const detinfo::DetectorClocksData& clock_data,
 			const detinfo::DetectorPropertiesData& det_prop,
 			const std::vector<my_recob::Wire>&
@@ -170,11 +177,21 @@ public:
 			unsigned int tpc,
 			unsigned int cryo);
 
+  bool setWireDriftDataFromHit(const AnaHitPD& hit);  // anselmo
+  
   std::vector<float> const&
   wireData(size_t widx) const
   {
     return fAlgView.fWireDriftData[widx];
   }
+
+  //anselmo
+  std::vector<std::vector<Float_t> >& wireData()
+  {
+    return fAlgView.fWireDriftData;
+  }
+
+
   
   std::vector<std::vector<float>>
   getPatch(size_t wire, float drift, size_t patchSizeW, size_t patchSizeD) const
@@ -291,7 +308,8 @@ protected:
 				   size_t tick0) const;
   std::vector<float>
   downscale(std::size_t dst_size, std::vector<float> const& adc, size_t tick0) const
-  {
+  {    
+    if (debug_level>=6) std::cout << "            DataProviderAlg::downscale" << std::endl;   
     switch (fDownscaleMode) {
     case img::DataProviderAlg::kMean: return downscaleMean(dst_size, adc, tick0);
     case img::DataProviderAlg::kMaxMean: return downscaleMaxMean(dst_size, adc, tick0);
