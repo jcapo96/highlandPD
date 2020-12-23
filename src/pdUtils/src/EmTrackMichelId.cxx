@@ -62,10 +62,38 @@ nnet::EmTrackMichelId::EmTrackMichelId():
 }
 // ------------------------------------------------------
 
-void nnet::EmTrackMichelId::produce(AnaEvent & evt)
+void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
 {
 
+  /*
+      - loop over Cryostats
+        - loop over TPCs in that cryostat
+          - loop over planes/views in that TPC
+            - loop over batches of hits in that plane, with size fBatchSize
+              - loop over hits in that batch
+                - fill the points vector: points.emplace_back(hit.WireID().Wire, hit.PeakTime());
+              - call TF for that batch of hits: fPointIdAlg.predictIdVectors(points);
+                - loop over points (= pairs of wire-PeakTime)
+                  - call PointIdAlg::bufferPatch
+                    - fill a 2D vector with adc values in a window of wires and time around the nominal point : patch[wire][drifttime]. 
+                      The function doing that is DataProviderAlg::patchFromOriginalView(wire, drift, fPatchSizeW, fPatchSizeD, patch);
+                      The window for Original view is W = fPatchSizeW=44, D = fPatchSizeD*fDriftWindow = 48*6=288
+                - Fill the inps 3D vector:  inps[hit index in batch][wire index][drifttime index]
+                - call fNNet->Run(inps);
+                  - Fills the input map for TF: input_map(s, r, c, 0) = row[c];  where s=hit index in batch, r=wire index, c=drifttime index, row[c]=adc value
+                  - Call TF:  g->run(_x);
 
+                  
+      That means that the input tree should only contain adc values for a window of wires and times around the hit, for all hits in the tracks we are interested in. 
+      The pion selection uses CNN for beam particle daughters (1.3 in average), which usually don't have many hits (avg=80)
+      Data Reduction: 
+       - For each hit 44 adc vectors (one for each wire) of 288 time samples are needed. However those 44 vectors are common to many hits, since for a particle those hits are contiguous.  
+       - Not all 288 time samples have contents, thus one can probaly save a vector of pairs (time,adc) for the meaningful samples 
+
+    */
+
+
+  
   std::cout << "next event: " << evt.EventInfo.Run << " / " << evt.EventInfo.Event << std::endl;
   /*
   mf::LogVerbatim("EmTrackMichelId") << "next event: " << evt.run() << " / " << evt.id().event();
@@ -76,8 +104,10 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
   detinfo::DetectorClocksData clockData;
   detinfo::DetectorPropertiesData detProp;
 
+  //  std::vector<my_recob::Wire> wireHandle;
+  //  FillWires(evt,wireHandle);
+
   
-  std::vector<my_recob::Wire> wireHandle;
   unsigned int cryo, tpc, view;
   
   // ******************* get and sort hits ********************
@@ -87,16 +117,9 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
   //  auto hitListHandle = evt.getValidHandle< std::vector<my_recob::Hit> >(fHitModuleLabel);
   //  art::fill_ptr_vector(hitPtrList, hitListHandle);
 
-  std::cout << "anselmo EmTrackMichelId.cxx: #parts "<< evt.nParticles << std::endl;  
-  for (UInt_t i=0;i<evt.nParticles;i++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(evt.Particles[i]);
-    for (UInt_t j=0;j<part->Hits[2].size();j++){
-      //      hitListHandle.push_back(&(part->Hits[2][j]));
-      hitPtrList.push_back(&(part->Hits[2][j]));
-    }
-  }
-
-  std::cout << "anselmo EmTrackMichelId.cxx: #hits "<< hitPtrList.size() << std::endl; 
+  FillHits(evt,hitPtrList);
+     
+  if (debug_level>=0) std::cout << "EmTrackMichelId.cxx: total #hits "<< hitPtrList.size() << std::endl; 
 
   EmTrackMichelId::cryo_tpc_view_keymap hitMap;
   for (auto const& h : hitPtrList)
@@ -110,6 +133,8 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
       //      hitMap[cryo][tpc][view].push_back(h.key());
       //      hitMap[cryo][tpc][view].push_back((size_t)h);
       // anselmo
+
+      //      std::cout << h->fChannel << " " << cryo << " " << tpc << " " << view << " " << h->WireID().Wire << std::endl; 
       hitMap[cryo][tpc][view].push_back(h);
     }
 
@@ -117,6 +142,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
   //    auto hitID = fMVAWriter.initOutputs<my_recob::Hit>(fHitModuleLabel, hitPtrList.size(), fPointIdAlg.outputLabels());  // anselmo. Only used for writter
 
     std::vector< char > hitInFA(hitPtrList.size(), 0); // tag hits in fid. area as 1, use 0 for hits close to the projectrion edges
+
     for (auto const & pcryo : hitMap)
     {
         cryo = pcryo.first;
@@ -128,13 +154,15 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 view = pview.first;
                 if (!isViewSelected(view)) continue; // should not happen, hits were selected
 
-                std::cout << "anselmo EmTrackMichelId.cxx: cryo, tpc, view = "<< cryo << " " << tpc << " " << view  << " --> #hits = " << pview.second.size() << std::endl;
+                if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: cryo, tpc, view = "<< cryo << " " << tpc << " " << view  << " --> #hits = " << pview.second.size() << std::endl;
                 
-                fPointIdAlg.setWireDriftData(clockData, detProp, wireHandle, view, tpc, cryo);
+                //                fPointIdAlg.setWireDriftData(clockData, detProp, wireHandle, view, tpc, cryo);  // anselmo
+
 
                 // (1) do all hits in this plane ------------------------------------------------
                 for (size_t idx = 0; idx < pview.second.size(); idx += fBatchSize)
                 {
+                  if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: processing hit with idx = "<< idx << std::endl;
                     std::vector< std::pair<unsigned int, float> > points;
                     std::vector< size_t > keys;
                     for (size_t k = 0; k < fBatchSize; ++k)
@@ -146,14 +174,14 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                         size_t h = (size_t)(pview.second[idx+k]);
                         //                        const AnaHitPD & hit = *(hitPtrList[h]);
                         const AnaHitPD & hit = *(pview.second[idx+k]);
-                        std::cout << "anselmo EmTrackMichelId.cxx: idx+k  = "<< idx+k << ", hit (wireID, peak time) = " << hit.WireID().Wire << " " << hit.PeakTime() << std::endl;
+                        if (debug_level>=2) std::cout << "  EmTrackMichelId.cxx: idx+k  = "<< idx+k << ", hit (wireID, peak time) = " << hit.WireID().Wire << " " << hit.PeakTime() << std::endl;
                   
                         points.emplace_back(hit.WireID().Wire, hit.PeakTime());
                         //                        keys.push_back(h);
                         keys.push_back((size_t)h);
                     }
                     auto batch_out = fPointIdAlg.predictIdVectors(points);
-                    std::cout << "anselmo EmTrackMichelId.cxx: #points = "<<  points.size() << " batch_out.size() = "  << batch_out.size() << std::endl;
+                    if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: #points = "<<  points.size() << " batch_out.size() = "  << batch_out.size() << std::endl;
                     if (points.size() != batch_out.size())
                     {
                       //                        throw cet::exception("EmTrackMichelId") << "hits processing failed" << std::endl;
@@ -163,7 +191,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                     {
                         size_t h = keys[k];
                         //                        fMVAWriter.setOutput(hitID, h, batch_out[k]);   // anselmo
-                        std::cout << "anselmo EmTrackMichelId.cxx: points[k].first, points[k].second = "<<  points[k].first << " " << points[k].second << std::endl;
+                        if (debug_level>=2) std::cout << "  EmTrackMichelId.cxx: points[k].first, points[k].second = "<<  points[k].first << " " << points[k].second << std::endl;
                         if (fPointIdAlg.isInsideFiducialRegion(points[k].first, points[k].second))
                           { /*hitInFA[h] = 1;     */}   // anselmo: must change h per hit index
                     }
@@ -293,21 +321,21 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
       }
       trkHitPtrList.resize(trkListHandle.size());
 
-      std::cout << "anselmo EmTrackMichelId.cxx: #tracks "<< trkListHandle.size() << std::endl; 
+      if (debug_level>=0) std::cout << "EmTrackMichelId.cxx: #tracks "<< trkListHandle.size() << std::endl; 
       
         for (size_t t = 0; t < trkListHandle.size(); ++t)
         {
             auto v = hitsFromTracks.at(t);
             size_t nh[3] = { 0, 0, 0 };
-            std::cout << "anselmo EmTrackMichelId.cxx: Track " << t << " --> #hits = "<< v.size() << std::endl; 
+            if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: Track " << t << " --> #hits = "<< v.size() << std::endl; 
             for (auto const & hptr : v) { ++nh[hptr.View()]; }  // count hits in eac view
             size_t best_view = 2; // collection
             if ((nh[0] >= nh[1]) && (nh[0] > 2 * nh[2])) best_view = 0; // ind1
             if ((nh[1] >= nh[0]) && (nh[1] > 2 * nh[2])) best_view = 1; // ind2
             size_t k = 0;
 
-            std::cout << "anselmo EmTrackMichelId.cxx: hits per view = " << nh[0] << " " << nh[1] << " " << nh[2] << std::endl; 
-            std::cout << "anselmo EmTrackMichelId.cxx: best view = " << best_view << std::endl; 
+            if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: hits per view = " << nh[0] << " " << nh[1] << " " << nh[2] << std::endl; 
+            if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: best view = " << best_view << std::endl; 
             while (!isViewSelected(best_view))
             {
                 best_view = (best_view + 1) % 3;
@@ -315,13 +343,13 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
                 if (++k > 3) { std::cout << "No views selected at all?" << std::endl; }
             }
 
-            std::cout << "anselmo EmTrackMichelId.cxx: best view (new) = " << best_view << std::endl; 
+            if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: best view (new) = " << best_view << std::endl; 
             for (auto const & hptr : v)
             {
                 if (hptr.View() == best_view) trkHitPtrList[t].emplace_back(hptr);
             }
 
-            std::cout << "anselmo EmTrackMichelId.cxx: trkHitPtrList[t].size() = " << trkHitPtrList[t].size() << std::endl; 
+            if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: trkHitPtrList[t].size() = " << trkHitPtrList[t].size() << std::endl; 
             
         }
         /*
@@ -342,6 +370,7 @@ void nnet::EmTrackMichelId::produce(AnaEvent & evt)
 
 bool nnet::EmTrackMichelId::isViewSelected(int view) const
 {
+  if (debug_level>=10) std::cout << "  EmTrackMichelId.cxx:isViewSelected. View = " << view << std::endl;   
   if (fViews.empty()) return true;
   else
     {
@@ -351,3 +380,92 @@ bool nnet::EmTrackMichelId::isViewSelected(int view) const
     }
 }
 // ------------------------------------------------------
+
+
+//*******************************************************
+void nnet::EmTrackMichelId::FillWires(const AnaEventPD& evt, std::vector<my_recob::Wire>& wires){
+//*******************************************************
+  
+  // anselmo: fill the wire vector 15400 wires
+  //  for (size_t i=0;i<15400;i++){
+  /*
+  for (size_t i=0;i<1;i++){
+    my_recob::Wire wire;
+    wire.fChannel=149;
+    for (size_t j=0;j<6000;j++){
+      if (j>4000 && j<5000)
+        wire.fSignal.push_back(149.33);
+      else
+        wire.fSignal.push_back(0);
+    }
+
+    wireHandle.push_back(wire);
+  }
+  */
+
+}
+
+
+
+  
+//*******************************************************
+void nnet::EmTrackMichelId::FillHits(const AnaEventPD& evt, std::vector<AnaHitPD*>& hitPtrList){
+//*******************************************************
+
+  
+  if (debug_level>=0) std::cout << "EmTrackMichelId.cxx: #parts "<< evt.nParticles << std::endl;  
+  for (UInt_t i=0;i<evt.nParticles/2+1;i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(evt.Particles[i]);
+
+    std::cout << "ANSELMO: particle " << i << " --> #hits = " << part->Hits[2].size() << std::endl;       
+    
+    if (debug_level>=0){
+      std::cout << "EmTrackMichelId.cxx: hits list for this particle: " << std::endl;       
+      for (UInt_t j=0;j<part->Hits[2].size();j++){
+
+        AnaHitPD& hit = part->Hits[2][j];
+        
+        std::cout << " - " << j << ": wire, time, ampl, integral =  "
+                  << hit.fWireID.Wire << " "
+                  << hit.fPeakTime << " "
+                  << hit.fPeakAmplitude << " "
+                  << hit.fIntegral << " "
+                  << hit.fChannel << " "
+                  << hit.fStartTick << "-"
+                  << hit.fEndTick << " "
+                  << evt.ADC[hit.fChannel][hit.fStartTick] << " "
+                  << hit.fSignal[0] << " " 
+                  << std::endl;       
+      }
+    }
+    
+    for (UInt_t j=0;j<part->Hits[2].size();j++){
+
+      AnaHitPD& hit = part->Hits[2][j];
+
+      // Fill hits with some "meaningful"  adc values
+      /*
+      for (size_t k=hit.fPeakTime-5;k<hit.fPeakTime+5;k++){
+        hit.fSignal.push_back(hit.fPeakAmplitude*10);
+      }
+      */
+      fPointIdAlg.setWireDriftDataFromHit(hit);
+      //      hitListHandle.push_back(&(hit));
+      hitPtrList.push_back(&(hit));
+    }
+  }
+}
+
+//*******************************************************
+void nnet::EmTrackMichelId::DumpADCs(const AnaEventPD& evt){
+//*******************************************************
+  
+  std::cout << "ANSELMO: List of ADC values" << std::endl;
+  for (UInt_t j=0;j<evt.ADC.size();j++){
+    for (UInt_t k=0;k<evt.ADC[j].size();k++){
+      if (evt.ADC[j][k]>0) 
+        std::cout << j << " " << k << " " << evt.ADC[j][k] << std::endl;
+    }
+  }
+}
+

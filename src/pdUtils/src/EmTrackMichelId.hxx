@@ -102,9 +102,14 @@ namespace nnet {
     EmTrackMichelId();
     
 
-    void produce(AnaEvent & e); //override;
+    void produce(AnaEventPD & e); //override;
     
     bool isViewSelected(int view) const;
+
+    void FillHits(const AnaEventPD& evt, std::vector<AnaHitPD*>& hitPtrList);
+    void FillWires(const AnaEventPD& evt, std::vector<my_recob::Wire>& wires);
+    void DumpADCs(const AnaEventPD& evt);
+  
   private:    
     size_t fBatchSize;
     PointIdAlg fPointIdAlg;
