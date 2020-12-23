@@ -53,7 +53,7 @@ class hitPionTreeConverter: public InputConverter{
   virtual bool AddFileToTChain(const std::string& inputString);
 
   //----------------
-  virtual AnaSpillB*          MakeSpill()       { return new AnaSpill(); }
+  virtual AnaSpillB*          MakeSpill()       { return new AnaSpillPD(); }
   virtual AnaBunch*           MakeBunch()       { return new AnaBunch(); }
   virtual AnaBeamPD*          MakeBeam()        { return new AnaBeamPD(); }
   virtual AnaDataQualityB*    MakeDataQuality() { return new AnaDataQuality(); }
@@ -89,7 +89,7 @@ class hitPionTreeConverter: public InputConverter{
 
 protected:
 
-  AnaSpill* _spill;
+  AnaSpillPD* _spill;
   
   std::string _previousFile;
   Int_t _previousRunID;
@@ -507,7 +507,34 @@ protected:
    vector<double>  *reco_beam_hit_peakTime     ;
    vector<double>  *reco_beam_hit_peakAmplitude;
    vector<int>     *reco_beam_hit_wireID       ;
+   vector<int>     *reco_beam_hit_channel      ;
+   vector<int>     *reco_beam_hit_startTick    ;
+   vector<int>     *reco_beam_hit_endTick      ;
 
+
+  vector<vector<double> >  *reco_daughter_allTrack_hit_integral     ;
+  vector<vector<double> >  *reco_daughter_allTrack_hit_peakTime     ;
+  vector<vector<double> > *reco_daughter_allTrack_hit_peakAmplitude;
+  vector<vector<int> >    *reco_daughter_allTrack_hit_wireID       ;
+  vector<vector<int> >    *reco_daughter_allTrack_hit_channel      ;
+  vector<vector<int> >    *reco_daughter_allTrack_hit_startTick    ;
+  vector<vector<int> >    *reco_daughter_allTrack_hit_endTick      ;
+
+  vector<vector<double> >  *reco_daughter_allShower_hit_integral     ;
+  vector<vector<double> >  *reco_daughter_allShower_hit_peakTime     ;
+  vector<vector<double> > *reco_daughter_allShower_hit_peakAmplitude;
+  vector<vector<int> >    *reco_daughter_allShower_hit_wireID       ;
+  vector<vector<int> >    *reco_daughter_allShower_hit_channel      ;
+  vector<vector<int> >    *reco_daughter_allShower_hit_startTick    ;
+  vector<vector<int> >    *reco_daughter_allShower_hit_endTick      ;
+
+  
+  
+
+   // adcs for CNN input
+   std::vector<std::vector<float> > *reduced_adc_cnn_map;
+   std::vector<Int_t> *reduced_adc_cnn_map_wires;
+   std::vector<Int_t> *reduced_adc_cnn_map_times;
   
    // List of branches
    TBranch        *b_run;   //!
@@ -900,7 +927,33 @@ protected:
    TBranch        *b_reco_beam_hit_peakTime     ;
    TBranch        *b_reco_beam_hit_peakAmplitude;
    TBranch        *b_reco_beam_hit_wireID       ;
+   TBranch        *b_reco_beam_hit_channel      ;
+   TBranch        *b_reco_beam_hit_startTick      ;
+   TBranch        *b_reco_beam_hit_endTick      ;
 
+
+   TBranch        *b_reco_daughter_allTrack_hit_integral     ;
+   TBranch        *b_reco_daughter_allTrack_hit_peakTime     ;
+   TBranch        *b_reco_daughter_allTrack_hit_peakAmplitude;
+   TBranch        *b_reco_daughter_allTrack_hit_wireID       ;
+   TBranch        *b_reco_daughter_allTrack_hit_channel      ;
+   TBranch        *b_reco_daughter_allTrack_hit_startTick      ;
+   TBranch        *b_reco_daughter_allTrack_hit_endTick      ;
+
+   TBranch        *b_reco_daughter_allShower_hit_integral     ;
+   TBranch        *b_reco_daughter_allShower_hit_peakTime     ;
+   TBranch        *b_reco_daughter_allShower_hit_peakAmplitude;
+   TBranch        *b_reco_daughter_allShower_hit_wireID       ;
+   TBranch        *b_reco_daughter_allShower_hit_channel      ;
+   TBranch        *b_reco_daughter_allShower_hit_startTick      ;
+   TBranch        *b_reco_daughter_allShower_hit_endTick      ;
+  
+  
+   TBranch        *b_reduced_adc_cnn_map;
+   TBranch        *b_reduced_adc_cnn_map_wires;
+   TBranch        *b_reduced_adc_cnn_map_times;
+
+  
   
   // Header's
   Int_t EventTime;

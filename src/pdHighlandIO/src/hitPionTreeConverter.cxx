@@ -325,8 +325,33 @@ bool hitPionTreeConverter::Initialize(){
    reco_beam_hit_peakTime = 0;
    reco_beam_hit_peakAmplitude = 0;
    reco_beam_hit_wireID = 0;
+   reco_beam_hit_channel = 0;
+   reco_beam_hit_startTick = 0;
+   reco_beam_hit_endTick = 0;
+
+
+   reco_daughter_allTrack_hit_integral = 0;
+   reco_daughter_allTrack_hit_peakTime = 0;
+   reco_daughter_allTrack_hit_peakAmplitude = 0;
+   reco_daughter_allTrack_hit_wireID = 0;
+   reco_daughter_allTrack_hit_channel = 0;
+   reco_daughter_allTrack_hit_startTick = 0;
+   reco_daughter_allTrack_hit_endTick = 0;
+
+   reco_daughter_allShower_hit_integral = 0;
+   reco_daughter_allShower_hit_peakTime = 0;
+   reco_daughter_allShower_hit_peakAmplitude = 0;
+   reco_daughter_allShower_hit_wireID = 0;
+   reco_daughter_allShower_hit_channel = 0;
+   reco_daughter_allShower_hit_startTick = 0;
+   reco_daughter_allShower_hit_endTick = 0;
    
-  // Set branch addresses and branch pointers
+
+   reduced_adc_cnn_map = 0;     
+   reduced_adc_cnn_map_times = 0;   
+   reduced_adc_cnn_map_wires = 0;
+   
+   // Set branch addresses and branch pointers
 
   if (!fChain) return false;
   fCurrent = -1;
@@ -721,10 +746,38 @@ bool hitPionTreeConverter::Initialize(){
    fChain->SetBranchAddress("reco_beam_hit_peakTime",      &reco_beam_hit_peakTime     , &b_reco_beam_hit_peakTime     );
    fChain->SetBranchAddress("reco_beam_hit_peakAmplitude", &reco_beam_hit_peakAmplitude, &b_reco_beam_hit_peakAmplitude);
    fChain->SetBranchAddress("reco_beam_hit_wireID",        &reco_beam_hit_wireID       , &b_reco_beam_hit_wireID       );
+   fChain->SetBranchAddress("reco_beam_hit_channel",       &reco_beam_hit_channel      , &b_reco_beam_hit_channel       );
+   fChain->SetBranchAddress("reco_beam_hit_startTick",     &reco_beam_hit_startTick    , &b_reco_beam_hit_startTick       );
+   fChain->SetBranchAddress("reco_beam_hit_endTick",       &reco_beam_hit_endTick      , &b_reco_beam_hit_endTick       );   
+
+
+
+   fChain->SetBranchAddress("reco_daughter_allTrack_hit_integral",      &reco_daughter_allTrack_hit_integral     , &b_reco_daughter_allTrack_hit_integral     );
+   fChain->SetBranchAddress("reco_daughter_allTrack_hit_peakTime",      &reco_daughter_allTrack_hit_peakTime     , &b_reco_daughter_allTrack_hit_peakTime     );
+   fChain->SetBranchAddress("reco_daughter_allTrack_hit_peakAmplitude", &reco_daughter_allTrack_hit_peakAmplitude, &b_reco_daughter_allTrack_hit_peakAmplitude);
+   fChain->SetBranchAddress("reco_daughter_allTrack_hit_wireID",        &reco_daughter_allTrack_hit_wireID       , &b_reco_daughter_allTrack_hit_wireID       );
+   fChain->SetBranchAddress("reco_daughter_allTrack_hit_channel",       &reco_daughter_allTrack_hit_channel      , &b_reco_daughter_allTrack_hit_channel       );
+   fChain->SetBranchAddress("reco_daughter_allTrack_hit_startTick",     &reco_daughter_allTrack_hit_startTick    , &b_reco_daughter_allTrack_hit_startTick       );
+   fChain->SetBranchAddress("reco_daughter_allTrack_hit_endTick",       &reco_daughter_allTrack_hit_endTick      , &b_reco_daughter_allTrack_hit_endTick       );   
+
+   fChain->SetBranchAddress("reco_daughter_allShower_hit_integral",      &reco_daughter_allShower_hit_integral     , &b_reco_daughter_allShower_hit_integral     );
+   fChain->SetBranchAddress("reco_daughter_allShower_hit_peakTime",      &reco_daughter_allShower_hit_peakTime     , &b_reco_daughter_allShower_hit_peakTime     );
+   fChain->SetBranchAddress("reco_daughter_allShower_hit_peakAmplitude", &reco_daughter_allShower_hit_peakAmplitude, &b_reco_daughter_allShower_hit_peakAmplitude);
+   fChain->SetBranchAddress("reco_daughter_allShower_hit_wireID",        &reco_daughter_allShower_hit_wireID       , &b_reco_daughter_allShower_hit_wireID       );
+   fChain->SetBranchAddress("reco_daughter_allShower_hit_channel",       &reco_daughter_allShower_hit_channel      , &b_reco_daughter_allShower_hit_channel       );
+   fChain->SetBranchAddress("reco_daughter_allShower_hit_startTick",     &reco_daughter_allShower_hit_startTick    , &b_reco_daughter_allShower_hit_startTick       );
+   fChain->SetBranchAddress("reco_daughter_allShower_hit_endTick",       &reco_daughter_allShower_hit_endTick      , &b_reco_daughter_allShower_hit_endTick       );   
+
    
+
+   fChain->SetBranchAddress("reduced_adc_cnn_map",       &reduced_adc_cnn_map      , &b_reduced_adc_cnn_map       );
+   fChain->SetBranchAddress("reduced_adc_cnn_map_times", &reduced_adc_cnn_map_times, &b_reduced_adc_cnn_map_times );
+   fChain->SetBranchAddress("reduced_adc_cnn_map_wires", &reduced_adc_cnn_map_wires, &b_reduced_adc_cnn_map_wires );
+
    
    //   fChain->SetBranchStatus("*", 0);
-   
+
+     
   return true;
 }
 
@@ -837,7 +890,7 @@ Int_t hitPionTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
     spill = MakeSpill();
     
     // Cast it to AnaSpill
-    _spill = static_cast<AnaSpill*>(spill);
+    _spill = static_cast<AnaSpillPD*>(spill);
     
     FillInfo(_spill);
   }
@@ -1049,6 +1102,17 @@ void hitPionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
   bunch->Weight = 1;
   bunch->Particles.clear();
   bunch->Vertices.clear();
+
+
+  for (size_t wi=0;wi<(*reduced_adc_cnn_map_wires).size();wi++){
+    Int_t wire = (*reduced_adc_cnn_map_wires)[wi];
+    Int_t t0   = (*reduced_adc_cnn_map_times)[wi];
+    for (size_t s=0;s<(*reduced_adc_cnn_map)[wi].size();s++){
+      Int_t time = t0+s;
+      _spill->ADC[wire][time]=(*reduced_adc_cnn_map)[wi][s];
+    }
+  }
+
   
   // The beam particle
   AnaParticlePD* part = MakeParticle();
@@ -1058,16 +1122,20 @@ void hitPionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
   // IMPORTANT !!!!! All daughters are reconstructed as both tracks and showers and added to the particle vector.
   //                So the actual number of particles is half of the size of the vector
 
+
   // The daughter tracks
   for (UInt_t i=0;i<reco_daughter_allTrack_ID->size();i++){
     AnaParticlePD* dautrk = MakeParticle();
+
     FillDaughterParticleTrackInfo(trueParticles, i, dautrk);
+
     bunch->Particles.push_back(dautrk);
     part->Daughters.push_back(dautrk);
     part->DaughtersIDs.push_back((*reco_daughter_allTrack_ID)[i]);
   }
 
   // The daughter showers
+
   for (UInt_t i=0;i<reco_daughter_allShower_ID->size();i++){
     AnaParticlePD* dausho = MakeParticle();
     FillDaughterParticleShowerInfo(trueParticles, i, dausho);
@@ -1083,8 +1151,7 @@ void hitPionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
     bunch->Vertices.push_back(vertex);
   }
   */
-
-
+  
 }
 
 //*****************************************************************************
@@ -1218,9 +1285,15 @@ void hitPionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& 
       hit.ResidualRange = (*reco_beam_resRange)[j];
       hit.fView         = plane;
       hit.fWireID.Wire  = (*reco_beam_hit_wireID)[j];
+      hit.fChannel      = (*reco_beam_hit_channel)[j];
+      hit.fStartTick    = (*reco_beam_hit_startTick)[j];
+      hit.fEndTick      = (*reco_beam_hit_endTick)[j];
+
+      for (UInt_t t=hit.fStartTick;t<=hit.fEndTick;t++){
+        hit.fSignal.push_back(_spill->ADC[hit.fChannel][t]);
+      }
       
       part->Hits[plane].push_back(hit);
-
 
       part->AveragedEdx += (*reco_beam_dEdX)[j];
       part->AveragedQdx += (*reco_beam_dQdX)[j];     
@@ -1439,18 +1512,24 @@ void hitPionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTruePart
       }
       part->AveragedEdx += dedx;
       part->AveragedQdx += dqdx;
-
       // Add hits
-      TVector3 point;
-      point.SetXYZ((*reco_beam_spacePts_X)[j],(*reco_beam_spacePts_Y)[j],(*reco_beam_spacePts_Z)[j]);
-      AnaHitPD hit(2,(*reco_beam_hit_integral)[j], (*reco_beam_hit_peakTime)[j], (*reco_beam_hit_peakAmplitude)[j], point);
-
+      TVector3 point;  // TODO
+      //      point.SetXYZ((*reco_daughter_spacePts_X)[itrk][j],(*reco_daughter_spacePts_Y)[itrk][j],(*reco_daughter_spacePts_Z)[itrk][j]);
+      AnaHitPD hit(2,(*reco_daughter_allTrack_hit_integral)[itrk][j], (*reco_daughter_allTrack_hit_peakTime)[itrk][j], (*reco_daughter_allTrack_hit_peakAmplitude)[itrk][j], point);  // TODO
       hit.dEdx         = dedx;
       hit.dQdx         = dqdx;
       hit.dEdx_corr    = dedx_cal;
       hit.ResidualRange= resRange;
       hit.fView        = plane;
-      hit.fWireID.Wire = (*reco_beam_hit_wireID)[j];
+      hit.fWireID.Wire = (*reco_daughter_allTrack_hit_wireID)[itrk][j];
+      hit.fChannel     = (*reco_daughter_allTrack_hit_channel)[itrk][j];
+      hit.fStartTick   = (*reco_daughter_allTrack_hit_startTick)[itrk][j];
+      hit.fEndTick     = (*reco_daughter_allTrack_hit_endTick)[itrk][j];  
+
+      for (UInt_t t=hit.fStartTick;t<=hit.fEndTick;t++){
+        hit.fSignal.push_back(_spill->ADC[hit.fChannel][t]);
+      }
+
       
       part->Hits[plane].push_back(hit);
 
@@ -1583,6 +1662,34 @@ void hitPionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePar
 
   part->NHits = (*reco_daughter_PFP_nHits)[itrk];
 
+
+
+
+  for (UInt_t plane=2;plane<3;plane++){   // only the last slice 
+    UInt_t nHits = std::min((int)NMAXHITSPERPLANE,   (int)(*reco_daughter_allShower_hit_wireID)[itrk].size());
+    for (UInt_t j=0;j<nHits;j++){
+      // Add hits
+      TVector3 point;  // TODO
+      //      point.SetXYZ((*reco_daughter_spacePts_X)[itrk][j],(*reco_daughter_spacePts_Y)[itrk][j],(*reco_daughter_spacePts_Z)[itrk][j]);
+      AnaHitPD hit(2,(*reco_daughter_allShower_hit_integral)[itrk][j], (*reco_daughter_allShower_hit_peakTime)[itrk][j], (*reco_daughter_allShower_hit_peakAmplitude)[itrk][j], point);  // TODO
+      hit.fView        = plane;
+      hit.fWireID.Wire = (*reco_daughter_allShower_hit_wireID)[itrk][j];
+      hit.fChannel     = (*reco_daughter_allShower_hit_channel)[itrk][j];
+      hit.fStartTick   = (*reco_daughter_allShower_hit_startTick)[itrk][j];
+      hit.fEndTick     = (*reco_daughter_allShower_hit_endTick)[itrk][j];  
+
+      for (UInt_t t=hit.fStartTick;t<=hit.fEndTick;t++){
+        hit.fSignal.push_back(_spill->ADC[hit.fChannel][t]);
+      }
+
+      
+      part->Hits[plane].push_back(hit);
+
+    }
+
+  }
+
+  
   /*
   part->NHits = 0;
   for (Int_t i=0;i<3;i++){
