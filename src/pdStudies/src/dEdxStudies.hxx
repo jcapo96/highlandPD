@@ -51,6 +51,16 @@ class dEdxStudies: public baseAnalysis {
   void AddCustomCategories();
 
 
+    /// Create the appropriate event time from an Spill and a Bunch in that spill
+  virtual AnaEventC* MakeEvent(){
+    return new AnaEventPD(GetSpill(),GetBunch());
+  }
+
+
+  /// Get a casted AnaSpillC to AnaSpill from the InputManager
+  AnaSpillPD& GetSpill(){return *static_cast<AnaSpillPD*>(&input().GetSpill());}
+
+
   void FilldEdxInfo(AnaParticlePD* part);
   
 private:

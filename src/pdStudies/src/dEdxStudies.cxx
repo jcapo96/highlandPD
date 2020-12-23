@@ -203,7 +203,7 @@ void dEdxStudies::FillMicroTrees(bool addBase){
 
   //  std::vector<hl::MVAPIDResult> result;
   //  fMVA.RunPID(GetEvent(),result);
-  _cnn.produce(GetEvent());
+  _cnn.produce(*(static_cast<AnaEventPD*>(&GetEvent())));
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
