@@ -51,6 +51,7 @@ bool debug=false;
 
     fCalAmpConstants.push_back(0.582554e-3);
     fCalAmpConstants.push_back(1.16594e-3);
+    fCalAmpConstants.push_back(1.16594e-3);
 
     //    fCalAreaConstants.push_back(0.544391e-2);
     //    fCalAreaConstants.push_back(2.0376e-2);
