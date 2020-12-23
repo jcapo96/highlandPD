@@ -167,6 +167,7 @@ private:
   bool
   bufferPatch(size_t wire, float drift, std::vector<std::vector<float>>& patch) const
   {
+    if (debug_level>=2) std::cout << "    PointIdAlg.hxx:bufferPatch" << std::endl;   
     if (fDownscaleFullView) {
       size_t sd = (size_t)(drift / fDriftWindow);
       if ((fCurrentWireIdx == wire) && (fCurrentScaledDrift == sd))

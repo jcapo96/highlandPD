@@ -25,6 +25,16 @@
 */
 #include <sys/stat.h>
 
+
+std::string wspaces2(size_t n){
+  std::string ws="";
+  for (size_t i=0;i<n;i++)
+    ws +=" ";
+  return ws;
+}
+
+
+
 // ------------------------------------------------------
 // -------------------ModelInterface---------------------
 // ------------------------------------------------------
@@ -109,28 +119,39 @@ nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 std::vector<std::vector<float>>
 nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& inps, int samples)
 {
-
+  if (debug_level>=2) std::cout << wspaces2(4) << "PointIdAlg.cxx:Run. inps.size() = " << inps.size() << std::endl;   
   if ((samples == 0) || inps.empty() || inps.front().empty() || inps.front().front().empty())
     return std::vector<std::vector<float>>();
 
   if ((samples == -1) || (samples > (long long int)inps.size())) { samples = inps.size(); }
 
   long long int rows = inps.front().size(), cols = inps.front().front().size();
-  /*
-  tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));
-  auto input_map = _x.tensor<float, 4>();
+
+  if (debug_level>=3) std::cout << wspaces2(6) << "PointIdAlg.cxx:Run. rows, cols = " << rows << " " << cols << std::endl;   
+  
+  if (debug_level>=3) std::cout << wspaces2(6) << "PointIdAlg.cxx:Run. READY TO CALL TF " << std::endl;   
+
+  size_t count_gt0=0;
+  
+  //  tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));   // anselmo
+  //  auto input_map = _x.tensor<float, 4>();
   for (long long int s = 0; s < samples; ++s) {
     const auto& sample = inps[s];
     for (long long int r = 0; r < rows; ++r) {
       const auto& row = sample[r];
       for (long long int c = 0; c < cols; ++c) {
-        input_map(s, r, c, 0) = row[c];
+        //        input_map(s, r, c, 0) = row[c];  // anselmo
+        if (row[c]>0) count_gt0++;
+        if (debug_level>=5) std::cout << wspaces2(8) << "PointIdAlg.cxx:Run. s, r, c, row[c] = " << s << " " << r << " " << c << " " << row[c] << std::endl;
+        else if (debug_level>=4 && row[c]>0 ) std::cout << wspaces2(6) << "PointIdAlg.cxx:Run. s, r, c, row[c] = " << s << " " << r << " " << c << " " << row[c] << std::endl;   
       }
     }
   }
 
-  return g->run(_x);
-  */
+  if (debug_level>=3) std::cout << wspaces2(6) << "PointIdAlg.cxx:Run. #tensor elements > 0 = " << count_gt0 << std::endl;   
+
+  //  return g->run(_x);
+
 
   return std::vector<std::vector<float>>();
 }
@@ -140,6 +161,8 @@ std::vector<float>
 nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 {
   long long int rows = inp2d.size(), cols = inp2d.front().size();
+
+  if (debug_level>=2) std::cout << wspaces2(4) << "PointIdAlg.cxx:Run. rows, cols = " << rows << " " << cols << std::endl;   
   /*
   tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({1, rows, cols, 1}));
   auto input_map = _x.tensor<float, 4>();
@@ -206,6 +229,7 @@ nnet::PointIdAlg::~PointIdAlg()
 void
 nnet::PointIdAlg::resizePatch()
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx::resizePatch" << std::endl;   
   fWireDriftPatch.resize(fPatchSizeW);
   for (auto& r : fWireDriftPatch)
     r.resize(fPatchSizeD);
@@ -215,6 +239,7 @@ nnet::PointIdAlg::resizePatch()
 float
 nnet::PointIdAlg::predictIdValue(unsigned int wire, float drift, size_t outIdx) const
 {
+  if (debug_level>=1) std::cout << wspaces2(2) << "PointIdAlg.cxx:predictIdValue" << std::endl;   
   float result = 0.;
 
   if (!bufferPatch(wire, drift)) {
@@ -239,6 +264,7 @@ nnet::PointIdAlg::predictIdValue(unsigned int wire, float drift, size_t outIdx) 
 std::vector<float>
 nnet::PointIdAlg::predictIdVector(unsigned int wire, float drift) const
 {
+  if (debug_level>=1) std::cout << wspaces2(2) << "PointIdAlg.cxx:predictIdVector" << std::endl;   
   std::vector<float> result;
   if (!bufferPatch(wire, drift)) {
     //    mf::LogError("PointIdAlg") << "Patch buffering failed.";
@@ -259,6 +285,7 @@ nnet::PointIdAlg::predictIdVector(unsigned int wire, float drift) const
 std::vector<std::vector<float>>
 nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> points) const
 {
+  if (debug_level>=1) std::cout << wspaces2(2) << "PointIdAlg.cxx:predictIdVectors" << std::endl;   
   if (points.empty() || !fNNet) { return std::vector<std::vector<float>>(); }
   std::vector<std::vector<std::vector<float>>> inps(
                                                     points.size(), std::vector<std::vector<float>>(fPatchSizeW, std::vector<float>(fPatchSizeD)));
@@ -268,8 +295,9 @@ nnet::PointIdAlg::predictIdVectors(std::vector<std::pair<unsigned int, float>> p
     if (!bufferPatch(wire, drift, inps[i])) {
       //      throw cet::exception("PointIdAlg") << "Patch buffering failed" << std::endl;
       std::cout << "Patch buffering failed" << std::endl;
-    }
+    }    
   }
+  
   return fNNet->Run(inps);
 }
 // ------------------------------------------------------
@@ -280,6 +308,7 @@ nnet::PointIdAlg::isSamePatch(unsigned int wire1,
                               unsigned int wire2,
                               float drift2) const
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx:isSamePatch" << std::endl;   
   if (fDownscaleFullView) {
     size_t sd1 = (size_t)(drift1 / fDriftWindow);
     size_t sd2 = (size_t)(drift2 / fDriftWindow);
@@ -295,6 +324,7 @@ nnet::PointIdAlg::isSamePatch(unsigned int wire1,
 bool
 nnet::PointIdAlg::isCurrentPatch(unsigned int wire, float drift) const
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx:isCurrentPatch" << std::endl;   
   if (fDownscaleFullView) {
     size_t sd = (size_t)(drift / fDriftWindow);
     if ((fCurrentWireIdx == wire) && (fCurrentScaledDrift == sd))
@@ -312,6 +342,7 @@ nnet::PointIdAlg::isCurrentPatch(unsigned int wire, float drift) const
 std::vector<float>
 nnet::PointIdAlg::flattenData2D(std::vector<std::vector<float>> const& patch)
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx: flattenData2D " << std::endl;   
   std::vector<float> flat;
   if (patch.empty() || patch.front().empty()) {
     //    mf::LogError("DataProviderAlg") << "Patch is empty.";
@@ -335,6 +366,7 @@ nnet::PointIdAlg::flattenData2D(std::vector<std::vector<float>> const& patch)
 bool
 nnet::PointIdAlg::isInsideFiducialRegion(unsigned int wire, float drift) const
 {
+  if (debug_level>=2) std::cout << wspaces2(4) << "PointIdAlg.cxx:isInsideFiducialRegion" << std::endl;   
   size_t marginW = fPatchSizeW / 8; // fPatchSizeX/2 will make patch always completely filled
   size_t marginD = fPatchSizeD / 8;
 
@@ -376,6 +408,7 @@ nnet::TrainingDataAlg::resizeView(detinfo::DetectorClocksData const& clock_data,
                                   size_t wires,
                                   size_t drifts)
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx:resizeView" << std::endl;   
   auto view = img::DataProviderAlg::resizeView(clock_data, det_prop, wires, drifts);
 
   fWireDriftEdep.resize(wires);
@@ -398,6 +431,7 @@ nnet::TrainingDataAlg::setWireEdepsAndLabels(std::vector<float> const& edeps,
                                              std::vector<int> const& pdgs,
                                              size_t wireIdx)
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx:setWireEdepsAndLabels" << std::endl;     
   if ((wireIdx >= fWireDriftEdep.size()) || (edeps.size() != pdgs.size())) { return false; }
 
   size_t dstep = 1;
@@ -444,6 +478,7 @@ nnet::TrainingDataAlg::getProjection(detinfo::DetectorClocksData const& clockDat
                                      const TLorentzVector& tvec,
                                      unsigned int plane) const
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx:getProjection" << std::endl;     
   nnet::TrainingDataAlg::WireDrift wd;
   wd.Wire = 0;
   wd.Drift = 0;
@@ -736,7 +771,7 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
                                         unsigned int cryo)
 {
 
-  
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx: setDataEventData " << std::endl;   
   std::vector<my_recob::Wire> wireHandle;// art::Handle<std::vector<my_recob::Wire>> wireHandle; 
   std::vector<my_recob::Wire*> Wirelist; // std::vector<art::Ptr<my_recob::Wire>> Wirelist;      
 
@@ -1040,6 +1075,7 @@ nnet::TrainingDataAlg::findCrop(float max_e_cut,
                                 unsigned int& d0,
                                 unsigned int& d1) const
 {
+  if (debug_level>=0) std::cout << "PointIdAlg.cxx: findCrop " << std::endl;   
   if (fWireDriftEdep.empty() || fWireDriftEdep.front().empty()) return false;
 
   float max_cut = 0.25 * max_e_cut;
