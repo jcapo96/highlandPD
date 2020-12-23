@@ -53,6 +53,8 @@ public:
   UInt_t Channel()const {return fChannel;}
   Int_t View()const {return fView;}
 
+  std::vector<Float_t> Signal() const {return fSignal;}
+  
   //protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
@@ -66,6 +68,10 @@ public:
   Float_t fPeakAmplitude;
   TVector3 Position;
 
+
+  UInt_t fStartTick;
+  UInt_t fEndTick;
+  
   UInt_t fChannel;
   Int_t  fView;
 
@@ -80,6 +86,8 @@ public:
   Float_t dQdx;  
   Float_t dQdx_corr;  
 
+  std::vector<Float_t> fSignal;
+  
 };
 
 
@@ -257,6 +265,66 @@ public:
   Int_t ntrue_beamdaughter_neutron;
   Int_t ntrue_beamdaughter_nucleus;
 };
+
+
+
+
+class AnaSpillPD: public AnaSpill{
+public :
+
+  AnaSpillPD();
+  virtual ~AnaSpillPD();
+
+  /// Clone this object.
+  virtual AnaSpillPD* Clone() {
+    AnaSpillPD* spill = new AnaSpillPD(*this);
+    spill->RedoLinks();
+    spill->isClone=true;
+    return spill;
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaSpillPD(const AnaSpillPD& spill);
+
+public:
+
+
+  std::vector<std::vector<Float_t > > ADC;
+  
+};
+
+class AnaEventPD: public AnaEvent{
+public :
+
+  AnaEventPD();
+  AnaEventPD(const AnaSpillPD& spill, const AnaBunch& bunch);
+  virtual ~AnaEventPD();
+
+  /// Clone this object.
+  virtual AnaEventPD* Clone() {
+    AnaEventPD* spill = new AnaEventPD(*this);
+    spill->isClone=true;
+    return spill;
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaEventPD(const AnaEventPD& event);
+
+public:
+
+  std::vector<std::vector<Float_t > > ADC;
+};
+
 
 
 #endif

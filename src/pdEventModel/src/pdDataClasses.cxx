@@ -32,12 +32,16 @@ AnaHitPD::AnaHitPD(){
   fChannel       = kIntUnassigned;
   fView          = kIntUnassigned; 
 
+  fStartTick     = (UInt_t)kIntUnassigned;
+  fEndTick       = (UInt_t)kIntUnassigned; 
   
   dEdx          = kFloatUnassigned;
   dQdx          = kFloatUnassigned;
   dEdx_corr     = kFloatUnassigned;
   dQdx_corr     = kFloatUnassigned;
   ResidualRange = kFloatUnassigned;
+
+  fSignal.clear();
 }
 
 //********************************************************************
@@ -52,12 +56,19 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   Position       = hit.Position;
   fChannel       = hit.fChannel;
   fView          = hit.fView;
+  fSignal        = hit.fSignal;
+
+
+  fStartTick     = hit.fStartTick;
+  fEndTick       = hit.fEndTick  ; 
   
   dEdx           = hit.dEdx;
   dQdx           = hit.dQdx;
   dEdx_corr      = hit.dEdx_corr;
   dQdx_corr      = hit.dQdx_corr;
   ResidualRange  = hit.ResidualRange;
+
+
 }
 
 //********************************************************************
@@ -69,6 +80,7 @@ void AnaHitPD::Print() const{
   std::cout << "WireID.Plane:  " << fWireID.Plane  << std::endl;
   std::cout << "WireID.Wire:   " << fWireID.Wire  << std::endl;
   std::cout << "View:          " << fView << std::endl;
+  std::cout << "#adcs:         " << fSignal.size()  << std::endl;
   std::cout << "Integral:      " << fIntegral      << std::endl; 
   std::cout << "PeakTime:      " << fPeakTime      << std::endl;
   std::cout << "PeakAmplitude: " << fPeakAmplitude << std::endl;
@@ -362,3 +374,87 @@ void AnaBeamPD::Print() const{
   std::cout << std::endl;
 
 }
+
+
+
+//********************************************************************
+AnaSpillPD::AnaSpillPD():AnaSpill(){
+//********************************************************************
+
+  ADC.clear();
+  ADC.resize(15480);
+  for (size_t w=0;w<ADC.size();w++)
+    ADC[w].resize(6000,0);
+  
+}
+
+//********************************************************************
+AnaSpillPD::~AnaSpillPD(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaSpillPD::AnaSpillPD(const AnaSpillPD& spill):AnaSpill(spill){
+//********************************************************************
+
+  ADC = spill.ADC;
+}
+
+//********************************************************************
+void AnaSpillPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaSpillPD --------- " << std::endl;
+
+  AnaSpill::Print();
+
+  std::cout << "ADC.size():            " << ADC.size() << std::endl;  
+}
+
+
+
+//********************************************************************
+AnaEventPD::AnaEventPD():AnaEvent(){
+//********************************************************************
+
+  ADC.clear();
+  ADC.resize(15480);
+  for (size_t w=0;w<ADC.size();w++)
+    ADC[w].resize(6000,0);
+  
+}
+
+//********************************************************************
+AnaEventPD::~AnaEventPD(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaEventPD::AnaEventPD(const AnaEventPD& event):AnaEvent(event){
+//********************************************************************
+
+  
+  ADC = event.ADC;
+}
+
+//*****************************************************************************
+AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunch& bunch):AnaEvent(spill,bunch) {
+//*****************************************************************************
+
+  ADC.clear();
+  ADC = spill.ADC;
+}
+
+//********************************************************************
+void AnaEventPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaEventPD --------- " << std::endl;
+
+  AnaEvent::Print();
+  std::cout << "ADC.size():            " << ADC.size() << std::endl;  
+
+}
+
