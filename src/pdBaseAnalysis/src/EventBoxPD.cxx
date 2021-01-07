@@ -1,6 +1,6 @@
 #include "EventBoxPD.hxx"
 #include "CutUtils.hxx"
-#include "DataClasses.hxx"
+#include "pdDataClasses.hxx"
 
 //********************************************************************
 EventBoxPD::EventBoxPD():EventBoxB(){
@@ -80,7 +80,7 @@ void boxUtils::FillCandidateAndDaughters(AnaEventB& event){
   Int_t nParts         = event.nParticles;
 
   for (Int_t i=0;i<nParts; ++i){    
-    AnaParticle* part = static_cast<AnaParticle*>(parts[i]);
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     if (part->isPandora){
       selTracks[nCandidateAndDaughters] = part;
       nCandidateAndDaughters++;
