@@ -24,10 +24,10 @@ public:
   /// The reconstructed EventVertex
   AnaVertexB* Vertex;
 
-  /// The MainTrack, defining the event vertex
+  /// The MainTrack (te beam particle in general)
   AnaParticlePD* MainTrack;
 
-  // Distance from the MainTrack to its daoughters
+  // Distance from the MainTrack to its daughters
   std::vector<Float_t> DaughterDistanceToVertex;
 };
 

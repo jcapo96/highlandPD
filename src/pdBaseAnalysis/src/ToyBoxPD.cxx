@@ -39,5 +39,5 @@ void ToyBoxPD::ResetBase(){
   Vertex=NULL;
   MainTrack=NULL;
   DaughterDistanceToVertex.clear();
-  SoftReset();
+  SoftReset();  // just reset internal stuff
 }  
