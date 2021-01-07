@@ -1221,11 +1221,10 @@ void hitPionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& 
 
 */
 
+  // This is the beam particle according to pandora
   part->isPandora = true;
-  part->UniqueID  = reco_beam_trackID;
 
-  // This is the beam particle (TODO)
-  part->Charge = -8888;
+  part->UniqueID  = reco_beam_trackID;
 
   //  variable in AnaParticlePD as an example of custom event model
   if      (reco_beam_type == 11) part->Type = AnaParticlePD::kShower;
