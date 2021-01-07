@@ -9,6 +9,7 @@ need to be enabled in baseAnalysis parameter file
 
  < pionAnalysis.Systematics.EnabledEdx              = 0 >
  < pionAnalysis.Systematics.EnableLength            = 0 >
+ < pionAnalysis.Systematics.EnableLifetime          = 0 >  
  < pionAnalysis.Systematics.EnabledBeamComposition  = 0 >	
 
 --- Corrections -----------
@@ -26,7 +27,7 @@ Use SCE correction for dEdx of beam particle daughters
  < pionAnalysis.TreeConverter.UseSCE               = 1 >
 
 Recompute based on distance whether this is the beam particle or not
- < pionAnalysis.UseIsBeamLike                      = 1 >
+ < pdBaseAnalysis.UseIsBeamLike                    = 1 >
 
 
 ###############################################################################
