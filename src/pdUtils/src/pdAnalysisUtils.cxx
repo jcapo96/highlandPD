@@ -46,7 +46,7 @@ TGraph const RvsKE_P(31, KE_MeV_P_Nist, Range_gpercm_P_Nist);
 TSpline3 const RvsKE_P_spline3("RvsKE_P_S", &RvsKE_P);
 
 
-TFile* dEdX_template_file = new TFile( (std::string(getenv("PIONANALYSISROOT"))+"/data/dEdxrestemplates.root").c_str(), "OPEN" );
+TFile* dEdX_template_file = new TFile( (std::string(getenv("PDUTILSROOT"))+"/data/dEdxrestemplates.root").c_str(), "OPEN" );
 std::map< int, TProfile* > templates;
 
 TProfile* ProtonTemplate = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
@@ -58,7 +58,7 @@ templates[ 2212 ] = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 */
 
 
-TFile* E_field_file = new TFile( (std::string(getenv("PIONANALYSISROOT"))+"/data/SCE_DataDriven_180kV_v3.root").c_str(), "OPEN" );
+TFile* E_field_file = new TFile( (std::string(getenv("PDUTILSROOT"))+"/data/SCE_DataDriven_180kV_v3.root").c_str(), "OPEN" );
 
 TH3F* ex_neg = (TH3F*)E_field_file->Get("Reco_ElecField_X_Neg");
 TH3F* ey_neg = (TH3F*)E_field_file->Get("Reco_ElecField_Y_Neg");
@@ -68,8 +68,8 @@ TH3F* ey_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Y_Pos");
 TH3F* ez_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Z_Pos");
 
 
-std::string X_correction_name = std::string(getenv("PIONANALYSISROOT"))+"/data/Xcalo_r5387.root";
-std::string YZ_correction_name = std::string(getenv("PIONANALYSISROOT"))+"/data/YZcalo_r5387.root";
+std::string X_correction_name = std::string(getenv("PDUTILSROOT"))+"/data/Xcalo_r5387.root";
+std::string YZ_correction_name = std::string(getenv("PDUTILSROOT"))+"/data/YZcalo_r5387.root";
 
 
 TFile* X_correction_file  = new TFile( X_correction_name.c_str(), "OPEN" );

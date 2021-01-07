@@ -17,7 +17,7 @@ pdspacecharge::pdSpaceCharge::pdSpaceCharge(){
   if((fEnableSimSpatialSCE == true) || (fEnableSimEfieldSCE == true)){
     
     //read input file
-    std::string fInputFilename = std::string(getenv("PIONANALYSISROOT"))+"/data/SCE_DataDriven_180kV_v3.root";
+    std::string fInputFilename = std::string(getenv("PDUTILSROOT"))+"/data/SCE_DataDriven_180kV_v3.root";
     infile = new TFile(fInputFilename.c_str(), "OPEN" );
 
     //check it exits
@@ -75,7 +75,7 @@ pdspacecharge::pdSpaceCharge::pdSpaceCharge(){
   if((fEnableCalSpatialSCE == true) || (fEnableCalEfieldSCE == true)){
 
     //read input file
-    std::string fCalInputFilename = std::string(getenv("PIONANALYSISROOT"))+"/data/SCE_DataDriven_180kV_v3.root";
+    std::string fCalInputFilename = std::string(getenv("PDUTILSROOT"))+"/data/SCE_DataDriven_180kV_v3.root";
     infile = new TFile(fCalInputFilename.c_str(), "OPEN" );
 
     //check it exists
