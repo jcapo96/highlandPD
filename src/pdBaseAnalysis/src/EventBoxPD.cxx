@@ -65,6 +65,10 @@ void boxUtils::FillLongTracks(AnaEventB& event, SubDetId::SubDetEnum det){
 void boxUtils::FillCandidateAndDaughters(AnaEventB& event){
 //********************************************************************
 
+
+  //  This method fills the EventBoxPD with  the candidate and its daughters for later use
+  
+  
   EventBoxB* EventBox = event.EventBoxes[EventBoxId::kEventBoxPD];
 
   // TODO. We need a better method to get the tracks (returning a variable size array). Otherwise we have to guess how many tracks we have
@@ -77,7 +81,7 @@ void boxUtils::FillCandidateAndDaughters(AnaEventB& event){
 
   for (Int_t i=0;i<nParts; ++i){    
     AnaParticle* part = static_cast<AnaParticle*>(parts[i]);
-    if (part->Charge==-8888){
+    if (part->isPandora){
       selTracks[nCandidateAndDaughters] = part;
       nCandidateAndDaughters++;
       const std::vector<AnaRecObjectC*>& daughters = part->Daughters;
