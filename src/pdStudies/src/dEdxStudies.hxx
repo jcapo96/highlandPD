@@ -52,9 +52,9 @@ class dEdxStudies: public baseAnalysis {
 
 
     /// Create the appropriate event time from an Spill and a Bunch in that spill
-  virtual AnaEventC* MakeEvent(){
-    return new AnaEventPD(GetSpill(),GetBunch());
-  }
+  //  virtual AnaEventC* MakeEvent(){
+  //    return new AnaEventPD(GetSpill(),GetBunch());
+  //  }
 
 
   /// Get a casted AnaSpillC to AnaSpill from the InputManager

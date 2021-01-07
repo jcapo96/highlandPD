@@ -20,7 +20,7 @@ dEdxStudies::dEdxStudies(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version (not yet properly done)
-  ND::versioning().AddPackage("dEdxStudies", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PDSTUDIESROOT")));
+  ND::versioning().AddPackage("pdStudies", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PDSTUDIESROOT")));
 }
 
 //********************************************************************
@@ -56,7 +56,7 @@ void dEdxStudies::DefineInputConverters(){
 
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
-  input().AddConverter("minitree",       new HighlandMiniTreeConverter());
+  input().AddConverter("minitree",       new HighlandMiniTreeConverter("kaonana/MiniTree"));
   input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
@@ -203,7 +203,7 @@ void dEdxStudies::FillMicroTrees(bool addBase){
 
   //  std::vector<hl::MVAPIDResult> result;
   //  fMVA.RunPID(GetEvent(),result);
-  _cnn.produce(*(static_cast<AnaEventPD*>(&GetEvent())));
+  //  _cnn.produce(*(static_cast<AnaEventPD*>(&GetEvent())));
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
@@ -304,7 +304,7 @@ void dEdxStudies::FillCategories(){
 void dEdxStudies::FilldEdxInfo(AnaParticlePD* part){
 //********************************************************************
 
-  bool debug = false;
+  bool debug = true;
   
   /*
     1. Original dEdX from tree
