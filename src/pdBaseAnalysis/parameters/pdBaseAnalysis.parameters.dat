@@ -1,0 +1,2 @@
+Recompute based on distance whether this is the beam particle or not
+ < pdBaseAnalysis.UseIsBeamLike                      = 1 >
