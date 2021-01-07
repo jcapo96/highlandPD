@@ -56,7 +56,7 @@ class CandidateIsBeamCut: public StepBase{
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new CandidateIsBeamCut();}
   bool useIsBeamLike;
-  CandidateIsBeamCut(){ useIsBeamLike = (bool)ND::params().GetParameterI("pionAnalysis.UseIsBeamLike");}
+  CandidateIsBeamCut(){ useIsBeamLike = (bool)ND::params().GetParameterI("pdBaseAnalysis.UseIsBeamLike");}
 };
 
 #endif
