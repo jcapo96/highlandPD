@@ -66,7 +66,7 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
         
         double dQdx_e      = part->Hits[i][j].dQdx/calib_factor[2]*norm_factor[2];
         part->Hits[i][j].dEdx_corr = part->Hits[i][j].dEdx = fCalo.dEdx_from_dQdx_e(dQdx_e,
-                                                                                    hit.PeakTime(),
+                                                                                    hit.PeakTime,
                                                                                     fEventT0);
         dedx_vector.push_back(part->Hits[i][j].dEdx_corr);
       }
