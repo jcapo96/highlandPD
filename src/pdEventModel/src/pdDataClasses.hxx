@@ -21,7 +21,7 @@ class AnaHitPD{
 public:
   AnaHitPD();
   virtual ~AnaHitPD(){}
-  
+
   AnaHitPD(Int_t wire, Float_t integ, Float_t peakT, Float_t peakAmp, TVector3 pos){
     WireID.Plane =wire;
     Integral = integ;
@@ -30,31 +30,17 @@ public:
     Position = pos;
   }
     
-  AnaHitPD(double integral){
-    Integral = integral;
-  }
-  
   /// Dump the object to screen.
   virtual void Print() const;
-  /*    
-  Float_t PeakAmplitude() const {return fPeakAmplitude;}
-  Float_t PeakTime() const {return fPeakTime;}
-  AnaWireID  WireID()const {return fWireID;}
-  Float_t Integral()const {return fIntegral;}
 
-  UInt_t Channel()const {return fChannel;}
-  Int_t View()const {return fView;}
-
-  std::vector<Float_t> Signal() const {return fSignal;}
-  */
-  //protected:
-
-  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  ///   Copy constructor
   AnaHitPD(const AnaHitPD& part);
   
 public:
 
+  // ---- Most of this information is needed to recompute the CNN. This is work in progress 
   AnaWireID WireID;    
+
   Float_t Integral;
   Float_t PeakTime;
   Float_t PeakAmplitude;
@@ -65,6 +51,11 @@ public:
   
   UInt_t Channel;
   Int_t  View;
+
+  /// wave form associated to this hit
+  std::vector<Float_t> Signal;  
+
+  //------------------------------------------------------------
 
   /// Residual range for each wire in each plane
   Float_t ResidualRange;
@@ -77,10 +68,7 @@ public:
   Float_t dQdx;  
   Float_t dQdx_corr;  
 
-  /// wave form associated to this hit
-  std::vector<Float_t> Signal;  
 };
-
 
 /// AnaParticle
 class AnaParticlePD: public AnaParticle{
