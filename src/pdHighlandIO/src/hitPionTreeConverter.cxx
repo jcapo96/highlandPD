@@ -1282,14 +1282,14 @@ void hitPionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& 
       hit.dQdx          = (*reco_beam_dQdX)[j];
       hit.dEdx_corr     = (*reco_beam_calibrated_dEdX)[j];      
       hit.ResidualRange = (*reco_beam_resRange)[j];
-      hit.fView         = plane;
-      hit.fWireID.Wire  = (*reco_beam_hit_wireID)[j];
-      hit.fChannel      = (*reco_beam_hit_channel)[j];
-      hit.fStartTick    = (*reco_beam_hit_startTick)[j];
-      hit.fEndTick      = (*reco_beam_hit_endTick)[j];
+      hit.View         = plane;
+      hit.WireID.Wire  = (*reco_beam_hit_wireID)[j];
+      hit.Channel      = (*reco_beam_hit_channel)[j];
+      hit.StartTick    = (*reco_beam_hit_startTick)[j];
+      hit.EndTick      = (*reco_beam_hit_endTick)[j];
 
-      for (UInt_t t=hit.fStartTick;t<=hit.fEndTick;t++){
-        hit.fSignal.push_back(_spill->ADC[hit.fChannel][t]);
+      for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
+        hit.Signal.push_back(_spill->ADC[hit.Channel][t]);
       }
       
       part->Hits[plane].push_back(hit);
@@ -1519,14 +1519,14 @@ void hitPionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTruePart
       hit.dQdx         = dqdx;
       hit.dEdx_corr    = dedx_cal;
       hit.ResidualRange= resRange;
-      hit.fView        = plane;
-      hit.fWireID.Wire = (*reco_daughter_allTrack_hit_wireID)[itrk][j];
-      hit.fChannel     = (*reco_daughter_allTrack_hit_channel)[itrk][j];
-      hit.fStartTick   = (*reco_daughter_allTrack_hit_startTick)[itrk][j];
-      hit.fEndTick     = (*reco_daughter_allTrack_hit_endTick)[itrk][j];  
+      hit.View        = plane;
+      hit.WireID.Wire = (*reco_daughter_allTrack_hit_wireID)[itrk][j];
+      hit.Channel     = (*reco_daughter_allTrack_hit_channel)[itrk][j];
+      hit.StartTick   = (*reco_daughter_allTrack_hit_startTick)[itrk][j];
+      hit.EndTick     = (*reco_daughter_allTrack_hit_endTick)[itrk][j];  
 
-      for (UInt_t t=hit.fStartTick;t<=hit.fEndTick;t++){
-        hit.fSignal.push_back(_spill->ADC[hit.fChannel][t]);
+      for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
+        hit.Signal.push_back(_spill->ADC[hit.Channel][t]);
       }
 
       
@@ -1671,14 +1671,14 @@ void hitPionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePar
       TVector3 point;  // TODO
       //      point.SetXYZ((*reco_daughter_spacePts_X)[itrk][j],(*reco_daughter_spacePts_Y)[itrk][j],(*reco_daughter_spacePts_Z)[itrk][j]);
       AnaHitPD hit(2,(*reco_daughter_allShower_hit_integral)[itrk][j], (*reco_daughter_allShower_hit_peakTime)[itrk][j], (*reco_daughter_allShower_hit_peakAmplitude)[itrk][j], point);  // TODO
-      hit.fView        = plane;
-      hit.fWireID.Wire = (*reco_daughter_allShower_hit_wireID)[itrk][j];
-      hit.fChannel     = (*reco_daughter_allShower_hit_channel)[itrk][j];
-      hit.fStartTick   = (*reco_daughter_allShower_hit_startTick)[itrk][j];
-      hit.fEndTick     = (*reco_daughter_allShower_hit_endTick)[itrk][j];  
+      hit.View        = plane;
+      hit.WireID.Wire = (*reco_daughter_allShower_hit_wireID)[itrk][j];
+      hit.Channel     = (*reco_daughter_allShower_hit_channel)[itrk][j];
+      hit.StartTick   = (*reco_daughter_allShower_hit_startTick)[itrk][j];
+      hit.EndTick     = (*reco_daughter_allShower_hit_endTick)[itrk][j];  
 
-      for (UInt_t t=hit.fStartTick;t<=hit.fEndTick;t++){
-        hit.fSignal.push_back(_spill->ADC[hit.fChannel][t]);
+      for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
+        hit.Signal.push_back(_spill->ADC[hit.Channel][t]);
       }
 
       

@@ -826,8 +826,8 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
 
     for (size_t iHit = 0; iHit < Hitlist.size(); ++iHit) {
 
-      if (Hitlist[iHit]->Channel() != widx + 240) { continue; }
-      if (Hitlist[iHit]->View() != 1) { continue; }
+      if (Hitlist[iHit]->Channel != widx + 240) { continue; }
+      if (Hitlist[iHit]->View != 1) { continue; }
 
       // Make sure there is a track association
       if (ass_trk_hits.at(iHit).size() == 0) { continue; }
@@ -843,15 +843,15 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
 
       for (size_t jHit = 0; jHit < Hitlist.size(); ++jHit) {
         if (jHit == iHit) { continue; }
-        if (Hitlist[jHit]->View() != 1) { continue; }
+        if (Hitlist[jHit]->View != 1) { continue; }
 
         if (ass_trk_hits.at(jHit).size() == 0) { continue; }
         if (ass_trk_hits.at(jHit)[0]->ID() != ass_trk_hits.at(iHit)[0]->ID()) { continue; }
 
-        double dist = sqrt((Hitlist[iHit]->Channel() - Hitlist[jHit]->Channel()) *
-                             (Hitlist[iHit]->Channel() - Hitlist[jHit]->Channel()) +
-                           (Hitlist[iHit]->PeakTime() - Hitlist[jHit]->PeakTime()) *
-                             (Hitlist[iHit]->PeakTime() - Hitlist[jHit]->PeakTime()));
+        double dist = sqrt((Hitlist[iHit]->Channel - Hitlist[jHit]->Channel) *
+                             (Hitlist[iHit]->Channel - Hitlist[jHit]->Channel) +
+                           (Hitlist[iHit]->PeakTime - Hitlist[jHit]->PeakTime) *
+                             (Hitlist[iHit]->PeakTime - Hitlist[jHit]->PeakTime));
 
         if (far_dist < dist) {
           far_dist = dist;
@@ -865,15 +865,15 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
 
       for (size_t jHit = 0; jHit < Hitlist.size(); ++jHit) {
         if (jHit == iHit or int(jHit) == far_index) { continue; }
-        if (Hitlist[jHit]->View() != 1) { continue; }
+        if (Hitlist[jHit]->View != 1) { continue; }
 
         if (ass_trk_hits.at(jHit).size() == 0) { continue; }
         if (ass_trk_hits.at(jHit)[0]->ID() != ass_trk_hits.at(iHit)[0]->ID()) { continue; }
 
-        double dist = sqrt((Hitlist[far_index]->Channel() - Hitlist[jHit]->Channel()) *
-                             (Hitlist[far_index]->Channel() - Hitlist[jHit]->Channel()) +
-                           (Hitlist[far_index]->PeakTime() - Hitlist[jHit]->PeakTime()) *
-                             (Hitlist[far_index]->PeakTime() - Hitlist[jHit]->PeakTime()));
+        double dist = sqrt((Hitlist[far_index]->Channel - Hitlist[jHit]->Channel) *
+                             (Hitlist[far_index]->Channel - Hitlist[jHit]->Channel) +
+                           (Hitlist[far_index]->PeakTime - Hitlist[jHit]->PeakTime) *
+                             (Hitlist[far_index]->PeakTime - Hitlist[jHit]->PeakTime));
 
         if (other_dist < dist) {
           other_dist = dist;
@@ -882,8 +882,8 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
       }
 
       // We have the end points now
-      double del_wire = double(Hitlist[other_end]->Channel() - Hitlist[far_index]->Channel());
-      double del_time = double(Hitlist[other_end]->PeakTime() - Hitlist[far_index]->PeakTime());
+      double del_wire = double(Hitlist[other_end]->Channel - Hitlist[far_index]->Channel);
+      double del_time = double(Hitlist[other_end]->PeakTime - Hitlist[far_index]->PeakTime);
       double hypo = sqrt(del_wire * del_wire + del_time * del_time);
 
       if (hypo == 0) { continue; } // Should never happen, but doing it anyway
@@ -903,7 +903,7 @@ nnet::TrainingDataAlg::setDataEventData(const AnaEvent& event,
       fEventsPerBin[binner]++;
 
       // If survives everything, saves the pdg
-      labels_pdg[Hitlist[iHit]->PeakTime()] = 211; // Same as pion for now
+      labels_pdg[Hitlist[iHit]->PeakTime] = 211; // Same as pion for now
     }
 
     setWireEdepsAndLabels(labels_deposit, labels_pdg, widx);
@@ -969,7 +969,7 @@ nnet::TrainingDataAlg::setEventData(const AnaEvent& event,
 
     std::map<int, std::map<int, double>> timeToTrackToCharge;
     for (auto const& channel : *simChannelHandle) {
-      if (channel.Channel() != wireChannelNumber) continue;
+      if (channel.Channel != wireChannelNumber) continue;
 
       auto const& timeSlices = channel.TDCIDEMap();
       for (auto const& timeSlice : timeSlices) {

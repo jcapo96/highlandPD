@@ -344,7 +344,7 @@ void dEdxStudies::FilldEdxInfo(AnaParticlePD* part){
       std::cout << "(3) dEdxStudies: fCalo.dEdx_from_dQdx. dQdx = " << hit.dQdx << std::endl;
     
     float dedx_3 = fCalo.dEdx_from_dQdx(hit.dQdx,
-                                        hit.PeakTime(),
+                                        hit.PeakTime,
                                         fEventT0);
     if (debug)
       std::cout << "(3)  --> dEdxStudies: fCalo.dEdx_from_dQdx. dEdx = " << dedx_3 << std::endl;
@@ -369,16 +369,16 @@ void dEdxStudies::FilldEdxInfo(AnaParticlePD* part){
 
 
 
-      output().FillVectorVar(seltrk_hit_dqdx_3, hit.Integral()/pitch3D);
+      output().FillVectorVar(seltrk_hit_dqdx_3, hit.Integral/pitch3D);
 
 
-      Float_t cal_dQdx_e = pdAnaUtils::ComputeCalibrateddQdX(hit.Integral()/pitch3D, hit.Position);
+      Float_t cal_dQdx_e = pdAnaUtils::ComputeCalibrateddQdX(hit.Integral/pitch3D, hit.Position);
       output().FillVectorVar(seltrk_hit_dqdx_3_cal, cal_dQdx_e);      
 
-      output().FillVectorVar(seltrk_hit_time,     (Float_t)hit.PeakTime());
-      output().FillVectorVar(seltrk_hit_integral, (Float_t)hit.Integral());
-      output().FillVectorVar(seltrk_hit_amplitude,(Float_t)hit.PeakAmplitude());
-      output().FillVectorVar(seltrk_hit_pitch3D, (Float_t)pitch3D);
+      output().FillVectorVar(seltrk_hit_time,     (Float_t)hit.PeakTime);
+      output().FillVectorVar(seltrk_hit_integral, (Float_t)hit.Integral);
+      output().FillVectorVar(seltrk_hit_amplitude,(Float_t)hit.PeakAmplitude);
+      output().FillVectorVar(seltrk_hit_pitch3D,  (Float_t)pitch3D);
       
       output().IncrementCounter(seltrk_nhits);
       

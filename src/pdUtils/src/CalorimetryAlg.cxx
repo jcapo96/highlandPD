@@ -80,7 +80,7 @@ bool debug=false;
                            double const pitch,
                            double const T0) const
   {
-    return dEdx_AMP(hit.PeakAmplitude() / pitch, hit.PeakTime(), hit.WireID().Plane, T0);
+    return dEdx_AMP(hit.PeakAmplitude / pitch, hit.PeakTime, hit.WireID.Plane, T0);
   }
 
   // ----------------------------------------------------------------------------------//
@@ -118,8 +118,8 @@ bool debug=false;
   {
 
     if (debug)
-      std::cout << "- dEdx_AREA (1): integral = " << hit.Integral()  << ", pitch = " << pitch << ", peakTime = " <<  hit.PeakTime() << ", plane = " << hit.WireID().Plane << ", T0 = " <<  T0 << std::endl;
-    return dEdx_AREA(hit.Integral() / pitch, hit.PeakTime(), hit.Position, hit.WireID().Plane, T0);
+      std::cout << "- dEdx_AREA (1): integral = " << hit.Integral  << ", pitch = " << pitch << ", peakTime = " <<  hit.PeakTime << ", plane = " << hit.WireID.Plane << ", T0 = " <<  T0 << std::endl;
+    return dEdx_AREA(hit.Integral / pitch, hit.PeakTime, hit.Position, hit.WireID.Plane, T0);
   }
 
   // ----------------------------------------------------------------------------------//

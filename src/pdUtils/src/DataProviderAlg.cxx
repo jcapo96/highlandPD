@@ -548,9 +548,9 @@ img::DataProviderAlg::setWireDriftDataFromHit(const AnaHitPD& hit)
   detinfo::DetectorClocksData clock_data;
   detinfo::DetectorPropertiesData det_prop;
   
-  fCryo  = hit.fWireID.Cryostat;
-  fTPC   = hit.fWireID.TPC;
-  fPlane = hit.fWireID.Plane;
+  fCryo  = hit.WireID.Cryostat;
+  fTPC   = hit.WireID.TPC;
+  fPlane = hit.WireID.Plane;
 
   
   fAdcSumOverThr = 0;
@@ -564,14 +564,14 @@ img::DataProviderAlg::setWireDriftDataFromHit(const AnaHitPD& hit)
     first=false;
   }
     
-  size_t w_idx = hit.fWireID.Wire;  
+  size_t w_idx = hit.WireID.Wire;  
   //  auto adc = hit.Signal();
 
 
   size_t fPatchSizeD = 48;
   std::vector<Float_t> adc(ndrifts,0);
-  for (size_t i=0;i<hit.Signal().size();i++)
-    adc[i+hit.PeakTime()-fPatchSizeD/2.] = hit.Signal()[i];
+  for (size_t i=0;i<hit.Signal.size();i++)
+    adc[i+hit.PeakTime-fPatchSizeD/2.] = hit.Signal[i];
   
   
   if (debug_level>=3) std::cout << wspaces(6) << "DataProviderAlg::setWireDriftDataFromHit. Found wireID in required TPC,cryo and plane. w_idx, adc.size() = " << w_idx << " " << adc.size()<< std::endl;   
@@ -607,7 +607,7 @@ img::DataProviderAlg::setWireDriftDataFromHit(const AnaHitPD& hit)
   }
   if (debug_level>=3) std::cout << wspaces(6) << "DataProviderAlg::setWireDriftDataFromHit. fAdcSumOverThr, fAdcSumAreaThr = " << fAdcSumOverThr << " " << fAdcAreaOverThr << std::endl;   
   
-  fAlgView.fWireChannels[w_idx] = hit.fChannel;
+  fAlgView.fWireChannels[w_idx] = hit.Channel;
 
   if (debug_level>=10) 
     for (auto v : wireData(w_idx)) {

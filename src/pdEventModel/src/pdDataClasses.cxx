@@ -24,16 +24,16 @@ AnaWireID::AnaWireID(const AnaWireID& wireID){
 AnaHitPD::AnaHitPD(){
 //********************************************************************
 
-  fWireID.Plane  = kIntUnassigned; 
-  fIntegral      = kFloatUnassigned;     
-  fPeakTime      = kFloatUnassigned;     
-  fPeakAmplitude = kFloatUnassigned;
+  WireID.Plane  = kIntUnassigned; 
+  Integral      = kFloatUnassigned;     
+  PeakTime      = kFloatUnassigned;     
+  PeakAmplitude = kFloatUnassigned;
   Position       = TVector3(0,0,0);
-  fChannel       = kIntUnassigned;
-  fView          = kIntUnassigned; 
+  Channel       = kIntUnassigned;
+  View          = kIntUnassigned; 
 
-  fStartTick     = (UInt_t)kIntUnassigned;
-  fEndTick       = (UInt_t)kIntUnassigned; 
+  StartTick     = (UInt_t)kIntUnassigned;
+  EndTick       = (UInt_t)kIntUnassigned; 
   
   dEdx          = kFloatUnassigned;
   dQdx          = kFloatUnassigned;
@@ -41,26 +41,26 @@ AnaHitPD::AnaHitPD(){
   dQdx_corr     = kFloatUnassigned;
   ResidualRange = kFloatUnassigned;
 
-  fSignal.clear();
+  Signal.clear();
 }
 
 //********************************************************************
 AnaHitPD::AnaHitPD(const AnaHitPD& hit){
 //********************************************************************
 
-  fWireID.Plane  = hit.fWireID.Plane;
-  fWireID.Wire   = hit.fWireID.Wire; 
-  fIntegral      = hit.fIntegral;     
-  fPeakTime      = hit.fPeakTime;     
-  fPeakAmplitude = hit.fPeakAmplitude;
-  Position       = hit.Position;
-  fChannel       = hit.fChannel;
-  fView          = hit.fView;
-  fSignal        = hit.fSignal;
+  WireID.Plane  = hit.WireID.Plane;
+  WireID.Wire   = hit.WireID.Wire; 
+  Integral      = hit.Integral;     
+  PeakTime      = hit.PeakTime;     
+  PeakAmplitude = hit.PeakAmplitude;
+  Position      = hit.Position;
+  Channel       = hit.Channel;
+  View          = hit.View;
+  Signal        = hit.Signal;
 
 
-  fStartTick     = hit.fStartTick;
-  fEndTick       = hit.fEndTick  ; 
+  StartTick     = hit.StartTick;
+  EndTick       = hit.EndTick  ; 
   
   dEdx           = hit.dEdx;
   dQdx           = hit.dQdx;
@@ -77,13 +77,13 @@ void AnaHitPD::Print() const{
 
   std::cout << "-------- AnaHitPD --------- " << std::endl;
 
-  std::cout << "WireID.Plane:  " << fWireID.Plane  << std::endl;
-  std::cout << "WireID.Wire:   " << fWireID.Wire  << std::endl;
-  std::cout << "View:          " << fView << std::endl;
-  std::cout << "#adcs:         " << fSignal.size()  << std::endl;
-  std::cout << "Integral:      " << fIntegral      << std::endl; 
-  std::cout << "PeakTime:      " << fPeakTime      << std::endl;
-  std::cout << "PeakAmplitude: " << fPeakAmplitude << std::endl;
+  std::cout << "WireID.Plane:  " << WireID.Plane  << std::endl;
+  std::cout << "WireID.Wire:   " << WireID.Wire  << std::endl;
+  std::cout << "View:          " << View << std::endl;
+  std::cout << "#adcs:         " << Signal.size()  << std::endl;
+  std::cout << "Integral:      " << Integral      << std::endl; 
+  std::cout << "PeakTime:      " << PeakTime      << std::endl;
+  std::cout << "PeakAmplitude: " << PeakAmplitude << std::endl;
   std::cout << "Position:      " << "( " << Position.X() << ", " << Position.Y() << ", " << Position.Z() << ")" << std::endl;
 
 }

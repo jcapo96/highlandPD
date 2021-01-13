@@ -4,8 +4,6 @@
 #include "DataClasses.hxx"
 #include "ParticleId.hxx"
 
-
-
 class AnaWireID{
 public:
 
@@ -19,32 +17,26 @@ public:
   Int_t Cryostat;
 };
 
-
-
-
-
 class AnaHitPD{
 public:
   AnaHitPD();
   virtual ~AnaHitPD(){}
   
   AnaHitPD(Int_t wire, Float_t integ, Float_t peakT, Float_t peakAmp, TVector3 pos){
-    fWireID.Plane =wire;
-    fIntegral = integ;
-    fPeakTime = peakT;
-    fPeakAmplitude = peakAmp;
+    WireID.Plane =wire;
+    Integral = integ;
+    PeakTime = peakT;
+    PeakAmplitude = peakAmp;
     Position = pos;
   }
     
   AnaHitPD(double integral){
-    fIntegral = integral;
+    Integral = integral;
   }
-
   
   /// Dump the object to screen.
   virtual void Print() const;
-  
-  
+  /*    
   Float_t PeakAmplitude() const {return fPeakAmplitude;}
   Float_t PeakTime() const {return fPeakTime;}
   AnaWireID  WireID()const {return fWireID;}
@@ -54,7 +46,7 @@ public:
   Int_t View()const {return fView;}
 
   std::vector<Float_t> Signal() const {return fSignal;}
-  
+  */
   //protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
@@ -62,18 +54,17 @@ public:
   
 public:
 
-  AnaWireID fWireID;    
-  Float_t fIntegral;
-  Float_t fPeakTime;
-  Float_t fPeakAmplitude;
+  AnaWireID WireID;    
+  Float_t Integral;
+  Float_t PeakTime;
+  Float_t PeakAmplitude;
   TVector3 Position;
 
-
-  UInt_t fStartTick;
-  UInt_t fEndTick;
+  UInt_t StartTick;
+  UInt_t EndTick;
   
-  UInt_t fChannel;
-  Int_t  fView;
+  UInt_t Channel;
+  Int_t  View;
 
   /// Residual range for each wire in each plane
   Float_t ResidualRange;
@@ -86,8 +77,8 @@ public:
   Float_t dQdx;  
   Float_t dQdx_corr;  
 
-  std::vector<Float_t> fSignal;
-  
+  /// wave form associated to this hit
+  std::vector<Float_t> Signal;  
 };
 
 
@@ -122,32 +113,21 @@ public:
   /// Track or Shower
   PartTypeEnum Type;
 
-  /// Is this the beam particle according to Pandora
-  bool isBeamPart;
-
-  /// 
+  /// Is this the beam particle according to Pandora ?
   bool isPandora;
 
+  ///  Pandora beam particle that passes geometric cuts
+  bool isBeamPart;
 
-  /// Number of hits in each wire plane
-  Int_t NHitsPerPlane[3];
-
-  /// Vector of hits for eac plane
+  /// Vector of hits for each plane
   std::vector<AnaHitPD> Hits[3];
 
+  /// Total Number of hits in each wire plane (The vector of Hits above might be a subsample)
+  Int_t NHitsPerPlane[3];
+  
   Float_t truncLibo_dEdx;
   
-  /// Particle ID hypothesis used in the fit (if any)
-  Int_t FitPDG;
-  
-  /// PDG of the most probable particle hypothesis used at reconstruction level
-  Int_t ReconPDG[3]; 
-
-  /// PID variables
-  Float_t PID[3][10];
-
-  Float_t PIDA[3];
-
+  // PID variables
   Float_t Chi2Proton;
   Float_t Chi2ndf;
 
@@ -160,8 +140,22 @@ public:
   Float_t RangeMomentum[2];
   Float_t RangeMomentum_alt[2];
 
+  /// Alternate length
   Float_t Length_alt;
 
+  // ---- OBSOLETE PID VARIABLES ----------
+  
+  /// Particle ID hypothesis used in the fit (if any)
+  Int_t FitPDG;
+  
+  /// PDG of the most probable particle hypothesis used at reconstruction level
+  Int_t ReconPDG[3]; 
+
+  /// PID variables
+  Float_t PID[3][10];
+
+  /// PIDA
+  Float_t PIDA[3];  
 };
 
 /// AnaTrueParticle
@@ -189,6 +183,7 @@ public:
   /// Vector Pi0 decays IDs
   std::vector<Int_t> Pi0_decay_ID; 
 
+  /// True-reco matching flag, need for 
   Bool_t Matched;
 
   /// Origin
@@ -201,8 +196,7 @@ public:
   Float_t MomentumInTPC;  
 };
 
-
-/// Representation of the beam information, including POT and quality.
+/// Extension of AnaEvent to include specific information of the ProtoDUNE beam line instrumentation
 class AnaBeamPD: public AnaBeam{
 public :
 
@@ -239,10 +233,10 @@ public:
   size_t nTracks;  
   
   std::vector< int > PDGs;
-
 };
 
 
+/// ProtoDUNE counters
 
 class PDCounters{
 
@@ -266,9 +260,7 @@ public:
   Int_t ntrue_beamdaughter_nucleus;
 };
 
-
-
-
+// Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN 
 class AnaSpillPD: public AnaSpill{
 public :
 
@@ -293,11 +285,12 @@ protected:
 
 public:
 
-
   std::vector<std::vector<Float_t > > ADC;
   
 };
 
+
+// Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN 
 class AnaEventPD: public AnaEvent{
 public :
 

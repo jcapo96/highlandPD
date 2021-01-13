@@ -124,11 +124,11 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
   EmTrackMichelId::cryo_tpc_view_keymap hitMap;
   for (auto const& h : hitPtrList)
     {
-      view = h->WireID().Plane;
+      view = h->WireID.Plane;
       if (!isViewSelected(view)) continue;
       
-      cryo = h->WireID().Cryostat;
-      tpc = h->WireID().TPC;
+      cryo = h->WireID.Cryostat;
+      tpc = h->WireID.TPC;
       
       //      hitMap[cryo][tpc][view].push_back(h.key());
       //      hitMap[cryo][tpc][view].push_back((size_t)h);
@@ -174,9 +174,9 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
                         size_t h = (size_t)(pview.second[idx+k]);
                         //                        const AnaHitPD & hit = *(hitPtrList[h]);
                         const AnaHitPD & hit = *(pview.second[idx+k]);
-                        if (debug_level>=2) std::cout << "  EmTrackMichelId.cxx: idx+k  = "<< idx+k << ", hit (wireID, peak time) = " << hit.WireID().Wire << " " << hit.PeakTime() << std::endl;
+                        if (debug_level>=2) std::cout << "  EmTrackMichelId.cxx: idx+k  = "<< idx+k << ", hit (wireID, peak time) = " << hit.WireID.Wire << " " << hit.PeakTime << std::endl;
                   
-                        points.emplace_back(hit.WireID().Wire, hit.PeakTime());
+                        points.emplace_back(hit.WireID.Wire, hit.PeakTime);
                         //                        keys.push_back(h);
                         keys.push_back((size_t)h);
                     }
@@ -328,7 +328,7 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
             auto v = hitsFromTracks.at(t);
             size_t nh[3] = { 0, 0, 0 };
             if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: Track " << t << " --> #hits = "<< v.size() << std::endl; 
-            for (auto const & hptr : v) { ++nh[hptr.View()]; }  // count hits in eac view
+            for (auto const & hptr : v) { ++nh[hptr.View]; }  // count hits in eac view
             size_t best_view = 2; // collection
             if ((nh[0] >= nh[1]) && (nh[0] > 2 * nh[2])) best_view = 0; // ind1
             if ((nh[1] >= nh[0]) && (nh[1] > 2 * nh[2])) best_view = 1; // ind2
@@ -346,7 +346,7 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
             if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: best view (new) = " << best_view << std::endl; 
             for (auto const & hptr : v)
             {
-                if (hptr.View() == best_view) trkHitPtrList[t].emplace_back(hptr);
+                if (hptr.View == best_view) trkHitPtrList[t].emplace_back(hptr);
             }
 
             if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: trkHitPtrList[t].size() = " << trkHitPtrList[t].size() << std::endl; 
@@ -426,15 +426,15 @@ void nnet::EmTrackMichelId::FillHits(const AnaEventPD& evt, std::vector<AnaHitPD
         AnaHitPD& hit = part->Hits[2][j];
         
         std::cout << " - " << j << ": wire, time, ampl, integral =  "
-                  << hit.fWireID.Wire << " "
-                  << hit.fPeakTime << " "
-                  << hit.fPeakAmplitude << " "
-                  << hit.fIntegral << " "
-                  << hit.fChannel << " "
-                  << hit.fStartTick << "-"
-                  << hit.fEndTick << " "
-                  << evt.ADC[hit.fChannel][hit.fStartTick] << " "
-                  << hit.fSignal[0] << " " 
+                  << hit.WireID.Wire << " "
+                  << hit.PeakTime << " "
+                  << hit.PeakAmplitude << " "
+                  << hit.Integral << " "
+                  << hit.Channel << " "
+                  << hit.StartTick << "-"
+                  << hit.EndTick << " "
+                  << evt.ADC[hit.Channel][hit.StartTick] << " "
+                  << hit.Signal[0] << " " 
                   << std::endl;       
       }
     }
