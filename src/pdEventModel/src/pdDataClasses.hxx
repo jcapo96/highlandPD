@@ -112,7 +112,8 @@ public:
 
   /// Total Number of hits in each wire plane (The vector of Hits above might be a subsample)
   Int_t NHitsPerPlane[3];
-  
+
+  /// Libo truncated mean
   Float_t truncLibo_dEdx;
   
   // PID variables
