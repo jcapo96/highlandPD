@@ -62,10 +62,10 @@ bool CandidateExistsCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   else return true;
 }
 
-/*//**************************************************
-bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-
+//bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+/*
   // Cast the candidate
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);
   AnaParticlePD* part = static_cast<AnaParticlePD*>(box.MainTrack);

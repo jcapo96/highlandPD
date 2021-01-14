@@ -4,6 +4,11 @@
 #include "ToyBoxB.hxx"
 #include "pdDataClasses.hxx"
 
+
+/* This is the container used to pass information from one step to another in the selection. In inherits from the base class in highland/src/psyche/psycheCore. 
+*/
+
+
 class ToyBoxPD:public ToyBoxB{
 public :
   
@@ -21,10 +26,10 @@ public:
   /// For storing the true vertex, for analyses with no reconstructed primary vertex
   AnaTrueVertexB* TrueVertex;
 
-  /// The reconstructed EventVertex
+  /// The reconstructed Event Vertex
   AnaVertexB* Vertex;
 
-  /// The MainTrack (te beam particle in general)
+  /// The MainTrack (the beam particle in general)
   AnaParticlePD* MainTrack;
 
   // Distance from the MainTrack to its daughters

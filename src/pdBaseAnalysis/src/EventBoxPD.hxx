@@ -4,14 +4,20 @@
 #include "BaseDataClasses.hxx"
 #include "EventBoxUtils.hxx"
 
+/*
+  The EventBox is used to store objects that are use many times when processing a single event, and 
+  are not directly available in the event model. For example if we need a subsample of particles, this can be stored 
+  in this box  
+ */ 
+
 
 class EventBoxPD:public EventBoxB{
  public :
 
   enum RecObjectGroupEnum{
     kTracksUnassigned=0,
-    kCandidateAndDaughters,
-    kAllTracks,      // All tracks
+    kCandidateAndDaughters,  // Beam particle and its daughters tracks
+    kAllTracks,       // All tracks
     kLongTracks,      // Tracks with more than 20 hits
     kLongTracksInFV   // Tracks with more than 20 hits in FV    
   };
