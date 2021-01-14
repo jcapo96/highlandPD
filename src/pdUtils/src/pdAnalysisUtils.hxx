@@ -1,11 +1,13 @@
 #ifndef pdAnalysisUtils_h
 #define pdAnalysisUtils_h
 
+#include "ParticleId.hxx"
 #include "CutUtils.hxx"
 #include "ToyBoxPD.hxx"
 #include "EventBoxId.hxx"
 #include "pdDataClasses.hxx"
 #include "TProfile.h"
+
 
 struct PossibleParticleCands2 {
 
@@ -16,7 +18,7 @@ struct PossibleParticleCands2 {
       bool kaon = false;
       bool proton = false;
       bool deuteron = false;
-
+  
   enum beamPDG2{
     kElectron = 11,
     kMuon = 13,
@@ -30,35 +32,34 @@ struct PossibleParticleCands2 {
 
   /*
     inline PossibleParticleCands operator&&(const PossibleParticleCands & b) const {
-      return {electron && b.electron, muon && b.muon, pion && b.pion, kaon && b.kaon, proton && b.proton, deuteron && b.deuteron};
+    return {electron && b.electron, muon && b.muon, pion && b.pion, kaon && b.kaon, proton && b.proton, deuteron && b.deuteron};
     }
     inline PossibleParticleCands operator||(const PossibleParticleCands & b) const {
-        return {electron || b.electron, muon || b.muon, pion || b.pion, kaon || b.kaon, proton || b.proton, deuteron || b.deuteron};
+    return {electron || b.electron, muon || b.muon, pion || b.pion, kaon || b.kaon, proton || b.proton, deuteron || b.deuteron};
     }
-    */
-    inline operator std::string () const { // overload cast to string
-        std::string result = "PossibleParticleCands: [ ";
-        if (electron) result += "e ";
-        if (muon) result += "mu ";
-        if (pion) result += "pi ";
-        if (kaon) result += "k ";
-        if (proton) result += "p ";
-        if (deuteron) result += "e ";
-        result += "]";
-        return result;
-    }
-    inline std::vector<int> getPDGCodes() const {
-        std::vector<int> result;
-        if (electron) result.push_back(kElectron);
-        if (muon) result.push_back(kMuon);
-        if (pion) result.push_back(kPion);
-        if (kaon) result.push_back(kKaon);
-        if (proton) result.push_back(kProton);
-        if (deuteron) result.push_back(kDeuteron);
-        return result;
-    }
-  };
-
+  */
+  inline operator std::string () const { // overload cast to string
+    std::string result = "PossibleParticleCands: [ ";
+    if (electron) result += "e ";
+    if (muon) result += "mu ";
+    if (pion) result += "pi ";
+    if (kaon) result += "k ";
+    if (proton) result += "p ";
+    if (deuteron) result += "e ";
+    result += "]";
+    return result;
+  }
+  inline std::vector<int> getPDGCodes() const {
+    std::vector<int> result;
+    if (electron) result.push_back(kElectron);
+    if (muon)     result.push_back(kMuon);
+    if (pion)     result.push_back(kPion);
+    if (kaon)     result.push_back(kKaon);
+    if (proton)   result.push_back(kProton);
+    if (deuteron) result.push_back(kDeuteron);
+    return result;
+  }
+};
 
 namespace pdAnaUtils{
 
