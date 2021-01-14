@@ -1,5 +1,5 @@
 /*
-   converter for DUNE AnaTree input format
+   converter for trees created by the official PionAnalyzer module
 
    A. Cervera February 2020
 */

@@ -1,7 +1,7 @@
 /*
-   converter for DUNE AnaTree input format
+   converter for trees created by the PionAnalyzer module, with some extra info related to hits
 
-   A. Cervera February 2020
+   A. Cervera November 2020
 */
 
 #ifndef hitPionTreeConverter_h
