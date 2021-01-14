@@ -34,7 +34,7 @@ public:
         else { return nullptr; }
     }
 
-    ~Graph();
+  ~Graph(){};  // anselmo
 
     std::vector<float> run(const std::vector< std::vector<float> > & x);
 

@@ -26,7 +26,7 @@
 namespace calo {
 
 bool debug=false;
-  
+
   // From PionAnalizer_module otput
   Int_t trigger_offset()
   {
@@ -147,9 +147,9 @@ bool debug=false;
     //    double const dQdx_e = dQdx / fADCtoEl; // Conversion from ADC/cm to e/cm
 
 
-    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
+    //    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
     //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
-    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
+    //    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
 
    
     // dq/dx should be in e/cm

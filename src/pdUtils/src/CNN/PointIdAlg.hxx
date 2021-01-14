@@ -348,17 +348,18 @@ private:
     detinfo::DetectorPropertiesData const& detProp,
     const std::unordered_map<int, const simb::MCParticle*>& particleMap,
     unsigned int plane) const;
-
+  /*
   static float
   particleRange2(const simb::MCParticle& particle)
   {
-    /*
+    
     float dx = particle.EndX() - particle.Vx();
     float dy = particle.EndY() - particle.Vy();
     float dz = particle.EndZ() - particle.Vz();
     return dx * dx + dy * dy + dz * dz;
 
-    */  }
+  }
+  */
   bool isElectronEnd(const simb::MCParticle& particle,
                      const std::unordered_map<int, const simb::MCParticle*>& particleMap) const;
 

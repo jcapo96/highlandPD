@@ -101,8 +101,8 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
   auto wireHandle = evt.getValidHandle< std::vector<my_recob::Wire> >(fWireProducerLabel);
   */
 
-  detinfo::DetectorClocksData clockData;
-  detinfo::DetectorPropertiesData detProp;
+  //  detinfo::DetectorClocksData clockData;
+  //  detinfo::DetectorPropertiesData detProp;
 
   //  std::vector<my_recob::Wire> wireHandle;
   //  FillWires(evt,wireHandle);
@@ -189,7 +189,7 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
                     }
                     for (size_t k = 0; k < points.size(); ++k)
                     {
-                        size_t h = keys[k];
+                      //                        size_t h = keys[k];  // anselmo
                         //                        fMVAWriter.setOutput(hitID, h, batch_out[k]);   // anselmo
                         if (debug_level>=2) std::cout << "  EmTrackMichelId.cxx: points[k].first, points[k].second = "<<  points[k].first << " " << points[k].second << std::endl;
                         if (fPointIdAlg.isInsideFiducialRegion(points[k].first, points[k].second))

@@ -193,9 +193,7 @@ public:
 
 
   
-  std::vector<std::vector<float>>
-  getPatch(size_t wire, float drift, size_t patchSizeW, size_t patchSizeD) const
-  {
+  std::vector<std::vector<float>> getPatch(size_t wire, float drift, size_t patchSizeW, size_t patchSizeD) const {
     bool ok = false;
     std::vector<std::vector<float>> patch;
     if (fDownscaleFullView) {
