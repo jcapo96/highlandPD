@@ -58,13 +58,33 @@ message("HighLAND_USE_FILE:            ${HIGHLAND_USE_FILE}")
 message("HighLAND include directories: ${HIGHLAND_INCLUDE_DIRS}")
 message("HighLAND libraries:           ${HIGHLAND_LIBRARIES}")
 
+#------ TENSORFLOW------------------
+find_package(TENSORFLOW REQUIRED)
+
+message("TENSORFLOW include directories: ${TENSORFLOW_INCLUDE_DIRS}")
+message("TENSORFLOW libraries:           ${TENSORFLOW_LIBRARIES}")
+
+#------ PROTOBUF------------------
+find_package(PROTOBUF REQUIRED)
+
+message("PROTOBUF include directories: ${PROTOBUF_INCLUDE_DIRS}")
+message("PROTOBUF libraries:           ${PROTOBUF_LIBRARIES}")
+
+#------ EIGEN------------------
+find_package(EIGEN REQUIRED)
+
+message("EIGEN include directories: ${EIGEN_INCLUDE_DIRS}")
+message("EIGEN libraries:           ${EIGEN_LIBRARIES}")
+
+
 #-------------------------------------------------------
 #----- include directories -----------------------------
 #-------------------------------------------------------
 
 file(GLOB highlandPD_inc ${CMAKE_SOURCE_DIR}/src/*/src
+                         ${CMAKE_SOURCE_DIR}/src/*/src/CNN
                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections ${CMAKE_SOURCE_DIR}/src/*/src/systematics
-                         ${LARSOFTREADER_DIR} ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}
+#                         ${LARSOFTREADER_DIR} ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}
                          ${CMAKE_BINARY_DIR}/dict)
 
 include_directories(${highlandPD_inc})
@@ -92,15 +112,15 @@ foreach(file0 ${dict_src})
   INSTALL(FILES "${CMAKE_BINARY_DIR}/lib${file3}.rootmap"   DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 endforeach(file0)
 
-  root_generate_dictionary(dict/LArSoftReaderProjectDict
-                           NODEPHEADERS LArSoftReaderProjectHeaders.h
+#  root_generate_dictionary(dict/LArSoftReaderProjectDict
+##                           NODEPHEADERS LArSoftReaderProjectHeaders.h
 #                           ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectHeaders.h
-                           LINKDEF ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderLinkDef.h
-                           MODULE LArSoftReader
-                           DEPENDENCIES ${ROOT_LIBRARIES})
-  list(APPEND dict_list ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx dict/LArSoftReaderProjectDict.cxx)
-  INSTALL(FILES "${CMAKE_BINARY_DIR}/libLArSoftReader_rdict.pcm" DESTINATION ${CMAKE_SOURCE_DIR}/lib)
-  INSTALL(FILES "${CMAKE_BINARY_DIR}/libLArSoftReader.rootmap"   DESTINATION ${CMAKE_SOURCE_DIR}/lib)
+#                           LINKDEF ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderLinkDef.h
+#                           MODULE LArSoftReader
+#                           DEPENDENCIES ${ROOT_LIBRARIES})
+#  list(APPEND dict_list ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx dict/LArSoftReaderProjectDict.cxx)
+#  INSTALL(FILES "${CMAKE_BINARY_DIR}/libLArSoftReader_rdict.pcm" DESTINATION ${CMAKE_SOURCE_DIR}/lib)
+#  INSTALL(FILES "${CMAKE_BINARY_DIR}/libLArSoftReader.rootmap"   DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 
 
 #-------------------------------------------------------
@@ -108,12 +128,15 @@ endforeach(file0)
 #-------------------------------------------------------
 
 file(GLOB highlandPD_src  ${CMAKE_SOURCE_DIR}/src/*/src/*.cxx
-                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.cxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.cxx 
-                          ${LARSOFTREADER_DIR}/LArSoft*.cxx
-                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
+                          ${CMAKE_SOURCE_DIR}/src/*/src/CNN/*.cxx
+                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.cxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.cxx) 
+#                          ${LARSOFTREADER_DIR}/LArSoft*.cxx
+#                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
 
 add_library(highlandPD SHARED ${dict_src} ${highlandPD_src} ) 
-target_include_directories(highlandPD PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_include_directories(highlandPD PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc} ${TENSORFLOW_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
+
+
 target_link_libraries(highlandPD ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES})
 INSTALL(TARGETS highlandPD DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 
@@ -124,9 +147,10 @@ set(HIGHLAND_PD_LIBRARIES "-L${CMAKE_BINARY_DIR} -lhighlandPD")
 #-------------------------------------------------------
 
 file(GLOB highlandPD_inc2 ${CMAKE_SOURCE_DIR}/src/*/src/*.hxx
-                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.hxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.hxx 
-                          ${LARSOFTREADER_DIR}/*.hxx
-                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/*.h)
+                          ${CMAKE_SOURCE_DIR}/src/*/src/CNN/*.hxx
+                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.hxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.hxx) 
+#                          ${LARSOFTREADER_DIR}/*.hxx
+#                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/*.h)
 
 foreach(file0 ${highlandPD_inc2})
    INSTALL(FILES ${file0} DESTINATION ${CMAKE_SOURCE_DIR}/include)
@@ -158,6 +182,7 @@ INSTALL(TARGETS proton.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(dedx.exe ${CMAKE_SOURCE_DIR}/src/pdStudies/app/RundEdxStudies.cxx)
 target_include_directories(dedx.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+#target_link_libraries(dedx.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 target_link_libraries(dedx.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
 INSTALL(TARGETS dedx.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
@@ -170,7 +195,7 @@ INSTALL(TARGETS dedx.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 add_custom_target(highlandPD_dicts ALL SOURCES ${dict_list})
 
 # target to change the library name in the rootmap files
-#add_custom_target(ch_rootmap COMMAND ${CMAKE_SOURCE_DIR}/scripts/chrootmap ${CMAKE_BINARY_DIR})
+add_custom_target(ch_rootmap COMMAND ${CMAKE_SOURCE_DIR}/scripts/chrootmap ${CMAKE_BINARY_DIR})
 
 # target to install header files in the include folder
 add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
@@ -183,7 +208,8 @@ add_dependencies(dedx.exe CreateMiniTreePionAna.exe )
 add_dependencies(CreateMiniTreePionAna.exe proton.exe)
 add_dependencies(proton.exe                pion.exe)
 add_dependencies(pion.exe                  highlandPD)
-add_dependencies(highlandPD                highlandPD_dicts)
+add_dependencies(highlandPD                ch_rootmap)
+add_dependencies(ch_rootmap                highlandPD_dicts)
 add_dependencies(highlandPD_dicts          include)
 
 #-------------------------------------------------------
