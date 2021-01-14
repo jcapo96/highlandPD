@@ -4,6 +4,16 @@
 #include "pionAnalysisUtils.hxx"
 #include "pandoraPreselection.hxx"
 
+/*
+  This file contains:
+  - the method DefineSteps in which actions and cuts are added to the selection in the right order. 
+  - the implementation of each of the steps
+  - the method InitializeEvent, in which the EventBox is created. This box is used to make a subsample 
+    of event objects (Particles, hits, etc), which are frequently needed, such that we don't have to create 
+    the subsample for every toy experiment dusing systematic propagation
+ */
+
+
 //********************************************************************
 pionSelection::pionSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
 //********************************************************************
@@ -34,14 +44,17 @@ void pionSelection::DefineSteps(){
 
   //First branch is for pi0 showers
   AddStep(0, StepBase::kCut, "pi0 showers",        new PionCexCut());
+
   //Second branch is for pi absortion
   AddStep(1, StepBase::kCut, "pi absorption",      new PionAbsorptionCut());
 
-  // Set the branch aliases to the three branches
+  // Set the branch aliases to the three branches 
   SetBranchAlias(0,"pi0 shower",     0);
   SetBranchAlias(1,"pi absorption",  1);
 
-  // No preselection for the moment
+  // This number tells the selection to stop when a given accum level (accumulated cut level) is not passed. For example, 2 as argument would mean
+  // that selection is stopped for the current toy experiment when the third cut (numbering starts at 0) is not passed. This is a way of saving time.
+  // -1 means no preselection
   SetPreSelectionAccumLevel(-1);
 }
 
@@ -146,10 +159,10 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   return noPion;  
 }
 
-/*//**************************************************
-bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-
+//bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+/*
   (void)event;
   Float_t cut_daughter_track_distance = 10;
   Float_t cut_CNNTrackScore = 0.35;

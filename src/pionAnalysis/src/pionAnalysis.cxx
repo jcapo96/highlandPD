@@ -31,10 +31,10 @@
 /*
   A highland Analysis inherits in ultimate instance from AnalysisAlgorithm. 
   In this particular case an intermediate class baseAnalysis is used, 
-  which does all the work that is common for DUNE analysis 
+  which does all the work that is common for ProtoDUNE analysis 
   Then pionAnalysis inherits from baseAnalysis, which inherits from AnalysisAlgorithm.
   
-  The class that does the loops (over events, over toys, etc) is AnalysisLoop (under highlandTools). 
+  The class that does the loops (over events, over toys, etc) is AnalysisLoop (under highland/src/highland/highlandTools/src). 
   There you can see the analysis flow, which is as follows
 
   LOOP over Spills{
@@ -129,7 +129,7 @@ bool pionAnalysis::Initialize(){
   anaUtils::AddStandardCategories();        // This is for the candidate particle
   anaUtils::AddStandardCategories("beam");  // This is for the Beam Instrumentation particle
 
-  // Add our own categories
+  // Add our own categories (in pionAnalysisUtils.cxx)
   pionAnaUtils::AddCustomCategories();
 
   return true;
@@ -139,6 +139,10 @@ bool pionAnalysis::Initialize(){
 void pionAnalysis::DefineInputConverters(){
 //********************************************************************
 
+  /*  InputConverters are the objects that read the input file (any format) and fill the internal highland event model.
+      The user can write its own converter for a given input file type. 
+   */
+  
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
   input().AddConverter("minitree",       new HighlandMiniTreeConverter("kaonana/MiniTree"));
@@ -193,6 +197,10 @@ void pionAnalysis::DefineCorrections(){
 void pionAnalysis::DefineSystematics(){
 //********************************************************************
 
+  /* There are two types of systematic propagation methods: variations and weights, which are added to two different managers 
+     The EventVariationManager (access with evar()) and the EventWeightManager (access with eweight()).     
+   */
+  
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
@@ -200,6 +208,7 @@ void pionAnalysis::DefineSystematics(){
   evar().AddEventVariation(kdEdx,    "dEdx",     new dEdxVariation());
   evar().AddEventVariation(kLength,  "Length",   new LengthVariation());
   evar().AddEventVariation(kLifetime,"Lifetime", new LifetimeVariation());
+
   eweight().AddEventWeight(kBeam,    "beamComp", new BeamCompositionWeight());
 }
 
@@ -215,7 +224,6 @@ void pionAnalysis::DefineConfigurations(){
   baseAnalysis::DefineConfigurations();
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
-
   if (_enableAllSystConfig){
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdx"))             conf().EnableEventVariation(kdEdx,         all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
@@ -229,7 +237,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
 
   /*  We call Micro-trees to the standard analysis trees appearing in the output file. 
-      There is always a Micro-Tree call "ana" which should contain the basic info to understand our selection. 
+      There is always a Micro-Tree called "ana" which should contain the basic info to understand our selection. 
       The user can add extra Micro-Trees by adding configurations to the analysis (see DefineConfigurations method above).
 
       Here we give an example of different variables that can be added. Have a look at highland/src/highland2/highlandTools/src/OutputManager.hxx
@@ -241,7 +249,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
-  // Add standard sets of variables for PD analysis
+  // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::AddStandardVariables_CountersTrue(output());  
   standardPDTree::AddStandardVariables_BeamReco(output());
   standardPDTree::AddStandardVariables_BeamTrue(output());
@@ -253,7 +261,8 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   standardPDTree::AddStandardVariables_AllParticlesReco(output(),NMAXSAVEDPARTICLES);
   standardPDTree::AddStandardVariables_AllParticlesTrue(output(),NMAXSAVEDPARTICLES);
 
-  // Additional variables
+  // -------- Add additional variables to the analysis tree ----------------------
+  
   AddVarF(  output(), seltrk_truebeta,    "candidate true beta");
   AddVarF(  output(), seltrk_truemom_tpc, "candidate true momentum at TPC entrance");
   AddVarF(  output(), seltrk_kinetic,     "candidate kinetic energy");
@@ -272,7 +281,6 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarF(      output(), seltrk_chi2_ndf,        "candidate chi2 ndf");
   AddToyVarF(      output(), seltrk_hit0_dedx,       "candidate dedx variated");
   AddToyVarF(      output(), seltrk_truncLibo_dEdx,  "candidate truncated libo variated");
-
   
   seltrk_ndau = standardPDTree::seltrk_ndau;
   AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
@@ -295,7 +303,7 @@ void pionAnalysis::DefineTruthTree(){
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineTruthTree();
 
-  // Add standard sets of variables for PD analysis
+  // Add standard sets of variables for ProtoDUNE analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::AddStandardVariables_CountersTrue(output());
   standardPDTree::AddStandardVariables_BeamTrue(    output());
 
@@ -326,7 +334,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
 
-  // Fill standard variables for the PD analysis
+  // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::FillStandardVariables_CountersTrue(     output(), _globalCounters);  
   standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
@@ -434,7 +442,7 @@ bool pionAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 
   (void) vtx; // to avoid warning for unused vtx variable
   
-  // fill it allways
+  // fill it allways for the moment
   return true;
 }
 
@@ -445,7 +453,7 @@ void pionAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
   // Fill the common variables (highland/src/highland2/baseAnalysis)
   baseAnalysis::FillTruthTreeBase(vtx);
 
-  // Fill standard variables for the PD analysis
+  // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::FillStandardVariables_CountersTrue(output(), _globalCounters);
   standardPDTree::FillStandardVariables_BeamTrue(    output(), GetSpill().Beam);
 
@@ -457,21 +465,21 @@ void pionAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 void pionAnalysis::FillCategories(){
 //********************************************************************
 
-  /* This method fills the micro-tree variables related with trackevent/object categories for color drawing. 
+  /* This method fills the micro-tree variables related with event/object categories for color drawing. 
      Those variables are added automatically (no need to explicitely add them in DefineMicroTrees) to the 
-     micro-trees, but must be filled by the analyser, provided the event and the relevant track 
+     micro-trees, but must be filled by the analyser, provided the event and the relevant object 
 
      If this method is not implemented, the one from the base class (baseAnalysis::FillCategories()) will be called.      
   */
 
   // For the candidate
   if (box().MainTrack){
-    anaUtils::FillCategories(          &GetEvent(), box().MainTrack,"");
-    pionAnaUtils::FillCustomCategories(&GetEvent(), box().MainTrack, _globalCounters);
+    anaUtils::FillCategories(          &GetEvent(), box().MainTrack,""); // method in highland/src/highland2/highlandUtils
+    pionAnaUtils::FillCustomCategories(&GetEvent(), box().MainTrack, _globalCounters); 
   }
 
   // For the beam track
   AnaParticleB* beamPart = static_cast<AnaBeam*>(GetSpill().Beam)->BeamParticle;
-  if (beamPart) anaUtils::FillCategories(&GetEvent(), beamPart, "beam");
+  if (beamPart) anaUtils::FillCategories(&GetEvent(), beamPart, "beam"); // method in highland/src/highland2/highlandUtils
 }
 
