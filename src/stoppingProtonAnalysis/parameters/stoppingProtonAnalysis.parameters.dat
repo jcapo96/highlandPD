@@ -8,17 +8,18 @@ or the all systematics configuration (when EnableAllSystematics = 0)
 need to be enabled in baseAnalysis parameter file
 
  < stoppingProtonAnalysis.Systematics.EnabledEdx              = 0 >
- < stoppingProtonAnalysis.Systematics.EnableHit               = 1 >	
+ < stoppingProtonAnalysis.Systematics.EnableHit               = 0 >	
 
 
 --- Corrections -----------
 
  < stoppingProtonAnalysis.Corrections.EnabledEdx             = 0 >
- < stoppingProtonAnalysis.Corrections.EnabledEdxData         = 1 >
- < stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData = 1 >  
+ < stoppingProtonAnalysis.Corrections.EnabledEdxData         = 0 >
+ < stoppingProtonAnalysis.Corrections.EnabledBrokenTrackData = 0 >  
  < stoppingProtonAnalysis.Corrections.EnabledBeamMom         = 0 >   
- < stoppingProtonAnalysis.Corrections.EnabledBeamMomSmearing = 1 >    
- < stoppingProtonAnalysis.Corrections.EnabledCryoWallBeamMom = 1 >   
+ < stoppingProtonAnalysis.Corrections.EnabledBeamMomSmearing = 0 >    
+ < stoppingProtonAnalysis.Corrections.EnabledCryoWallBeamMom = 0 >   
+ < stoppingProtonAnalysis.Corrections.EnabledHitPositionSCE  = 0 >
 
 --- Other Parameters -----------
 
