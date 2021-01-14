@@ -19,7 +19,7 @@
 
 #include "pionTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
-#include "LArSoftTreeConverter.hxx"
+//#include "LArSoftTreeConverter.hxx"
 
 #include "baseToyMaker.hxx"
 
@@ -133,7 +133,7 @@ void stoppingProtonAnalysis::DefineInputConverters(){
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new pionTreeConverter());
   input().AddConverter("minitree",       new HighlandMiniTreeConverter("kaonana/MiniTree"));
-  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
+  //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
 //********************************************************************

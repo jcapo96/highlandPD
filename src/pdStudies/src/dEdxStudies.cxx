@@ -8,7 +8,7 @@
 
 #include "hitPionTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
-#include "LArSoftTreeConverter.hxx"
+//#include "LArSoftTreeConverter.hxx"
 #include "pandoraPreselection.hxx"
 
 
@@ -57,7 +57,7 @@ void dEdxStudies::DefineInputConverters(){
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
   input().AddConverter("minitree",       new HighlandMiniTreeConverter("kaonana/MiniTree"));
-  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
+  //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
 //********************************************************************
