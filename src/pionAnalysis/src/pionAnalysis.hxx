@@ -107,8 +107,6 @@ public:
     enumSystLast_pionAnalysis
   };
   
-
-
 };
 
 #endif
