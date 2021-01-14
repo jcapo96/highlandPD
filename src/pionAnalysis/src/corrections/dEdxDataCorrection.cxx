@@ -44,7 +44,7 @@ void dEdxDataCorrection::Apply(AnaSpillC& spillC){
       if (!original) continue; //?
 
       for (Int_t i=2;i<3;i++){
-        for (Int_t j=0;j<part->Hits[i].size();j++){
+        for (UInt_t j=0;j<part->Hits[i].size();j++){
           if (part->Hits[i][j].dQdx<0.1) continue;  // Protection against crazy values
           part->Hits[i][j].dQdx = ComputeCalibratedDqDx(original->Hits[i][j].dQdx,original->Hits[i][j].Position.X());
           part->Hits[i][j].dEdx = pdAnaUtils::ComputeDeDxFromDqDx(part->Hits[i][j].dQdx, i);

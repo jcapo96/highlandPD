@@ -474,7 +474,7 @@ img::DataProviderAlg::setWireDriftData(detinfo::DetectorClocksData const& clock_
 
     //    for (auto const& id : fGeometry->ChannelToWire(wireChannelNumber)) {  // anselmo ChannelToWire returns std::vector<geo::WireID>
     for (auto const& id : ChannelToWire(wireChannelNumber)) { 
-      if ((id.Plane == plane) && (id.TPC == tpc) && (id.Cryostat == cryo)) {
+      if (((UInt_t)id.Plane == plane) && ((UInt_t)id.TPC == tpc) && ((UInt_t)id.Cryostat == cryo)) {
         w_idx = id.Wire;
         auto adc = wire.Signal();
         if (debug_level>=3) std::cout << wspaces(6) << "DataProviderAlg::setWireDriftData. Found wireID in required TPC,cryo and plane. w_idx, adc.size() = " << w_idx << " " << adc.size()<< std::endl;   

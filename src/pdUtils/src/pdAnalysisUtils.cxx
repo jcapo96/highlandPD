@@ -624,7 +624,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
     return std::make_pair(9999., -1);
   
   //Ignore first and last point
-  for( Int_t i = 1; i < part.Hits[plane].size()-1; ++i ){
+  for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
     //Skip large pulse heights
     if( part.Hits[plane][i].dEdx_corr > 1000. )
       continue;

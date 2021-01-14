@@ -313,7 +313,7 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
       std::vector<std::vector<AnaHitPD> > hitsFromTracks;
       std::vector<std::vector<AnaHitPD> > trkHitPtrList;
 
-      for (UInt_t i=0;i<evt.nParticles;i++){
+      for (Int_t i=0;i<evt.nParticles;i++){
         AnaParticlePD* part = static_cast<AnaParticlePD*>(evt.Particles[i]);
         my_recob::Track track(*part);
         trkListHandle.push_back(track);
@@ -346,7 +346,7 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
             if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: best view (new) = " << best_view << std::endl; 
             for (auto const & hptr : v)
             {
-                if (hptr.View == best_view) trkHitPtrList[t].emplace_back(hptr);
+	      if ((UInt_t)hptr.View == best_view) trkHitPtrList[t].emplace_back(hptr);
             }
 
             if (debug_level>=1) std::cout << " EmTrackMichelId.cxx: trkHitPtrList[t].size() = " << trkHitPtrList[t].size() << std::endl; 
@@ -414,7 +414,7 @@ void nnet::EmTrackMichelId::FillHits(const AnaEventPD& evt, std::vector<AnaHitPD
 
   
   if (debug_level>=0) std::cout << "EmTrackMichelId.cxx: #parts "<< evt.nParticles << std::endl;  
-  for (UInt_t i=0;i<evt.nParticles/2+1;i++){
+  for (Int_t i=0;i<evt.nParticles/2+1;i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(evt.Particles[i]);
 
     std::cout << "ANSELMO: particle " << i << " --> #hits = " << part->Hits[2].size() << std::endl;       

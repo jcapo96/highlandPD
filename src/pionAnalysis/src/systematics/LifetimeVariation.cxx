@@ -56,7 +56,7 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     
     // Apply the variation to the evnt model quantities
     for (Int_t i=2;i<3;i++){
-      for (Int_t j=0;j<part->Hits[i].size();j++){
+      for (UInt_t j=0;j<part->Hits[i].size();j++){
 
         AnaHitPD& hit = part->Hits[i][j];
 

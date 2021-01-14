@@ -357,31 +357,29 @@ void dEdxStudies::FilldEdxInfo(AnaParticlePD* part){
     if (debug)
       std::cout << "ALL RESULTS: " << hit.dEdx << " " << dedx_2 <<  " " << dedx_3 <<  " " << dedx_4 << std::endl;
 
-      output().FillVectorVar(seltrk_hit_dedx_0, hit.dEdx);
-      output().FillVectorVar(seltrk_hit_dedx_1, dedx_2);
-      output().FillVectorVar(seltrk_hit_dedx_2, dedx_3);
-      output().FillVectorVar(seltrk_hit_dedx_3, dedx_4);
-
-      output().FillVectorVar(seltrk_hit_dedx_0_cal, hit.dEdx_corr);
-
-
-      output().FillVectorVar(seltrk_hit_dqdx_0, hit.dQdx);
-
-
-
-      output().FillVectorVar(seltrk_hit_dqdx_3, hit.Integral/pitch3D);
-
-
-      Float_t cal_dQdx_e = pdAnaUtils::ComputeCalibrateddQdX(hit.Integral/pitch3D, hit.Position);
-      output().FillVectorVar(seltrk_hit_dqdx_3_cal, cal_dQdx_e);      
-
-      output().FillVectorVar(seltrk_hit_time,     (Float_t)hit.PeakTime);
-      output().FillVectorVar(seltrk_hit_integral, (Float_t)hit.Integral);
-      output().FillVectorVar(seltrk_hit_amplitude,(Float_t)hit.PeakAmplitude);
-      output().FillVectorVar(seltrk_hit_pitch3D,  (Float_t)pitch3D);
-      
-      output().IncrementCounter(seltrk_nhits);
-      
-
+    output().FillVectorVar(seltrk_hit_dedx_0, hit.dEdx);
+    output().FillVectorVar(seltrk_hit_dedx_1, dedx_2);
+    output().FillVectorVar(seltrk_hit_dedx_2, dedx_3);
+    output().FillVectorVar(seltrk_hit_dedx_3, dedx_4);
+    
+    output().FillVectorVar(seltrk_hit_dedx_0_cal, hit.dEdx_corr);
+    
+    
+    output().FillVectorVar(seltrk_hit_dqdx_0, hit.dQdx);
+    
+    
+    
+    output().FillVectorVar(seltrk_hit_dqdx_3, hit.Integral/pitch3D);
+    
+    
+    Float_t cal_dQdx_e = pdAnaUtils::ComputeCalibrateddQdX(hit.Integral/pitch3D, hit.Position);
+    output().FillVectorVar(seltrk_hit_dqdx_3_cal, cal_dQdx_e);      
+    
+    output().FillVectorVar(seltrk_hit_time,     (Float_t)hit.PeakTime);
+    output().FillVectorVar(seltrk_hit_integral, (Float_t)hit.Integral);
+    output().FillVectorVar(seltrk_hit_amplitude,(Float_t)hit.PeakAmplitude);
+    output().FillVectorVar(seltrk_hit_pitch3D,  (Float_t)pitch3D);
+    
+    output().IncrementCounter(seltrk_nhits);    
   }
 }
