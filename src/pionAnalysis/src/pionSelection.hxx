@@ -1,7 +1,6 @@
 #ifndef pionSelection_h
 #define pionSelection_h
 
-//#include "duneExampleSelection.hxx"
 #include "SelectionBase.hxx"
 #include "Parameters.hxx"
 #include "ToyBoxPD.hxx"
@@ -9,6 +8,12 @@
 #include "EventBoxId.hxx"
 #include "SystId.hxx"
 #include "SubDetId.hxx"
+
+/* 
+   This file contains the Pion Selection developed b J. Calcutt and F. Stocker, relized in the class pionSelection, which is a collection of steps (StepBase class). 
+   The steps (cuts or actions) are added to the pionSelection class in the source file. 
+*/
+
 
 class pionSelection: public SelectionBase{
  public:
@@ -31,6 +36,7 @@ class pionSelection: public SelectionBase{
 
 protected:
 
+  // TODO. Not used
   Int_t _PionRangeCutIndex;
   Int_t _PionRangeStepIndex;
 };
