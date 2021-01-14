@@ -11,6 +11,13 @@
 #include "EmTrackMichelId.hxx"
 
 
+/*
+
+  This analysis algorithm is used to fill a tree with dEdx related variables computed in different ways, used for comparisons
+
+ */
+
+
 class dEdxStudies: public baseAnalysis {
  public:
   dEdxStudies(AnalysisAlgorithm* ana=NULL);
