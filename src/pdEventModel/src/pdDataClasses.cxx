@@ -404,26 +404,6 @@ AnaSpillPD::AnaSpillPD(const AnaSpillPD& spill):AnaSpill(spill){
 void AnaSpillPD::RedoLinks(){
 //********************************************************************
 
-  // Fill the vector of pointers for the Daugthers of each particle using the IDs
-
-  std::vector<AnaBunchC*> allBunches = Bunches;
-  if (OutOfBunch) allBunches.push_back(OutOfBunch);
-  
-  for (UInt_t i=0;i<allBunches.size();i++){
-    AnaBunchB* bunch = static_cast<AnaBunchB*>(allBunches[i]);
-    
-    for (UInt_t j=0;j<bunch->Particles.size();j++){
-      AnaParticle* part = static_cast<AnaParticle*>(bunch->Particles[j]);
-
-      part->DaughtersIDs.clear();
-      for (UInt_t k=0;k<part->DaughtersIDs.size();k++){
-        AnaParticleB* dau = anaUtils::GetParticleByID(*bunch, part->DaughtersIDs[k]);
-        if (dau)  part->Daughters.push_back(dau);
-      }      
-    }
-  }
-
-
   for (size_t wi=0;wi<reduced_adc_cnn_map_wires.size();wi++){
     Int_t wire = reduced_adc_cnn_map_wires[wi];
     Int_t t0   = reduced_adc_cnn_map_times[wi];
@@ -433,6 +413,8 @@ void AnaSpillPD::RedoLinks(){
     }
   }
 
+  // Redo the links in the bae class
+  AnaSpill::RedoLinks();    
 }
 
 //********************************************************************
