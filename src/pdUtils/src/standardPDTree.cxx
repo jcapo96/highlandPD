@@ -391,7 +391,7 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
   
   for (UInt_t j = 0; j < dau->Hits[2].size(); j++){  
     output.FillMatrixVar(seltrk_dau_hit_dedx,      dau->Hits[2][j].dEdx, -1, j);
-    output.FillMatrixVar(seltrk_dau_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(dau->Original->Original->Original)->Hits[2][j].dQdx, -1, j);  
+    //output.FillMatrixVar(seltrk_dau_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(dau->Original->Original->Original)->Hits[2][j].dQdx, -1, j);  
     output.FillMatrixVar(seltrk_dau_hit_resrange,  dau->Hits[2][j].ResidualRange, -1, j);
   }
 }
