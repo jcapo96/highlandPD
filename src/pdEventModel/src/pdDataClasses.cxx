@@ -1,6 +1,7 @@
 #define pdDataClasses_C
 
 #include "pdDataClasses.hxx"
+#include "AnalysisUtils.hxx"
 
 
 // define a constant value for uninitialised parameters
@@ -67,8 +68,6 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   dEdx_corr      = hit.dEdx_corr;
   dQdx_corr      = hit.dQdx_corr;
   ResidualRange  = hit.ResidualRange;
-
-
 }
 
 //********************************************************************
@@ -85,9 +84,7 @@ void AnaHitPD::Print() const{
   std::cout << "PeakTime:      " << PeakTime      << std::endl;
   std::cout << "PeakAmplitude: " << PeakAmplitude << std::endl;
   std::cout << "Position:      " << "( " << Position.X() << ", " << Position.Y() << ", " << Position.Z() << ")" << std::endl;
-
 }
-
 
 //********************************************************************
 AnaParticlePD::AnaParticlePD():AnaParticle(){
@@ -233,11 +230,8 @@ void AnaParticlePD::Print() const{
   
   std::cout << "RangeMomentum:           " << RangeMomentum[0] << " " << RangeMomentum[1] << std::endl;
 
-  std::cout << "Stored hits in plane 2:  " << Hits[2].size() << std::endl;
-
-    
+  std::cout << "Stored hits in plane 2:  " << Hits[2].size() << std::endl;    
 }
-
 
 //********************************************************************
 AnaTrueParticlePD::AnaTrueParticlePD():AnaTrueParticle(){
@@ -284,9 +278,7 @@ void AnaTrueParticlePD::Print() const{
   std::cout << "Matched:               " << Matched << std::endl; 
   std::cout << "LengthInTPC:           " << LengthInTPC << std::endl;
   std::cout << "MomentumInTPC:         " << MomentumInTPC << std::endl;
-
 }
-
 
 //********************************************************************
 AnaBeamPD::AnaBeamPD(){
@@ -347,8 +339,7 @@ AnaBeamPD::AnaBeamPD(const AnaBeamPD& beam):AnaBeam(beam){
 
   PDGs.clear();
   for (UInt_t i=0; i<beam.PDGs.size(); i++)
-    PDGs.push_back(beam.PDGs[i]);
-  
+    PDGs.push_back(beam.PDGs[i]);  
 }
 
 //********************************************************************
@@ -375,8 +366,6 @@ void AnaBeamPD::Print() const{
 
 }
 
-
-
 //********************************************************************
 AnaSpillPD::AnaSpillPD():AnaSpill(){
 //********************************************************************
@@ -384,8 +373,7 @@ AnaSpillPD::AnaSpillPD():AnaSpill(){
   ADC.clear();
   ADC.resize(15480);
   for (size_t w=0;w<ADC.size();w++)
-    ADC[w].resize(6000,0);
-  
+    ADC[w].resize(6000,0);  
 }
 
 //********************************************************************
@@ -402,6 +390,30 @@ AnaSpillPD::AnaSpillPD(const AnaSpillPD& spill):AnaSpill(spill){
 }
 
 //********************************************************************
+void AnaSpillPD::RedoLinks(){
+//********************************************************************
+
+  // Fill the vector of pointers for the Daugthers of each particle using the IDs
+
+  std::vector<AnaBunchC*> allBunches = Bunches;
+  if (OutOfBunch) allBunches.push_back(OutOfBunch);
+  
+  for (UInt_t i=0;i<allBunches.size();i++){
+    AnaBunchB* bunch = static_cast<AnaBunchB*>(allBunches[i]);
+    
+    for (UInt_t j=0;j<bunch->Particles.size();j++){
+      AnaParticle* part = static_cast<AnaParticle*>(bunch->Particles[j]);
+
+      part->DaughtersIDs.clear();
+      for (UInt_t k=0;k<part->DaughtersIDs.size();k++){
+        AnaParticleB* dau = anaUtils::GetParticleByID(*bunch, part->DaughtersIDs[k]);
+        if (dau)  part->Daughters.push_back(dau);
+      }      
+    }
+  }
+}
+
+//********************************************************************
 void AnaSpillPD::Print() const{
 //********************************************************************
 
@@ -411,8 +423,6 @@ void AnaSpillPD::Print() const{
 
   std::cout << "ADC.size():            " << ADC.size() << std::endl;  
 }
-
-
 
 //********************************************************************
 AnaEventPD::AnaEventPD():AnaEvent(){

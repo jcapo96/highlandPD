@@ -267,6 +267,9 @@ public :
   /// Dump the object to screen.
   virtual void Print() const;
 
+  /// Redo reco-reco and reco-truth after cloning or reading MiniTree
+  virtual void RedoLinks();
+  
 protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
