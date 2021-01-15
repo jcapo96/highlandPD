@@ -149,7 +149,6 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   bool noPion = true;
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-    std::cout << daughter->Type << " " << daughter->UniqueID << " " << daughter->CNNscore[0] << " " << daughter->truncLibo_dEdx << std::endl;
     if(daughter->Type           == AnaParticlePD::kTrack &&
        daughter->UniqueID       != -999 &&
        daughter->CNNscore[0]    > cut_CNNTrackScore &&
