@@ -127,7 +127,8 @@ namespace pdAnaUtils{
   Float_t ComputeTrackLengthFromHitPosition(const AnaParticlePD* part); 
 
   // Compute the truncated mean of an std vector
-  Float_t ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> part); 
+  Float_t ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> dEdx); 
+  Float_t ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<AnaHitPD> hits); 
 
   // Calibrated dQdx
   Float_t ComputeCalibrateddQdX(Float_t prim_dqdx, const TVector3& pos);

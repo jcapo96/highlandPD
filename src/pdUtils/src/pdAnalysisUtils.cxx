@@ -945,6 +945,41 @@ Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high
 }
 
 
+//***************************************************************
+Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<AnaHitPD> hits){
+//***************************************************************
+
+  //check levels are ok
+  truncate_high = 1 - truncate_high;
+  if((truncate_low < 0 || truncate_low > 1) || (truncate_high < 0 || truncate_high > 1) || truncate_low > truncate_high){
+    //std::cout << "invalid truncation levels, returning -999" << std::endl;
+    return -999;
+  }
+
+  //check vector is not empty
+  if(hits.empty()){
+    //std::cout << "empty dEdx vector, returning -999" << std::endl;
+    return -999;
+  }
+
+  //compute limits
+  int size   = hits.size();
+  int i_low  = rint(truncate_low*size);
+  int i_high = rint(truncate_high*size);
+
+  //compute mean value
+  Float_t accumulated = 0;
+  int counter = 0;
+
+  for(int i = i_low; i < i_high; i++){
+    accumulated = accumulated + hits.at(i).dEdx;
+    counter ++;
+  }
+  
+  return accumulated/counter;
+}
+
+
 
 //***************************************************************
 Float_t pdAnaUtils::ComputeCalibrateddQdX(Float_t prim_dqdx, const TVector3& pos){
