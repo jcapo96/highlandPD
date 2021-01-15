@@ -282,8 +282,6 @@ public:
   std::vector<std::vector<float> > reduced_adc_cnn_map;
   std::vector<Int_t> reduced_adc_cnn_map_wires;
   std::vector<Int_t> reduced_adc_cnn_map_times;
-
-
 };
 
 
