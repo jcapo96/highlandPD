@@ -374,6 +374,13 @@ AnaSpillPD::AnaSpillPD():AnaSpill(){
   ADC.resize(15480);
   for (size_t w=0;w<ADC.size();w++)
     ADC[w].resize(6000,0);  
+
+
+
+  reduced_adc_cnn_map.clear();
+  reduced_adc_cnn_map_wires.clear();
+  reduced_adc_cnn_map_times.clear();
+
 }
 
 //********************************************************************
@@ -387,6 +394,10 @@ AnaSpillPD::AnaSpillPD(const AnaSpillPD& spill):AnaSpill(spill){
 //********************************************************************
 
   ADC = spill.ADC;
+
+  reduced_adc_cnn_map       = spill.reduced_adc_cnn_map      ;
+  reduced_adc_cnn_map_wires = spill.reduced_adc_cnn_map_wires;
+  reduced_adc_cnn_map_times = spill.reduced_adc_cnn_map_times;
 }
 
 //********************************************************************
@@ -411,6 +422,17 @@ void AnaSpillPD::RedoLinks(){
       }      
     }
   }
+
+
+  for (size_t wi=0;wi<reduced_adc_cnn_map_wires.size();wi++){
+    Int_t wire = reduced_adc_cnn_map_wires[wi];
+    Int_t t0   = reduced_adc_cnn_map_times[wi];
+    for (size_t s=0;s<reduced_adc_cnn_map[wi].size();s++){
+      Int_t time = t0+s;
+      ADC[wire][time]=reduced_adc_cnn_map[wi][s];
+    }
+  }
+
 }
 
 //********************************************************************
