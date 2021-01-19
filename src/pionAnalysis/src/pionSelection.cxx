@@ -147,15 +147,17 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   // Look for pion daughters (track hypothesis)
   bool noPion = true;
-  for(UInt_t i = 0; i < box.MainTrack->Daughters.size()/2; i++){
+  for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-    if(daughter->UniqueID       != -999 &&
+    if(daughter->Type           == AnaParticlePD::kTrack &&
+       daughter->UniqueID       != -999 &&
        daughter->CNNscore[0]    > cut_CNNTrackScore &&
        daughter->truncLibo_dEdx <= cut_dEdx){
       noPion = false;
       break;
     }
   }
+
   return noPion;  
 }
 
@@ -200,9 +202,10 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   // loop over daughters assuming shower hypothesis
   bool cex = false;
-  for(UInt_t i = box.MainTrack->Daughters.size()/2; i < box.MainTrack->Daughters.size(); i++){
+  for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-    if(daughter->CNNscore[0] < cut_CNNTrackScore &&
+    if(daughter->Type       == AnaParticlePD::kShower &&
+       daughter->CNNscore[0] < cut_CNNTrackScore &&
        daughter->NHits       > cut_nHits_shower_low &&
        daughter->CNNscore[0] != -999){
       cex = true;
