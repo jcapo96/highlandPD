@@ -381,10 +381,33 @@ AnaWireCNN::AnaWireCNN(){
 AnaWireCNN::AnaWireCNN(const AnaWireCNN& CNNwire){
 //********************************************************************
 
-  adcs = CNNwire.adcs     ;
+  adcs = CNNwire.adcs;
   wire = CNNwire.wire;
   time = CNNwire.time;
 }
+
+//********************************************************************
+AnaBunchPD::AnaBunchPD():AnaBunch(){
+//********************************************************************
+
+  CNNwires.clear();
+
+}
+
+//********************************************************************
+AnaBunchPD::~AnaBunchPD(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaBunchPD::AnaBunchPD(const AnaBunchPD& bunch):AnaBunch(bunch){
+//********************************************************************
+
+  CNNwires = bunch.CNNwires;
+}
+
+
 
 //********************************************************************
 AnaSpillPD::AnaSpillPD():AnaSpill(){
@@ -396,7 +419,7 @@ AnaSpillPD::AnaSpillPD():AnaSpill(){
   for (size_t w=0;w<ADC.size();w++)
     ADC[w].resize(6000,0);  
   */
-  CNNwires.clear();
+  //  CNNwires.clear();
 
 }
 
@@ -411,7 +434,7 @@ AnaSpillPD::AnaSpillPD(const AnaSpillPD& spill):AnaSpill(spill){
 //********************************************************************
 
   ADC = spill.ADC;
-  CNNwires = spill.CNNwires;
+  //  CNNwires = spill.CNNwires;
 }
 
 //********************************************************************

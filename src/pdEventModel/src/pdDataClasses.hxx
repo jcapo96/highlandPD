@@ -257,10 +257,39 @@ public:
 
 public:
 
-  std::vector<float> adcs; //!
+  std::vector<float> adcs;
   Int_t wire;
   Int_t time;
 };
+
+
+
+class AnaBunchPD: public AnaBunch{
+public :
+
+  AnaBunchPD();
+  virtual ~AnaBunchPD();
+
+  /// Clone this object.
+  virtual AnaBunchPD* Clone() {
+    return new AnaBunchPD(*this);
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaBunchPD(const AnaBunchPD& bunch);
+
+public:
+
+  std::vector<AnaWireCNN> CNNwires;
+
+};
+
+
 
 // Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN 
 class AnaSpillPD: public AnaSpill{
@@ -292,7 +321,7 @@ public:
 
   std::vector<std::vector<Float_t > > ADC; //!
 
-  std::vector<AnaWireCNN> CNNwires;
+  //  std::vector<AnaWireCNN> CNNwires;
 
 };
 
