@@ -249,6 +249,19 @@ public:
   Int_t ntrue_beamdaughter_nucleus;
 };
 
+class AnaWireCNN{
+public:
+  AnaWireCNN();
+  virtual ~AnaWireCNN(){}
+  AnaWireCNN(const AnaWireCNN& wire);
+
+public:
+
+  std::vector<float> adcs; //!
+  Int_t wire;
+  Int_t time;
+};
+
 // Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN 
 class AnaSpillPD: public AnaSpill{
 public :
@@ -278,10 +291,9 @@ protected:
 public:
 
   std::vector<std::vector<Float_t > > ADC; //!
-  
-  std::vector<std::vector<float> > reduced_adc_cnn_map;
-  std::vector<Int_t> reduced_adc_cnn_map_wires;
-  std::vector<Int_t> reduced_adc_cnn_map_times;
+
+  std::vector<AnaWireCNN> CNNwires;
+
 };
 
 

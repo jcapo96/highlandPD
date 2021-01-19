@@ -367,19 +367,36 @@ void AnaBeamPD::Print() const{
 }
 
 //********************************************************************
+AnaWireCNN::AnaWireCNN(){
+//********************************************************************
+
+
+  adcs.clear();
+  wire=0;
+  time=0;
+
+}
+
+//********************************************************************
+AnaWireCNN::AnaWireCNN(const AnaWireCNN& CNNwire){
+//********************************************************************
+
+  adcs = CNNwire.adcs     ;
+  wire = CNNwire.wire;
+  time = CNNwire.time;
+}
+
+//********************************************************************
 AnaSpillPD::AnaSpillPD():AnaSpill(){
 //********************************************************************
 
   ADC.clear();
+  /*
   ADC.resize(15480);
   for (size_t w=0;w<ADC.size();w++)
     ADC[w].resize(6000,0);  
-
-
-
-  reduced_adc_cnn_map.clear();
-  reduced_adc_cnn_map_wires.clear();
-  reduced_adc_cnn_map_times.clear();
+  */
+  CNNwires.clear();
 
 }
 
@@ -394,16 +411,13 @@ AnaSpillPD::AnaSpillPD(const AnaSpillPD& spill):AnaSpill(spill){
 //********************************************************************
 
   ADC = spill.ADC;
-
-  reduced_adc_cnn_map       = spill.reduced_adc_cnn_map      ;
-  reduced_adc_cnn_map_wires = spill.reduced_adc_cnn_map_wires;
-  reduced_adc_cnn_map_times = spill.reduced_adc_cnn_map_times;
+  CNNwires = spill.CNNwires;
 }
 
 //********************************************************************
 void AnaSpillPD::RedoLinks(){
 //********************************************************************
-
+/*
   for (size_t wi=0;wi<reduced_adc_cnn_map_wires.size();wi++){
     Int_t wire = reduced_adc_cnn_map_wires[wi];
     Int_t t0   = reduced_adc_cnn_map_times[wi];
@@ -412,8 +426,8 @@ void AnaSpillPD::RedoLinks(){
       ADC[wire][time]=reduced_adc_cnn_map[wi][s];
     }
   }
-
-  // Redo the links in the bae class
+*/
+  // Redo the links in the base class
   AnaSpill::RedoLinks();    
 }
 
