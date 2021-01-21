@@ -29,9 +29,7 @@ protected:
   /// Get the TrackGroup IDs array for this systematic
   Int_t GetRelevantRecObjectGroups(const SelectionBase& sel,     Int_t* IDs) const; 
 
-
-  calo::CalorimetryAlg fCalo;
-  
+  calo::CalorimetryAlg fCalo;  
 };
 
 #endif

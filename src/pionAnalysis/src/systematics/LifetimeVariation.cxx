@@ -20,11 +20,7 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
 
-  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
-  //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
-  double norm_factor[3] = {1.0078, 1.0082, 0.9946};
   double fEventT0=500;
-
   
   // Loop over all relevant tracks for this variation
   for (Int_t itrk = 0; itrk < box->nRelevantRecObjects; itrk++){
@@ -42,42 +38,26 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     
     // Get the systematics parameters
     if (!GetBinValues(0.5, mean_corr,  mean_var,  mean_index))  return;
-
-    fCalo.SetElectronLifetime(mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]);
-
-
-    
-    //    TVector3 dir = anaUtils::ArrayToTVector3(part->DirectionStart);
-    //    Int_t plane = 2;
-    //    Float_t pitch3D = pdAnaUtils::Compute3DWirePitch(plane, dir);
-
-
-    std::vector<double> dedx_vector;
-    
-    // Apply the variation to the evnt model quantities
+       
+    // Apply the variation to the event model quantities
+    // Only plane 2 for the moment
     for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
 
-        AnaHitPD& hit = part->Hits[i][j];
+        AnaHitPD& hit = part->Hits[i][j];                
 
-                
-        // dq/dx should be in e/cm
-        // dE/dx is returned in MeV/cm
-        
-        double dQdx_e      = part->Hits[i][j].dQdx/calib_factor[2]*norm_factor[2];
-        part->Hits[i][j].dEdx_corr = part->Hits[i][j].dEdx = fCalo.dEdx_from_dQdx_e(dQdx_e,
-                                                                                    hit.PeakTime,
-                                                                                    fEventT0);
-        dedx_vector.push_back(part->Hits[i][j].dEdx_corr);
+        // Set the nominal electron lifetime and get the lifetime correction
+        fCalo.SetElectronLifetime(mean_corr);
+        Float_t corr_nominal = fCalo.LifetimeCorrection(hit.PeakTime, fEventT0);
+
+        // Set the varied lifetime and get the correction
+        fCalo.SetElectronLifetime(mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]);        
+        Float_t corr = fCalo.LifetimeCorrection(hit.PeakTime, fEventT0);
+
+        // Uncorrect for the nominal and apply the varied correction only to dQdx
+        hit.dQdx_corr = hit.dQdx = hit.dQdx*corr/corr_nominal;
       }
     }
-
-    // Recompute the derived quantities. TODO: This should be done somewhere else, in a more transparent way
-    std::pair<double, int> chi2pid = pdAnaUtils::Chi2PID(*part, NULL);
-    part->Chi2Proton  = chi2pid.first;
-    part->Chi2ndf     = chi2pid.second;
-    part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,dedx_vector);
-
   }
 }
 
@@ -96,13 +76,10 @@ bool LifetimeVariation::UndoSystematic(AnaEventC& event){
 
     for (Int_t i=0;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
-        part->Hits[i][j].dEdx      = original->Hits[i][j].dEdx;
-        part->Hits[i][j].dEdx_corr = original->Hits[i][j].dEdx_corr;
+        part->Hits[i][j].dQdx      = original->Hits[i][j].dQdx;
+        part->Hits[i][j].dQdx_corr = original->Hits[i][j].dQdx_corr;
       }
     }
-    part->Chi2Proton      = original->Chi2Proton;
-    part->Chi2ndf         = original->Chi2ndf;
-    part->truncLibo_dEdx  = original->truncLibo_dEdx;
   }
 
   // Don't reset the spill to corrected
