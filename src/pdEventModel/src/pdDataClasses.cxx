@@ -78,6 +78,7 @@ void AnaHitPD::Print() const{
 
   std::cout << "WireID.Plane:  " << WireID.Plane  << std::endl;
   std::cout << "WireID.Wire:   " << WireID.Wire  << std::endl;
+  std::cout << "Channel:       " << Channel  << std::endl;
   std::cout << "View:          " << View << std::endl;
   std::cout << "#adcs:         " << Signal.size()  << std::endl;
   std::cout << "Integral:      " << Integral      << std::endl; 
@@ -407,6 +408,20 @@ AnaBunchPD::AnaBunchPD(const AnaBunchPD& bunch):AnaBunch(bunch){
   CNNwires = bunch.CNNwires;
 }
 
+
+//********************************************************************
+void AnaBunchPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaBunchPD --------- " << std::endl;
+
+
+  AnaBunch::Print();
+  
+  std::cout << "#wires:      " << CNNwires.size() << std::endl;
+
+  
+}
 
 
 //********************************************************************

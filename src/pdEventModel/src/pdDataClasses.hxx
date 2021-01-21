@@ -263,7 +263,7 @@ public:
 };
 
 
-
+// Extension of AnaBunch to include the APA wire wafeforms, needed to recompute the CNN 
 class AnaBunchPD: public AnaBunch{
 public :
 
@@ -291,7 +291,7 @@ public:
 
 
 
-// Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN 
+
 class AnaSpillPD: public AnaSpill{
 public :
 
