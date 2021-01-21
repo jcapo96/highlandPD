@@ -81,6 +81,7 @@ public:
     seltrk_CNNscore,
     seltrk_chi2_prot,
     seltrk_chi2_ndf,
+    seltrk_hit0_dqdx,
     seltrk_hit0_dedx,
     seltrk_truncLibo_dEdx,
 
@@ -96,6 +97,8 @@ public:
   enum enumConf_pionAnalysis{
     detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
     dedx_syst,
+    Lifetime_syst,
+    dQdxCalib_syst,
     enumConfLast_pionAnalysis
   };
 
@@ -103,6 +106,8 @@ public:
     kdEdx=0,
     kLength,
     kLifetime,
+    kdQdxCalib,
+    kDerived,
     kBeam,    
     enumSystLast_pionAnalysis
   };

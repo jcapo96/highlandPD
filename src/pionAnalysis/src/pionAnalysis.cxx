@@ -3,6 +3,8 @@
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "baseToyMaker.hxx"
+
 
 #include "dEdxCorrection.hxx"
 #include "BeamMomCorrection.hxx"
@@ -15,6 +17,8 @@
 #include "LengthVariation.hxx"
 #include "BeamCompositionWeight.hxx"
 #include "LifetimeVariation.hxx"
+#include "dQdxCalibVariation.hxx"
+#include "DerivedQuantitiesVariation.hxx"
 
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
@@ -205,9 +209,11 @@ void pionAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   // Define additional systematics (pionAnalysys/src/systematics)
-  evar().AddEventVariation(kdEdx,    "dEdx",     new dEdxVariation());
-  evar().AddEventVariation(kLength,  "Length",   new LengthVariation());
-  evar().AddEventVariation(kLifetime,"Lifetime", new LifetimeVariation());
+  evar().AddEventVariation(kdEdx,     "dEdx",     new dEdxVariation());
+  evar().AddEventVariation(kLength,   "Length",   new LengthVariation());
+  evar().AddEventVariation(kLifetime, "Lifetime", new LifetimeVariation());
+  evar().AddEventVariation(kdQdxCalib,"dQdxCalib",new dQdxCalibVariation());
+  evar().AddEventVariation(kDerived,  "Derived",  new DerivedQuantitiesVariation());
 
   eweight().AddEventWeight(kBeam,    "beamComp", new BeamCompositionWeight());
 }
@@ -228,8 +234,27 @@ void pionAnalysis::DefineConfigurations(){
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdx"))             conf().EnableEventVariation(kdEdx,         all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime"))         conf().EnableEventVariation(kLifetime,     all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib"))        conf().EnableEventVariation(kdQdxCalib,    all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
+
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableDerivedQuantities"))conf().EnableEventVariation(kDerived,     all_syst);
   }
+
+  if (_enableSingleVariationSystConf){
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime")){      
+      AddConfiguration(conf(), Lifetime_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
+      conf().EnableEventVariation(kLifetime,     Lifetime_syst);
+      conf().EnableEventVariation(kDerived,      Lifetime_syst);
+    }
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib")){      
+      AddConfiguration(conf(), dQdxCalib_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
+      conf().EnableEventVariation(kdQdxCalib,    dQdxCalib_syst);
+      conf().EnableEventVariation(kDerived,      dQdxCalib_syst);
+    }
+  }
+
+
+
 }
 
 //********************************************************************
@@ -280,6 +305,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarF(      output(), seltrk_chi2_prot,       "candidate chi2 proton");
   AddToyVarF(      output(), seltrk_chi2_ndf,        "candidate chi2 ndf");
   AddToyVarF(      output(), seltrk_hit0_dedx,       "candidate dedx variated");
+  AddToyVarF(      output(), seltrk_hit0_dqdx,       "candidate dqdx variated");
   AddToyVarF(      output(), seltrk_truncLibo_dEdx,  "candidate truncated libo variated");
   
   seltrk_ndau = standardPDTree::seltrk_ndau;
@@ -427,8 +453,10 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
     output().FillToyVar(seltrk_chi2_prot, box().MainTrack->Chi2Proton);
     output().FillToyVar(seltrk_chi2_ndf,  box().MainTrack->Chi2ndf);
     output().FillToyVar(seltrk_truncLibo_dEdx,  box().MainTrack->truncLibo_dEdx);
-    if (!box().MainTrack->Hits[2].empty())
+    if (!box().MainTrack->Hits[2].empty()){
+      output().FillToyVar(seltrk_hit0_dqdx, box().MainTrack->Hits[2][0].dQdx_corr);
       output().FillToyVar(seltrk_hit0_dedx, box().MainTrack->Hits[2][0].dEdx_corr);
+    }
   }  
 }
 
