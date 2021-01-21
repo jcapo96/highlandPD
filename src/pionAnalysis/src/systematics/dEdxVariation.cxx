@@ -48,11 +48,6 @@ void dEdxVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
         // A variation on the residual range and the track length is also expected. Should this be done here or in a different systematic ?
       }
     }
-
-    // Recompute the derived quantities. TODO: This should be done somewhere else, in a more transparent way
-    std::pair<double, int> chi2pid = pdAnaUtils::Chi2PID(*part, NULL);
-    part->Chi2Proton  = chi2pid.first;
-    part->Chi2ndf     = chi2pid.second;
   }
 }
 
@@ -72,8 +67,6 @@ bool dEdxVariation::UndoSystematic(AnaEventC& event){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
         part->Hits[i][i].dEdx      = original->Hits[i][i].dEdx;
         part->Hits[i][i].dEdx_corr = original->Hits[i][i].dEdx_corr;
-        part->Chi2Proton      = original->Chi2Proton;
-        part->Chi2ndf         = original->Chi2ndf;
       }
     }
   }
