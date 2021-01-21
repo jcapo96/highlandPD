@@ -128,6 +128,15 @@ namespace calo {
                           double T0 = 0) const;
 
 
+    double dEdx_from_dQdx_e(double dQdx_e) const;
+
+    double dEdx_from_dQdx(double dQdx) const;
+    double dQdx_e_from_dQdx(double dQdx) const;
+
+
+
+    
+
     void SetElectronLifetime(double lifetime){fElectronLifetime=lifetime;}
     
     std::vector<double> fCalAmpConstants;

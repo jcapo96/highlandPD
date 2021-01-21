@@ -180,9 +180,7 @@ bool debug=false;
     if (debug)
       std::cout << "    - dEdx_from_dQdx_e: dQdx_e (lifetime corr)= " << dQdx_e << std::endl;
     
-    if (fUseModBox) { return ModBoxCorrection(dQdx_e); }
-
-    return BirksCorrection(dQdx_e);
+    return dEdx_from_dQdx_e(dQdx_e);
   }
 
 
@@ -192,14 +190,8 @@ bool debug=false;
                                  double const time,
                                  double const T0) const
   {
-
-
-    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
-    //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
-    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
-
     
-    double dQdx_e = dQdx/calib_factor[2]*norm_factor[2];
+    double dQdx_e = dQdx_e_from_dQdx(dQdx);
 
     if (debug)
       std::cout << "    - dEdx_from_dQdx: dQdx (ADC) =  " << dQdx << " dQdx (e) = " << dQdx_e << std::endl;
@@ -207,6 +199,46 @@ bool debug=false;
     return dEdx_from_dQdx_e(dQdx_e,time,T0);
   }
 
+
+
+  // Apply recombination correction only
+  double
+  CalorimetryAlg::dEdx_from_dQdx(double dQdx) const
+  {
+
+    double dQdx_e = dQdx_e_from_dQdx(dQdx);
+    return dEdx_from_dQdx_e(dQdx_e);
+  }
+
+
+  // Apply recombination correction only
+  double
+  CalorimetryAlg::dEdx_from_dQdx_e(double dQdx_e) const
+  {
+    //    if (debug)
+    //      std::cout << "    - dEdx_from_dQdx_e: dQdx (ADC) =  " << dQdx << " dQdx (e) = " << dQdx_e << std::endl;
+
+    if (fUseModBox) { return ModBoxCorrection(dQdx_e); }
+    return BirksCorrection(dQdx_e);
+  }
+
+
+  // Apply recombination correction only
+  double
+  CalorimetryAlg::dQdx_e_from_dQdx(double dQdx) const
+  {
+
+    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
+    //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
+    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
+
+    double dQdx_e = dQdx/calib_factor[2]*norm_factor[2];
+    
+    if (debug)
+      std::cout << "    - dQdx_from_dQdx_e: dQdx (ADC) =  " << dQdx << " dQdx (e) = " << dQdx_e << std::endl;
+
+    return dQdx_e;
+  }
   
   //------------------------------------------------------------------------------------//
   // for the time being copying from Calorimetry.cxx - should be decided where
