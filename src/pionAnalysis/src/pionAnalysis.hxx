@@ -90,6 +90,10 @@ public:
     seltrk_dau_chi2_ndf,
     seltrk_dau_vtxdistance,
     seltrk_dau_type,
+    seltrk_dau_truncLibo_dEdx,
+    seltrk_dau_hit0_dqdx,
+    seltrk_dau_hit0_dedx,
+
     trk_pandora,
     enumStandardMicroTreesLast_pionAnalysis
   };

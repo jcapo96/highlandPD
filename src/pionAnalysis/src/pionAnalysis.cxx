@@ -215,7 +215,7 @@ void pionAnalysis::DefineSystematics(){
   evar().AddEventVariation(kdQdxCalib,"dQdxCalib",new dQdxCalibVariation());
   evar().AddEventVariation(kDerived,  "Derived",  new DerivedQuantitiesVariation());
 
-  eweight().AddEventWeight(kBeam,    "beamComp", new BeamCompositionWeight());
+  eweight().AddEventWeight(kBeam,     "beamComp", new BeamCompositionWeight());
 }
 
 //********************************************************************
@@ -307,14 +307,21 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarF(      output(), seltrk_hit0_dedx,       "candidate dedx variated");
   AddToyVarF(      output(), seltrk_hit0_dqdx,       "candidate dqdx variated");
   AddToyVarF(      output(), seltrk_truncLibo_dEdx,  "candidate truncated libo variated");
+
   
   seltrk_ndau = standardPDTree::seltrk_ndau;
   AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_ndf,    "candidate daughters chi2 ndf",               seltrk_ndau,NMAXSAVEDDAUGHTERS);
-  AddVarMaxSizeVF( output(), seltrk_dau_vtxdistance, "candidate daguhters distance to vtx",        seltrk_ndau,NMAXSAVEDDAUGHTERS);
-  AddVarMaxSizeVI( output(), seltrk_dau_type,        "candidate daguhters type(track=0, shower=1)",seltrk_ndau,NMAXSAVEDDAUGHTERS);
+  AddVarMaxSizeVF( output(), seltrk_dau_vtxdistance, "candidate daughters distance to vtx",        seltrk_ndau,NMAXSAVEDDAUGHTERS);
+  AddVarMaxSizeVI( output(), seltrk_dau_type,        "candidate daughters type(track=0, shower=1)",seltrk_ndau,NMAXSAVEDDAUGHTERS);
 
+  AddToyVarVF(     output(), seltrk_dau_truncLibo_dEdx, "candidate daughter truncated libo variated",NMAXSAVEDDAUGHTERS);
+  AddToyVarVF(     output(), seltrk_dau_hit0_dqdx,      "candidate daughter dqdx variated",          NMAXSAVEDDAUGHTERS);
+  AddToyVarVF(     output(), seltrk_dau_hit0_dedx,      "candidate daughter dedx variated",          NMAXSAVEDDAUGHTERS);
+    
+
+  
   AddVarI(  output(), trk_pandora,      "trk is pandora candidate");
 }
 
@@ -457,7 +464,20 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
       output().FillToyVar(seltrk_hit0_dqdx, box().MainTrack->Hits[2][0].dQdx_corr);
       output().FillToyVar(seltrk_hit0_dedx, box().MainTrack->Hits[2][0].dEdx_corr);
     }
-  }  
+
+
+    Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
+    for (Int_t i=0;i<std::min((Int_t)NMAXSAVEDDAUGHTERS,ndau); ++i){      
+      AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
+      output().FillToyVectorVar(seltrk_dau_truncLibo_dEdx,  dau->truncLibo_dEdx, i);
+      if (!dau->Hits[2].empty()){
+        output().FillToyVectorVar(seltrk_dau_hit0_dqdx, dau->Hits[2][0].dQdx,i);
+        output().FillToyVectorVar(seltrk_dau_hit0_dedx, dau->Hits[2][0].dEdx,i);
+      }
+
+
+    }
+  }
 }
 
 //********************************************************************
