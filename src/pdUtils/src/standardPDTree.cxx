@@ -358,17 +358,17 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
       int jmin = std::max<int>(0,(int)part->Hits[i].size()-NMAXHITSPERPLANE_SELTRK);
       int jmax = (int)part->Hits[i].size();
       for (int j = jmin; j < jmax; j++){
-        output.FillMatrixVar(seltrk_hit_x    ,(Float_t)part->Hits[i][j].Position.X(), i, j-jmin);
-        output.FillMatrixVar(seltrk_hit_y    ,(Float_t)part->Hits[i][j].Position.Y(), i, j-jmin);
+	output.FillMatrixVar(seltrk_hit_x    ,(Float_t)part->Hits[i][j].Position.X(), i, j-jmin);
+	output.FillMatrixVar(seltrk_hit_y    ,(Float_t)part->Hits[i][j].Position.Y(), i, j-jmin);
         output.FillMatrixVar(seltrk_hit_z    ,(Float_t)part->Hits[i][j].Position.Z(), i, j-jmin);
         output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.X(), i, j-jmin);
         output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.Y(), i, j-jmin);
         output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.Z(), i, j-jmin);
-
+	
 	output.FillMatrixVar(seltrk_hit_dedx,      part->Hits[i][j].dEdx,              i, j-jmin);
-	output.FillMatrixVar(seltrk_hit_dedx_cor,  part->Hits[i][j].dEdx_corr,         i, j-jmin);
+	output.FillMatrixVar(seltrk_hit_dedx_cor,  part->Hits[i][j].dEdx_calib,        i, j-jmin);
 	output.FillMatrixVar(seltrk_hit_dqdx,      part->Hits[i][j].dQdx,              i, j-jmin);
-	output.FillMatrixVar(seltrk_hit_dqdx_cor,  part->Hits[i][j].dQdx_corr,         i, j-jmin);
+	output.FillMatrixVar(seltrk_hit_dqdx_cor,  part->Hits[i][j].dQdx_NoSCE,        i, j-jmin);
 	output.FillMatrixVar(seltrk_hit_resrange,  part->Hits[i][j].ResidualRange,     i, j-jmin);
 	output.FillMatrixVar(seltrk_hit_dedx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].dEdx, i, j-jmin);
 	output.FillMatrixVar(seltrk_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].dQdx, i, j-jmin);

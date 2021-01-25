@@ -1280,7 +1280,7 @@ void hitPionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& 
 
       hit.dEdx          = (*reco_beam_dEdX)[j];
       hit.dQdx          = (*reco_beam_dQdX)[j];
-      hit.dEdx_corr     = (*reco_beam_calibrated_dEdX)[j];      
+      hit.dEdx_calib     = (*reco_beam_calibrated_dEdX)[j];      
       hit.ResidualRange = (*reco_beam_resRange)[j];
       hit.View         = plane;
       hit.WireID.Wire  = (*reco_beam_hit_wireID)[j];
@@ -1517,7 +1517,7 @@ void hitPionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTruePart
       AnaHitPD hit(2,(*reco_daughter_allTrack_hit_integral)[itrk][j], (*reco_daughter_allTrack_hit_peakTime)[itrk][j], (*reco_daughter_allTrack_hit_peakAmplitude)[itrk][j], point);  // TODO
       hit.dEdx         = dedx;
       hit.dQdx         = dqdx;
-      hit.dEdx_corr    = dedx_cal;
+      hit.dEdx_calib   = dedx_cal;
       hit.ResidualRange= resRange;
       hit.View        = plane;
       hit.WireID.Wire = (*reco_daughter_allTrack_hit_wireID)[itrk][j];

@@ -362,7 +362,7 @@ void dEdxStudies::FilldEdxInfo(AnaParticlePD* part){
     output().FillVectorVar(seltrk_hit_dedx_2, dedx_3);
     output().FillVectorVar(seltrk_hit_dedx_3, dedx_4);
     
-    output().FillVectorVar(seltrk_hit_dedx_0_cal, hit.dEdx_corr);
+    output().FillVectorVar(seltrk_hit_dedx_0_cal, hit.dEdx_calib);
     
     
     output().FillVectorVar(seltrk_hit_dqdx_0, hit.dQdx);

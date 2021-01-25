@@ -46,7 +46,7 @@ void dQdxCalibVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
         
         // This is a multiplicative correction assuming the nominal is correct and there is a gaussian error
         // in the multiplicative factors (X_cal, XZ_cal)
-        hit.dQdx_corr = hit.dQdx = hit.dQdx*(mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]);        ;
+        hit.dQdx_NoSCE = hit.dQdx = hit.dQdx*(mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]);        ;
       }
     }
   }
@@ -67,8 +67,8 @@ bool dQdxCalibVariation::UndoSystematic(AnaEventC& event){
 
     for (Int_t i=0;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
-        part->Hits[i][j].dQdx      = original->Hits[i][j].dQdx;
-        part->Hits[i][j].dQdx_corr = original->Hits[i][j].dQdx_corr;
+        part->Hits[i][j].dQdx       = original->Hits[i][j].dQdx;
+        part->Hits[i][j].dQdx_NoSCE = original->Hits[i][j].dQdx_NoSCE;
       }
     }
   }

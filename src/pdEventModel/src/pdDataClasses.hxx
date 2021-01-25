@@ -60,13 +60,13 @@ public:
   /// Residual range for each wire in each plane
   Float_t ResidualRange;
 
+  /// dQdx for each wire in each plane
+  Float_t dQdx_NoSCE;  
+  Float_t dQdx;  
+
   /// dEdx for each wire in each plane
   Float_t dEdx;
-  Float_t dEdx_corr;
-
-  /// dQdx for each wire in each plane
-  Float_t dQdx;  
-  Float_t dQdx_corr;  
+  Float_t dEdx_calib;
 
 };
 

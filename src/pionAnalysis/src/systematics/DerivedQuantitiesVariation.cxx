@@ -39,9 +39,9 @@ void DerivedQuantitiesVariation::Apply(const ToyExperiment& toy, AnaEventC& even
       AnaHitPD& hit = part->Hits[2][j];
 
       // compute the dEdx from the varied dQdx
-      hit.dEdx_corr = hit.dEdx = fCalo.dEdx_from_dQdx(hit.dQdx);
+      hit.dEdx_calib = hit.dEdx = fCalo.dEdx_from_dQdx(hit.dQdx);
 
-      dedx_vector.push_back(hit.dEdx_corr);
+      dedx_vector.push_back(hit.dEdx_calib);
     }
 
     // Recompute the derived quantities. 

@@ -55,7 +55,7 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
         Float_t corr = fCalo.LifetimeCorrection(hit.PeakTime, fEventT0);
 
         // Uncorrect for the nominal and apply the varied correction only to dQdx
-        hit.dQdx_corr = hit.dQdx = hit.dQdx*corr/corr_nominal;
+        hit.dQdx_NoSCE = hit.dQdx = hit.dQdx*corr/corr_nominal;
       }
     }
   }
@@ -76,8 +76,8 @@ bool LifetimeVariation::UndoSystematic(AnaEventC& event){
 
     for (Int_t i=0;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
-        part->Hits[i][j].dQdx      = original->Hits[i][j].dQdx;
-        part->Hits[i][j].dQdx_corr = original->Hits[i][j].dQdx_corr;
+        part->Hits[i][j].dQdx       = original->Hits[i][j].dQdx;
+        part->Hits[i][j].dQdx_NoSCE = original->Hits[i][j].dQdx_NoSCE;
       }
     }
   }

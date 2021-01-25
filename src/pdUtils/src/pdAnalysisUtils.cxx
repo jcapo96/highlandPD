@@ -245,7 +245,7 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
   double kinetic=0;
   double res=0;
   for (int j=0;j<nhits;j++){
-    double dedxi = part.Hits[plane][j].dEdx_corr;
+    double dedxi = part.Hits[plane][j].dEdx_calib;
 //    double dedxi = part.dEdx[plane][i];
     double Residualrangei = part.Hits[plane][j].ResidualRange;
     kinetic = kinetic + dedxi * (Residualrangei - res);
@@ -465,8 +465,8 @@ void pdAnaUtils::AddParticles(AnaParticlePD* part1, AnaParticlePD* part2){
       Int_t offset = 0;
       part1->Hits[i][j+offset].dEdx           = part2->Hits[i][j].dEdx;          
       part1->Hits[i][j+offset].dQdx           = part2->Hits[i][j].dQdx;          
-      part1->Hits[i][j+offset].dEdx_corr      = part2->Hits[i][j].dEdx_corr;     
-      part1->Hits[i][j+offset].dQdx_corr      = part2->Hits[i][j].dQdx_corr;     
+      part1->Hits[i][j+offset].dEdx_calib     = part2->Hits[i][j].dEdx_calib;     
+      part1->Hits[i][j+offset].dQdx_NoSCE     = part2->Hits[i][j].dQdx_NoSCE;     
       part1->Hits[i][j+offset].ResidualRange  = part2->Hits[i][j].ResidualRange; 
       part1->Hits[i][j+offset].Position.SetX(   part2->Hits[i][j].Position.X());
       last_hit=j;
@@ -476,8 +476,8 @@ void pdAnaUtils::AddParticles(AnaParticlePD* part1, AnaParticlePD* part2){
       Int_t offset = part1->NHitsPerPlane[i];
       part1->Hits[i][j+offset].dEdx           = part1c->Hits[i][j].dEdx;          
       part1->Hits[i][j+offset].dQdx           = part1c->Hits[i][j].dQdx;          
-      part1->Hits[i][j+offset].dEdx_corr      = part1c->Hits[i][j].dEdx_corr;     
-      part1->Hits[i][j+offset].dQdx_corr      = part1c->Hits[i][j].dQdx_corr;     
+      part1->Hits[i][j+offset].dEdx_calib     = part1c->Hits[i][j].dEdx_calib;     
+      part1->Hits[i][j+offset].dQdx_NoSCE     = part1c->Hits[i][j].dQdx_NoSCE;     
       part1->Hits[i][j+offset].Position.SetX(   part1c->Hits[i][j].Position.X());   
       part1->Hits[i][j+offset].ResidualRange  = part1c->Hits[i][j].ResidualRange+part2->Hits[i][last_hit].ResidualRange;
     }    
@@ -626,7 +626,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
   //Ignore first and last point
   for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
     //Skip large pulse heights
-    if( part.Hits[plane][i].dEdx_corr > 1000. )
+    if( part.Hits[plane][i].dEdx_calib > 1000. )
       continue;
 
     int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
@@ -644,12 +644,12 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
         template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
       }
 
-      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx_corr * part.Hits[plane][i].dEdx_corr;      
-      dedx_res *= part.Hits[plane][i].dEdx_corr; 
+      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx_calib * part.Hits[plane][i].dEdx_calib;      
+      dedx_res *= part.Hits[plane][i].dEdx_calib; 
       
       
       //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
-      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx_corr - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
+      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx_calib - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
             
       ++npt;      
     }	
