@@ -18,12 +18,6 @@ void DerivedQuantitiesVariation::Apply(const ToyExperiment& toy, AnaEventC& even
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
 
-
-  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
-  //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
-  double norm_factor[3] = {1.0078, 1.0082, 0.9946};
-  double fEventT0=500;
-  
   // Loop over all relevant tracks for this variation
   for (Int_t itrk = 0; itrk < box->nRelevantRecObjects; itrk++){
 
@@ -33,18 +27,21 @@ void DerivedQuantitiesVariation::Apply(const ToyExperiment& toy, AnaEventC& even
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
     if (!original)         continue;
         
-    //    Fill the dedx_vector for the collection plane
     std::vector<double> dedx_vector;
+
+    // Loop over hits in the collection plane (plane 2)
     for (UInt_t j=0;j<part->Hits[2].size();j++){
       AnaHitPD& hit = part->Hits[2][j];
 
       // compute the dEdx from the varied dQdx
-      hit.dEdx_corr = hit.dEdx = fCalo.dEdx_from_dQdx(hit.dQdx);
+      hit.dEdx      = fCalo.dEdx_from_dQdx(hit.dQdx);
+      hit.dEdx_corr = fCalo.dEdx_from_dQdx(hit.dQdx_corr);
 
+      // Fill the dedx_vector for the collection plane to recompute truncLibo_dEdx    
       dedx_vector.push_back(hit.dEdx_corr);
     }
 
-    // Recompute the derived quantities. 
+    // Recompute the top level derived quantities
     std::pair<double, int> chi2pid = pdAnaUtils::Chi2PID(*part, NULL);
     part->Chi2Proton  = chi2pid.first;
     part->Chi2ndf     = chi2pid.second;
