@@ -62,7 +62,8 @@ namespace calo {
     CalorimetryAlg(const std::string& pset):fUseModBox(true), fLifeTimeForm(0),fDoLifeTimeCorrection(false){
 
       fElectronLifetime = 35000; // from PionAnalyzer_module output
-
+      fModBoxA          = 0.930;    
+      fModBoxB          = 0.212;             
     }
     //      : CalorimetryAlg(fhicl::Table<Config>(pset, {})())
     //    {}
@@ -138,6 +139,8 @@ namespace calo {
     
 
     void SetElectronLifetime(double lifetime){fElectronLifetime=lifetime;}
+    void SetModBoxA(double ModBoxA){fModBoxA=ModBoxA;}
+    void SetModBoxB(double ModBoxB){fModBoxB=ModBoxB;}
     
     std::vector<double> fCalAmpConstants;
     std::vector<double> fCalAreaConstants;
@@ -146,7 +149,8 @@ namespace calo {
     bool const fDoLifeTimeCorrection;
 
     double fElectronLifetime;
-
+    double fModBoxA;
+    double fModBoxB;
     
   }; // class CalorimetryAlg
 } // namespace calo

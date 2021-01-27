@@ -70,6 +70,9 @@ bool debug=false;
     }
 
     fElectronLifetime = 35000; // from PionAnalyzer_module output
+    fModBoxA          = 0.930;    
+    fModBoxB          = 0.212;             
+
   }
 
   //------------------------------------------------------------------------------------//
@@ -157,7 +160,6 @@ bool debug=false;
 
     double dQdx_e = dQdx;///calib_factor[2]*norm_factor[2];
 
-
     
     Float_t cal_dQdx_e = pdAnaUtils::ComputeCalibrateddQdX(dQdx_e, pos);
 
@@ -177,12 +179,13 @@ bool debug=false;
       dQdx_e *= LifetimeCorrection(time, T0); // (dQdx_e in e/cm)
     }
 
-    if (debug)
-      std::cout << "    - dEdx_from_dQdx_e: dQdx_e (lifetime corr)= " << dQdx_e << std::endl;
-    
-    return dEdx_from_dQdx_e(dQdx_e);
-  }
+    double dEdx = dEdx_from_dQdx_e(dQdx_e);
 
+    if (debug)
+      std::cout << "    - dEdx_from_dQdx_e: dQdx_e = " << dQdx_e << " dQdx_e (lifetime corr)= " << dQdx_e << " dEdx = " << dEdx << std::endl;
+    
+    return dEdx;
+  }
 
   // Apply Lifetime and recombination correction.
   double
@@ -200,14 +203,18 @@ bool debug=false;
   }
 
 
-
   // Apply recombination correction only
   double
   CalorimetryAlg::dEdx_from_dQdx(double dQdx) const
   {
 
     double dQdx_e = dQdx_e_from_dQdx(dQdx);
-    return dEdx_from_dQdx_e(dQdx_e);
+    double dEdx = dEdx_from_dQdx_e(dQdx_e);
+
+    if (debug)
+      std::cout << "    - dEdx_from_dQdx: dQdx (ADC) =  " << dQdx << " dQdx (e) = " << dQdx_e << " dEdx = " << dEdx << std::endl;
+
+    return dEdx;
   }
 
 
@@ -228,8 +235,12 @@ bool debug=false;
   CalorimetryAlg::dQdx_e_from_dQdx(double dQdx) const
   {
 
-    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
-    //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
+    //    double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
+
+    // calib factor taken from
+    // https://cdcvs.fnal.gov/redmine/projects/protoduneana/repository/revisions/develop/entry/protoduneana/Utilities/ProtoDUNECalibration.fcl
+    // and explained here: https://wiki.dunescience.org/wiki/DQdx_and_dEdx_calibration_instructions#dE.2Fdx_calibration_factor
+    double calib_factor[3] = {1.011e-3, 1.011e-3, 1.011e-3};
     double norm_factor[3] = {1.0078, 1.0082, 0.9946};
 
     double dQdx_e = dQdx/calib_factor[2]*norm_factor[2];
@@ -271,7 +282,7 @@ bool debug=false;
   }
 
 
-double calo::CalorimetryAlg::ModBoxCorrection 	( 	double  	dQdx	) 	const
+double calo::CalorimetryAlg::ModBoxCorrection(double dQdx_e) 	const
  {
 
 
@@ -295,8 +306,9 @@ double calo::CalorimetryAlg::ModBoxCorrection 	( 	double  	dQdx	) 	const
    // dE/dx is returned in MeV/cm
    
    
-   double kModBoxA        = 0.930;    
-   double kModBoxB        = 0.212;    
+   double kModBoxA        = fModBoxA;    
+   double kModBoxB        = fModBoxB;
+   //   double kGeVToElectrons = 4.237e7/5.2;  //anselmo
    double kGeVToElectrons = 4.237e7;
    double Density = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia)
    double Efield = pdAnaUtils::ComputeTotalEField(0,0,0);
@@ -306,10 +318,11 @@ double calo::CalorimetryAlg::ModBoxCorrection 	( 	double  	dQdx	) 	const
    double const E_field = Efield; // Electric Field in the drift region in KV/cm
    double const Beta = kModBoxB / (rho * E_field);
    double Alpha = kModBoxA;
-   double const dEdx = (exp(Beta * Wion * dQdx) - Alpha) / Beta;
+   double const dEdx = (exp(Beta * Wion * dQdx_e) - Alpha) / Beta;
 
    if (debug){
-     std::cout << "  --> dqdx, dedx (modbox)= " << dQdx << " " << dEdx << std::endl;
+     std::cout << "  --> A,B  = " << kModBoxA << " " << kModBoxB << std::endl;
+     std::cout << "  --> dQdx_e, dEdx (modbox)= " << dQdx_e << " " << dEdx << std::endl;
    }
    
    return dEdx;
