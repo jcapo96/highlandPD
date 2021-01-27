@@ -29,7 +29,6 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
     // The un-corrected particle
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
-
     if (!original)         continue;
     
     // We need the errors part of the data file but as well the relative uncertainty for sigma
@@ -39,8 +38,7 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     // Get the systematics parameters
     if (!GetBinValues(0.5, mean_corr,  mean_var,  mean_index))  return;
        
-    // Apply the variation to the event model quantities
-    // Only plane 2 for the moment
+    // Apply the variation to the event model quantities. Only plane 2 for the moment
     for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
 
@@ -55,7 +53,8 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
         Float_t corr = fCalo.LifetimeCorrection(hit.PeakTime, fEventT0);
 
         // Uncorrect for the nominal and apply the varied correction only to dQdx
-        hit.dQdx_corr = hit.dQdx = hit.dQdx*corr/corr_nominal;
+        hit.dQdx      *= corr/corr_nominal;
+        hit.dQdx_corr *= corr/corr_nominal;
       }
     }
   }
