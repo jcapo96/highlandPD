@@ -46,7 +46,10 @@ void dQdxCalibVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
         
         // This is a multiplicative correction assuming the nominal is correct and there is a gaussian error
         // in the multiplicative factors (X_cal, XZ_cal)
-        hit.dQdx_corr = hit.dQdx = hit.dQdx*(mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index]);        ;
+        Float_t alpha = mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index];
+
+        hit.dQdx      *= alpha;
+        hit.dQdx_corr *= alpha;
       }
     }
   }
