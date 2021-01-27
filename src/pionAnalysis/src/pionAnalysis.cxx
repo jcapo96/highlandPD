@@ -18,6 +18,7 @@
 #include "BeamCompositionWeight.hxx"
 #include "LifetimeVariation.hxx"
 #include "dQdxCalibVariation.hxx"
+#include "RecombinationVariation.hxx"
 #include "DerivedQuantitiesVariation.hxx"
 
 #include "pionSelection.hxx"
@@ -209,11 +210,12 @@ void pionAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   // Define additional systematics (pionAnalysys/src/systematics)
-  evar().AddEventVariation(kdEdx,     "dEdx",     new dEdxVariation());
-  evar().AddEventVariation(kLength,   "Length",   new LengthVariation());
-  evar().AddEventVariation(kLifetime, "Lifetime", new LifetimeVariation());
-  evar().AddEventVariation(kdQdxCalib,"dQdxCalib",new dQdxCalibVariation());
-  evar().AddEventVariation(kDerived,  "Derived",  new DerivedQuantitiesVariation());
+  evar().AddEventVariation(kdEdx,         "dEdx",         new dEdxVariation());
+  evar().AddEventVariation(kLength,       "Length",       new LengthVariation());
+  evar().AddEventVariation(kLifetime,     "Lifetime",     new LifetimeVariation());
+  evar().AddEventVariation(kdQdxCalib,    "dQdxCalib",    new dQdxCalibVariation());
+  evar().AddEventVariation(kRecombination,"Recombination",new RecombinationVariation());
+  evar().AddEventVariation(kDerived,      "Derived",      new DerivedQuantitiesVariation());
 
   eweight().AddEventWeight(kBeam,     "beamComp", new BeamCompositionWeight());
 }
@@ -235,6 +237,7 @@ void pionAnalysis::DefineConfigurations(){
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime"))         conf().EnableEventVariation(kLifetime,     all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib"))        conf().EnableEventVariation(kdQdxCalib,    all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination"))    conf().EnableEventVariation(kRecombination,    all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
 
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableDerivedQuantities"))conf().EnableEventVariation(kDerived,     all_syst);
@@ -250,6 +253,11 @@ void pionAnalysis::DefineConfigurations(){
       AddConfiguration(conf(), dQdxCalib_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
       conf().EnableEventVariation(kdQdxCalib,    dQdxCalib_syst);
       conf().EnableEventVariation(kDerived,      dQdxCalib_syst);
+    }
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination")){      
+      AddConfiguration(conf(), Recombination_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
+      conf().EnableEventVariation(kRecombination,    Recombination_syst);
+      conf().EnableEventVariation(kDerived,          Recombination_syst);
     }
   }
 
@@ -421,10 +429,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
       output().FillVectorVar(seltrk_dau_chi2_prot,          dau->Chi2Proton);
       output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
       output().FillVectorVar(seltrk_dau_vtxdistance,        box().DaughterDistanceToVertex[i]);
-      if (dau->UniqueID!=-1 && dau->Chi2ndf>0)
-        output().FillVectorVar(seltrk_dau_type,              0);
-      else
-        output().FillVectorVar(seltrk_dau_type,              1);
+      output().FillVectorVar(seltrk_dau_type,               dau->Type);
       
       output().IncrementCounter(seltrk_ndau);
     }    

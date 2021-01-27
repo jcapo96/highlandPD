@@ -103,6 +103,7 @@ public:
     dedx_syst,
     Lifetime_syst,
     dQdxCalib_syst,
+    Recombination_syst,
     enumConfLast_pionAnalysis
   };
 
@@ -111,6 +112,7 @@ public:
     kLength,
     kLifetime,
     kdQdxCalib,
+    kRecombination,
     kDerived,
     kBeam,    
     enumSystLast_pionAnalysis
