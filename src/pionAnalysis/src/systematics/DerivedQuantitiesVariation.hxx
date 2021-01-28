@@ -28,6 +28,9 @@ protected:
   Int_t GetRelevantRecObjectGroups(const SelectionBase& sel,     Int_t* IDs) const; 
   
   calo::CalorimetryAlg fCalo;
+
+
+  bool _recombEnabled;
 };
 
 #endif

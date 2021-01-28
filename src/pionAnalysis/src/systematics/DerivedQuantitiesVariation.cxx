@@ -3,17 +3,20 @@
 #include "pdAnalysisUtils.hxx"
 #include <cassert>
 #include "EventBoxPD.hxx"
+#include "Parameters.hxx"
 
 //********************************************************************
 DerivedQuantitiesVariation::DerivedQuantitiesVariation(): EventVariationBase(){
 //********************************************************************
 
+  _recombEnabled = (bool)ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination");
 }
 
 //********************************************************************
 void DerivedQuantitiesVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 //********************************************************************
 
+  
   // Get the SystBox for this event. The SystBox contains vector of objects that are relevant for this systematic.
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
@@ -33,10 +36,13 @@ void DerivedQuantitiesVariation::Apply(const ToyExperiment& toy, AnaEventC& even
     for (UInt_t j=0;j<part->Hits[2].size();j++){
       AnaHitPD& hit = part->Hits[2][j];
 
-      // compute the dEdx from the varied dQdx
-      hit.dEdx      = fCalo.dEdx_from_dQdx(hit.dQdx);
-      hit.dEdx_corr = fCalo.dEdx_from_dQdx(hit.dQdx_corr);
-
+      if (!_recombEnabled){
+        // recompute the dEdx from the varied dQdx
+        // only when the recombination variation is not enabled, since there dEdx is recomputed
+        hit.dEdx      = fCalo.dEdx_from_dQdx(hit.dQdx);
+        hit.dEdx_corr = fCalo.dEdx_from_dQdx(hit.dQdx_corr);
+      }
+        
       // Fill the dedx_vector for the collection plane to recompute truncLibo_dEdx    
       dedx_vector.push_back(hit.dEdx_corr);
     }
