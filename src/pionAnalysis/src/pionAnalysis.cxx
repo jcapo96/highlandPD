@@ -13,13 +13,13 @@
 #include "dEdxDataCorrection.hxx"
 #include "BrokenTrackDataCorrection.hxx"
 
-#include "dEdxVariation.hxx"
 #include "LengthVariation.hxx"
 #include "BeamCompositionWeight.hxx"
 #include "LifetimeVariation.hxx"
 #include "dQdxCalibVariation.hxx"
 #include "RecombinationVariation.hxx"
 #include "DerivedQuantitiesVariation.hxx"
+#include "TrackEffWeight.hxx"
 
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
@@ -210,14 +210,14 @@ void pionAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   // Define additional systematics (pionAnalysys/src/systematics)
-  evar().AddEventVariation(kdEdx,         "dEdx",         new dEdxVariation());
   evar().AddEventVariation(kLength,       "Length",       new LengthVariation());
   evar().AddEventVariation(kLifetime,     "Lifetime",     new LifetimeVariation());
   evar().AddEventVariation(kdQdxCalib,    "dQdxCalib",    new dQdxCalibVariation());
   evar().AddEventVariation(kRecombination,"Recombination",new RecombinationVariation());
   evar().AddEventVariation(kDerived,      "Derived",      new DerivedQuantitiesVariation());
 
-  eweight().AddEventWeight(kBeam,     "beamComp", new BeamCompositionWeight());
+  eweight().AddEventWeight(kBeam,         "beamComp",     new BeamCompositionWeight());
+  eweight().AddEventWeight(kTrackEff,     "trackEff",     new TrackEffWeight());
 }
 
 //********************************************************************
@@ -233,14 +233,14 @@ void pionAnalysis::DefineConfigurations(){
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if (_enableAllSystConfig){
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdx"))             conf().EnableEventVariation(kdEdx,         all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime"))         conf().EnableEventVariation(kLifetime,     all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib"))        conf().EnableEventVariation(kdQdxCalib,    all_syst);
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination"))    conf().EnableEventVariation(kRecombination,    all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination"))    conf().EnableEventVariation(kRecombination,all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableDerivedQuantities"))conf().EnableEventVariation(kDerived,      all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
 
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableDerivedQuantities"))conf().EnableEventVariation(kDerived,     all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledTrackEff"))        conf().EnableEventWeight(   kTrackEff,     all_syst);
   }
 
   if (_enableSingleVariationSystConf){
@@ -257,11 +257,8 @@ void pionAnalysis::DefineConfigurations(){
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination")){      
       AddConfiguration(conf(), Recombination_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
       conf().EnableEventVariation(kRecombination,    Recombination_syst);
-      conf().EnableEventVariation(kDerived,          Recombination_syst);
     }
   }
-
-
 
 }
 

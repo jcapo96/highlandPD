@@ -104,6 +104,7 @@ public:
     Lifetime_syst,
     dQdxCalib_syst,
     Recombination_syst,
+    TrackEff_syst,
     enumConfLast_pionAnalysis
   };
 
@@ -114,7 +115,8 @@ public:
     kdQdxCalib,
     kRecombination,
     kDerived,
-    kBeam,    
+    kBeam,
+    kTrackEff,
     enumSystLast_pionAnalysis
   };
   
