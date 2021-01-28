@@ -7,12 +7,14 @@ The single systematics configuration (when EnableSingle...SystConfigurations = 1
 or the all systematics configuration (when EnableAllSystematics = 1)
 need to be enabled in baseAnalysis parameter file
 
- < pionAnalysis.Systematics.EnabledEdx              = 0 >
  < pionAnalysis.Systematics.EnableLength            = 0 >
  < pionAnalysis.Systematics.EnableLifetime          = 0 >
  < pionAnalysis.Systematics.EnabledQdxCalib         = 0 >
+ < pionAnalysis.Systematics.EnableRecombination     = 0 >
  < pionAnalysis.Systematics.EnableDerivedQuantities = 0 >  
- < pionAnalysis.Systematics.EnabledBeamComposition  = 0 >	
+
+ < pionAnalysis.Systematics.EnabledBeamComposition  = 0 >
+ < pionAnalysis.Systematics.EnabledTrackEff         = 0 >
 
 --- Corrections -----------
 
