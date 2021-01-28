@@ -234,4 +234,5 @@ void pionSelection::InitializeEvent(AnaEventC& eventBB){
     event.EventBoxes[EventBoxId::kEventBoxPD] = new EventBoxPD();
 
   boxUtils::FillCandidateAndDaughters(event);
+  boxUtils::FillTrueCandidateAndDaughters(event);
 }
