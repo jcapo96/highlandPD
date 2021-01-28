@@ -107,3 +107,53 @@ void boxUtils::FillCandidateAndDaughters(AnaEventB& event){
 
   
 }
+
+
+//********************************************************************
+void boxUtils::FillTrueCandidateAndDaughters(AnaEventB& event){
+//********************************************************************
+
+
+  //  This method fills the EventBoxPD with  the true candidate and its daughters for later use
+  
+  
+  EventBoxB* EventBox = event.EventBoxes[EventBoxId::kEventBoxPD];
+
+  // TODO. We need a better method to get the tracks (returning a variable size array). Otherwise we have to guess how many tracks we have
+  AnaTrueParticle* trueParts[NMAXPARTICLES*10];
+  int nCandidateAndDaughters = 0; 
+
+  // Get all reconstructed parts in the event
+  AnaTrueParticleB** parts = event.TrueParticles;
+  Int_t nParts             = event.nTrueParticles;
+
+  for (Int_t i=0;i<nParts; ++i){    
+    AnaTrueParticlePD* part = static_cast<AnaTrueParticlePD*>(parts[i]);
+    if (part->ProcessStart == AnaTrueParticle::primary){
+      trueParts[nCandidateAndDaughters] = part;
+      nCandidateAndDaughters++;
+      const std::vector<Int_t>& daughtersIDs = part->Daughters;
+      for (UInt_t j=0;j<daughtersIDs.size(); ++j){      
+        AnaTrueParticleB* dau = anaUtils::GetTrueParticleByID(event, daughtersIDs[j]);
+        if (!dau) continue;
+        trueParts[nCandidateAndDaughters] = static_cast<AnaTrueParticle*>(dau);
+        nCandidateAndDaughters++;
+      }
+      break;
+    }
+  }
+      
+  EventBox->nTrueObjectsInGroup[EventBoxPD::kCandidateAndDaughters]=0;
+  anaUtils::CreateArray(EventBox->TrueObjectsInGroup[EventBoxPD::kCandidateAndDaughters], nCandidateAndDaughters);
+
+  for (Int_t i=0;i<nCandidateAndDaughters; ++i){
+    AnaTrueParticleB* part = trueParts[i];
+    EventBox->TrueObjectsInGroup[EventBoxPD::kCandidateAndDaughters][EventBox->nTrueObjectsInGroup[EventBoxPD::kCandidateAndDaughters]++] = part;
+  }
+
+  anaUtils::ResizeArray(EventBox->TrueObjectsInGroup [EventBoxPD::kCandidateAndDaughters], 
+                        EventBox->nTrueObjectsInGroup[EventBoxPD::kCandidateAndDaughters],
+                        nCandidateAndDaughters);
+
+  
+}

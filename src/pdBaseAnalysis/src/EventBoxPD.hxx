@@ -37,6 +37,7 @@ namespace boxUtils{
   /// Fill in the EventBox several arrays of tracks with Subdet2
   void FillLongTracks(AnaEventB& event, SubDetId::SubDetEnum det = SubDetId::kSubdet1);
   void FillCandidateAndDaughters(AnaEventB& event);
+  void FillTrueCandidateAndDaughters(AnaEventB& event);
 }
 
 #endif
