@@ -5,11 +5,14 @@
 #include "EventBoxPD.hxx"
 
 //********************************************************************
-dQdxCalibVariation::dQdxCalibVariation(): EventVariationBase(),BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dQdxCalib", BinnedParams::k1D_SYMMETRIC){
+dQdxCalibVariation::dQdxCalibVariation(): EventVariationBase(){
 //********************************************************************
 
+  _calibX  = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dQdxCalibX",  BinnedParams::k1D_SYMMETRIC);
+  _calibYZ = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dQdxCalibYZ", BinnedParams::k1D_SYMMETRIC);
+  
   // Read the systematic source parameters from the data files
-  SetNParameters(GetNBins());
+  SetNParameters(_calibX->GetNBins()+_calibYZ->GetNBins());
 }
 
 //********************************************************************
@@ -31,8 +34,15 @@ void dQdxCalibVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     if (!original)         continue;
     
     // We need the errors part of the data file but as well the relative uncertainty for sigma
-    Float_t mean_corr, mean_var;
-    Int_t mean_index;
+    Float_t X_mean, X_var, YZ_mean, YZ_var;
+    Int_t X_index, YZ_index;
+    
+    // Get the systematics parameters
+    if ( !_calibX->GetBinValues(0.5, X_mean,  X_var,  X_index))  return;
+    if (!_calibYZ->GetBinValues(0.5, YZ_mean, YZ_var, YZ_index))  return;
+
+    Float_t C_X  =  X_mean +   X_var*toy.GetToyVariations(_index)->Variations[X_index];
+    Float_t C_YZ = YZ_mean +  YZ_var*toy.GetToyVariations(_index)->Variations[X_index+_calibX->GetNBins()]; 
     
     // Apply the variation to the event model quantities
     // Only plane 2 for the moment
@@ -42,14 +52,14 @@ void dQdxCalibVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
         AnaHitPD& hit = part->Hits[i][j];                
 
         // Get the systematics parameters as a function of X
-        if (!GetBinValues(hit.Position.x(), mean_corr,  mean_var,  mean_index))  return;
+        //        if (!GetBinValues(hit.Position.x(), mean_corr,  mean_var,  mean_index))  return;
         
         // This is a multiplicative correction assuming the nominal is correct and there is a gaussian error
         // in the multiplicative factors (X_cal, XZ_cal)
-        Float_t alpha = mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index];
+        //        Float_t alpha = mean_corr +  mean_var*toy.GetToyVariations(_index)->Variations[mean_index];
 
-        hit.dQdx      *= alpha;
-        hit.dQdx_corr *= alpha;
+        hit.dQdx      *= C_X*C_YZ;
+        hit.dQdx_corr *= C_X*C_YZ;
       }
     }
   }

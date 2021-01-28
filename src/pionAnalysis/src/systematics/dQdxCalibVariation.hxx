@@ -31,6 +31,10 @@ protected:
 
 
   calo::CalorimetryAlg fCalo;
+
+  BinnedParams* _calibX;
+  BinnedParams* _calibYZ;
+
   
 };
 
