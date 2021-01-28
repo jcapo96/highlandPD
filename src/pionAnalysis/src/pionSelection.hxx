@@ -30,7 +30,7 @@ class pionSelection: public SelectionBase{
   bool FillEventSummary(AnaEventC&, Int_t*){return false;}
   SampleId_h GetSampleId(){return UNASSIGNEDID;}
   Int_t GetRelevantRecObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{ IDs[0] = EventBoxPD::kCandidateAndDaughters;return 1;}
-  Int_t GetRelevantTrueObjectGroupsForSystematic(SystId_h, Int_t*, Int_t) const{return 0;}
+  Int_t GetRelevantTrueObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{IDs[0] = EventBoxPD::kCandidateAndDaughters;return 1;}
 
   //------------------
 
