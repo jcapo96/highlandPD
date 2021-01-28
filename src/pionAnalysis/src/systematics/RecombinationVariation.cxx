@@ -13,8 +13,6 @@
 RecombinationVariation::RecombinationVariation(): EventVariationBase(){
 //********************************************************************
 
-
-
   _modBoxA = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","RecombinationA", BinnedParams::k1D_SYMMETRIC);
   _modBoxB = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","RecombinationB", BinnedParams::k1D_SYMMETRIC);
   
@@ -43,15 +41,14 @@ void RecombinationVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     // We need the errors part of the data file but as well the relative uncertainty for sigma
     Float_t A_mean, A_var, B_mean, B_var;
     Int_t A_index, B_index;
-
     
-    // Get the systematics parameters as a function of X
+    // Get the systematics parameters
     if (!_modBoxA->GetBinValues(0.5, A_mean,  A_var,  A_index))  return;
     if (!_modBoxB->GetBinValues(0.5, B_mean,  B_var,  B_index))  return;
 
     Float_t ModBoxA = A_mean +  A_var*toy.GetToyVariations(_index)->Variations[A_index];
-    Float_t ModBoxB = B_mean +  B_var*toy.GetToyVariations(_index)->Variations[B_index]; 
-    
+    Float_t ModBoxB = B_mean +  B_var*toy.GetToyVariations(_index)->Variations[B_index+_modBoxA->GetNBins()]; 
+
     // Set the varied parameters
     fCalo.SetModBoxA(ModBoxA);
     fCalo.SetModBoxB(ModBoxB);        
@@ -84,7 +81,7 @@ bool RecombinationVariation::UndoSystematic(AnaEventC& event){
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
     if (!original)   continue;
 
-    for (Int_t i=0;i<3;i++){
+    for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
         part->Hits[i][j].dEdx      = original->Hits[i][j].dEdx;
         part->Hits[i][j].dEdx_corr = original->Hits[i][j].dEdx_corr;
