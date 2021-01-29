@@ -43,16 +43,16 @@ void RecombinationVariation::Apply(const ToyExperiment& toy, AnaHitPD& hit){
 //********************************************************************
             
   // compute the dEdx from the varied dQdx
-  hit.dEdx      = fCalo.dEdx_from_dQdx(hit.dQdx);
-  hit.dEdx_corr = fCalo.dEdx_from_dQdx(hit.dQdx_corr);
+  hit.dEdx       = fCalo.dEdx_from_dQdx(hit.dQdx);
+  //  hit.dEdx_calib = fCalo.dEdx_from_dQdx(hit.dQdx_calib);
 }
 
 //********************************************************************
 bool RecombinationVariation::UndoSystematic(const AnaHitPD& original_hit, AnaHitPD& hit){
   //********************************************************************
   
-  hit.dEdx      = original_hit.dEdx;
-  hit.dEdx_corr = original_hit.dEdx_corr;
+  hit.dEdx       = original_hit.dEdx;
+  hit.dEdx_calib = original_hit.dEdx_calib;
 
   // Don't reset the spill to corrected
   return false;

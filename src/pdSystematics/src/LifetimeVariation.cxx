@@ -32,16 +32,16 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaHitPD& hit){
   Float_t corr = fCalo.LifetimeCorrection(hit.PeakTime, fEventT0);
   
   // Uncorrect for the nominal and apply the varied correction only to dQdx
-  hit.dQdx      *= corr/corr_nominal;
-  hit.dQdx_corr *= corr/corr_nominal;
+  hit.dQdx       *= corr/corr_nominal;
+  hit.dQdx_NoSCE *= corr/corr_nominal;
 }
 
 //********************************************************************
 bool LifetimeVariation::UndoSystematic(const AnaHitPD& original_hit, AnaHitPD& hit){
   //********************************************************************
   
-  hit.dQdx      = original_hit.dQdx;
-  hit.dQdx_corr = original_hit.dQdx_corr;
+  hit.dQdx       = original_hit.dQdx;
+  hit.dQdx_NoSCE = original_hit.dQdx_NoSCE;
 
   // Don't reset the spill to corrected
   return false;

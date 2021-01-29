@@ -61,7 +61,7 @@ void dEdxCalibVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
           // recompute the dEdx from the varied dQdx
           // only when the recombination variation is not enabled, since there dEdx is recomputed
           hit.dEdx      = fCalo.dEdx_from_dQdx(hit.dQdx);
-          hit.dEdx_corr = fCalo.dEdx_from_dQdx(hit.dQdx_corr);
+          //          hit.dEdx_calib = fCalo.dEdx_from_dQdx(hit.dQdx_corr);
         }
 
         // Fill the dedx_vector for the collection plane to recompute truncLibo_dEdx    
@@ -101,8 +101,8 @@ bool dEdxCalibVariation::UndoSystematic(AnaEventC& event){
         }
 
         // Reset the dEdx
-        part->Hits[i][j].dEdx      = original->Hits[i][j].dEdx;
-        part->Hits[i][j].dEdx_corr = original->Hits[i][j].dEdx_corr;
+        part->Hits[i][j].dEdx       = original->Hits[i][j].dEdx;
+        part->Hits[i][j].dEdx_calib = original->Hits[i][j].dEdx_calib;
       }
     }
     // reset the top level quantities

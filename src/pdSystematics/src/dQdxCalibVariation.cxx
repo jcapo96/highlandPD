@@ -29,16 +29,16 @@ void dQdxCalibVariation::Apply(const ToyExperiment& toy, AnaHitPD& hit){
   Float_t C_X  =  X_mean +   X_var*toy.GetToyVariations(_index)->Variations[X_index];
   Float_t C_YZ = YZ_mean +  YZ_var*toy.GetToyVariations(_index)->Variations[X_index+_calibX->GetNBins()]; 
     
-  hit.dQdx      *= C_X*C_YZ;
-  hit.dQdx_corr *= C_X*C_YZ;
+  hit.dQdx       *= C_X*C_YZ;
+  hit.dQdx_NoSCE *= C_X*C_YZ;
 }
 
 //********************************************************************
 bool dQdxCalibVariation::UndoSystematic(const AnaHitPD& original_hit, AnaHitPD& hit){
   //********************************************************************
   
-  hit.dQdx      = original_hit.dQdx;
-  hit.dQdx_corr = original_hit.dQdx_corr;
+  hit.dQdx       = original_hit.dQdx;
+  hit.dQdx_NoSCE = original_hit.dQdx_NoSCE;
 
   // Don't reset the spill to corrected
   return false;
