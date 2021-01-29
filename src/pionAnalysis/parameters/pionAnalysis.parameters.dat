@@ -8,10 +8,13 @@ or the all systematics configuration (when EnableAllSystematics = 1)
 need to be enabled in baseAnalysis parameter file
 
  < pionAnalysis.Systematics.EnableLength            = 0 >
+
  < pionAnalysis.Systematics.EnableLifetime          = 0 >
  < pionAnalysis.Systematics.EnabledQdxCalib         = 0 >
  < pionAnalysis.Systematics.EnableRecombination     = 0 >
- < pionAnalysis.Systematics.EnableDerivedQuantities = 0 >  
+
+This is the parent systematic of the three above
+ < pionAnalysis.Systematics.EnabledEdxCalib         = 0 >  
 
  < pionAnalysis.Systematics.EnabledBeamComposition  = 0 >
  < pionAnalysis.Systematics.EnabledTrackEff         = 0 >
