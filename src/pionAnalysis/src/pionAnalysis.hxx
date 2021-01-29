@@ -104,17 +104,17 @@ public:
     Lifetime_syst,
     dQdxCalib_syst,
     Recombination_syst,
+    dEdxCalib_syst,
     TrackEff_syst,
     enumConfLast_pionAnalysis
   };
 
   enum enumSyst_pionAnalysis{
-    kdEdx=0,
-    kLength,
+    kLength=0,
     kLifetime,
     kdQdxCalib,
     kRecombination,
-    kDerived,
+    kdEdxCalib,
     kBeam,
     kTrackEff,
     enumSystLast_pionAnalysis

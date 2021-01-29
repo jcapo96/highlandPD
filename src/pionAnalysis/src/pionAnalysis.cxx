@@ -17,8 +17,8 @@
 #include "BeamCompositionWeight.hxx"
 #include "LifetimeVariation.hxx"
 #include "dQdxCalibVariation.hxx"
+#include "dEdxCalibVariation.hxx"
 #include "RecombinationVariation.hxx"
-#include "DerivedQuantitiesVariation.hxx"
 #include "TrackEffWeight.hxx"
 
 #include "pionSelection.hxx"
@@ -209,13 +209,22 @@ void pionAnalysis::DefineSystematics(){
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
-  // Define additional systematics (pionAnalysys/src/systematics)
+  //---- Define additional systematics (pionAnalysys/src/systematics) -----
   evar().AddEventVariation(kLength,       "Length",       new LengthVariation());
+
+  // dEdx hit level variations
   evar().AddEventVariation(kLifetime,     "Lifetime",     new LifetimeVariation());
   evar().AddEventVariation(kdQdxCalib,    "dQdxCalib",    new dQdxCalibVariation());
   evar().AddEventVariation(kRecombination,"Recombination",new RecombinationVariation());
-  evar().AddEventVariation(kDerived,      "Derived",      new DerivedQuantitiesVariation());
 
+  // The main dEdx variation, including the three above
+  dEdxCalibVariation* dEdxCalib = new dEdxCalibVariation();
+  dEdxCalib->AddDaughter(evar().GetEventVariation(kLifetime));
+  dEdxCalib->AddDaughter(evar().GetEventVariation(kdQdxCalib));
+  dEdxCalib->AddDaughter(evar().GetEventVariation(kRecombination));    
+  evar().AddEventVariation(kdEdxCalib,    "dEdxCalib",    dEdxCalib);
+  
+  // Weight systematics                                                                                
   eweight().AddEventWeight(kBeam,         "beamComp",     new BeamCompositionWeight());
   eweight().AddEventWeight(kTrackEff,     "trackEff",     new TrackEffWeight());
 }
@@ -234,29 +243,35 @@ void pionAnalysis::DefineConfigurations(){
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if (_enableAllSystConfig){
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime"))         conf().EnableEventVariation(kLifetime,     all_syst);
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib"))        conf().EnableEventVariation(kdQdxCalib,    all_syst);
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination"))    conf().EnableEventVariation(kRecombination,all_syst);
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableDerivedQuantities"))conf().EnableEventVariation(kDerived,      all_syst);
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
 
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdxCalib")){
+      if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime"))         conf().EnableEventVariation(kLifetime,     all_syst);
+      if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib"))        conf().EnableEventVariation(kdQdxCalib,    all_syst);
+      if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination"))    conf().EnableEventVariation(kRecombination,all_syst);
+      conf().EnableEventVariation(kdEdxCalib,    all_syst);
+    }
+      
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledTrackEff"))        conf().EnableEventWeight(   kTrackEff,     all_syst);
   }
 
   if (_enableSingleVariationSystConf){
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime")){      
-      AddConfiguration(conf(), Lifetime_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
-      conf().EnableEventVariation(kLifetime,     Lifetime_syst);
-      conf().EnableEventVariation(kDerived,      Lifetime_syst);
-    }
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib")){      
-      AddConfiguration(conf(), dQdxCalib_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
-      conf().EnableEventVariation(kdQdxCalib,    dQdxCalib_syst);
-      conf().EnableEventVariation(kDerived,      dQdxCalib_syst);
-    }
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination")){      
-      AddConfiguration(conf(), Recombination_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
-      conf().EnableEventVariation(kRecombination,    Recombination_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdxCalib")){
+      if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime")){      
+        AddConfiguration(conf(), Lifetime_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
+        conf().EnableEventVariation(kLifetime,     Lifetime_syst);
+        conf().EnableEventVariation(kdEdxCalib,    Lifetime_syst);
+      }
+      if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib")){      
+        AddConfiguration(conf(), dQdxCalib_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
+        conf().EnableEventVariation(kdQdxCalib,    dQdxCalib_syst);
+        conf().EnableEventVariation(kdEdxCalib,    dQdxCalib_syst);
+      }
+      if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination")){      
+        AddConfiguration(conf(), Recombination_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
+        conf().EnableEventVariation(kRecombination,  Recombination_syst);
+        conf().EnableEventVariation(kdEdxCalib,      Recombination_syst);
+      }
     }
   }
 
@@ -368,7 +383,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
       This method is called once all toys have been run, what means that the value of all variables for the last toy will be saved. This is not a problem 
       for variables that are not expected to change from a toy to another.
   */
-  
+
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
 
@@ -425,7 +440,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
       output().FillMatrixVarFromArray(seltrk_dau_CNNscore,  dau->CNNscore,         3); 
       output().FillVectorVar(seltrk_dau_chi2_prot,          dau->Chi2Proton);
       output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
-      output().FillVectorVar(seltrk_dau_vtxdistance,        box().DaughterDistanceToVertex[i]);
+      //      output().FillVectorVar(seltrk_dau_vtxdistance,        box().DaughterDistanceToVertex[i]);
       output().FillVectorVar(seltrk_dau_type,               dau->Type);
       
       output().IncrementCounter(seltrk_ndau);
