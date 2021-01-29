@@ -83,7 +83,7 @@ message("EIGEN libraries:           ${EIGEN_LIBRARIES}")
 
 file(GLOB highlandPD_inc ${CMAKE_SOURCE_DIR}/src/*/src
                          ${CMAKE_SOURCE_DIR}/src/*/src/CNN
-                         ${CMAKE_SOURCE_DIR}/src/*/src/corrections ${CMAKE_SOURCE_DIR}/src/*/src/systematics
+                         ${CMAKE_SOURCE_DIR}/src/*/src/corrections
 #                         ${LARSOFTREADER_DIR} ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}
                          ${CMAKE_BINARY_DIR}/dict)
 
@@ -129,7 +129,7 @@ endforeach(file0)
 
 file(GLOB highlandPD_src  ${CMAKE_SOURCE_DIR}/src/*/src/*.cxx
                           ${CMAKE_SOURCE_DIR}/src/*/src/CNN/*.cxx
-                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.cxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.cxx) 
+                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.cxx) 
 #                          ${LARSOFTREADER_DIR}/LArSoft*.cxx
 #                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
 
@@ -148,7 +148,7 @@ set(HIGHLAND_PD_LIBRARIES "-L${CMAKE_BINARY_DIR} -lhighlandPD")
 
 file(GLOB highlandPD_inc2 ${CMAKE_SOURCE_DIR}/src/*/src/*.hxx
                           ${CMAKE_SOURCE_DIR}/src/*/src/CNN/*.hxx
-                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.hxx ${CMAKE_SOURCE_DIR}/src/*/src/systematics/*.hxx) 
+                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.hxx) 
 #                          ${LARSOFTREADER_DIR}/*.hxx
 #                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/*.h)
 
