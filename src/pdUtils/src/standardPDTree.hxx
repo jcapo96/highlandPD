@@ -160,7 +160,9 @@ namespace standardPDTree{
     beam_ckov_status,  
     beam_ckov_time,    
     beam_ckov_pressure,
-
+    beam_npdgs,
+    beam_pdgs,
+    
     // global counters
     truebeamdau_npi0,
     truebeamdau_npiplus,
