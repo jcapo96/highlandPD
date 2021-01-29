@@ -36,7 +36,7 @@ void pionSelection::DefineSteps(){
   AddStep(StepBase::kCut,    "candidate is track",         new CandidateIsTrackCut());
   AddStep(StepBase::kCut,    "pion track end",             new PionEndsAPA3Cut());
   //AddStep(StepBase::kCut,    "seltrk chi2 cut",            new PionPassChi2Cut());
-  AddStep(StepBase::kAction, "compute daughter distance",  new ComputeDaughterDistanceAction());  
+  //  AddStep(StepBase::kAction, "compute daughter distance",  new ComputeDaughterDistanceAction());  
   AddStep(StepBase::kCut,    "no pion daughter",           new NoPionDaughterCut());
 
   //Add a split to the trunk with 2 branches.
@@ -55,7 +55,7 @@ void pionSelection::DefineSteps(){
   // This number tells the selection to stop when a given accum level (accumulated cut level) is not passed. For example, 2 as argument would mean
   // that selection is stopped for the current toy experiment when the third cut (numbering starts at 0) is not passed. This is a way of saving time.
   // -1 means no preselection
-  SetPreSelectionAccumLevel(-1);
+  SetPreSelectionAccumLevel(5);   // TODO: No need to Apply dEdx systematics
 }
 
 //**************************************************
@@ -224,10 +224,10 @@ bool PionAbsorptionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 }
 
 //**************************************************
-void pionSelection::InitializeEvent(AnaEventC& eventBB){
+void pionSelection::InitializeEvent(AnaEventC& eventC){
 //**************************************************
 
-  AnaEventB& event = *static_cast<AnaEventB*>(&eventBB); 
+  AnaEventB& event = *static_cast<AnaEventB*>(&eventC); 
 
   // Create the appropriate EventBox if it does not exist yet
   if (!event.EventBoxes[EventBoxId::kEventBoxPD])
@@ -236,3 +236,4 @@ void pionSelection::InitializeEvent(AnaEventC& eventBB){
   boxUtils::FillCandidateAndDaughters(event);
   boxUtils::FillTrueCandidateAndDaughters(event);
 }
+
