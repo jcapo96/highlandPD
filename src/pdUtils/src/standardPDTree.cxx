@@ -90,10 +90,10 @@ void standardPDTree::AddStandardVariables_CandidateHitsReco(OutputManager& outpu
   AddVarFixMF(output, seltrk_hit_z_raw,      "candidate z per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_dedx_raw,   "candidate dEdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_dedx,       "candidate calibrated dEdx per hit",3,NMAXHITSPERPLANE_SELTRK);
-  AddVarFixMF(output, seltrk_hit_dedx_cor,   "candidate LAr calibrated dEdx per hit",3,NMAXHITSPERPLANE_SELTRK);
+  AddVarFixMF(output, seltrk_hit_dedx_cal,   "candidate LAr calibrated dEdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_dqdx_raw,   "candidate dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_dqdx,       "candidate calibrated dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
-  AddVarFixMF(output, seltrk_hit_dqdx_cor,   "candidate LAr calibrated dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
+  AddVarFixMF(output, seltrk_hit_dqdx_noSCE, "candidate LAr noSCE dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_resrange,   "candidate Residual Range per hit",3,NMAXHITSPERPLANE_SELTRK);
 }
 
@@ -354,9 +354,9 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
         output.FillMatrixVar(seltrk_hit_y_raw   ,(Float_t)-999., i, j);
         output.FillMatrixVar(seltrk_hit_z_raw   ,(Float_t)-999., i, j);
         output.FillMatrixVar(seltrk_hit_dedx    ,(Float_t)-999., i, j);
-        output.FillMatrixVar(seltrk_hit_dedx_cor,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_dedx_cal,(Float_t)-999., i, j);
         output.FillMatrixVar(seltrk_hit_dqdx    ,(Float_t)-999., i, j);
-        output.FillMatrixVar(seltrk_hit_dqdx_cor,(Float_t)-999., i, j);
+        output.FillMatrixVar(seltrk_hit_dqdx_noSCE,(Float_t)-999., i, j);
         output.FillMatrixVar(seltrk_hit_resrange,(Float_t)-999., i, j);
         output.FillMatrixVar(seltrk_hit_dedx_raw,(Float_t)-999., i, j);
         output.FillMatrixVar(seltrk_hit_dqdx_raw,(Float_t)-999., i, j);
@@ -375,11 +375,11 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
         output.FillMatrixVar(seltrk_hit_x_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.X(), i, j-jmin);
         output.FillMatrixVar(seltrk_hit_y_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.Y(), i, j-jmin);
         output.FillMatrixVar(seltrk_hit_z_raw,(Float_t)static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].Position.Z(), i, j-jmin);
-        output.FillMatrixVar(seltrk_hit_dedx,      part->Hits[i][j].dEdx,              i, j-jmin);
-        output.FillMatrixVar(seltrk_hit_dedx_cor,  part->Hits[i][j].dEdx_corr,         i, j-jmin);
-        output.FillMatrixVar(seltrk_hit_dqdx,      part->Hits[i][j].dQdx,              i, j-jmin);
-        output.FillMatrixVar(seltrk_hit_dqdx_cor,  part->Hits[i][j].dQdx_corr,         i, j-jmin);
-        output.FillMatrixVar(seltrk_hit_resrange,  part->Hits[i][j].ResidualRange,     i, j-jmin);
+        output.FillMatrixVar(seltrk_hit_dedx,       part->Hits[i][j].dEdx,              i, j-jmin);
+        output.FillMatrixVar(seltrk_hit_dedx_cal,   part->Hits[i][j].dEdx_calib,        i, j-jmin);
+        output.FillMatrixVar(seltrk_hit_dqdx,       part->Hits[i][j].dQdx,              i, j-jmin);
+        output.FillMatrixVar(seltrk_hit_dqdx_noSCE, part->Hits[i][j].dQdx_NoSCE,        i, j-jmin);
+        output.FillMatrixVar(seltrk_hit_resrange,   part->Hits[i][j].ResidualRange,     i, j-jmin);
         output.FillMatrixVar(seltrk_hit_dedx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].dEdx, i, j-jmin);
         output.FillMatrixVar(seltrk_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(part->Original->Original->Original)->Hits[i][j].dQdx, i, j-jmin);
       }

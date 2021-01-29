@@ -80,10 +80,10 @@ namespace standardPDTree{
 
     seltrk_hit_dedx,
     seltrk_hit_dedx_raw,
-    seltrk_hit_dedx_cor,
+    seltrk_hit_dedx_cal,
     seltrk_hit_dqdx,
     seltrk_hit_dqdx_raw,
-    seltrk_hit_dqdx_cor,
+    seltrk_hit_dqdx_noSCE,
     seltrk_hit_x,
     seltrk_hit_y,
     seltrk_hit_z,
