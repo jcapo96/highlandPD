@@ -102,8 +102,8 @@
   
 */
 
-const UInt_t NMAXSAVEDPARTICLES=700;
-const UInt_t NMAXSAVEDDAUGHTERS=100;
+const UInt_t NMAXSAVEDPARTICLES=20;
+const UInt_t NMAXSAVEDDAUGHTERS=20;
 
 PDCounters _globalCounters; 
 
