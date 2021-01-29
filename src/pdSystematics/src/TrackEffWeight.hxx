@@ -10,15 +10,14 @@ public:
   
   TrackEffWeight();
   virtual ~TrackEffWeight(){}
-  
+
+  /// computes the weight for this event
   using EventWeightBase::ComputeWeight;
   Weight_h ComputeWeight(const ToyExperiment& toy, const AnaEventC& event, const ToyBoxB& box);
 
-
+  /// Is this true object relevant for this systematic
   bool IsRelevantTrueObject(const AnaEventC& event, const AnaTrueObjectC& trueObj) const;
 
-  Int_t GetRelevantTrueObjectGroups(const SelectionBase& sel, Int_t* IDs) const;
-  
 };
 
 #endif
