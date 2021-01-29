@@ -2,6 +2,21 @@
 #include "pdAnalysisUtils.hxx"
 #include "HitVariationBase.hxx"
 
+/*
+  This is the dEdx calibration variation, applying different variations at the hit level 
+  (this avoid redoing the it loop in several places). Those has to be added as daughters 
+  of this variation in the analysis algorithm. Some options are:
+  - Lifetime
+  - dQdxCalib
+  - Recombination
+
+  This variation also recomputes all derived quantities depending on dQdx:
+  - dEdx
+  - Chi2Proton
+  - Truncated dEdx
+*/
+
+
 //********************************************************************
 void dEdxCalibVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 //********************************************************************
