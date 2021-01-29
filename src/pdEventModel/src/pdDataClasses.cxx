@@ -36,10 +36,10 @@ AnaHitPD::AnaHitPD(){
   StartTick     = (UInt_t)kIntUnassigned;
   EndTick       = (UInt_t)kIntUnassigned; 
   
-  dEdx          = kFloatUnassigned;
+  dQdx_NoSCE    = kFloatUnassigned;
   dQdx          = kFloatUnassigned;
-  dEdx_corr     = kFloatUnassigned;
-  dQdx_corr     = kFloatUnassigned;
+  dEdx          = kFloatUnassigned;
+  dEdx_calib    = kFloatUnassigned;
   ResidualRange = kFloatUnassigned;
 
   Signal.clear();
@@ -63,10 +63,10 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   StartTick     = hit.StartTick;
   EndTick       = hit.EndTick  ; 
   
-  dEdx           = hit.dEdx;
+  dQdx_NoSCE     = hit.dQdx_NoSCE;
   dQdx           = hit.dQdx;
-  dEdx_corr      = hit.dEdx_corr;
-  dQdx_corr      = hit.dQdx_corr;
+  dEdx           = hit.dEdx;
+  dEdx_calib     = hit.dEdx_calib;
   ResidualRange  = hit.ResidualRange;
 }
 

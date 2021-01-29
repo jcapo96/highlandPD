@@ -1200,7 +1200,7 @@ void pionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& tru
 
       hit.dEdx          = (*reco_beam_dEdX)[j];
       hit.dQdx          = (*reco_beam_dQdX)[j];
-      hit.dEdx_corr     = (*reco_beam_calibrated_dEdX)[j];      
+      hit.dEdx_calib     = (*reco_beam_calibrated_dEdX)[j];      
       hit.ResidualRange = (*reco_beam_resRange)[j];
            
       part->Hits[plane].push_back(hit);
@@ -1431,7 +1431,7 @@ void pionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTrueParticl
 
       hit.dEdx         = dedx;
       hit.dQdx         = dqdx;
-      hit.dEdx_corr    = dedx_cal;
+      hit.dEdx_calib   = dedx_cal;
       hit.ResidualRange= resRange;
 
       part->Hits[plane].push_back(hit);

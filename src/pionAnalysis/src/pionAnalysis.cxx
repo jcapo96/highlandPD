@@ -478,8 +478,8 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
     output().FillToyVar(seltrk_chi2_ndf,  box().MainTrack->Chi2ndf);
     output().FillToyVar(seltrk_truncLibo_dEdx,  box().MainTrack->truncLibo_dEdx);
     if (!box().MainTrack->Hits[2].empty()){
-      output().FillToyVar(seltrk_hit0_dqdx, box().MainTrack->Hits[2][0].dQdx_corr);
-      output().FillToyVar(seltrk_hit0_dedx, box().MainTrack->Hits[2][0].dEdx_corr);
+      output().FillToyVar(seltrk_hit0_dqdx, box().MainTrack->Hits[2][0].dQdx_NoSCE);
+      output().FillToyVar(seltrk_hit0_dedx, box().MainTrack->Hits[2][0].dEdx_calib);
     }
 
 
