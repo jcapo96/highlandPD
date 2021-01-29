@@ -9,8 +9,8 @@
 RecombinationVariation::RecombinationVariation(): HitVariationBase(true){
 //********************************************************************
 
-  _modBoxA = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","RecombinationA", BinnedParams::k1D_SYMMETRIC);
-  _modBoxB = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","RecombinationB", BinnedParams::k1D_SYMMETRIC);
+  _modBoxA = new BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","RecombinationA", BinnedParams::k1D_SYMMETRIC);
+  _modBoxB = new BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","RecombinationB", BinnedParams::k1D_SYMMETRIC);
   
   // Read the systematic source parameters from the data files
   SetNParameters(_modBoxA->GetNBins()+_modBoxB->GetNBins());

@@ -7,8 +7,8 @@
 dQdxCalibVariation::dQdxCalibVariation(): HitVariationBase(){
 //********************************************************************
 
-  _calibX  = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dQdxCalibX",  BinnedParams::k1D_SYMMETRIC);
-  _calibYZ = new BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dQdxCalibYZ", BinnedParams::k1D_SYMMETRIC);
+  _calibX  = new BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","dQdxCalibX",  BinnedParams::k1D_SYMMETRIC);
+  _calibYZ = new BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","dQdxCalibYZ", BinnedParams::k1D_SYMMETRIC);
   
   // Read the systematic source parameters from the data files
   SetNParameters(_calibX->GetNBins()+_calibYZ->GetNBins());

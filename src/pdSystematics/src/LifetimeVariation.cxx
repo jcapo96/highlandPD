@@ -3,7 +3,7 @@
 #include <cassert>
 
 //********************************************************************
-LifetimeVariation::LifetimeVariation(): HitVariationBase(),BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","Lifetime", BinnedParams::k1D_SYMMETRIC){
+LifetimeVariation::LifetimeVariation(): HitVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","Lifetime", BinnedParams::k1D_SYMMETRIC){
 //********************************************************************
 
   // Read the systematic source parameters from the data files

@@ -5,7 +5,7 @@
 #include "EventBoxPD.hxx"
 
 //********************************************************************
-LengthVariation::LengthVariation(): EventVariationBase(),BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","length", BinnedParams::k1D_SYMMETRIC){
+LengthVariation::LengthVariation(): EventVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","length", BinnedParams::k1D_SYMMETRIC){
 //********************************************************************
 
   // Read the systematic source parameters from the data files

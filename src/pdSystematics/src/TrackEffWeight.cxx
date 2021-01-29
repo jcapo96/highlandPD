@@ -5,7 +5,7 @@
 #include "SystematicUtils.hxx"
 
 //********************************************************************
-TrackEffWeight::TrackEffWeight():EventWeightBase(), BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","trackEff", BinnedParams::k1D_EFF_ASSYMMETRIC){
+TrackEffWeight::TrackEffWeight():EventWeightBase(), BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","trackEff", BinnedParams::k1D_EFF_ASSYMMETRIC){
 //********************************************************************
 
   // Read the systematic source parameters from the data files
