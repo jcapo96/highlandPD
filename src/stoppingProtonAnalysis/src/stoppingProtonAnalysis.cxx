@@ -6,7 +6,6 @@
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 
-#include "dEdxVariation.hxx"
 #include "dEdxCorrection.hxx"
 #include "BeamMomCorrection.hxx"
 #include "BeamMomSmearingCorrection.hxx"
@@ -189,7 +188,6 @@ void stoppingProtonAnalysis::DefineSystematics(){
   // Some corrections are defined in baseAnalysis
   baseAnalysis::DefineSystematics();
 
-  //evar().AddEventVariation(SystId::kdEdx,           "dEdx",           new dEdxVariation());
 }
 
 //********************************************************************
