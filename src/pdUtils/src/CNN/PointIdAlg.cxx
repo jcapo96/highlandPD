@@ -6,7 +6,9 @@
 
 #include "PointIdAlg.hxx"
 
-//#include "tensorflow/core/public/session.h"  // anselmo
+#ifdef  CompileTF
+#include "tensorflow/core/public/session.h"  // anselmo
+#endif
 /*
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -105,12 +107,13 @@ nnet::KerasModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 
 nnet::TfModelInterface::TfModelInterface(const char* modelFileName)
 {
-  /* anselmo
+
+#ifdef  CompileTF
   g = tf::Graph::create(nnet::ModelInterface::findFile(modelFileName).c_str(),
                         {"cnn_output", "_netout"});
   //if (!g) { throw art::Exception(art::errors::Unknown) << "TF model failed."; }
   if (!g) {std::cout << "TF model failed." << std::endl; exit(1);}
-  */
+#endif
   std::cout << "TF model loaded." << std::endl;
   
 }
@@ -132,15 +135,19 @@ nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& 
   if (debug_level>=3) std::cout << wspaces2(6) << "PointIdAlg.cxx:Run. READY TO CALL TF " << std::endl;   
 
   size_t count_gt0=0;
-  
-  //  tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));   // anselmo
-  //  auto input_map = _x.tensor<float, 4>();
+
+#ifdef  CompileTF
+  tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({samples, rows, cols, 1}));   // anselmo
+  auto input_map = _x.tensor<float, 4>();
+#endif
   for (long long int s = 0; s < samples; ++s) {
     const auto& sample = inps[s];
     for (long long int r = 0; r < rows; ++r) {
       const auto& row = sample[r];
       for (long long int c = 0; c < cols; ++c) {
-        //        input_map(s, r, c, 0) = row[c];  // anselmo
+#ifdef  CompileTF
+        input_map(s, r, c, 0) = row[c];  // anselmo
+#endif
         if (row[c]>0) count_gt0++;
         if (debug_level>=5) std::cout << wspaces2(8) << "PointIdAlg.cxx:Run. s, r, c, row[c] = " << s << " " << r << " " << c << " " << row[c] << std::endl;
         else if (debug_level>=4 && row[c]>0 ) std::cout << wspaces2(6) << "PointIdAlg.cxx:Run. s, r, c, row[c] = " << s << " " << r << " " << c << " " << row[c] << std::endl;   
@@ -206,7 +213,7 @@ nnet::PointIdAlg::PointIdAlg()
   }
   */    
   if ((fNNetModelFilePath.length() > 3) &&
-      (fNNetModelFilePath.compare(fNNetModelFilePath.length() - 3, 3, ".pb") == 0)) {
+      (fNNetModelFilePath.compare(fNNetModelFilePath.length() - 3, 3, ".pb") == 0)) {    
     fNNet = new nnet::TfModelInterface(fNNetModelFilePath.c_str());
   }
   else {

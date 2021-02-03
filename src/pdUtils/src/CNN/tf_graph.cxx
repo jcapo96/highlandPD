@@ -7,8 +7,7 @@
 
 #include "tf_graph.hxx"
 
-//#define Compile
-#ifdef  Compile
+#ifdef  CompileTF
 
 
 #include "tensorflow/core/public/session.h"
