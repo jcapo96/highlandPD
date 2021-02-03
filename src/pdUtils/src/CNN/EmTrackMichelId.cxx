@@ -185,7 +185,7 @@ void nnet::EmTrackMichelId::produce(AnaEventPD & evt)
                     if (points.size() != batch_out.size())
                     {
                       //                        throw cet::exception("EmTrackMichelId") << "hits processing failed" << std::endl;
-                      std::cout << "hits processing failed" << std::endl;
+                      std::cout << "hits processing failed: " << points.size() << " " << batch_out.size()  << std::endl;
                     }
                     for (size_t k = 0; k < points.size(); ++k)
                     {
@@ -433,8 +433,8 @@ void nnet::EmTrackMichelId::FillHits(const AnaEventPD& evt, std::vector<AnaHitPD
                   << hit.Channel << " "
                   << hit.StartTick << "-"
                   << hit.EndTick << " "
-                  << evt.ADC[hit.Channel][hit.StartTick] << " "
-                  << hit.Signal[0] << " " 
+          //                  << evt.ADC[hit.Channel][hit.StartTick] << " "
+                  << hit.Signal.size() << " " 
                   << std::endl;       
       }
     }
@@ -461,10 +461,10 @@ void nnet::EmTrackMichelId::DumpADCs(const AnaEventPD& evt){
 //*******************************************************
   
   std::cout << "ANSELMO: List of ADC values" << std::endl;
-  for (UInt_t j=0;j<evt.ADC.size();j++){
-    for (UInt_t k=0;k<evt.ADC[j].size();k++){
-      if (evt.ADC[j][k]>0) 
-        std::cout << j << " " << k << " " << evt.ADC[j][k] << std::endl;
+  for (UInt_t j=0;j<evt.CNNwires.size();j++){
+    for (UInt_t k=0;k<evt.CNNwires[j].adcs.size();k++){
+      if (evt.CNNwires[j].adcs[k]>0) 
+        std::cout << j << " " << k << " " << evt.CNNwires[j].adcs[k] << std::endl;
     }
   }
 }
