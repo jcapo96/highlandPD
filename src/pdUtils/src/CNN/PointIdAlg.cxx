@@ -157,10 +157,11 @@ nnet::TfModelInterface::Run(std::vector<std::vector<std::vector<float>>> const& 
 
   if (debug_level>=3) std::cout << wspaces2(6) << "PointIdAlg.cxx:Run. #tensor elements > 0 = " << count_gt0 << std::endl;   
 
-  //  return g->run(_x);
-
-
+#ifdef  CompileTF 
+  return g->run(_x);
+#else
   return std::vector<std::vector<float>>();
+#endif
 }
 // ------------------------------------------------------
 
