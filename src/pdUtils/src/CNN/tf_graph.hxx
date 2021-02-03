@@ -37,8 +37,12 @@ public:
         else { return nullptr; }
     }
 
-  ~Graph(){};  // anselmo
-
+#ifdef  CompileTF  
+  ~Graph();  // anselmo
+#else
+  ~Graph(){}  // anselmo
+#endif
+  
     std::vector<float> run(const std::vector< std::vector<float> > & x);
 
     // process vector of 3D inputs, return vector of 1D outputs; use all inputs
