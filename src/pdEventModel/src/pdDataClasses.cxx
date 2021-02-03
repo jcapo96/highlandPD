@@ -43,6 +43,7 @@ AnaHitPD::AnaHitPD(){
   ResidualRange = kFloatUnassigned;
 
   Signal.clear();
+  CNN[0]=CNN[1]=CNN[2];
 }
 
 //********************************************************************
@@ -58,7 +59,8 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   Channel       = hit.Channel;
   View          = hit.View;
   Signal        = hit.Signal;
-
+  for (size_t i=0;i<3;i++)
+    CNN[i]           = hit.CNN[i];
 
   StartTick     = hit.StartTick;
   EndTick       = hit.EndTick  ; 
@@ -85,6 +87,7 @@ void AnaHitPD::Print() const{
   std::cout << "PeakTime:      " << PeakTime      << std::endl;
   std::cout << "PeakAmplitude: " << PeakAmplitude << std::endl;
   std::cout << "Position:      " << "( " << Position.X() << ", " << Position.Y() << ", " << Position.Z() << ")" << std::endl;
+  std::cout << "CNN:           " << "( " << CNN[0] << ", " << CNN[1] << ", " << CNN[2] << ")" << std::endl;
 }
 
 //********************************************************************
