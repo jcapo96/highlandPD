@@ -150,7 +150,7 @@ void pionAnalysis::DefineInputConverters(){
   
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
-  input().AddConverter("minitree",       new HighlandMiniTreeConverter("kaonana/MiniTree"));
+  input().AddConverter("minitree",       new HighlandMiniTreeConverter("highlandana/MiniTree"));
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
@@ -339,7 +339,11 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarVF(     output(), seltrk_dau_truncLibo_dEdx, "candidate daughter truncated libo variated",NMAXSAVEDDAUGHTERS);
   AddToyVarVF(     output(), seltrk_dau_hit0_dqdx,      "candidate daughter dqdx variated",          NMAXSAVEDDAUGHTERS);
   AddToyVarVF(     output(), seltrk_dau_hit0_dedx,      "candidate daughter dedx variated",          NMAXSAVEDDAUGHTERS);
-    
+
+
+  AddVarMaxSizeVI(  output(), pixel_wire,             "pixel wire", npixels, 400);
+  AddVarMaxSizeVI(  output(), pixel_time,             "pixel time", npixels, 400);
+  AddVarMF(  output(), pixel_adc,              "pixel adc",  npixels,-400, 100);
 
   
   AddVarI(  output(), trk_pandora,      "trk is pandora candidate");
@@ -384,6 +388,10 @@ void pionAnalysis::FillMicroTrees(bool addBase){
       for variables that are not expected to change from a toy to another.
   */
 
+
+  _cnn.produce(*(static_cast<AnaEventPD*>(&GetEvent())));
+
+  
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
 
@@ -454,6 +462,22 @@ void pionAnalysis::FillMicroTrees(bool addBase){
         output().FillVar(seltrk_truebeta,          anaUtils::ComputeBetaGamma(truePart->Momentum, ParticleId::GetParticle(truePart->PDG)));
     }
   }
+
+
+
+  std::vector<AnaWireCNN>& wires = static_cast<AnaBunchPD*>(GetSpill().Bunches[0])->CNNwires;
+  
+  for (size_t i = 0;i<wires.size();i++){
+    output().FillVectorVar(pixel_wire, wires[i].wire);
+    output().FillVectorVar(pixel_time, wires[i].time);
+    for (size_t j = 0;j<wires[i].adcs.size();j++){
+      output().FillMatrixVar(pixel_adc, wires[i].adcs[j] , -1, j); 
+    }
+    output().IncrementCounter(npixels);
+  }
+
+
+
 }
 
 //********************************************************************

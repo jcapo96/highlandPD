@@ -4,6 +4,8 @@
 #include "baseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
+#include "EmTrackMichelId.hxx"
+
 
 /* This is an example of analysis in ProtoDUNE-SP detector 
    This example contains several elements:
@@ -42,6 +44,23 @@ class pionAnalysis: public baseAnalysis {
   void InitializeBunch();
   void FillCategories();
   void DefineInputConverters();
+
+
+  /// Get a casted AnaSpillC to AnaSpill from the InputManager
+  AnaSpillPD& GetSpill(){return *static_cast<AnaSpillPD*>(&input().GetSpill());}
+  
+  /// Get a casted AnaBunchBB to AnaBunch from the InputManager
+  AnaBunchPD& GetBunch(){return *static_cast<AnaBunchPD*>(&input().GetBunch());}
+
+  /// Get a casted AnaEventC to AnaEvent 
+  AnaEventPD& GetEvent(){return *static_cast<AnaEventPD*>(_event);}
+
+  
+  /// Create the appropriate event time from an Spill and a Bunch in that spill
+  virtual AnaEventC* MakeEvent(){
+    return new AnaEventPD(GetSpill(),GetBunch());
+  }
+
   
   /// Returns the ToyBoxPD
   virtual const ToyBoxPD& box(Int_t isel=-1) const {return *static_cast<const ToyBoxPD*>(&boxB(isel));}
@@ -57,6 +76,8 @@ class pionAnalysis: public baseAnalysis {
 
 private:
 
+  nnet::EmTrackMichelId _cnn;
+  
 public:
 
   // Needed to get the index of the counters from standardPDTree 
@@ -94,6 +115,11 @@ public:
     seltrk_dau_hit0_dqdx,
     seltrk_dau_hit0_dedx,
 
+    npixels,
+    pixel_wire,
+    pixel_time,
+    pixel_adc,
+    
     trk_pandora,
     enumStandardMicroTreesLast_pionAnalysis
   };
