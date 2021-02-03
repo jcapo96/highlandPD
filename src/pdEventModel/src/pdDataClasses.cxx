@@ -418,77 +418,14 @@ void AnaBunchPD::Print() const{
 
   AnaBunch::Print();
   
-  std::cout << "#wires:      " << CNNwires.size() << std::endl;
-
-  
-}
-
-
-//********************************************************************
-AnaSpillPD::AnaSpillPD():AnaSpill(){
-//********************************************************************
-
-  ADC.clear();
-  /*
-  ADC.resize(15480);
-  for (size_t w=0;w<ADC.size();w++)
-    ADC[w].resize(6000,0);  
-  */
-  //  CNNwires.clear();
-
-}
-
-//********************************************************************
-AnaSpillPD::~AnaSpillPD(){
-//********************************************************************
-
-}
-
-//********************************************************************
-AnaSpillPD::AnaSpillPD(const AnaSpillPD& spill):AnaSpill(spill){
-//********************************************************************
-
-  ADC = spill.ADC;
-  //  CNNwires = spill.CNNwires;
-}
-
-//********************************************************************
-void AnaSpillPD::RedoLinks(){
-//********************************************************************
-/*
-  for (size_t wi=0;wi<reduced_adc_cnn_map_wires.size();wi++){
-    Int_t wire = reduced_adc_cnn_map_wires[wi];
-    Int_t t0   = reduced_adc_cnn_map_times[wi];
-    for (size_t s=0;s<reduced_adc_cnn_map[wi].size();s++){
-      Int_t time = t0+s;
-      ADC[wire][time]=reduced_adc_cnn_map[wi][s];
-    }
-  }
-*/
-  // Redo the links in the base class
-  AnaSpill::RedoLinks();    
-}
-
-//********************************************************************
-void AnaSpillPD::Print() const{
-//********************************************************************
-
-  std::cout << "-------- AnaSpillPD --------- " << std::endl;
-
-  AnaSpill::Print();
-
-  std::cout << "ADC.size():            " << ADC.size() << std::endl;  
+  std::cout << "#wires:      " << CNNwires.size() << std::endl;  
 }
 
 //********************************************************************
 AnaEventPD::AnaEventPD():AnaEvent(){
 //********************************************************************
 
-  ADC.clear();
-  ADC.resize(15480);
-  for (size_t w=0;w<ADC.size();w++)
-    ADC[w].resize(6000,0);
-  
+  CNNwires.clear();
 }
 
 //********************************************************************
@@ -501,16 +438,33 @@ AnaEventPD::~AnaEventPD(){
 AnaEventPD::AnaEventPD(const AnaEventPD& event):AnaEvent(event){
 //********************************************************************
 
-  
-  ADC = event.ADC;
+  CNNwires = event.CNNwires;
 }
 
 //*****************************************************************************
-AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunch& bunch):AnaEvent(spill,bunch) {
+AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunchPD& bunch):AnaEvent(spill,bunch) {
 //*****************************************************************************
 
-  ADC.clear();
-  ADC = spill.ADC;
+  CNNwires = bunch.CNNwires;
+
+  for (Int_t i=0;i<nParticles/2+1;i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(Particles[i]);
+    
+    for (UInt_t j=0;j<part->Hits[2].size();j++){      
+      AnaHitPD& hit = part->Hits[2][j];
+
+      for (UInt_t w =0;w<CNNwires.size();w++){
+        if (CNNwires[w].wire == hit.Channel && CNNwires[w].time == hit.StartTick ){
+          for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
+            hit.Signal.push_back(CNNwires[w].adcs[t-CNNwires[w].time]);            
+          }
+        }
+      }      
+    }
+
+  }
+
+
 }
 
 //********************************************************************
@@ -520,7 +474,6 @@ void AnaEventPD::Print() const{
   std::cout << "-------- AnaEventPD --------- " << std::endl;
 
   AnaEvent::Print();
-  std::cout << "ADC.size():            " << ADC.size() << std::endl;  
-
+  std::cout << "#wires:      " << CNNwires.size() << std::endl;
 }
 

@@ -286,17 +286,13 @@ protected:
 public:
 
   std::vector<AnaWireCNN> CNNwires;
-
 };
-
-
-
 
 class AnaSpillPD: public AnaSpill{
 public :
 
-  AnaSpillPD();
-  virtual ~AnaSpillPD();
+  AnaSpillPD(){}
+  virtual ~AnaSpillPD(){}
 
   /// Clone this object.
   virtual AnaSpillPD* Clone() {
@@ -306,22 +302,9 @@ public :
     return spill;
   }
 
-  /// Dump the object to screen.
-  virtual void Print() const;
-
-  /// Redo reco-reco and reco-truth after cloning or reading MiniTree
-  virtual void RedoLinks();
-  
 protected:
 
-  /// Copy constructor is protected, as Clone() should be used to copy this object.
-  AnaSpillPD(const AnaSpillPD& spill);
-
 public:
-
-  std::vector<std::vector<Float_t > > ADC; //!
-
-  //  std::vector<AnaWireCNN> CNNwires;
 
 };
 
@@ -331,7 +314,7 @@ class AnaEventPD: public AnaEvent{
 public :
 
   AnaEventPD();
-  AnaEventPD(const AnaSpillPD& spill, const AnaBunch& bunch);
+  AnaEventPD(const AnaSpillPD& spill, const AnaBunchPD& bunch);
   virtual ~AnaEventPD();
 
   /// Clone this object.
@@ -351,7 +334,7 @@ protected:
 
 public:
 
-  std::vector<std::vector<Float_t > > ADC;
+  std::vector<AnaWireCNN> CNNwires;
 };
 
 
