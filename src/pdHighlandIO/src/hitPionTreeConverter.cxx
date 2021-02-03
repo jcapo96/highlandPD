@@ -1103,16 +1103,6 @@ void hitPionTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
   bunch->Particles.clear();
   bunch->Vertices.clear();
 
-
-  for (size_t wi=0;wi<(*reduced_adc_cnn_map_wires).size();wi++){
-    Int_t wire = (*reduced_adc_cnn_map_wires)[wi];
-    Int_t t0   = (*reduced_adc_cnn_map_times)[wi];
-    for (size_t s=0;s<(*reduced_adc_cnn_map)[wi].size();s++){
-      Int_t time = t0+s;
-      _spill->ADC[wire][time]=(*reduced_adc_cnn_map)[wi][s];
-    }
-  }
-
   
   // The beam particle
   AnaParticlePD* part = MakeParticle();
@@ -1288,10 +1278,11 @@ void hitPionTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& 
       hit.StartTick    = (*reco_beam_hit_startTick)[j];
       hit.EndTick      = (*reco_beam_hit_endTick)[j];
 
+      /*
       for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
         hit.Signal.push_back(_spill->ADC[hit.Channel][t]);
       }
-      
+      */
       part->Hits[plane].push_back(hit);
 
       part->AveragedEdx += (*reco_beam_dEdX)[j];
@@ -1525,10 +1516,11 @@ void hitPionTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTruePart
       hit.StartTick   = (*reco_daughter_allTrack_hit_startTick)[itrk][j];
       hit.EndTick     = (*reco_daughter_allTrack_hit_endTick)[itrk][j];  
 
+      /*
       for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
         hit.Signal.push_back(_spill->ADC[hit.Channel][t]);
       }
-
+      */
       
       part->Hits[plane].push_back(hit);
 
@@ -1677,10 +1669,11 @@ void hitPionTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTruePar
       hit.StartTick   = (*reco_daughter_allShower_hit_startTick)[itrk][j];
       hit.EndTick     = (*reco_daughter_allShower_hit_endTick)[itrk][j];  
 
+      /*
       for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
         hit.Signal.push_back(_spill->ADC[hit.Channel][t]);
       }
-
+      */
       
       part->Hits[plane].push_back(hit);
 
