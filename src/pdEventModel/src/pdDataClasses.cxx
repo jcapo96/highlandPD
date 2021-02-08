@@ -43,7 +43,7 @@ AnaHitPD::AnaHitPD(){
   ResidualRange = kFloatUnassigned;
 
   Signal.clear();
-  CNN[0]=CNN[1]=CNN[2];
+  CNN[0]=CNN[1]=CNN[2]=kFloatUnassigned;
 }
 
 //********************************************************************
