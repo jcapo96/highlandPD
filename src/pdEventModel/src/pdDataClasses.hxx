@@ -52,7 +52,7 @@ public:
   UInt_t Channel;
   Int_t  View;
 
-  Float_t CNN[3];
+  std::vector<Float_t> CNN; //!
   
   /// wave form associated to this hit
   std::vector<Float_t> Signal;  

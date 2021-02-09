@@ -43,6 +43,7 @@ AnaHitPD::AnaHitPD(){
   ResidualRange = kFloatUnassigned;
 
   Signal.clear();
+  CNN.resize(3);
   CNN[0]=CNN[1]=CNN[2]=kFloatUnassigned;
 }
 
@@ -59,6 +60,7 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   Channel       = hit.Channel;
   View          = hit.View;
   Signal        = hit.Signal;
+  CNN.resize(3);
   for (size_t i=0;i<3;i++)
     CNN[i]           = hit.CNN[i];
 
