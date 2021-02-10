@@ -9,7 +9,7 @@ class CNNUtils{
 public:
   
   
-  CNNUtils();
+  CNNUtils(){}
   
   
   void produce(std::vector<AnaHitPD>& hits); //override;
