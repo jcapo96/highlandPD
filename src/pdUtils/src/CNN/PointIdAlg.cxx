@@ -60,7 +60,7 @@ std::string
 nnet::ModelInterface::findFile(const char* fileName) const
 {
   std::string fname_out;
-  std::string path = "/data4/DUNE/migue/analysis/";
+  std::string path = "";
   /*
   cet::search_path sp("FW_SEARCH_PATH");
   if (!sp.find_file(fileName, fname_out)) {
@@ -198,12 +198,12 @@ nnet::TfModelInterface::Run(std::vector<std::vector<float>> const& inp2d)
 nnet::PointIdAlg::PointIdAlg()
   : // img::DataProviderAlg(config)
   fNNet(0)
-  , fPatchSizeW(44)
+  , fPatchSizeW(48)
   , fPatchSizeD(48)
   , fCurrentWireIdx(99999)
   , fCurrentScaledDrift(99999)
 {
-  fNNetModelFilePath = "cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoduneBeamAndCosmicsMCC11.pb";
+  fNNetModelFilePath = "cnn.pb";
   //  fNNetOutputs = "";
   
   deleteNNet();
