@@ -3,6 +3,8 @@
 #include "pdAnalysisUtils.hxx"
 #include "pionAnalysisUtils.hxx"
 #include "pandoraPreselection.hxx"
+#include "CNNUtils.hxx"
+
 
 /*
   This file contains:
@@ -194,9 +196,16 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   (void)event;
 
+  static CNNUtils* _cnn;
+  static bool first=true;
+  if (first){
+    _cnn = new CNNUtils();
+    first=false;
+  }
+
   int cut_nHits_shower_low  = 40;
   Float_t cut_CNNTrackScore = 0.3;
-  
+
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
   if (!box.MainTrack) return false;
 
@@ -204,6 +213,17 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   bool cex = false;
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
+
+
+    if (abs(daughter->CNNscore[0]-cut_CNNTrackScore)<100.5){
+
+      for (auto & hit: daughter->Hits[2]){
+	std::vector<AnaHitPD*> hits;
+	hits.push_back(&hit);
+	_cnn->produce(hits);
+      }
+    }
+
     if(daughter->Type       == AnaParticlePD::kShower &&
        daughter->CNNscore[0] < cut_CNNTrackScore &&
        daughter->NHits       > cut_nHits_shower_low &&
@@ -218,9 +238,7 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 bool PionAbsorptionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-
-  PionCexCut cut;
-  return !cut.Apply(event, boxB);
+  return !_cut.Apply(event, boxB);
 }
 
 //**************************************************
