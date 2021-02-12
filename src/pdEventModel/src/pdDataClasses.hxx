@@ -4,6 +4,10 @@
 #include "DataClasses.hxx"
 #include "ParticleId.hxx"
 
+
+const UInt_t NMAXHITSPERPLANE        = 300;
+const UInt_t NMAXHITSPERPLANE_SELTRK = 2500;
+
 class AnaWireID{
 public:
 
