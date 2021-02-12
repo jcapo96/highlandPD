@@ -6,7 +6,7 @@
 #include "CalorimetryAlg.hxx"
 #include "tf_graph.hxx"
 
-const int debug_levelA=3;
+const int debug_levelA=-1;
 
 struct DataProviderAlgView {
   unsigned int fNWires;
@@ -58,11 +58,11 @@ public:
 
   enum EDownscaleMode { kMax = 1, kMaxMean = 2, kMean = 3 };
   
-  void produce(std::vector<AnaHitPD>& hits); //override;
+  void produce(std::vector<AnaHitPD*>& hits); //override;
   void FillHits(const AnaEventPD& evt, std::vector<AnaHitPD*>& hitPtrList);
 
 
-  std::vector<std::vector<float>> predictIdVectors(std::vector<std::pair<unsigned int, float>> points) const;
+  std::vector<std::vector<float>> predictIdVectors(std::vector<std::pair<unsigned int, float>> points);
 
   
   bool setWireDriftDataFromHit(const AnaHitPD& hit);
@@ -90,6 +90,8 @@ public:
   bool bufferPatch(size_t wire, float drift, std::vector<std::vector<float>>& patch) const;
   bool patchFromOriginalView(size_t wire,float drift,size_t size_w,size_t size_d,std::vector<std::vector<float>>& patch) const;
   bool patchFromDownsampledView(size_t wire,float drift,size_t size_w,size_t size_d,std::vector<std::vector<float>>& patch) const{}
+
+  void printTime(const std::string& m);
   
 private:    
   size_t fBatchSize;
@@ -121,7 +123,6 @@ private:
   mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
   
   int fPlane=2;
-  
 };
  
   

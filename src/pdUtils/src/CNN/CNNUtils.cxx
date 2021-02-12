@@ -1,4 +1,10 @@
 #include "CNNUtils.hxx"
+#include "timeUtils.hxx"
+ 
+#ifdef  CompileTF
+#include "tensorflow/core/public/session.h"  // anselmo
+#endif
+
 
 std::string wspacesA(size_t n){
   std::string ws="";
@@ -6,6 +12,8 @@ std::string wspacesA(size_t n){
     ws +=" ";
   return ws;
 }
+
+timeUtils tutils;
 
 /*
   produce
@@ -38,7 +46,7 @@ CNNUtils::CNNUtils():
   fAdcAreaOverThr(0), 
     //  , fNoiseSigma(0)
     //  , fCoherentSigma(0)
-  fCalibrateLifetime(true),
+  fCalibrateLifetime(false),
   fCalibrateAmpl(true)
 {
 //*******************************************************
@@ -143,20 +151,23 @@ CNNUtils::CNNUtils():
   */
 }
 
-
 //*******************************************************
-void CNNUtils::produce(std::vector<AnaHitPD>& hits){
+void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
 //*******************************************************  
 
-  AnaHitPD last_hit;
+  tutils.printTime("time 0");
+
+  AnaHitPD* last_hit=NULL;
   std::vector< std::pair<unsigned int, float> > points;
-  for (auto const & hit : hits){                  
-    points.emplace_back(hit.WireID.Wire, hit.PeakTime);
+  for (auto hit : hits){                  
+    points.emplace_back(hit->WireID.Wire, hit->PeakTime);
 
     // 
-    setWireDriftDataFromHit(hit);
+    setWireDriftDataFromHit(*hit);
     last_hit=hit;
   }
+
+  tutils.printTime("time 1");
 
   auto batch_out = predictIdVectors(points);
   if (debug_levelA>=1) std::cout << " CNNUtils.cxx: #points = "<<  points.size() << " batch_out.size() = "  << batch_out.size() << std::endl;
@@ -165,28 +176,43 @@ void CNNUtils::produce(std::vector<AnaHitPD>& hits){
       std::cout << "hits processing failed: " << points.size() << " " << batch_out.size()  << std::endl;
   }
   else{
-    std::cout << last_hit.Channel << " " << last_hit.PeakTime << " ---> ";
+    std::cout << last_hit->Channel << " " << last_hit->PeakTime << " ---> ";
     for (int jj=0;jj<batch_out[0].size();jj++)                                                                                                                                           
       std::cout << " " << batch_out[0][jj] << " ";                                                                                                                                       
     std::cout << std::endl;                                                                                                                                                              
+
+    if (last_hit)
+      for (int jj=0;jj<3;jj++)
+	last_hit->CNN[jj] = batch_out[0][jj];
+    //    last_hit->Print();
+
   }
+
+
+  tutils.printTime("time 5");
 }
   
 //*******************************************************
-std::vector<std::vector<float>> CNNUtils::predictIdVectors(std::vector<std::pair<unsigned int, float>> points) const{
+std::vector<std::vector<float>> CNNUtils::predictIdVectors(std::vector<std::pair<unsigned int, float>> points){
 //*******************************************************
   
   if (debug_levelA>=1) std::cout << wspacesA(2) << "predictIdVectors" << std::endl;   
   if (points.empty() || !fNNet) { return std::vector<std::vector<float>>(); }
 
+  tutils.printTime("time 2");
   std::vector<std::vector<std::vector<float>>> inps(points.size(), std::vector<std::vector<float>>(fPatchSizeW, std::vector<float>(fPatchSizeD)));
   for (size_t i = 0; i < points.size(); ++i) {
     size_t wire = points[i].first;
     float drift = points[i].second;
     if (!bufferPatch(wire, drift, inps[i])) {std::cout << "Patch buffering failed" << std::endl;}    
   }
-  
-  return fNNet->Run(inps);
+  tutils.printTime("time 3");
+
+  std::vector<std::vector<float>> idvector = fNNet->Run(inps);
+
+  tutils.printTime("time 4");
+
+  return idvector;
 }
 
 //*******************************************************
@@ -198,9 +224,10 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
   size_t nwires = 480;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
   size_t ndrifts = 6000;//det_prop.NumberTimeSamples();    anselmo
 
+  tutils.printTime("time 1.1");
   // 1. 
   fAlgView = resizeView(nwires, ndrifts);
-    
+  tutils.printTime("time 1.2");
   size_t w_idx = hit.WireID.Wire;  
 
   std::vector<Float_t> adc(ndrifts,0);
@@ -213,7 +240,7 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
 
   // 2. 
   auto wire_data = setWireData(adc, w_idx);
-
+  tutils.printTime("time 1.3");
   //--------------------------
   size_t l=0;
   size_t non0_values=0;;
@@ -236,7 +263,6 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
     std::cout << "Wire data not set." << std::endl;
     return false; // also not critical, try to set other wires
   }
-  //    fAlgView.fWireDriftData[w_idx] = *wire_data;
   fAlgView.fWireDriftData[w_idx] = wire_data;  // anselmo
   fAlgView.fWireChannels[w_idx] = hit.Channel;
   
@@ -271,29 +297,32 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
 //*******************************************************
 DataProviderAlgView CNNUtils::resizeView(size_t wires,size_t drifts){
 //*******************************************************
-  
+  tutils.printTime("time 1.2.1");
   if (debug_levelA>=2) std::cout << wspacesA(4) << "resizeView. total drifts, total wires = " << drifts << " " << wires << std::endl;   
   DataProviderAlgView result;
   result.fNWires = wires;
   result.fNDrifts = drifts;
   result.fNScaledDrifts = drifts / fDriftWindow;
   result.fNCachedDrifts = fDownscaleFullView ? result.fNScaledDrifts : drifts;
-  
+  tutils.printTime("time 1.2.2");
   //  result.fWireChannels.resize(wires, raw::InvalidChannelID);
   result.fWireChannels.resize(wires, 4294967295); 
   result.fWireDriftData.resize(wires, std::vector<float>(result.fNCachedDrifts, fAdcZero));   
-  result.fLifetimeCorrFactors.resize(drifts);
-  
+  tutils.printTime("time 1.2.3");  
   if (fCalibrateLifetime) {
+    result.fLifetimeCorrFactors.resize(drifts);
     for (size_t t = 0; t < drifts; ++t) {
       result.fLifetimeCorrFactors[t] = fCalorimetryAlg.LifetimeCorrection(t);
     }
   }
+  /*
   else {
     for (size_t t = 0; t < drifts; ++t) {
       result.fLifetimeCorrFactors[t] = 1.0;
     }
   }
+  */
+  tutils.printTime("time 1.2.4");
   return result;
 }
 
@@ -452,8 +481,13 @@ std::vector<float> CNNUtils::downscaleMean(std::size_t dst_size,std::vector<floa
     // sum all adc values in a batch applying Lifetime correction
     float sum_adc = 0;
     for (size_t k = k0; k < k1; ++k) {
-      if (k + tick0 < fAlgView.fLifetimeCorrFactors.size())
-        sum_adc += adc[k] * fAlgView.fLifetimeCorrFactors[k + tick0];
+      if (fCalibrateLifetime){
+	if (k + tick0 < fAlgView.fLifetimeCorrFactors.size())
+	  sum_adc += adc[k] * fAlgView.fLifetimeCorrFactors[k + tick0];
+      }
+      else
+	  sum_adc += adc[k];
+
       if (debug_levelA>=8) std::cout << wspacesA(16) << "downscaleMean. adc["<< k << "] = " << adc[k] << std::endl;   
     }
     result[i] = sum_adc * fDriftWindowInv;
