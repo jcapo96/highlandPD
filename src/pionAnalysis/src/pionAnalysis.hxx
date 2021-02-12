@@ -104,6 +104,7 @@ public:
     seltrk_chi2_ndf,
     seltrk_hit0_dqdx,
     seltrk_hit0_dedx,
+    seltrk_hit0_cnn,
     seltrk_truncLibo_dEdx,
 
     seltrk_dau_CNNscore,
@@ -114,6 +115,7 @@ public:
     seltrk_dau_truncLibo_dEdx,
     seltrk_dau_hit0_dqdx,
     seltrk_dau_hit0_dedx,
+    seltrk_dau_hit0_cnn,
 
     npixels,
     pixel_wire,
@@ -132,6 +134,7 @@ public:
     Recombination_syst,
     dEdxCalib_syst,
     TrackEff_syst,
+    CNN_syst,
     enumConfLast_pionAnalysis
   };
 
@@ -143,6 +146,7 @@ public:
     kdEdxCalib,
     kBeam,
     kTrackEff,
+    kCNN,
     enumSystLast_pionAnalysis
   };
   
