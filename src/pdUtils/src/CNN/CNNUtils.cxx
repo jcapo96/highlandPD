@@ -13,7 +13,7 @@ std::string wspacesA(size_t n){
   return ws;
 }
 
-timeUtils tutils;
+timeUtils tutils(3);;
 
 /*
   produce
@@ -151,11 +151,21 @@ CNNUtils::CNNUtils():
   */
 }
 
+CNNUtils::~CNNUtils(){
+
+  tutils.dumpTimes();
+  
+}
+
+  
+
 //*******************************************************
 void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
 //*******************************************************  
 
-  tutils.printTime("time 0");
+//  tutils.printTime("time 0");
+
+  tutils.accumulateTime(0);
 
   AnaHitPD* last_hit=NULL;
   std::vector< std::pair<unsigned int, float> > points;
@@ -167,7 +177,9 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
     last_hit=hit;
   }
 
-  tutils.printTime("time 1");
+  tutils.accumulateTime(1);
+  
+  //  tutils.printTime("time 1");
 
   auto batch_out = predictIdVectors(points);
   if (debug_levelA>=1) std::cout << " CNNUtils.cxx: #points = "<<  points.size() << " batch_out.size() = "  << batch_out.size() << std::endl;
@@ -188,8 +200,8 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
 
   }
 
-
-  tutils.printTime("time 5");
+  tutils.accumulateTime(2);
+  //  tutils.printTime("time 5");
 }
   
 //*******************************************************

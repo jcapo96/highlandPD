@@ -56,6 +56,8 @@ public:
   
   CNNUtils();
 
+  virtual ~CNNUtils();
+
   enum EDownscaleMode { kMax = 1, kMaxMean = 2, kMean = 3 };
   
   void produce(std::vector<AnaHitPD*>& hits); //override;
