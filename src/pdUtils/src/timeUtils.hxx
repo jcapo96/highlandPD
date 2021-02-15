@@ -8,14 +8,21 @@
 class timeUtils{
 public:
     
-  timeUtils(){fPrevTime=0;}
+  timeUtils(size_t ntimes);
 
   void printTime(const std::string& tm);
 
+  void accumulateTime(size_t index);
+
+  void dumpTimes();
+  
 protected:
 
-  double fPrevTime;
-  timeval fTime;
+  double _prevTime;
+  timeval _time;
+
+  std::vector<double> _times;
+
 };
  
   
