@@ -5,6 +5,7 @@
 #include "pdDataClasses.hxx"
 #include "CalorimetryAlg.hxx"
 #include "tf_graph.hxx"
+#include "timeUtils.hxx"
 
 const int debug_levelA=-1;
 
@@ -94,8 +95,14 @@ public:
   bool patchFromDownsampledView(size_t wire,float drift,size_t size_w,size_t size_d,std::vector<std::vector<float>>& patch) const{}
 
   void printTime(const std::string& m);
+
+public:
+  timeUtils* _tutils;
   
 private:    
+
+
+
   size_t fBatchSize;
 
   DataProviderAlgView fAlgView;

@@ -13,7 +13,6 @@ std::string wspacesA(size_t n){
   return ws;
 }
 
-timeUtils tutils(3);;
 
 /*
   produce
@@ -149,12 +148,12 @@ CNNUtils::CNNUtils():
     fNoiseSigma = config.NoiseSigma();
     fCoherentSigma = config.CoherentSigma();
   */
+
+  _tutils = new timeUtils(30);
 }
 
 CNNUtils::~CNNUtils(){
 
-  tutils.dumpTimes();
-  
 }
 
   
@@ -163,9 +162,9 @@ CNNUtils::~CNNUtils(){
 void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
 //*******************************************************  
 
-//  tutils.printTime("time 0");
+//  _tutils->printTime("time 0");
 
-  tutils.accumulateTime(0);
+  _tutils->accumulateTime(0);
 
   AnaHitPD* last_hit=NULL;
   std::vector< std::pair<unsigned int, float> > points;
@@ -177,9 +176,9 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
     last_hit=hit;
   }
 
-  tutils.accumulateTime(1);
+  _tutils->accumulateTime(1);
   
-  //  tutils.printTime("time 1");
+  //  _tutils->printTime("time 1");
 
   auto batch_out = predictIdVectors(points);
   if (debug_levelA>=1) std::cout << " CNNUtils.cxx: #points = "<<  points.size() << " batch_out.size() = "  << batch_out.size() << std::endl;
@@ -200,8 +199,8 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
 
   }
 
-  tutils.accumulateTime(2);
-  //  tutils.printTime("time 5");
+  _tutils->accumulateTime(2);
+  //  _tutils->printTime("time 5");
 }
   
 //*******************************************************
@@ -211,18 +210,21 @@ std::vector<std::vector<float>> CNNUtils::predictIdVectors(std::vector<std::pair
   if (debug_levelA>=1) std::cout << wspacesA(2) << "predictIdVectors" << std::endl;   
   if (points.empty() || !fNNet) { return std::vector<std::vector<float>>(); }
 
-  tutils.printTime("time 2");
+
+  _tutils->accumulateTime(20);
+
   std::vector<std::vector<std::vector<float>>> inps(points.size(), std::vector<std::vector<float>>(fPatchSizeW, std::vector<float>(fPatchSizeD)));
   for (size_t i = 0; i < points.size(); ++i) {
     size_t wire = points[i].first;
     float drift = points[i].second;
     if (!bufferPatch(wire, drift, inps[i])) {std::cout << "Patch buffering failed" << std::endl;}    
+  
   }
-  tutils.printTime("time 3");
+  _tutils->accumulateTime(21);
 
   std::vector<std::vector<float>> idvector = fNNet->Run(inps);
 
-  tutils.printTime("time 4");
+  _tutils->accumulateTime(22);
 
   return idvector;
 }
@@ -236,10 +238,12 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
   size_t nwires = 480;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
   size_t ndrifts = 6000;//det_prop.NumberTimeSamples();    anselmo
 
-  tutils.printTime("time 1.1");
+  _tutils->accumulateTime(10);
+
   // 1. 
   fAlgView = resizeView(nwires, ndrifts);
-  tutils.printTime("time 1.2");
+
+  _tutils->accumulateTime(11);
   size_t w_idx = hit.WireID.Wire;  
 
   std::vector<Float_t> adc(ndrifts,0);
@@ -252,7 +256,7 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
 
   // 2. 
   auto wire_data = setWireData(adc, w_idx);
-  tutils.printTime("time 1.3");
+  _tutils->accumulateTime(12);
   //--------------------------
   size_t l=0;
   size_t non0_values=0;;
@@ -309,18 +313,24 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
 //*******************************************************
 DataProviderAlgView CNNUtils::resizeView(size_t wires,size_t drifts){
 //*******************************************************
-  tutils.printTime("time 1.2.1");
+
+  _tutils->accumulateTime(15);
+
   if (debug_levelA>=2) std::cout << wspacesA(4) << "resizeView. total drifts, total wires = " << drifts << " " << wires << std::endl;   
   DataProviderAlgView result;
   result.fNWires = wires;
   result.fNDrifts = drifts;
   result.fNScaledDrifts = drifts / fDriftWindow;
   result.fNCachedDrifts = fDownscaleFullView ? result.fNScaledDrifts : drifts;
-  tutils.printTime("time 1.2.2");
+
+  _tutils->accumulateTime(16);
+
   //  result.fWireChannels.resize(wires, raw::InvalidChannelID);
   result.fWireChannels.resize(wires, 4294967295); 
   result.fWireDriftData.resize(wires, std::vector<float>(result.fNCachedDrifts, fAdcZero));   
-  tutils.printTime("time 1.2.3");  
+
+  _tutils->accumulateTime(17);
+
   if (fCalibrateLifetime) {
     result.fLifetimeCorrFactors.resize(drifts);
     for (size_t t = 0; t < drifts; ++t) {
@@ -334,7 +344,9 @@ DataProviderAlgView CNNUtils::resizeView(size_t wires,size_t drifts){
     }
   }
   */
-  tutils.printTime("time 1.2.4");
+
+  _tutils->accumulateTime(18);
+
   return result;
 }
 

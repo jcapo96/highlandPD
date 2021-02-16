@@ -4,7 +4,7 @@
 #include "baseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
-#include "EmTrackMichelId.hxx"
+#include "CNNUtils.hxx"
 
 
 /* This is an example of analysis in ProtoDUNE-SP detector 
@@ -41,6 +41,7 @@ class pionAnalysis: public baseAnalysis {
   //--------------------
 
   bool Initialize();
+  void Finalize();
   void InitializeBunch();
   void FillCategories();
   void DefineInputConverters();
@@ -76,7 +77,7 @@ class pionAnalysis: public baseAnalysis {
 
 private:
 
-  nnet::EmTrackMichelId _cnn;
+  CNNUtils* _cnn;
   
 public:
 
