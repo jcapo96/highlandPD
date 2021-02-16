@@ -150,6 +150,7 @@ CNNUtils::CNNUtils():
   */
 
   _tutils = new timeUtils(30);
+  fNNet->SetTimeUtils(_tutils);
 }
 
 CNNUtils::~CNNUtils(){
@@ -187,16 +188,17 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
       std::cout << "hits processing failed: " << points.size() << " " << batch_out.size()  << std::endl;
   }
   else{
+    /*
     std::cout << last_hit->Channel << " " << last_hit->PeakTime << " ---> ";
     for (int jj=0;jj<batch_out[0].size();jj++)                                                                                                                                           
       std::cout << " " << batch_out[0][jj] << " ";                                                                                                                                       
     std::cout << std::endl;                                                                                                                                                              
-
+    */
     if (last_hit)
       for (int jj=0;jj<3;jj++)
 	last_hit->CNN[jj] = batch_out[0][jj];
     //    last_hit->Print();
-
+    
   }
 
   _tutils->accumulateTime(2);
@@ -241,7 +243,7 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
   _tutils->accumulateTime(10);
 
   // 1. 
-  fAlgView = resizeView(nwires, ndrifts);
+  resizeView(nwires, ndrifts);
 
   _tutils->accumulateTime(11);
   size_t w_idx = hit.WireID.Wire;  
@@ -311,13 +313,13 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
 }
 
 //*******************************************************
-DataProviderAlgView CNNUtils::resizeView(size_t wires,size_t drifts){
+void CNNUtils::resizeView(size_t wires,size_t drifts){
 //*******************************************************
 
   _tutils->accumulateTime(15);
 
   if (debug_levelA>=2) std::cout << wspacesA(4) << "resizeView. total drifts, total wires = " << drifts << " " << wires << std::endl;   
-  DataProviderAlgView result;
+  DataProviderAlgView& result = fAlgView;
   result.fNWires = wires;
   result.fNDrifts = drifts;
   result.fNScaledDrifts = drifts / fDriftWindow;
@@ -347,7 +349,7 @@ DataProviderAlgView CNNUtils::resizeView(size_t wires,size_t drifts){
 
   _tutils->accumulateTime(18);
 
-  return result;
+  //  return result;
 }
 
 

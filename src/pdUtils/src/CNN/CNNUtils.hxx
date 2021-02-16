@@ -28,7 +28,9 @@ namespace nnet2{
     virtual std::vector<std::vector<float>> Run(
                                                 std::vector<std::vector<std::vector<float>>> const& inps,
                                                 int samples = -1);
-    
+
+
+    virtual void SetTimeUtils(timeUtils* time){}    
   protected:
     std::string findFile(const char* fileName) const;
   };
@@ -43,6 +45,8 @@ namespace nnet2{
                                         int samples = -1);
     //  std::vector<float> Run(std::vector<std::vector<float>> const& inp2d) override;
     std::vector<float> Run(std::vector<std::vector<float>> const& inp2d);
+
+    void SetTimeUtils(timeUtils* time){g->_tutils=time;}
     
   private:
     std::unique_ptr<tf::Graph> g; // network graph
@@ -70,7 +74,7 @@ public:
   
   bool setWireDriftDataFromHit(const AnaHitPD& hit);
 
-  DataProviderAlgView resizeView(size_t wires,size_t drifts);
+  void resizeView(size_t wires,size_t drifts);
 
   std::vector<float> setWireData(std::vector<float> const& adc, size_t wireIdx) const;
 
@@ -95,6 +99,8 @@ public:
   bool patchFromDownsampledView(size_t wire,float drift,size_t size_w,size_t size_d,std::vector<std::vector<float>>& patch) const{}
 
   void printTime(const std::string& m);
+
+
 
 public:
   timeUtils* _tutils;
