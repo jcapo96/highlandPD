@@ -23,6 +23,9 @@ namespace standardPDTree{
   void AddStandardVariables_CandidateDaughtersReco(OutputManager& output, UInt_t nmax);
   void AddStandardVariables_CandidateDaughtersTrue(OutputManager& output, UInt_t nmax);
 
+  void AddStandardVariables_CandidateGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
+  void AddStandardVariables_CandidateGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
+
 
   // Methods to fill the standard sets of variables in the output tree
   void FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters);
@@ -40,6 +43,9 @@ namespace standardPDTree{
   void FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticlePD* part);
   void FillStandardVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* part);  
 
+  void FillStandardVariables_CandidateGDaughterReco(OutputManager& output, AnaParticlePD* part, Int_t index);
+  void FillStandardVariables_CandidateGDaughterTrue(OutputManager& output, AnaParticlePD* part, Int_t index);  
+
 
   // Enum with unique indexes for output tree variables  
   enum enumStandardMicroTrees_standardPDTree{
@@ -49,7 +55,8 @@ namespace standardPDTree{
     seltrk_trueendmom,
     seltrk_truepdg,
     seltrk_trueproc,
-    seltrk_trueendproc,    
+    seltrk_trueendproc,
+    seltrk_truendau,  
 
     // selected track reco info
     seltrk_mom_muon,
@@ -93,9 +100,11 @@ namespace standardPDTree{
     seltrk_hit_y_raw,
     seltrk_hit_z_raw,
     seltrk_hit_resrange,
+    seltrk_hit_cnn,
     seltrk_nhitsperplane,
 
     // selected track daughters reco info
+    seltrk_dau_ndau,
     seltrk_dau_mom_muon,
     seltrk_dau_mom_prot,
     seltrk_dau_pos,
@@ -108,9 +117,10 @@ namespace standardPDTree{
     seltrk_dau_hit_dedx,
     seltrk_dau_hit_dqdx_raw,    
     seltrk_dau_hit_resrange,
+    seltrk_dau_hit_cnn,
 
     // selected track daughters true info
-    seltrk_ntruedau,
+    seltrk_dau_truendau,
     seltrk_dau_truepdg,
     seltrk_dau_truepos,
     seltrk_dau_trueendpos,
@@ -118,6 +128,29 @@ namespace standardPDTree{
     seltrk_dau_trueendproc,
     seltrk_dau_truemom,
     seltrk_dau_trueendmom,
+
+    // selected track gdaughters reco info
+    seltrk_gdau_ndau,
+    seltrk_gdau_pos,
+    seltrk_gdau_dir,
+    seltrk_gdau_endpos,
+    seltrk_gdau_enddir,
+    seltrk_gdau_length,
+    seltrk_gdau_nhits,
+    seltrk_gdau_nhits2,
+    seltrk_gdau_hit_dedx,
+    seltrk_gdau_hit_dqdx_raw,    
+    seltrk_gdau_hit_resrange,
+
+    // selected track gdaughters true info
+    seltrk_gdau_truendau,
+    seltrk_gdau_truepdg,
+    seltrk_gdau_truepos,
+    seltrk_gdau_trueendpos,
+    seltrk_gdau_trueproc,
+    seltrk_gdau_trueendproc,
+    seltrk_gdau_truemom,
+    seltrk_gdau_trueendmom,
 
     // all particles in the event, true info
     ntracks,

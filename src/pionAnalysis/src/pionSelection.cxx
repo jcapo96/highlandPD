@@ -216,12 +216,11 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
 
 
-    if (abs(daughter->CNNscore[0]-cut_CNNTrackScore)<100.5){
+    if (abs(daughter->CNNscore[0]-cut_CNNTrackScore)<0.3){
 
       for (auto & hit: daughter->Hits[2]){
 	std::vector<AnaHitPD*> hits;
 	hits.push_back(&hit);
-	std::cout << _cnn << std::endl;
 	_cnn->produce(hits);
       }
     }

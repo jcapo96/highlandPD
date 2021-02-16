@@ -61,7 +61,9 @@ private:
     std::string fInputName;
     std::vector< std::string > fOutputNames;
 
-  timeUtils tutils;
+  public:
+  timeUtils* _tutils;
+  //  timeUtils tutils;
 
 };
 

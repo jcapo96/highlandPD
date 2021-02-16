@@ -163,8 +163,11 @@ std::vector< std::vector< float > > tf::Graph::run(const tensorflow::Tensor & x)
   //  tutils.printTime("tg: 1");
   
   std::vector<tensorflow::Tensor> outputs;
+
+  _tutils->accumulateTime(26);
   auto status = fSession->Run(inputs, fOutputNames, {}, &outputs);
   
+  _tutils->accumulateTime(27);
   //  tutils.printTime("tg: 2");
 
   //  std::cout << "out size " << outputs.size() << std::endl;

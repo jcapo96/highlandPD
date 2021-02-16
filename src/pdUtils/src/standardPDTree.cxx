@@ -47,7 +47,6 @@ void standardPDTree::AddStandardVariables_BeamReco(OutputManager& output){
   AddVarFixVD(output,  beam_ckov_time,     "beam ckov time",    2);
   AddVarFixVD(output,  beam_ckov_pressure, "beam ckov pressure",2);  
 
-
   AddVarVI(  output, beam_pdgs,             "beam pdgs", beam_npdgs);
 }
 
@@ -95,8 +94,13 @@ void standardPDTree::AddStandardVariables_CandidateHitsReco(OutputManager& outpu
   AddVarFixMF(output, seltrk_hit_dqdx,       "candidate calibrated dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_dqdx_noSCE, "candidate LAr noSCE dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_resrange,   "candidate Residual Range per hit",3,NMAXHITSPERPLANE_SELTRK);
+<<<<<<< HEAD
   AddVarFixMI(output, seltrk_hit_ch,         "candidate channel per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMI(output, seltrk_hit_t0,         "candidate t0 per hit",3,NMAXHITSPERPLANE_SELTRK);
+=======
+
+  AddVarFixMF(output, seltrk_hit_cnn,        "candidate cnn for hit",NMAXHITSPERPLANE_SELTRK,3);
+>>>>>>> 306e933b5df1e5398d273becead60a5e3f4918ea
 }
 
 //********************************************************************
@@ -107,6 +111,7 @@ void standardPDTree::AddStandardVariables_CandidateTrue(OutputManager& output){
   AddVar3VF(output, seltrk_truedir,     "candidate true direction");         
   AddVarF(  output, seltrk_truemom,     "candidate true momentum");
   AddVarI(  output, seltrk_trueproc,    "candidate true initial process");
+  AddVarI(  output, seltrk_truendau,    "candidate true number of daughters");
 
   AddVar4VF(output, seltrk_trueendpos,  "candidate true end position");      
   AddVarF(  output, seltrk_trueendmom,  "candidate true end momentum");
@@ -159,7 +164,8 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersTrue(OutputManager& 
   AddVarMaxSizeVI(output,  seltrk_dau_trueendproc, "daughters true end process", seltrk_ndau,nmax);
   AddVarMaxSizeVF(output,  seltrk_dau_truemom,     "daughters true momentum",    seltrk_ndau,nmax);
   AddVarMaxSizeVF(output,  seltrk_dau_trueendmom,  "daughters true end momentum",seltrk_ndau,nmax);
-  AddVarMaxSizeVI(output,  seltrk_dau_truepdg,     "daguhters length",           seltrk_ndau,nmax);
+  AddVarMaxSizeVI(output,  seltrk_dau_truepdg,     "daughters true pdg",         seltrk_ndau,nmax);
+  AddVarMaxSizeVI(output,  seltrk_dau_truendau,    "daughters' true ndaughters", seltrk_ndau,nmax);
 }
 
 //********************************************************************
@@ -172,13 +178,48 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersReco(OutputManager& 
   AddVarMaxSize3MF(output, seltrk_dau_dir,        "daughters direction",         seltrk_ndau,nmax);
   AddVarMaxSize4MF(output, seltrk_dau_endpos,     "daughters position",          seltrk_ndau,nmax); 
   AddVarMaxSize3MF(output, seltrk_dau_enddir,     "daughters direction",         seltrk_ndau,nmax);
-  AddVarMaxSizeVF( output, seltrk_dau_length,     "daguhters length",            seltrk_ndau,nmax);
-  AddVarMaxSizeVI( output, seltrk_dau_nhits,      "daguhters #hits",             seltrk_ndau,nmax);
-  AddVarMaxSizeVI( output, seltrk_dau_nhits2,     "daguhters hits in plane 2",   seltrk_ndau,nmax);
+  AddVarMaxSizeVF( output, seltrk_dau_length,     "daughters length",            seltrk_ndau,nmax);
+  AddVarMaxSizeVI( output, seltrk_dau_nhits,      "daughters #hits",             seltrk_ndau,nmax);
+  AddVarMaxSizeVI( output, seltrk_dau_nhits2,     "daughters hits in plane 2",   seltrk_ndau,nmax);
+  AddVarMaxSizeVI( output, seltrk_dau_ndau,       "daughters' daughters"     ,   seltrk_ndau,nmax);
 
   AddVarMF(output, seltrk_dau_hit_dedx,     "daughters dEdx per hit",       seltrk_ndau,-nmax,NMAXHITSPERPLANE);
   AddVarMF(output, seltrk_dau_hit_dqdx_raw, "daughters raw dQdx per hit",   seltrk_ndau,-nmax,NMAXHITSPERPLANE);
-  AddVarMF(output, seltrk_dau_hit_resrange, "daughters residual range",     seltrk_ndau,-nmax,NMAXHITSPERPLANE);
+  AddVarMF(output, seltrk_dau_hit_resrange, "daughters hit residual range", seltrk_ndau,-nmax,NMAXHITSPERPLANE);
+
+  AddVarMF(output, seltrk_dau_hit_cnn,      "daughters hit cnn",            seltrk_ndau,-nmax,NMAXHITSPERPLANE);
+
+}
+
+//********************************************************************
+void standardPDTree::AddStandardVariables_CandidateGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters){
+//********************************************************************
+
+  AddVarMI(   output, seltrk_gdau_truendau,    "gdaughters true number of daughters", seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_truepos,     "gdaughters true position",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_trueendpos,  "gdaughters true position",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI(   output, seltrk_gdau_trueproc,    "gdaughters true process",             seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI(   output, seltrk_gdau_trueendproc, "gdaughters true end process",        seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF(   output, seltrk_gdau_truemom,     "gdaughters true mom",                seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF(   output, seltrk_gdau_trueendmom,  "gdaughters true end mom",            seltrk_ndau, -nmax, nmaxgdaughters);
+
+}
+
+//********************************************************************
+void standardPDTree::AddStandardVariables_CandidateGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters){
+//********************************************************************
+
+  AddVarMI(   output, seltrk_gdau_ndau,         "gdaughters number of daughters", seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_pos,          "gdaughters position",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D3MF(output, seltrk_gdau_dir,          "gdaughters direction",           seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_endpos,       "gdaughters end position",        seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D3MF(output, seltrk_gdau_enddir,       "gdaughters end direction",       seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF(   output, seltrk_gdau_length,       "gdaughters length",              seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI(   output, seltrk_gdau_nhits,        "gdaughters #hits",               seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI(   output, seltrk_gdau_nhits2,       "gdaughters #hits plane 2",       seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3DMF( output, seltrk_gdau_hit_dedx,     "gdauthers hits dedx",            seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
+  AddVar3DMF( output, seltrk_gdau_hit_resrange, "gdauthers hits resrange",        seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
+
 }
 
 //********************************************************************
@@ -244,9 +285,6 @@ void standardPDTree::FillStandardVariables_BeamReco(OutputManager& output, AnaBe
     output.IncrementCounter(beam_npdgs);
   }
   
-  //if (beamPart->TrueObject)output.FillVar(               beam_mom_tpc_raw,    beam_mom_tpc);   
-  //else;
-
 }
 
 //********************************************************************
@@ -262,7 +300,7 @@ void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& outpu
   output.FillVectorVar(trk_mom_muon,       part->RangeMomentum[1]);
   output.FillVectorVar(trk_dedx,           part->AveragedEdx);
   output.FillVectorVar(trk_length,         part->Length);
-  output.FillVectorVar(trk_ndau,           (Int_t)part->Daughters.size());
+  output.FillVectorVar(trk_ndau,    (Int_t)part->Daughters.size());
 }
   
 //********************************************************************
@@ -308,6 +346,8 @@ void standardPDTree::FillStandardVariables_CandidateTrue(OutputManager& output, 
     
   output.FillVar(seltrk_truepur,                  part->TruePur);
   output.FillVar(seltrk_trueeff,                  part->TrueEff);
+
+  output.FillVar(seltrk_truendau,          (Int_t)truePart->Daughters.size());
 }
 
 //********************************************************************
@@ -369,9 +409,6 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
     else{
       int jmin = std::max<int>(0,(int)part->Hits[i].size()-NMAXHITSPERPLANE_SELTRK);
       int jmax = (int)part->Hits[i].size();
-      //      int jmax = std::min<int>(part->Hits[i].size(), NMAXHITSPERPLANE_SELTRK);
-      //      int jmax = NMAXHITSPERPLANE_SELTRK;
-      //      jmin=0;
       for (int j = jmin; j < jmax; j++){
         output.FillMatrixVar(seltrk_hit_ch   ,  (Int_t)part->Hits[i][j].Channel,      i, j-jmin);
         output.FillMatrixVar(seltrk_hit_t0   ,  (Int_t)part->Hits[i][j].StartTick,    i, j-jmin);
@@ -392,14 +429,25 @@ void standardPDTree::FillStandardVariables_CandidateHitsReco(OutputManager& outp
     }
     output.FillVectorVarFromArray(seltrk_nhitsperplane, part->NHitsPerPlane,3);
   }
-}
 
+
+  int jmin = std::max<int>(0,(int)part->Hits[2].size()-NMAXHITSPERPLANE_SELTRK);
+  int jmax = (int)part->Hits[2].size();
+
+  if(!part->Hits[2].empty()){
+    for (int j = jmin; j < jmax; j++){
+      for (int i = jmin; i < 3; i++){
+	output.FillMatrixVar(seltrk_hit_cnn,       part->Hits[2][j].CNN[i], j-jmin, i);
+      }
+    }
+  }
+}
+  
 //********************************************************************
 void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticlePD* dau){
 //********************************************************************
 
   if (!dau) return;
-  
   output.FillVectorVar(seltrk_dau_mom_prot,        dau->RangeMomentum[0]);
   output.FillVectorVar(seltrk_dau_mom_muon,        dau->RangeMomentum[1]);
   output.FillMatrixVarFromArray(seltrk_dau_pos,    dau->PositionStart,4);
@@ -409,21 +457,30 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
   output.FillVectorVar(seltrk_dau_length,          dau->Length);
   output.FillVectorVar(seltrk_dau_nhits2,          dau->NHitsPerPlane[2] );
   output.FillVectorVar(seltrk_dau_nhits,           dau->NHits);
+  output.FillVectorVar(seltrk_dau_ndau,     (Int_t)dau->Daughters.size());
 
   if(dau->Hits[2].empty()){
     for (int j = 0; j < (int)NMAXHITSPERPLANE; j++){
       output.FillMatrixVar(seltrk_dau_hit_dedx,     (Float_t)-999., -1, j);
       output.FillMatrixVar(seltrk_dau_hit_dqdx_raw, (Float_t)-999., -1, j);  
       output.FillMatrixVar(seltrk_dau_hit_resrange, (Float_t)-999., -1, j);
+      output.FillMatrixVar(seltrk_dau_hit_cnn,      (Float_t)-999., -1, j);
     }
   }
   else{
-    int jmin = std::max<int>(0,(int)dau->Hits[2].size()-NMAXHITSPERPLANE);
-    int jmax = std::max<int>(NMAXHITSPERPLANE,(int)dau->Hits[2].size()); 
+    int jmin = 0; std::max<int>(0,(int)dau->Hits[2].size()-NMAXHITSPERPLANE);
+    int jmax = std::min<int>(NMAXHITSPERPLANE,(int)dau->Hits[2].size()); 
+
+    //    int jmin = std::max<int>(0,(int)dau->Hits[2].size()-NMAXHITSPERPLANE);
+    //    int jmax = (int)dau->Hits[2].size();
     for (int j = jmin; j < jmax; j++){
       output.FillMatrixVar(seltrk_dau_hit_dedx,      dau->Hits[2][j].dEdx, -1, j-jmin);
       //output.FillMatrixVar(seltrk_dau_hit_dqdx_raw,  static_cast<const AnaParticlePD*>(dau->Original->Original->Original)->Hits[2][j].dQdx, -1, j);  
       output.FillMatrixVar(seltrk_dau_hit_resrange,  dau->Hits[2][j].ResidualRange, -1, j-jmin);
+      //      std::cout << "anselmo: " << dau->Hits[2][j].CNN[0] << std::endl;
+      //      dau->Hits[2][j].Print();
+      output.FillMatrixVar(seltrk_dau_hit_cnn,       dau->Hits[2][j].CNN[1], -1, j-jmin);
+      //      dau->Hits[2][j].Print();
     }
   }
 }
@@ -443,4 +500,53 @@ void standardPDTree::FillStandardVariables_CandidateDaughterTrue(OutputManager& 
   output.FillMatrixVarFromArray(seltrk_dau_trueendpos, dauTruePart->PositionEnd,4);
   output.FillVectorVar(seltrk_dau_truemom,             dauTruePart->Momentum);
   output.FillVectorVar(seltrk_dau_trueendmom,          dauTruePart->MomentumEnd);
+  output.FillVectorVar(seltrk_dau_truendau,     (Int_t)dauTruePart->Daughters.size());
+}
+
+//********************************************************************
+void standardPDTree::FillStandardVariables_CandidateGDaughterReco(OutputManager& output, AnaParticlePD* gdau, Int_t gdau_index){
+//********************************************************************
+
+  if(!gdau) return;
+  
+  output.FillMatrixVar           (seltrk_gdau_ndau, (Int_t)gdau->Daughters.size(), -1, gdau_index   );
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_pos,         gdau->PositionStart,    -1, gdau_index, 4);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_pos,         gdau->DirectionStart,   -1, gdau_index, 3);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_endpos,      gdau->PositionEnd,      -1, gdau_index, 4);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_endpos,      gdau->DirectionEnd,     -1, gdau_index, 3);
+  output.FillMatrixVar           (seltrk_gdau_length,      gdau->Length,           -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_nhits,       gdau->NHits,            -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_nhits2,      gdau->NHitsPerPlane[2], -1, gdau_index   );
+
+  if(gdau->Hits[2].empty()){
+    for (int j = 0; j < (int)NMAXHITSPERPLANE; j++){
+      output.Fill3DMatrixVar(seltrk_gdau_hit_dedx,     (Float_t)-999., -1, gdau_index, j);
+      output.Fill3DMatrixVar(seltrk_gdau_hit_resrange, (Float_t)-999., -1, gdau_index, j);
+    }
+  }
+  else{
+    int jmin = std::max<int>(0,(int)gdau->Hits[2].size()-NMAXHITSPERPLANE);
+    int jmax = (int)gdau->Hits[2].size();
+    for (int j = jmin; j < jmax; j++){
+      output.Fill3DMatrixVar(seltrk_gdau_hit_dedx,      gdau->Hits[2][j].dEdx,          -1, gdau_index, j-jmin);
+      output.Fill3DMatrixVar(seltrk_gdau_hit_resrange,  gdau->Hits[2][j].ResidualRange, -1, gdau_index, j-jmin);
+    }
+  }
+}
+
+//********************************************************************
+void standardPDTree::FillStandardVariables_CandidateGDaughterTrue(OutputManager& output, AnaParticlePD* gdau, Int_t gdau_index){
+//********************************************************************
+
+  if(!gdau) return;  
+  AnaTrueParticle* gdauTruePart = static_cast<AnaTrueParticle*>(gdau->TrueObject);
+  if(!gdauTruePart) return;
+  
+  output.FillMatrixVar           (seltrk_gdau_truendau, (Int_t)gdauTruePart->Daughters.size(), -1, gdau_index   );
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_truepos,         gdauTruePart->Position,         -1, gdau_index, 4);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_trueendpos,      gdauTruePart->PositionEnd,      -1, gdau_index, 4);
+  output.FillMatrixVar           (seltrk_gdau_trueproc,        gdauTruePart->ProcessStart,     -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_trueendproc,     gdauTruePart->ProcessEnd,       -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_truemom,         gdauTruePart->Momentum,         -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_trueendmom,      gdauTruePart->MomentumEnd,      -1, gdau_index   );
 }
