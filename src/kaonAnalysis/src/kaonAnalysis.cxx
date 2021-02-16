@@ -319,8 +319,8 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
 
     // ---------- Save information about all (max kaonAnalysisConstants::NMAXSAVEDDAUGHTERS) daughters in the candidate --------------
     Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
-    for (Int_t i=0;i<std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDDAUGHTERS,ndau); ++i){      
-      AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
+    for (Int_t idau = 0; idau < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDDAUGHTERS,ndau); idau++){      
+      AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[idau]);
 
       // These are standard variables for the PD analysis
       standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
@@ -331,22 +331,12 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
       output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
 
       // ---------- Save information about all (max kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS) gdaughters in the candidate --------------
-
-      // Associate to each daughter all gdaughters (pointers) using the DaughterIDs
-      /*dau->Daughters.clear();
-      for (UInt_t j = 0; j < dau->DaughtersIDs.size(); j++){
-	AnaParticleB* gdau = anaUtils::GetParticleByID(GetEvent(),dau->DaughtersIDs[j]);
-	if (gdau) {dau->Daughters.push_back(gdau); gdau->Print();}      
-	}*/
-      
-
-      std::cout << "MIGUE " << dau->Daughters.size() << std::endl;
-      Int_t ngdau = (Int_t)dau->Daughters.size();
-      for(int  j = 0; j < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS,ngdau); j++){
-      AnaParticlePD* gdau = static_cast<AnaParticlePD*>(dau->Daughters[i]);
-      //standardPDTree::FillStandardVariables_CandidateGDaughterReco(output(), gdau, j);
-      //standardPDTree::FillStandardVariables_CandidateGDaughterTrue(output(), gdau, j);
-      gdau->Print();
+          
+      Int_t ngdau = (Int_t)dau->DaughtersIDs.size();
+      for (UInt_t jgdau = 0; jgdau < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS,ngdau); jgdau++){
+	AnaParticlePD* gdau = static_cast<AnaParticlePD*>(dau->Daughters[jgdau]);
+	standardPDTree::FillStandardVariables_CandidateGDaughterReco(output(), gdau, jgdau);
+	standardPDTree::FillStandardVariables_CandidateGDaughterTrue(output(), gdau, jgdau);
       }
 
       output().IncrementCounter(seltrk_ndau);
