@@ -15,6 +15,7 @@
 
 #include "tensorflow/core/public/session_options.h"
 
+
 // -------------------------------------------------------------------
 tf::Graph::Graph(const char* graph_file_name, const std::vector<std::string> & outputs, bool & success)
 {
@@ -157,12 +158,16 @@ std::vector< std::vector< float > > tf::Graph::run(const tensorflow::Tensor & x)
     { fInputName, x }
   };
   
-  //std::cout << "run session" << std::endl;
+  //  std::cout << "run session" << std::endl;
+
+  //  tutils.printTime("tg: 1");
   
   std::vector<tensorflow::Tensor> outputs;
   auto status = fSession->Run(inputs, fOutputNames, {}, &outputs);
   
-  //std::cout << "out size " << outputs.size() << std::endl;
+  //  tutils.printTime("tg: 2");
+
+  //  std::cout << "out size " << outputs.size() << std::endl;
   
   if (status.ok())
     {

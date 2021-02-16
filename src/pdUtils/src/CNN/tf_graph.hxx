@@ -11,11 +11,12 @@
 #define Graph_h
 
 
-//#define CompileTF
+#define CompileTF
 
 #include <memory>
 #include <vector>
 #include <string>
+#include "timeUtils.hxx"
 
 namespace tensorflow
 {
@@ -59,6 +60,9 @@ private:
     tensorflow::Session* fSession;
     std::string fInputName;
     std::vector< std::string > fOutputNames;
+
+  timeUtils tutils;
+
 };
 
 } // namespace tf

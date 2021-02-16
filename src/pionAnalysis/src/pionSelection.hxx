@@ -8,6 +8,7 @@
 #include "EventBoxId.hxx"
 #include "SystId.hxx"
 #include "SubDetId.hxx"
+#include "CNNUtils.hxx"
 
 /* 
    This file contains the Pion Selection developed b J. Calcutt and F. Stocker, relized in the class pionSelection, which is a collection of steps (StepBase class). 
@@ -89,6 +90,8 @@ class PionCexCut: public StepBase{
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new PionCexCut();}
+  void SetCNNUtils(CNNUtils* cnn){_cnn=cnn;}
+  CNNUtils* _cnn;
 };
 
 class PionAbsorptionCut: public StepBase{
@@ -96,6 +99,7 @@ class PionAbsorptionCut: public StepBase{
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new PionAbsorptionCut();}
+  PionCexCut _cut;
 };
 
 

@@ -20,6 +20,7 @@
 #include "dEdxCalibVariation.hxx"
 #include "RecombinationVariation.hxx"
 #include "TrackEffWeight.hxx"
+#include "CNNVariation.hxx"
 
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
@@ -137,7 +138,18 @@ bool pionAnalysis::Initialize(){
   // Add our own categories (in pionAnalysisUtils.cxx)
   pionAnaUtils::AddCustomCategories();
 
+  _cnn = new CNNUtils();
+
   return true;
+}
+
+//********************************************************************
+void pionAnalysis::Finalize(){
+//********************************************************************
+
+
+  _cnn->_tutils->dumpTimes();
+
 }
 
 //********************************************************************
@@ -175,6 +187,7 @@ void pionAnalysis::DefineSelections(){
   //   not passing the entire selection
 
   sel().AddSelection("pionSelection", "pion selection", new pionSelection(false));     // true/false for forcing break  
+  static_cast<PionCexCut*>(sel().GetSelection("pionSelection")->GetStep("pi0 showers"))->SetCNNUtils(_cnn);
 }
 
 //********************************************************************
@@ -212,6 +225,8 @@ void pionAnalysis::DefineSystematics(){
   //---- Define additional systematics (pionAnalysys/src/systematics) -----
   evar().AddEventVariation(kLength,       "Length",       new LengthVariation());
 
+  evar().AddEventVariation(kCNN,    "CNN",    new CNNVariation());
+  /*
   // dEdx hit level variations
   evar().AddEventVariation(kLifetime,     "Lifetime",     new LifetimeVariation());
   evar().AddEventVariation(kdQdxCalib,    "dQdxCalib",    new dQdxCalibVariation());
@@ -223,7 +238,8 @@ void pionAnalysis::DefineSystematics(){
   dEdxCalib->AddDaughter(evar().GetEventVariation(kdQdxCalib));
   dEdxCalib->AddDaughter(evar().GetEventVariation(kRecombination));    
   evar().AddEventVariation(kdEdxCalib,    "dEdxCalib",    dEdxCalib);
-  
+
+  */
   // Weight systematics                                                                                
   eweight().AddEventWeight(kBeam,         "beamComp",     new BeamCompositionWeight());
   eweight().AddEventWeight(kTrackEff,     "trackEff",     new TrackEffWeight());
@@ -250,9 +266,12 @@ void pionAnalysis::DefineConfigurations(){
       if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableRecombination"))    conf().EnableEventVariation(kRecombination,all_syst);
       conf().EnableEventVariation(kdEdxCalib,    all_syst);
     }
+
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableCNN"))    conf().EnableEventVariation(kCNN,all_syst);
+
       
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledTrackEff"))        conf().EnableEventWeight(   kTrackEff,     all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableTrackEff"))        conf().EnableEventWeight(   kTrackEff,     all_syst);
   }
 
   if (_enableSingleVariationSystConf){
@@ -272,6 +291,10 @@ void pionAnalysis::DefineConfigurations(){
         conf().EnableEventVariation(kRecombination,  Recombination_syst);
         conf().EnableEventVariation(kdEdxCalib,      Recombination_syst);
       }
+    }
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableCNN")){      
+      AddConfiguration(conf(), CNN_syst, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));
+      conf().EnableEventVariation(kCNN,  CNN_syst);
     }
   }
 
@@ -327,7 +350,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarF(      output(), seltrk_hit0_dedx,       "candidate dedx variated");
   AddToyVarF(      output(), seltrk_hit0_dqdx,       "candidate dqdx variated");
   AddToyVarF(      output(), seltrk_truncLibo_dEdx,  "candidate truncated libo variated");
-
+  AddToyVarF(      output(), seltrk_hit0_cnn,        "candidate hit cnn variated");
   
   seltrk_ndau = standardPDTree::seltrk_ndau;
   AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
@@ -339,11 +362,12 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarVF(     output(), seltrk_dau_truncLibo_dEdx, "candidate daughter truncated libo variated",NMAXSAVEDDAUGHTERS);
   AddToyVarVF(     output(), seltrk_dau_hit0_dqdx,      "candidate daughter dqdx variated",          NMAXSAVEDDAUGHTERS);
   AddToyVarVF(     output(), seltrk_dau_hit0_dedx,      "candidate daughter dedx variated",          NMAXSAVEDDAUGHTERS);
+  AddToyVarVF(     output(), seltrk_dau_hit0_cnn,      "candidate daughter CNN variated",          NMAXSAVEDDAUGHTERS);
 
 
   AddVarMaxSizeVI(  output(), pixel_wire,             "pixel wire", npixels, 400);
   AddVarMaxSizeVI(  output(), pixel_time,             "pixel time", npixels, 400);
-  AddVarMF(  output(), pixel_adc,              "pixel adc",  npixels,-400, 100);
+  AddVarMF(  output(), pixel_adc,              "pixel adc",  npixels,-400, 200);
 
   
   AddVarI(  output(), trk_pandora,      "trk is pandora candidate");
@@ -389,7 +413,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
   */
 
 
-  _cnn.produce(*(static_cast<AnaEventPD*>(&GetEvent())));
+  //  _cnn.produce(*(static_cast<AnaEventPD*>(&GetEvent())));
 
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
@@ -468,6 +492,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
   std::vector<AnaWireCNN>& wires = static_cast<AnaBunchPD*>(GetSpill().Bunches[0])->CNNwires;
   
   for (size_t i = 0;i<wires.size();i++){
+    if (i>=400) break;
     output().FillVectorVar(pixel_wire, wires[i].wire);
     output().FillVectorVar(pixel_time, wires[i].time);
     for (size_t j = 0;j<wires[i].adcs.size();j++){
@@ -504,6 +529,7 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
     if (!box().MainTrack->Hits[2].empty()){
       output().FillToyVar(seltrk_hit0_dqdx, box().MainTrack->Hits[2][0].dQdx_NoSCE);
       output().FillToyVar(seltrk_hit0_dedx, box().MainTrack->Hits[2][0].dEdx_calib);
+      output().FillToyVar(seltrk_hit0_cnn,  box().MainTrack->Hits[2][0].CNN[1]);
     }
 
 
@@ -514,6 +540,7 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
       if (!dau->Hits[2].empty()){
         output().FillToyVectorVar(seltrk_dau_hit0_dqdx, dau->Hits[2][0].dQdx,i);
         output().FillToyVectorVar(seltrk_dau_hit0_dedx, dau->Hits[2][0].dEdx,i);
+        output().FillToyVectorVar(seltrk_dau_hit0_cnn, dau->Hits[2][0].CNN[1],i);
       }
 
 

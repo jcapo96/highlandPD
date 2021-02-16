@@ -56,7 +56,7 @@ void dEdxStudies::DefineInputConverters(){
 
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
-  input().AddConverter("minitree",       new HighlandMiniTreeConverter("kaonana/MiniTree"));
+  input().AddConverter("minitree",       new HighlandMiniTreeConverter("highlandana/MiniTree"));
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 

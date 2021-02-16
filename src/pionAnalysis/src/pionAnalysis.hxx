@@ -4,7 +4,7 @@
 #include "baseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
-#include "EmTrackMichelId.hxx"
+#include "CNNUtils.hxx"
 
 
 /* This is an example of analysis in ProtoDUNE-SP detector 
@@ -41,6 +41,7 @@ class pionAnalysis: public baseAnalysis {
   //--------------------
 
   bool Initialize();
+  void Finalize();
   void InitializeBunch();
   void FillCategories();
   void DefineInputConverters();
@@ -76,7 +77,7 @@ class pionAnalysis: public baseAnalysis {
 
 private:
 
-  nnet::EmTrackMichelId _cnn;
+  CNNUtils* _cnn;
   
 public:
 
@@ -104,6 +105,7 @@ public:
     seltrk_chi2_ndf,
     seltrk_hit0_dqdx,
     seltrk_hit0_dedx,
+    seltrk_hit0_cnn,
     seltrk_truncLibo_dEdx,
 
     seltrk_dau_CNNscore,
@@ -114,6 +116,7 @@ public:
     seltrk_dau_truncLibo_dEdx,
     seltrk_dau_hit0_dqdx,
     seltrk_dau_hit0_dedx,
+    seltrk_dau_hit0_cnn,
 
     npixels,
     pixel_wire,
@@ -132,6 +135,7 @@ public:
     Recombination_syst,
     dEdxCalib_syst,
     TrackEff_syst,
+    CNN_syst,
     enumConfLast_pionAnalysis
   };
 
@@ -143,6 +147,7 @@ public:
     kdEdxCalib,
     kBeam,
     kTrackEff,
+    kCNN,
     enumSystLast_pionAnalysis
   };
   

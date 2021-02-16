@@ -43,6 +43,7 @@ AnaHitPD::AnaHitPD(){
   ResidualRange = kFloatUnassigned;
 
   Signal.clear();
+  CNN.resize(3);
   CNN[0]=CNN[1]=CNN[2]=kFloatUnassigned;
 }
 
@@ -59,6 +60,7 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   Channel       = hit.Channel;
   View          = hit.View;
   Signal        = hit.Signal;
+  CNN.resize(3);
   for (size_t i=0;i<3;i++)
     CNN[i]           = hit.CNN[i];
 
@@ -456,6 +458,7 @@ AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunchPD& bunch):AnaEven
     for (UInt_t j=0;j<part->Hits[2].size();j++){      
       AnaHitPD& hit = part->Hits[2][j];
 
+      hit.Signal.clear();
       for (UInt_t w =0;w<CNNwires.size();w++){
         if (CNNwires[w].wire == hit.Channel && CNNwires[w].time == hit.StartTick ){
           for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){

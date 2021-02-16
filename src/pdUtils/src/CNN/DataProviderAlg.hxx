@@ -30,7 +30,7 @@
 #include <set>
 
 
-const int debug_level=0;
+const int debug_level=-1;
 
 namespace detinfo {
   class DetectorClocksData;

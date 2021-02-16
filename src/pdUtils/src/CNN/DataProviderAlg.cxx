@@ -176,10 +176,25 @@ img::DataProviderAlg::DataProviderAlg()
 
 
     //from https://internal.dunescience.org/doxygen/sp__fd__adcdump__job__example_8fcl_source.html
+    /*
     fAdcMax    = 250.0;
     fAdcMin    = -5.0;
     Float_t OutMax  = 127.0; 
     Float_t OutMin = -128.0; 
+    */ //anselmo
+    fAdcMax    = 250.0;
+    fAdcMin    = -5.0;
+    Float_t OutMax  = 250.0; 
+    Float_t OutMin =  -5; 
+
+
+    fAdcMax    = 30.0;
+    fAdcMin    = -10.0;
+    OutMax  = 15.0; 
+    OutMin =  -5.0; 
+
+
+
     fAdcOffset = OutMin;
     fAdcScale = (OutMax - fAdcOffset) / (fAdcMax - fAdcMin);
     fAdcZero   = fAdcOffset + fAdcScale * (0 - fAdcMin); // level of zero ADC after scaling;
@@ -403,7 +418,7 @@ img::DataProviderAlg::downscaleMean(std::size_t dst_size,
 std::vector<float>
 img::DataProviderAlg::setWireData(std::vector<float> const& adc, size_t wireIdx) const
 {
-  if (debug_level>=4) std::cout << wspaces(8) << "DataProviderAlg::setWireData" << std::endl;   
+  if (debug_level>=4) std::cout << wspaces(8) << "DataProviderAlg::setWireData. wireIdx, fAlgView.fWireDriftData.size() = " << wireIdx << " " << fAlgView.fWireDriftData.size() << std::endl;   
   
   if (wireIdx >= fAlgView.fWireDriftData.size()) return std::vector<float>();//std::nullopt;
   auto& wData = fAlgView.fWireDriftData[wireIdx];
@@ -559,10 +574,10 @@ img::DataProviderAlg::setWireDriftDataFromHit(const AnaHitPD& hit)
   size_t nwires = 480;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
   size_t ndrifts = 6000;//det_prop.NumberTimeSamples();    anselmo
 
-  if (first){
+  //  if (first){
     fAlgView = resizeView(clock_data, det_prop, nwires, ndrifts);
-    first=false;
-  }
+    //    first=false;
+    //  }
     
   size_t w_idx = hit.WireID.Wire;  
   //  auto adc = hit.Signal();
@@ -574,7 +589,7 @@ img::DataProviderAlg::setWireDriftDataFromHit(const AnaHitPD& hit)
     adc[i+hit.PeakTime-fPatchSizeD/2.] = hit.Signal[i];
   
   
-  if (debug_level>=3) std::cout << wspaces(6) << "DataProviderAlg::setWireDriftDataFromHit. Found wireID in required TPC,cryo and plane. w_idx, adc.size() = " << w_idx << " " << adc.size()<< std::endl;   
+  if (debug_level>=3) std::cout << wspaces(6) << "DataProviderAlg::setWireDriftDataFromHit. Found wireID in required TPC,cryo and plane. w_idx, hit.Signal[i].size(), adc.size() = " << w_idx << " " << hit.Signal.size() << " " << adc.size()<< std::endl;   
   auto wire_data = setWireData(adc, w_idx);
   
   size_t l=0;
