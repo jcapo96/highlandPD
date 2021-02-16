@@ -84,6 +84,8 @@ namespace standardPDTree{
     seltrk_hit_dqdx,
     seltrk_hit_dqdx_raw,
     seltrk_hit_dqdx_noSCE,
+    seltrk_hit_ch,
+    seltrk_hit_t0,
     seltrk_hit_x,
     seltrk_hit_y,
     seltrk_hit_z,
