@@ -34,9 +34,6 @@ CNNUtils::CNNUtils():
   fDownscaleMode(kMax),
   fDriftWindow(6), 
   fDownscaleFullView(false),
-  fNNet(0),
-  fPatchSizeW(48), 
-  fPatchSizeD(48), 
   // set fixed threshold of 10 ADC counts for counting the sum
 
     //  , fNoiseSigma(0)
@@ -46,10 +43,27 @@ CNNUtils::CNNUtils():
   fAdcSumOverThr(0),
   fAdcSumThr(10),
   fAdcAreaOverThr(0),
+  fPatchSizeW(48), 
+  fPatchSizeD(48),
   fCurrentWireIdx(99999),
-  fCurrentScaledDrift(99999)
-
+  fCurrentScaledDrift(99999),
+  fNNet(0)
 {
+  /*
+
+  size_t fDriftWindow;
+  bool fDownscaleFullView;
+  std::vector<float> fAmplCalibConst;
+  bool fCalibrateAmpl;
+  bool fCalibrateLifetime;
+  float fAdcMax, fAdcMin, fAdcScale, fAdcOffset, fAdcZero;
+  double fAdcSumOverThr;
+  double fAdcSumThr;
+  size_t fAdcAreaOverThr;
+  size_t fPatchSizeW, fPatchSizeD;
+  mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
+  */
+  
 //*******************************************************
   
   fNNetModelFilePath = "cnn.pb";

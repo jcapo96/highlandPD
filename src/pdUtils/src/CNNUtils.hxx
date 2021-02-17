@@ -114,18 +114,24 @@ private:
   DataProviderAlgView fAlgView;
   EDownscaleMode fDownscaleMode;
   //std::function<void (std::vector<float> &, std::vector<float> const &, size_t)> fnDownscale;
+
+
+  float fDriftWindowInv;
   
   size_t fDriftWindow;
   bool fDownscaleFullView;
-  float fDriftWindowInv;
-
-
   std::vector<float> fAmplCalibConst;
-  bool fCalibrateAmpl, fCalibrateLifetime;
+  bool fCalibrateAmpl;
+  bool fCalibrateLifetime;
   float fAdcMax, fAdcMin, fAdcScale, fAdcOffset, fAdcZero;
-  double fAdcSumOverThr, fAdcSumThr;
+  double fAdcSumOverThr;
+  double fAdcSumThr;
   size_t fAdcAreaOverThr;
+  size_t fPatchSizeW, fPatchSizeD;
+  mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
 
+
+  
   calo::CalorimetryAlg fCalorimetryAlg;
 
 
@@ -134,8 +140,6 @@ private:
   std::vector<std::string> fNNetOutputs;
   nnet2::ModelInterface* fNNet;
 
-  size_t fPatchSizeW, fPatchSizeD;
-  mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
   
   int fPlane=2;
 };
