@@ -31,22 +31,24 @@ std::string wspacesA(size_t n){
 */
 //*******************************************************
 CNNUtils::CNNUtils():
-  fNNet(0), 
+  fDownscaleMode(kMax),
+  fDriftWindow(6), 
+  fDownscaleFullView(false),
+  fNNet(0),
   fPatchSizeW(48), 
   fPatchSizeD(48), 
-  fCurrentWireIdx(99999), 
-  fCurrentScaledDrift(99999), 
-  fDownscaleFullView(false),
-  fDownscaleMode(kMax), 
-  fDriftWindow(6), 
-  fAdcSumOverThr(0), 
-  fAdcSumThr(10), 
   // set fixed threshold of 10 ADC counts for counting the sum
-  fAdcAreaOverThr(0), 
+
     //  , fNoiseSigma(0)
     //  , fCoherentSigma(0)
+  fCalibrateAmpl(true),
   fCalibrateLifetime(false),
-  fCalibrateAmpl(true)
+  fAdcSumOverThr(0),
+  fAdcSumThr(10),
+  fAdcAreaOverThr(0),
+  fCurrentWireIdx(99999),
+  fCurrentScaledDrift(99999)
+
 {
 //*******************************************************
   

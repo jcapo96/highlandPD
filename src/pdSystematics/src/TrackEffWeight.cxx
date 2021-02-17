@@ -29,7 +29,7 @@ Weight_h TrackEffWeight::ComputeWeight(const ToyExperiment& toy, const AnaEventC
    
   // Loop over all TrueParticles in the TPC
   for (Int_t itrue=0;itrue< SystBox->nRelevantTrueObjects; itrue++){      
-    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(SystBox->RelevantTrueObjects[itrue]);            
+    //    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(SystBox->RelevantTrueObjects[itrue]);            
 
     // True-reco association done only once per event in EventWeightBase;
     bool found = (SystBox->RelevantTrueObjectsReco[itrue]!=NULL);

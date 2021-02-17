@@ -4,7 +4,6 @@
 #include "baseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
-#include "EmTrackMichelId.hxx"
 
 
 /* This is an example of analysis in ProtoDUNE-SP detector 
@@ -84,8 +83,6 @@ class kaonAnalysis: public baseAnalysis {
 
 private:
 
-  nnet::EmTrackMichelId _cnn;
-  
 public:
 
   // Needed to get the index of the counters from standardPDTree 

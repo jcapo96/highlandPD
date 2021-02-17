@@ -55,16 +55,13 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
         AnaHitPD& hit = part->Hits[i][j];                
-	for (UInt_t k=0;k<hit.Signal.size();k++){
-	  hit.Signal[k] *= C;
-	}
+        for (UInt_t k=0;k<hit.Signal.size();k++){
+          hit.Signal[k] *= C;
+        }
       }
     }
 
   }
-
-  // Recompute the top level derived quantities
-  //  _cnn.produce(*(static_cast<AnaEventPD*>(&event)));
 
 }
 

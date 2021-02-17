@@ -84,8 +84,8 @@ public:
 
   std::vector<float> downscale       (std::size_t dst_size, std::vector<float> const& adc,size_t tick0, size_t adc_gt0=0) const;    
   std::vector<float> downscaleMean   (std::size_t dst_size, std::vector<float> const& adc,size_t tick0, size_t adc_gt0) const;
-  std::vector<float> downscaleMax    (std::size_t dst_size, std::vector<float> const& adc,size_t tick0) const{}
-  std::vector<float> downscaleMaxMean(std::size_t dst_size, std::vector<float> const& adc,size_t tick0) const{}
+  std::vector<float> downscaleMax    (std::size_t dst_size, std::vector<float> const& adc,size_t tick0) const{return std::vector<float>();}
+  std::vector<float> downscaleMaxMean(std::size_t dst_size, std::vector<float> const& adc,size_t tick0) const{return std::vector<float>();}
 
                                   
 
@@ -96,7 +96,7 @@ public:
 
   bool bufferPatch(size_t wire, float drift, std::vector<std::vector<float>>& patch) const;
   bool patchFromOriginalView(size_t wire,float drift,size_t size_w,size_t size_d,std::vector<std::vector<float>>& patch) const;
-  bool patchFromDownsampledView(size_t wire,float drift,size_t size_w,size_t size_d,std::vector<std::vector<float>>& patch) const{}
+  bool patchFromDownsampledView(size_t wire,float drift,size_t size_w,size_t size_d,std::vector<std::vector<float>>& patch) const{return true;}
 
   void printTime(const std::string& m);
 
