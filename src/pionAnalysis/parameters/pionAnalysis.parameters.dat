@@ -16,7 +16,8 @@ need to be enabled in baseAnalysis parameter file
 This is the parent systematic of the three above
  < pionAnalysis.Systematics.EnabledEdxCalib         = 0 >  
 
- < pionAnalysis.Systematics.EnableCNN               = 0 >  
+ < pionAnalysis.Systematics.EnableCNN               = 0 >
+ < pionAnalysis.Systematics.CNNRecomputeCut         = 0.3 >  
 
  < pionAnalysis.Systematics.EnableBeamComposition   = 0 >
  < pionAnalysis.Systematics.EnableTrackEff          = 0 >
@@ -96,5 +97,5 @@ Create configurations with a single systematic ( a configuration for each system
 
 Enable/disable the configuration with all systematics (or the ones selected above)
 
- < baseAnalysis.Configurations.EnableAllSystematics = 1 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 0 >
  
