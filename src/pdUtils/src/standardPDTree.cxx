@@ -94,13 +94,11 @@ void standardPDTree::AddStandardVariables_CandidateHitsReco(OutputManager& outpu
   AddVarFixMF(output, seltrk_hit_dqdx,       "candidate calibrated dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_dqdx_noSCE, "candidate LAr noSCE dQdx per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMF(output, seltrk_hit_resrange,   "candidate Residual Range per hit",3,NMAXHITSPERPLANE_SELTRK);
-<<<<<<< HEAD
   AddVarFixMI(output, seltrk_hit_ch,         "candidate channel per hit",3,NMAXHITSPERPLANE_SELTRK);
   AddVarFixMI(output, seltrk_hit_t0,         "candidate t0 per hit",3,NMAXHITSPERPLANE_SELTRK);
-=======
 
   AddVarFixMF(output, seltrk_hit_cnn,        "candidate cnn for hit",NMAXHITSPERPLANE_SELTRK,3);
->>>>>>> 306e933b5df1e5398d273becead60a5e3f4918ea
+
 }
 
 //********************************************************************
