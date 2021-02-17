@@ -167,28 +167,27 @@ endforeach(file0)
 
 add_executable(pion.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunPionAnalysis.cxx)
 target_include_directories(pion.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(pion.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
+target_link_libraries(pion.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS pion.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(kaon.exe ${CMAKE_SOURCE_DIR}/src/kaonAnalysis/app/RunKaonAnalysis.cxx)
 target_include_directories(kaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(kaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
+target_link_libraries(kaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS kaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CreateMiniTreePionAna.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunCreateMiniTree.cxx)
 target_include_directories(CreateMiniTreePionAna.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreePionAna.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
+target_link_libraries(CreateMiniTreePionAna.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS CreateMiniTreePionAna.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(proton.exe ${CMAKE_SOURCE_DIR}/src/stoppingProtonAnalysis/app/RunStoppingProtonAnalysis.cxx)
 target_include_directories(proton.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(proton.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
+target_link_libraries(proton.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS proton.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(dedx.exe ${CMAKE_SOURCE_DIR}/src/pdStudies/app/RundEdxStudies.cxx)
 target_include_directories(dedx.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-#target_link_libraries(dedx.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-target_link_libraries(dedx.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES})
+target_link_libraries(dedx.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS dedx.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 
