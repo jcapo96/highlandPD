@@ -150,14 +150,38 @@ CNNUtils::CNNUtils():
   */
 
   _tutils = new timeUtils(30);
+#ifdef CompileTF
   fNNet->SetTimeUtils(_tutils);
+#endif
 }
 
 CNNUtils::~CNNUtils(){
 
 }
 
+//*******************************************************
+void CNNUtils::ComputeParticleCNN(AnaParticlePD& part){
+//*******************************************************  
+
+  part.Print();
   
+  int nhits = 0;
+  for(size_t ihit = 0; ihit < part.Hits[2].size(); ihit++){
+    for (size_t j=0;j<3;j++){
+      part.CNNscore[j] += part.Hits[2][ihit].CNN[j];
+      nhits++;
+    }
+  }
+
+  std::cout << "After CNN: " << std::endl;
+  
+  for (size_t j=0;j<3;j++){
+    part.CNNscore[j] /= (Float_t)nhits;
+  }
+
+  part.Print();
+
+}
 
 //*******************************************************
 void CNNUtils::produce(std::vector<AnaHitPD*>& hits){

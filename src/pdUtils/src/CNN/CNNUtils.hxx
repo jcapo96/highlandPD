@@ -30,7 +30,7 @@ namespace nnet2{
                                                 int samples = -1);
 
 
-    virtual void SetTimeUtils(timeUtils* time){}    
+    virtual void SetTimeUtils(timeUtils* time)=0;
   protected:
     std::string findFile(const char* fileName) const;
   };
@@ -100,7 +100,7 @@ public:
 
   void printTime(const std::string& m);
 
-
+  void ComputeParticleCNN(AnaParticlePD& part);
 
 public:
   timeUtils* _tutils;
