@@ -138,8 +138,6 @@ bool pionAnalysis::Initialize(){
   // Add our own categories (in pionAnalysisUtils.cxx)
   pionAnaUtils::AddCustomCategories();
 
-  _cnn = new CNNUtils();
-
   return true;
 }
 
@@ -148,7 +146,7 @@ void pionAnalysis::Finalize(){
 //********************************************************************
 
 
-  _cnn->_tutils->dumpTimes();
+  pdAnaUtils::DumpCNNTimes();
 
 }
 
@@ -187,7 +185,6 @@ void pionAnalysis::DefineSelections(){
   //   not passing the entire selection
 
   sel().AddSelection("pionSelection", "pion selection", new pionSelection(false));     // true/false for forcing break  
-  static_cast<PionCexCut*>(sel().GetSelection("pionSelection")->GetStep("pi0 showers"))->SetCNNUtils(_cnn);
 }
 
 //********************************************************************

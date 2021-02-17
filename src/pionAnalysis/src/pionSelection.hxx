@@ -90,8 +90,6 @@ class PionCexCut: public StepBase{
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new PionCexCut();}
-  void SetCNNUtils(CNNUtils* cnn){_cnn=cnn;}
-  CNNUtils* _cnn;
 };
 
 class PionAbsorptionCut: public StepBase{

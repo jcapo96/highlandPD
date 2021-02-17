@@ -138,6 +138,8 @@ namespace pdAnaUtils{
 
 
   void ComputeParticleCNN(AnaParticlePD& part);
+
+  void DumpCNNTimes();
 }
 
 #endif
