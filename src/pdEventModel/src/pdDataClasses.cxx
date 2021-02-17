@@ -460,7 +460,7 @@ AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunchPD& bunch):AnaEven
 
       hit.Signal.clear();
       for (UInt_t w =0;w<CNNwires.size();w++){
-        if (CNNwires[w].wire == hit.Channel && CNNwires[w].time == hit.StartTick ){
+        if ((UInt_t)(CNNwires[w].wire) == hit.Channel && (UInt_t)(CNNwires[w].time) == hit.StartTick ){
           for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
             hit.Signal.push_back(CNNwires[w].adcs[t-CNNwires[w].time]);            
           }
