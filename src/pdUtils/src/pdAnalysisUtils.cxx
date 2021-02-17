@@ -84,7 +84,7 @@ TH2F* YZ_neg = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_negativeX_hi
 TH2F* YZ_pos = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_positiveX_hist_2");
 
 
-CNNUtils* _cnn = new CNNUtils();
+CNNUtils* _cnn = NULL;
 
 //*****************************************************************************
 Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
@@ -1105,6 +1105,10 @@ Float_t pdAnaUtils::Compute3DWirePitch(Int_t planeKey, const TVector3& dir){
 //***************************************************************
 void pdAnaUtils::ComputeParticleCNN(AnaParticlePD& part){
 //***************************************************************
+
+  if (!_cnn){
+    _cnn= new CNNUtils();
+  }
 
   for (auto & hit: part.Hits[2]){
     std::vector<AnaHitPD*> hits;
