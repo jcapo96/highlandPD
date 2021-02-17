@@ -11,7 +11,7 @@
 #define Graph_h
 
 
-#define CompileTF
+//#define CompileTF
 
 #include <memory>
 #include <vector>
@@ -61,9 +61,8 @@ private:
     std::string fInputName;
     std::vector< std::string > fOutputNames;
 
-  public:
+public:
   timeUtils* _tutils;
-  //  timeUtils tutils;
 
 };
 
