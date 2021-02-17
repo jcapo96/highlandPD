@@ -136,6 +136,8 @@ namespace pdAnaUtils{
   // Compute the wire pitch taking into account the direction of the particle
   Float_t Compute3DWirePitch(Int_t planeKey, const TVector3& dir);
 
+
+  void ComputeParticleCNN(AnaParticlePD& part);
 }
 
 #endif
