@@ -163,23 +163,32 @@ CNNUtils::~CNNUtils(){
 void CNNUtils::ComputeParticleCNN(AnaParticlePD& part){
 //*******************************************************  
 
-  part.Print();
+
   
-  int nhits = 0;
-  for(size_t ihit = 0; ihit < part.Hits[2].size(); ihit++){
+  std::cout << "CNN before: " << part.CNNscore[0] << " " << part.CNNscore[1] << " " << part.CNNscore[2] << " " << std::endl;
+
+  if (part.Hits[2].size()>0){
     for (size_t j=0;j<3;j++){
+      part.CNNscore[j] = 0;
+    }
+
+    int nhits = 0;
+    for(size_t ihit = 0; ihit < part.Hits[2].size(); ihit++){
+      std::cout << " - " << ihit << ":" << part.Hits[2][ihit].CNN[0] << part.Hits[2][ihit].CNN[1] << part.Hits[2][ihit].CNN[2] << std::endl;
+      for (size_t j=0;j<3;j++){
       part.CNNscore[j] += part.Hits[2][ihit].CNN[j];
+      }
       nhits++;
     }
+    
+    if (nhits>=0){
+      for (size_t j=0;j<3;j++){
+	part.CNNscore[j] /= (Float_t)nhits;
+      }
+    }    
   }
 
-  std::cout << "After CNN: " << std::endl;
-  
-  for (size_t j=0;j<3;j++){
-    part.CNNscore[j] /= (Float_t)nhits;
-  }
-
-  part.Print();
+  std::cout << "CNN after: " << part.CNNscore[0] << " " << part.CNNscore[1] << " " << part.CNNscore[2] << " " << std::endl;
 
 }
 
