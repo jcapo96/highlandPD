@@ -207,9 +207,12 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
 
-
-    if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<0.3){
-      pdAnaUtils::ComputeParticleCNN(*daughter);
+    // To minimize the number of times this is called, we only call it when needed, that is
+    // when the selection gets to this cut and the CNN is around the cut value
+    if (_cnnSystematicEnabled){
+      if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
+        pdAnaUtils::ComputeParticleCNN(*daughter);
+      }
     }
     
     if(daughter->Type       == AnaParticlePD::kShower &&

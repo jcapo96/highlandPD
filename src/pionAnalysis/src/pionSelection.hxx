@@ -9,6 +9,7 @@
 #include "SystId.hxx"
 #include "SubDetId.hxx"
 #include "CNNUtils.hxx"
+#include "Parameters.hxx"
 
 /* 
    This file contains the Pion Selection developed b J. Calcutt and F. Stocker, relized in the class pionSelection, which is a collection of steps (StepBase class). 
@@ -87,9 +88,15 @@ class NoPionDaughterCut: public StepBase{
 
 class PionCexCut: public StepBase{
  public:
+  PionCexCut(){
+    _cnnRecomputeCut = ND::params().GetParameterD("pionAnalysis.Systematics.CNNRecomputeCut");
+    _cnnSystematicEnabled = ND::params().GetParameterD("pionAnalysis.Systematics.EnableCNN");
+  }
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new PionCexCut();}
+  Float_t _cnnRecomputeCut;
+  bool _cnnSystematicEnabled;
 };
 
 class PionAbsorptionCut: public StepBase{
