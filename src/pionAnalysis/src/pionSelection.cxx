@@ -196,14 +196,6 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   (void)event;
 
-  /*
-  static CNNUtils* _cnn;
-  static bool first=true;
-  if (first){
-    _cnn = new CNNUtils();
-    first=false;
-  }
-  */
   int cut_nHits_shower_low  = 40;
   Float_t cut_CNNTrackScore = 0.3;
 
@@ -217,15 +209,9 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
 
     if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<0.3){
-
-      for (auto & hit: daughter->Hits[2]){
-        std::vector<AnaHitPD*> hits;
-        hits.push_back(&hit);
-        _cnn->produce(hits);
-      }
-      _cnn->ComputeParticleCNN(*daughter);
+      pdAnaUtils::ComputeParticleCNN(*daughter);
     }
-
+    
     if(daughter->Type       == AnaParticlePD::kShower &&
        daughter->CNNscore[0] < cut_CNNTrackScore &&
        daughter->NHits       > cut_nHits_shower_low &&
