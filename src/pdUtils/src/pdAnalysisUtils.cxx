@@ -1123,6 +1123,7 @@ void pdAnaUtils::ComputeParticleCNN(AnaParticlePD& part){
 void pdAnaUtils::DumpCNNTimes(){
 //***************************************************************
 
-  _cnn->_tutils->dumpTimes();
+  if (_cnn)
+    _cnn->_tutils->dumpTimes();
 
 }
