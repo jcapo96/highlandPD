@@ -28,7 +28,7 @@
 
 #include "pionTreeConverter.hxx"
 #include "hitPionTreeConverter.hxx"
-#include "HighlandMiniTreeConverter.hxx"
+#include "highlandPDMiniTreeConverter.hxx"
 //#include "LArSoftTreeConverter.hxx"
 
 // PionAnalysis from Jake and Francesca
@@ -160,7 +160,7 @@ void pionAnalysis::DefineInputConverters(){
   
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
-  input().AddConverter("minitree",       new HighlandMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("minitree",       new highlandPDMiniTreeConverter("highlandana/MiniTree"));
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
