@@ -81,9 +81,15 @@ class PionPassChi2Cut: public StepBase{
 
 class NoPionDaughterCut: public StepBase{
  public:
+  NoPionDaughterCut(){
+    _cnnRecomputeCut = ND::params().GetParameterD("pionAnalysis.Systematics.CNNRecomputeCut");
+    _cnnSystematicEnabled = ND::params().GetParameterD("pionAnalysis.Systematics.EnableCNN");
+  }
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new NoPionDaughterCut();}
+  Float_t _cnnRecomputeCut;
+  bool _cnnSystematicEnabled;
 };
 
 class PionCexCut: public StepBase{

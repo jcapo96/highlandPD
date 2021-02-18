@@ -151,12 +151,22 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   bool noPion = true;
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
+
     if(daughter->Type           == AnaParticlePD::kTrack &&
        daughter->UniqueID       != -999 &&
-       daughter->CNNscore[0]    > cut_CNNTrackScore &&
        daughter->truncLibo_dEdx <= cut_dEdx){
-      noPion = false;
-      break;
+
+      // To minimize the number of times CNN is called, we only call it when needed, that is
+      // when the selection gets to this point and the CNN is around the cut value
+      if (_cnnSystematicEnabled){
+        if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
+          pdAnaUtils::ComputeParticleCNN(*daughter);
+        }
+      }            
+      if (daughter->CNNscore[0]    > cut_CNNTrackScore){        
+        noPion = false;
+        break;
+      }
     }
   }
 
@@ -205,22 +215,23 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   // loop over daughters assuming shower hypothesis
   bool cex = false;
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
-    AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-
-    // To minimize the number of times this is called, we only call it when needed, that is
-    // when the selection gets to this cut and the CNN is around the cut value
-    if (_cnnSystematicEnabled){
-      if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
-        pdAnaUtils::ComputeParticleCNN(*daughter);
-      }
-    }
-    
+    AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);    
     if(daughter->Type       == AnaParticlePD::kShower &&
-       daughter->CNNscore[0] < cut_CNNTrackScore &&
        daughter->NHits       > cut_nHits_shower_low &&
        daughter->CNNscore[0] != -999){
-      cex = true;
-      break;
+
+      // To minimize the number of times CNN is called, we only call it when needed, that is
+      // when the selection gets to this point and the CNN is around the cut value
+      if (_cnnSystematicEnabled){
+        if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
+          pdAnaUtils::ComputeParticleCNN(*daughter);
+        }
+      }            
+
+      if (daughter->CNNscore[0] < cut_CNNTrackScore){
+        cex = true;
+        break;
+      }
     }
   }
   return cex;
