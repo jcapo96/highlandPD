@@ -1,6 +1,9 @@
 #include "CNNUtils.hxx"
 #include "timeUtils.hxx"
- 
+#include <chrono>
+#include <thread>
+
+
 #ifdef  CompileTF
 #include "tensorflow/core/public/session.h"  // anselmo
 #endif
@@ -183,27 +186,28 @@ void CNNUtils::ComputeParticleCNN(AnaParticlePD& part){
   
   std::cout << "CNN before: " << part.CNNscore[0] << " " << part.CNNscore[1] << " " << part.CNNscore[2] << " " << std::endl;
 
+#ifdef CompileTF
   if (part.Hits[2].size()>0){
     for (size_t j=0;j<3;j++){
       part.CNNscore[j] = 0;
     }
-
+    
     int nhits = 0;
     for(size_t ihit = 0; ihit < part.Hits[2].size(); ihit++){
       std::cout << " - " << ihit << ":" << part.Hits[2][ihit].CNN[0] << part.Hits[2][ihit].CNN[1] << part.Hits[2][ihit].CNN[2] << std::endl;
       for (size_t j=0;j<3;j++){
-      part.CNNscore[j] += part.Hits[2][ihit].CNN[j];
+        part.CNNscore[j] += part.Hits[2][ihit].CNN[j];
       }
       nhits++;
     }
     
     if (nhits>=0){
       for (size_t j=0;j<3;j++){
-	part.CNNscore[j] /= (Float_t)nhits;
+        part.CNNscore[j] /= (Float_t)nhits;
       }
     }    
   }
-
+#endif
   std::cout << "CNN after: " << part.CNNscore[0] << " " << part.CNNscore[1] << " " << part.CNNscore[2] << " " << std::endl;
 
 }
@@ -216,6 +220,12 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
 
   _tutils->accumulateTime(0);
 
+#ifndef CompileTP
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  _tutils->accumulateTime(1);
+  return;  
+#endif
+  
   AnaHitPD* last_hit=NULL;
   std::vector< std::pair<unsigned int, float> > points;
   for (auto hit : hits){                  
