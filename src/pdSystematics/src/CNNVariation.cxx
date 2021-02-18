@@ -66,6 +66,7 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
       }
     }
 
+    // TODO: temporarily vary CNN here instead of using the recomputed value using TF
     Float_t cut_CNNTrackScore=0.3;
     if (fabs(part->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
       for (size_t i=0;i<3;i++)
