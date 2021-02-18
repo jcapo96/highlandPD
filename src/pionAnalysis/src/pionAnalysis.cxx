@@ -366,7 +366,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
 
   AddVarMaxSizeVI(  output(), pixel_wire,             "pixel wire", npixels, 400);
   AddVarMaxSizeVI(  output(), pixel_time,             "pixel time", npixels, 400);
-  AddVarMF(  output(), pixel_adc,              "pixel adc",  npixels,-400, 200);
+  AddVarMF(         output(), pixel_adc,              "pixel adc",  npixels,-400, 200);
 
   
   AddVarI(  output(), trk_pandora,      "trk is pandora candidate");
@@ -494,7 +494,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     if (i>=400) break;
     output().FillVectorVar(pixel_wire, wires[i].wire);
     output().FillVectorVar(pixel_time, wires[i].time);
-    for (size_t j = 0;j<wires[i].adcs.size();j++){
+    for (size_t j = 0;j<std::min((Int_t)wires[i].adcs.size(),200);j++){
       output().FillMatrixVar(pixel_adc, wires[i].adcs[j] , -1, j); 
     }
     output().IncrementCounter(npixels);
