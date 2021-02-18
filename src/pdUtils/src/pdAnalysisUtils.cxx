@@ -6,7 +6,6 @@
 #include <TH3F.h>
 #include <TH2F.h>
 
-
 bool debug = false;
 
 //data for range-momentum conversion, muons
@@ -1115,8 +1114,7 @@ void pdAnaUtils::ComputeParticleCNN(AnaParticlePD& part){
     hits.push_back(&hit);
     _cnn->produce(hits);
   }
-  _cnn->ComputeParticleCNN(part);
-
+  //  _cnn->ComputeParticleCNN(part);
 }
 
 //***************************************************************
