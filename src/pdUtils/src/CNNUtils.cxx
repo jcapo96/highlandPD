@@ -221,7 +221,8 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
   _tutils->accumulateTime(0);
 
 #ifndef CompileTP
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  // sleep for 0.09 seconds to simulate the effect of TF when this is not enabled
+  std::this_thread::sleep_for(std::chrono::milliseconds(9));
   _tutils->accumulateTime(1);
   return;  
 #endif
