@@ -1,6 +1,8 @@
 #include "CNNVariation.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "HitVariationBase.hxx"
+#include "Parameters.hxx"
+#include "tf_graph.hxx"
 
 /*
   This is the dEdx calibration variation, applying different variations at the hit level 
@@ -22,6 +24,9 @@ CNNVariation::CNNVariation(): EventVariationBase(),BinnedParams(std::string(gete
 
   // Read the systematic source parameters from the data files
   SetNParameters(GetNBins());
+
+  _cnnRecomputeCut = ND::params().GetParameterD("pionAnalysis.Systematics.CNNRecomputeCut");
+
 }
 
 //********************************************************************
@@ -61,6 +66,11 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
       }
     }
 
+    Float_t cut_CNNTrackScore=0.3;
+    if (fabs(part->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
+      for (size_t i=0;i<3;i++)
+        part->CNNscore[i] = C*original->CNNscore[i];    
+    }
   }
 
 }
@@ -84,6 +94,8 @@ bool CNNVariation::UndoSystematic(AnaEventC& event){
         }
       }
     }
+    for (size_t i=0;i<3;i++)
+      part->CNNscore[i] = original->CNNscore[i];
   }
 
   // Don't reset the spill to corrected

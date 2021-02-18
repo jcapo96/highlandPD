@@ -27,6 +27,8 @@ protected:
   // needed to recompute dEdx
   calo::CalorimetryAlg fCalo;
 
+  Float_t _cnnRecomputeCut;
+  
 };
 
 #endif
