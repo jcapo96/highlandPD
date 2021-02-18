@@ -69,7 +69,6 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 bool CNNVariation::UndoSystematic(AnaEventC& event){
   //********************************************************************
 
-
   // Get the SystBox for this event
   SystBoxB* box = GetSystBox(event);
 
@@ -80,9 +79,9 @@ bool CNNVariation::UndoSystematic(AnaEventC& event){
 
     for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
-	for (UInt_t k=0;k<part->Hits[i][j].Signal.size();k++){
-	  part->Hits[i][j].Signal[k]       = original->Hits[i][j].Signal[k];
-	}
+        for (UInt_t k=0;k<part->Hits[i][j].Signal.size();k++){
+          part->Hits[i][j].Signal[k]       = original->Hits[i][j].Signal[k];
+        }
       }
     }
   }
