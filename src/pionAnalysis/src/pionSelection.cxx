@@ -240,8 +240,8 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 bool PionAbsorptionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-//  return !_cut.Apply(event, boxB);
-  return true;
+  // TODO: make sure CNN is computed only once
+  return !_cut.Apply(event, boxB);
 }
 
 //**************************************************
