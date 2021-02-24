@@ -186,6 +186,7 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersReco(OutputManager& 
   AddVarMF(output, seltrk_dau_hit_resrange, "daughters hit residual range", seltrk_ndau,-nmax,NMAXHITSPERPLANE);
 
   AddVarMF(output, seltrk_dau_hit_cnn,      "daughters hit cnn",            seltrk_ndau,-nmax,NMAXHITSPERPLANE);
+  AddVarMI(output, seltrk_dau_hit_ch,       "daughters hit channel",        seltrk_ndau,-nmax,NMAXHITSPERPLANE);
 
 }
 
@@ -463,6 +464,7 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
       output.FillMatrixVar(seltrk_dau_hit_dqdx_raw, (Float_t)-999., -1, j);  
       output.FillMatrixVar(seltrk_dau_hit_resrange, (Float_t)-999., -1, j);
       output.FillMatrixVar(seltrk_dau_hit_cnn,      (Float_t)-999., -1, j);
+      output.FillMatrixVar(seltrk_dau_hit_ch,       (Int_t)-999 , -1, j);
     }
   }
   else{
@@ -478,6 +480,7 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
       //      std::cout << "anselmo: " << dau->Hits[2][j].CNN[0] << std::endl;
       //      dau->Hits[2][j].Print();
       output.FillMatrixVar(seltrk_dau_hit_cnn,       dau->Hits[2][j].CNN[1], -1, j-jmin);
+      output.FillMatrixVar(seltrk_dau_hit_ch,        (Int_t)dau->Hits[2][j].Channel, -1, j-jmin);
       //      dau->Hits[2][j].Print();
     }
   }

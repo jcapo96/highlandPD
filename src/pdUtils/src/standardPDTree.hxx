@@ -118,6 +118,7 @@ namespace standardPDTree{
     seltrk_dau_hit_dqdx_raw,    
     seltrk_dau_hit_resrange,
     seltrk_dau_hit_cnn,
+    seltrk_dau_hit_ch,
 
     // selected track daughters true info
     seltrk_dau_truendau,
