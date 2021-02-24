@@ -37,11 +37,6 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   Float_t C_mean, C_var;
   Int_t C_index;
 
-  // Get the systematics parameters
-  if (!GetBinValues(0.5,C_mean, C_var, C_index))  return;
-
-  Float_t C = C_mean +  C_var*toy.GetToyVariations(_index)->Variations[C_index]; 
-
   // Get the SystBox for this event. The SystBox contains vector of objects that are relevant for this systematic.
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
@@ -60,6 +55,13 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
         AnaHitPD& hit = part->Hits[i][j];                
+
+        // Get the systematics parameters
+        if (!GetBinValues(hit.Channel,C_mean, C_var, C_index))  return;
+        
+        Float_t C = C_mean +  C_var*toy.GetToyVariations(_index)->Variations[C_index]; 
+
+
         for (UInt_t k=0;k<hit.Signal.size();k++){
           hit.Signal[k] *= C;
         }
@@ -69,6 +71,15 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     // TODO: temporarily vary CNN here instead of using the recomputed value using TF
     Float_t cut_CNNTrackScore=0.3;
     if (fabs(part->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
+
+      if (part->Hits[2].size()==0) continue;
+      AnaHitPD& hit0 = part->Hits[2][0];                
+      
+      // Get the systematics parameters
+      if (!GetBinValues(hit0.Channel,C_mean, C_var, C_index))  return;
+      
+      Float_t C = C_mean +  C_var*toy.GetToyVariations(_index)->Variations[C_index]; 
+
       for (size_t i=0;i<3;i++)
         part->CNNscore[i] = C*original->CNNscore[i];    
     }
