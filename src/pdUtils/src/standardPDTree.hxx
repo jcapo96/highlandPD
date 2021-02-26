@@ -97,6 +97,8 @@ namespace standardPDTree{
     seltrk_hit_dqdx,
     seltrk_hit_dqdx_raw,
     seltrk_hit_dqdx_noSCE,
+    seltrk_hit_ch,
+    seltrk_hit_t0,
     seltrk_hit_x,
     seltrk_hit_y,
     seltrk_hit_z,
@@ -104,6 +106,7 @@ namespace standardPDTree{
     seltrk_hit_y_raw,
     seltrk_hit_z_raw,
     seltrk_hit_resrange,
+    seltrk_hit_cnn,
     seltrk_nhitsperplane,
 
     // selected track daughters reco info
@@ -120,6 +123,8 @@ namespace standardPDTree{
     seltrk_dau_hit_dedx,
     seltrk_dau_hit_dqdx_raw,    
     seltrk_dau_hit_resrange,
+    seltrk_dau_hit_cnn,
+    seltrk_dau_hit_ch,
 
     // selected track daughters true info
     seltrk_dau_truendau,

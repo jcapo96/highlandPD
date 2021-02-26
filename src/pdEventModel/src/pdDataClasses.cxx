@@ -400,7 +400,6 @@ AnaBunchPD::AnaBunchPD():AnaBunch(){
 //********************************************************************
 
   CNNwires.clear();
-
 }
 
 //********************************************************************
@@ -453,27 +452,7 @@ AnaEventPD::AnaEventPD(const AnaEventPD& event):AnaEvent(event){
 AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunchPD& bunch):AnaEvent(spill,bunch) {
 //*****************************************************************************
 
-  CNNwires = bunch.CNNwires;
-
-  for (Int_t i=0;i<nParticles/2+1;i++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(Particles[i]);
-    
-    for (UInt_t j=0;j<part->Hits[2].size();j++){      
-      AnaHitPD& hit = part->Hits[2][j];
-
-      hit.Signal.clear();
-      for (UInt_t w =0;w<CNNwires.size();w++){
-        if (CNNwires[w].wire == hit.Channel && CNNwires[w].time == hit.StartTick ){
-          for (UInt_t t=hit.StartTick;t<=hit.EndTick;t++){
-            hit.Signal.push_back(CNNwires[w].adcs[t-CNNwires[w].time]);            
-          }
-        }
-      }      
-    }
-
-  }
-
-
+//  CNNwires = bunch.CNNwires;
 }
 
 //********************************************************************

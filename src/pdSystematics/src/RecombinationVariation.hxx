@@ -19,6 +19,7 @@ public:
   virtual void Apply(const ToyExperiment& toy, AnaHitPD& hit);
   
   /// Undo the variation provided the hit
+  using HitVariationBase::UndoSystematic;
   bool UndoSystematic(const AnaHitPD& original_hit, AnaHitPD& hit);
 
 protected:

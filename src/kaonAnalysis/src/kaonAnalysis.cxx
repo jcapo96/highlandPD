@@ -346,7 +346,7 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
       // ---------- Save information about all (max kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS) gdaughters in the candidate --------------
           
       Int_t ngdau = (Int_t)dau->DaughtersIDs.size();
-      for (UInt_t jgdau = 0; jgdau < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS,ngdau); jgdau++){
+      for (Int_t jgdau = 0; jgdau < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS,ngdau); jgdau++){
 	AnaParticlePD* gdau = static_cast<AnaParticlePD*>(dau->Daughters[jgdau]);
 	standardPDTree::FillStandardVariables_CandidateGDaughterReco(output(), gdau, jgdau);
 	standardPDTree::FillStandardVariables_CandidateGDaughterTrue(output(), gdau, jgdau);

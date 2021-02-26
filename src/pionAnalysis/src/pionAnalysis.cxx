@@ -28,7 +28,7 @@
 
 #include "pionTreeConverter.hxx"
 #include "hitPionTreeConverter.hxx"
-#include "HighlandMiniTreeConverter.hxx"
+#include "highlandPDMiniTreeConverter.hxx"
 //#include "LArSoftTreeConverter.hxx"
 
 // PionAnalysis from Jake and Francesca
@@ -138,8 +138,6 @@ bool pionAnalysis::Initialize(){
   // Add our own categories (in pionAnalysisUtils.cxx)
   pionAnaUtils::AddCustomCategories();
 
-  _cnn = new CNNUtils();
-
   return true;
 }
 
@@ -148,7 +146,7 @@ void pionAnalysis::Finalize(){
 //********************************************************************
 
 
-  _cnn->_tutils->dumpTimes();
+  pdAnaUtils::DumpCNNTimes();
 
 }
 
@@ -162,7 +160,7 @@ void pionAnalysis::DefineInputConverters(){
   
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
-  input().AddConverter("minitree",       new HighlandMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("minitree",       new highlandPDMiniTreeConverter("highlandana/MiniTree"));
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
@@ -187,7 +185,6 @@ void pionAnalysis::DefineSelections(){
   //   not passing the entire selection
 
   sel().AddSelection("pionSelection", "pion selection", new pionSelection(false));     // true/false for forcing break  
-  static_cast<PionCexCut*>(sel().GetSelection("pionSelection")->GetStep("pi0 showers"))->SetCNNUtils(_cnn);
 }
 
 //********************************************************************
@@ -353,7 +350,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarF(      output(), seltrk_hit0_cnn,        "candidate hit cnn variated");
   
   seltrk_ndau = standardPDTree::seltrk_ndau;
-  AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
+  //  AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_ndf,    "candidate daughters chi2 ndf",               seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_vtxdistance, "candidate daughters distance to vtx",        seltrk_ndau,NMAXSAVEDDAUGHTERS);
@@ -364,10 +361,12 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarVF(     output(), seltrk_dau_hit0_dedx,      "candidate daughter dedx variated",          NMAXSAVEDDAUGHTERS);
   AddToyVarVF(     output(), seltrk_dau_hit0_cnn,      "candidate daughter CNN variated",          NMAXSAVEDDAUGHTERS);
 
+  AddToyVarMF(     output(), seltrk_dau_CNNscore, "candidate daughter CNN varied",NMAXSAVEDDAUGHTERS,3);
+
 
   AddVarMaxSizeVI(  output(), pixel_wire,             "pixel wire", npixels, 400);
   AddVarMaxSizeVI(  output(), pixel_time,             "pixel time", npixels, 400);
-  AddVarMF(  output(), pixel_adc,              "pixel adc",  npixels,-400, 200);
+  AddVarMF(         output(), pixel_adc,              "pixel adc",  npixels,-400, 200);
 
   
   AddVarI(  output(), trk_pandora,      "trk is pandora candidate");
@@ -469,7 +468,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
       standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
 
       //Jake/Franceska variables
-      output().FillMatrixVarFromArray(seltrk_dau_CNNscore,  dau->CNNscore,         3); 
+      //      output().FillMatrixVarFromArray(seltrk_dau_CNNscore,  dau->CNNscore,         3); 
       output().FillVectorVar(seltrk_dau_chi2_prot,          dau->Chi2Proton);
       output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
       //      output().FillVectorVar(seltrk_dau_vtxdistance,        box().DaughterDistanceToVertex[i]);
@@ -495,7 +494,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     if (i>=400) break;
     output().FillVectorVar(pixel_wire, wires[i].wire);
     output().FillVectorVar(pixel_time, wires[i].time);
-    for (size_t j = 0;j<wires[i].adcs.size();j++){
+    for (size_t j = 0;j<std::min((Int_t)wires[i].adcs.size(),200);j++){
       output().FillMatrixVar(pixel_adc, wires[i].adcs[j] , -1, j); 
     }
     output().IncrementCounter(npixels);
@@ -537,10 +536,12 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
     for (Int_t i=0;i<std::min((Int_t)NMAXSAVEDDAUGHTERS,ndau); ++i){      
       AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
       output().FillToyVectorVar(seltrk_dau_truncLibo_dEdx,  dau->truncLibo_dEdx, i);
+      for (size_t j=0;j<3;j++)
+        output().FillToyMatrixVar(seltrk_dau_CNNscore, dau->CNNscore[j],i, j);
       if (!dau->Hits[2].empty()){
-        output().FillToyVectorVar(seltrk_dau_hit0_dqdx, dau->Hits[2][0].dQdx,i);
-        output().FillToyVectorVar(seltrk_dau_hit0_dedx, dau->Hits[2][0].dEdx,i);
-        output().FillToyVectorVar(seltrk_dau_hit0_cnn, dau->Hits[2][0].CNN[1],i);
+        output().FillToyVectorVar(seltrk_dau_hit0_dqdx, dau->Hits[2][0].dQdx,  i);
+        output().FillToyVectorVar(seltrk_dau_hit0_dedx, dau->Hits[2][0].dEdx,  i);
+        output().FillToyVectorVar(seltrk_dau_hit0_cnn,  dau->Hits[2][0].CNN[1],i);
       }
 
 

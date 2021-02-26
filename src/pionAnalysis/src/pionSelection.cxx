@@ -151,12 +151,22 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   bool noPion = true;
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
+
     if(daughter->Type           == AnaParticlePD::kTrack &&
        daughter->UniqueID       != -999 &&
-       daughter->CNNscore[0]    > cut_CNNTrackScore &&
        daughter->truncLibo_dEdx <= cut_dEdx){
-      noPion = false;
-      break;
+
+      // To minimize the number of times CNN is called, we only call it when needed, that is
+      // when the selection gets to this point and the CNN is around the cut value
+      if (_cnnSystematicEnabled){
+        if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
+          pdAnaUtils::ComputeParticleCNN(*daughter);
+        }
+      }            
+      if (daughter->CNNscore[0]    > cut_CNNTrackScore){        
+        noPion = false;
+        break;
+      }
     }
   }
 
@@ -196,14 +206,6 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   (void)event;
 
-  /*
-  static CNNUtils* _cnn;
-  static bool first=true;
-  if (first){
-    _cnn = new CNNUtils();
-    first=false;
-  }
-  */
   int cut_nHits_shower_low  = 40;
   Float_t cut_CNNTrackScore = 0.3;
 
@@ -213,25 +215,23 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   // loop over daughters assuming shower hypothesis
   bool cex = false;
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
-    AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-
-
-    if (abs(daughter->CNNscore[0]-cut_CNNTrackScore)<100.5){
-
-      for (auto & hit: daughter->Hits[2]){
-	std::vector<AnaHitPD*> hits;
-	hits.push_back(&hit);
-	std::cout << _cnn << std::endl;
-	_cnn->produce(hits);
-      }
-    }
-
+    AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);    
     if(daughter->Type       == AnaParticlePD::kShower &&
-       daughter->CNNscore[0] < cut_CNNTrackScore &&
        daughter->NHits       > cut_nHits_shower_low &&
        daughter->CNNscore[0] != -999){
-      cex = true;
-      break;
+
+      // To minimize the number of times CNN is called, we only call it when needed, that is
+      // when the selection gets to this point and the CNN is around the cut value
+      if (_cnnSystematicEnabled){
+        if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
+          pdAnaUtils::ComputeParticleCNN(*daughter);
+        }
+      }            
+
+      if (daughter->CNNscore[0] < cut_CNNTrackScore){
+        cex = true;
+        break;
+      }
     }
   }
   return cex;
@@ -240,8 +240,8 @@ bool PionCexCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 bool PionAbsorptionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-//  return !_cut.Apply(event, boxB);
-  return true;
+  // TODO: make sure CNN is computed only once
+  return !_cut.Apply(event, boxB);
 }
 
 //**************************************************

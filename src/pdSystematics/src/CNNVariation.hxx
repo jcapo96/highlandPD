@@ -4,7 +4,6 @@
 #include "EventVariationBase.hxx"
 #include "BinnedParams.hxx"
 #include "CalorimetryAlg.hxx"
-#include "EmTrackMichelId.hxx"
 
 class CNNVariation: public EventVariationBase, BinnedParams{
 public:
@@ -28,7 +27,8 @@ protected:
   // needed to recompute dEdx
   calo::CalorimetryAlg fCalo;
 
-  nnet::EmTrackMichelId _cnn;
+  Float_t _cnnRecomputeCut;
+  
 };
 
 #endif

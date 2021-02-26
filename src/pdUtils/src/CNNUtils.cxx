@@ -1,6 +1,9 @@
 #include "CNNUtils.hxx"
 #include "timeUtils.hxx"
- 
+#include <chrono>
+#include <thread>
+
+
 #ifdef  CompileTF
 #include "tensorflow/core/public/session.h"  // anselmo
 #endif
@@ -31,23 +34,39 @@ std::string wspacesA(size_t n){
 */
 //*******************************************************
 CNNUtils::CNNUtils():
-  fNNet(0), 
-  fPatchSizeW(48), 
-  fPatchSizeD(48), 
-  fCurrentWireIdx(99999), 
-  fCurrentScaledDrift(99999), 
-  fDownscaleFullView(false),
-  fDownscaleMode(kMax), 
+  fDownscaleMode(kMax),
   fDriftWindow(6), 
-  fAdcSumOverThr(0), 
-  fAdcSumThr(10), 
+  fDownscaleFullView(false),
   // set fixed threshold of 10 ADC counts for counting the sum
-  fAdcAreaOverThr(0), 
+
     //  , fNoiseSigma(0)
     //  , fCoherentSigma(0)
+  fCalibrateAmpl(true),
   fCalibrateLifetime(false),
-  fCalibrateAmpl(true)
+  fAdcSumOverThr(0),
+  fAdcSumThr(10),
+  fAdcAreaOverThr(0),
+  fPatchSizeW(48), 
+  fPatchSizeD(48),
+  fCurrentWireIdx(99999),
+  fCurrentScaledDrift(99999),
+  fNNet(0)
 {
+  /*
+
+  size_t fDriftWindow;
+  bool fDownscaleFullView;
+  std::vector<float> fAmplCalibConst;
+  bool fCalibrateAmpl;
+  bool fCalibrateLifetime;
+  float fAdcMax, fAdcMin, fAdcScale, fAdcOffset, fAdcZero;
+  double fAdcSumOverThr;
+  double fAdcSumThr;
+  size_t fAdcAreaOverThr;
+  size_t fPatchSizeW, fPatchSizeD;
+  mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
+  */
+  
 //*******************************************************
   
   fNNetModelFilePath = "cnn.pb";
@@ -150,13 +169,48 @@ CNNUtils::CNNUtils():
   */
 
   _tutils = new timeUtils(30);
+#ifdef CompileTF
+  fNNet->SetTimeUtils(_tutils);
+#endif
 }
 
 CNNUtils::~CNNUtils(){
 
 }
 
+//*******************************************************
+void CNNUtils::ComputeParticleCNN(AnaParticlePD& part){
+//*******************************************************  
+
+
   
+  std::cout << "CNN before: " << part.CNNscore[0] << " " << part.CNNscore[1] << " " << part.CNNscore[2] << " " << std::endl;
+
+#ifdef CompileTF
+  if (part.Hits[2].size()>0){
+    for (size_t j=0;j<3;j++){
+      part.CNNscore[j] = 0;
+    }
+    
+    int nhits = 0;
+    for(size_t ihit = 0; ihit < part.Hits[2].size(); ihit++){
+      std::cout << " - " << ihit << ":" << part.Hits[2][ihit].CNN[0] << part.Hits[2][ihit].CNN[1] << part.Hits[2][ihit].CNN[2] << std::endl;
+      for (size_t j=0;j<3;j++){
+        part.CNNscore[j] += part.Hits[2][ihit].CNN[j];
+      }
+      nhits++;
+    }
+    
+    if (nhits>=0){
+      for (size_t j=0;j<3;j++){
+        part.CNNscore[j] /= (Float_t)nhits;
+      }
+    }    
+  }
+#endif
+  std::cout << "CNN after: " << part.CNNscore[0] << " " << part.CNNscore[1] << " " << part.CNNscore[2] << " " << std::endl;
+
+}
 
 //*******************************************************
 void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
@@ -166,6 +220,13 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
 
   _tutils->accumulateTime(0);
 
+#ifndef CompileTP
+  // sleep for 0.09 seconds to simulate the effect of TF when this is not enabled
+  std::this_thread::sleep_for(std::chrono::milliseconds(9));
+  _tutils->accumulateTime(1);
+  return;  
+#endif
+  
   AnaHitPD* last_hit=NULL;
   std::vector< std::pair<unsigned int, float> > points;
   for (auto hit : hits){                  
@@ -187,16 +248,17 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
       std::cout << "hits processing failed: " << points.size() << " " << batch_out.size()  << std::endl;
   }
   else{
+    /*
     std::cout << last_hit->Channel << " " << last_hit->PeakTime << " ---> ";
     for (int jj=0;jj<batch_out[0].size();jj++)                                                                                                                                           
       std::cout << " " << batch_out[0][jj] << " ";                                                                                                                                       
     std::cout << std::endl;                                                                                                                                                              
-
+    */
     if (last_hit)
       for (int jj=0;jj<3;jj++)
 	last_hit->CNN[jj] = batch_out[0][jj];
     //    last_hit->Print();
-
+    
   }
 
   _tutils->accumulateTime(2);
@@ -241,7 +303,7 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
   _tutils->accumulateTime(10);
 
   // 1. 
-  fAlgView = resizeView(nwires, ndrifts);
+  resizeView(nwires, ndrifts);
 
   _tutils->accumulateTime(11);
   size_t w_idx = hit.WireID.Wire;  
@@ -311,13 +373,13 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
 }
 
 //*******************************************************
-DataProviderAlgView CNNUtils::resizeView(size_t wires,size_t drifts){
+void CNNUtils::resizeView(size_t wires,size_t drifts){
 //*******************************************************
 
   _tutils->accumulateTime(15);
 
   if (debug_levelA>=2) std::cout << wspacesA(4) << "resizeView. total drifts, total wires = " << drifts << " " << wires << std::endl;   
-  DataProviderAlgView result;
+  DataProviderAlgView& result = fAlgView;
   result.fNWires = wires;
   result.fNDrifts = drifts;
   result.fNScaledDrifts = drifts / fDriftWindow;
@@ -347,7 +409,7 @@ DataProviderAlgView CNNUtils::resizeView(size_t wires,size_t drifts){
 
   _tutils->accumulateTime(18);
 
-  return result;
+  //  return result;
 }
 
 

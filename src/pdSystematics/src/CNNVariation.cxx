@@ -1,6 +1,8 @@
 #include "CNNVariation.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "HitVariationBase.hxx"
+#include "Parameters.hxx"
+#include "tf_graph.hxx"
 
 /*
   This is the dEdx calibration variation, applying different variations at the hit level 
@@ -22,6 +24,9 @@ CNNVariation::CNNVariation(): EventVariationBase(),BinnedParams(std::string(gete
 
   // Read the systematic source parameters from the data files
   SetNParameters(GetNBins());
+
+  _cnnRecomputeCut = ND::params().GetParameterD("pionAnalysis.Systematics.CNNRecomputeCut");
+
 }
 
 //********************************************************************
@@ -31,11 +36,6 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // We need the errors part of the data file but as well the relative uncertainty for sigma
   Float_t C_mean, C_var;
   Int_t C_index;
-
-  // Get the systematics parameters
-  if (!GetBinValues(0.5,C_mean, C_var, C_index))  return;
-
-  Float_t C = C_mean +  C_var*toy.GetToyVariations(_index)->Variations[C_index]; 
 
   // Get the SystBox for this event. The SystBox contains vector of objects that are relevant for this systematic.
   // In this way the loop over objects is restricted to the ones that really matter
@@ -55,23 +55,41 @@ void CNNVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
         AnaHitPD& hit = part->Hits[i][j];                
-	for (UInt_t k=0;k<hit.Signal.size();k++){
-	  hit.Signal[k] *= C;
-	}
+
+        // Get the systematics parameters
+        if (!GetBinValues(hit.Channel,C_mean, C_var, C_index))  return;
+        
+        Float_t C = C_mean +  C_var*toy.GetToyVariations(_index)->Variations[C_index]; 
+
+
+        for (UInt_t k=0;k<hit.Signal.size();k++){
+          hit.Signal[k] *= C;
+        }
       }
     }
 
-  }
+    // TODO: temporarily vary CNN here instead of using the recomputed value using TF
+    Float_t cut_CNNTrackScore=0.3;
+    if (fabs(part->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
 
-  // Recompute the top level derived quantities
-  //  _cnn.produce(*(static_cast<AnaEventPD*>(&event)));
+      if (part->Hits[2].size()==0) continue;
+      AnaHitPD& hit0 = part->Hits[2][0];                
+      
+      // Get the systematics parameters
+      if (!GetBinValues(hit0.Channel,C_mean, C_var, C_index))  return;
+      
+      Float_t C = C_mean +  C_var*toy.GetToyVariations(_index)->Variations[C_index]; 
+
+      for (size_t i=0;i<3;i++)
+        part->CNNscore[i] = C*original->CNNscore[i];    
+    }
+  }
 
 }
 
 //********************************************************************
 bool CNNVariation::UndoSystematic(AnaEventC& event){
   //********************************************************************
-
 
   // Get the SystBox for this event
   SystBoxB* box = GetSystBox(event);
@@ -83,11 +101,13 @@ bool CNNVariation::UndoSystematic(AnaEventC& event){
 
     for (Int_t i=2;i<3;i++){
       for (UInt_t j=0;j<part->Hits[i].size();j++){
-	for (UInt_t k=0;k<part->Hits[i][j].Signal.size();k++){
-	  part->Hits[i][j].Signal[k]       = original->Hits[i][j].Signal[k];
-	}
+        for (UInt_t k=0;k<part->Hits[i][j].Signal.size();k++){
+          part->Hits[i][j].Signal[k]       = original->Hits[i][j].Signal[k];
+        }
       }
     }
+    for (size_t i=0;i<3;i++)
+      part->CNNscore[i] = original->CNNscore[i];
   }
 
   // Don't reset the spill to corrected

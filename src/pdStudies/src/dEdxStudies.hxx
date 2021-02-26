@@ -8,7 +8,6 @@
 #include "CalorimetryAlg.hxx"
 //#include "pdMVA.hxx"
 
-#include "EmTrackMichelId.hxx"
 
 
 /*
@@ -72,7 +71,6 @@ class dEdxStudies: public baseAnalysis {
   
 private:
 
-  nnet::EmTrackMichelId _cnn;
   //  mvapid::MVAAlg fMVA;
   
 public:

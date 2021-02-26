@@ -2,9 +2,9 @@
 #include "TSpline.h"
 #include "CategoryManager.hxx"
 #include "standardPDTree.hxx"
+#include "CNNUtils.hxx"
 #include <TH3F.h>
 #include <TH2F.h>
-
 
 bool debug = false;
 
@@ -82,6 +82,8 @@ TH1F* X_correction_hist = (TH1F*)X_correction_file->Get( hist_name.c_str() );
 TH2F* YZ_neg = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_negativeX_hist_2");
 TH2F* YZ_pos = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_positiveX_hist_2");
 
+
+CNNUtils* _cnn = NULL;
 
 //*****************************************************************************
 Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
@@ -1097,4 +1099,29 @@ Float_t pdAnaUtils::Compute3DWirePitch(Int_t planeKey, const TVector3& dir){
   //  std::cout << yzPitch << " " << xComponent << " " << pitch3D << " " << dir.X() << " " << dir.Y() << " " << dir.Z() << std::endl;
   
   return pitch3D;
+}
+
+//***************************************************************
+void pdAnaUtils::ComputeParticleCNN(AnaParticlePD& part){
+//***************************************************************
+
+  if (!_cnn){
+    _cnn= new CNNUtils();
+  }
+
+  for (auto & hit: part.Hits[2]){
+    std::vector<AnaHitPD*> hits;
+    hits.push_back(&hit);
+    _cnn->produce(hits);
+  }
+  //  _cnn->ComputeParticleCNN(part);
+}
+
+//***************************************************************
+void pdAnaUtils::DumpCNNTimes(){
+//***************************************************************
+
+  if (_cnn)
+    _cnn->_tutils->dumpTimes();
+
 }
