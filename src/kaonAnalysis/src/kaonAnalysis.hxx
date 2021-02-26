@@ -20,9 +20,10 @@
 
 namespace kaonAnalysisConstants{
 
-  const UInt_t NMAXSAVEDPARTICLES  = 20;
-  const UInt_t NMAXSAVEDDAUGHTERS  = 20;
-  const UInt_t NMAXSAVEDGDAUGHTERS = 5;
+  const UInt_t NMAXSAVEDPARTICLES   = 20;
+  const UInt_t NMAXSAVEDDAUGHTERS   = 20;
+  const UInt_t NMAXSAVEDGDAUGHTERS  = 5;
+  const UInt_t NMAXSAVEDGGDAUGHTERS = 5;
 
 }
 
@@ -98,11 +99,22 @@ public:
     seltrk_truedaukaons,
     seltrk_truedaukaon_nmu,
     seltrk_chi2_prot,
+    seltrk_chi2_muon,
     seltrk_chi2_ndf,
 
     seltrk_dau_CNNscore,
     seltrk_dau_chi2_prot,
+    seltrk_dau_chi2_muon,
     seltrk_dau_chi2_ndf,
+
+    seltrk_gdau_CNNscore,
+    seltrk_gdau_track,
+    seltrk_gdau_mom_muon,
+    seltrk_gdau_type,
+
+    seltrk_ggdau_CNNscore0,
+    seltrk_ggdau_CNNscore1,
+    seltrk_ggdau_CNNscore2,
 
     enumStandardMicroTreesLast_kaonAnalysis
   };
