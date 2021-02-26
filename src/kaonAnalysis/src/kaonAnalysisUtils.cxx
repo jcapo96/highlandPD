@@ -51,11 +51,11 @@ void kaonAnaUtils::FillDaughterCategory(AnaEventB* event, AnaTrueParticlePD* tru
   else if (truePart->PDG == 11  ) anaUtils::_categ->SetObjectCode("daughter", 11  );
   else if (truePart->PDG == 111 ) anaUtils::_categ->SetObjectCode("daughter", 111 );
   else if (truePart->PDG == -321) anaUtils::_categ->SetObjectCode("daughter", -321);
-  else if (truePart->PDG == -13 ) anaUtils::_categ->SetObjectCode("daughter", -13);
-  else if (truePart->PDG == -11 ) anaUtils::_categ->SetObjectCode("daughter", -11);
-  else if (truePart->PDG == 211 ) anaUtils::_categ->SetObjectCode("daughter", 211);
-  else if (truePart->PDG == 321 ) anaUtils::_categ->SetObjectCode("daughter", 321);
+  else if (truePart->PDG == -13 ) anaUtils::_categ->SetObjectCode("daughter", -13 );
+  else if (truePart->PDG == -11 ) anaUtils::_categ->SetObjectCode("daughter", -11 );
+  else if (truePart->PDG == 211 ) anaUtils::_categ->SetObjectCode("daughter", 211 );
+  else if (truePart->PDG == 321 ) anaUtils::_categ->SetObjectCode("daughter", 321 );
   else if (truePart->PDG == 2212) anaUtils::_categ->SetObjectCode("daughter", 2212);
-  else                            anaUtils::_categ->SetObjectCode("daughter", 10);
+  else                            anaUtils::_categ->SetObjectCode("daughter", 10  );
 
 }

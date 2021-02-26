@@ -11,6 +11,7 @@ namespace kaonAnaUtils{
   // Fill Custom categories
   void FillCustomCategories(AnaEventB* event, AnaParticle* part);
   void FillDaughterCategory(AnaEventB* event, AnaTrueParticlePD* part);
+  void FillGDaughterCategory(AnaEventB* event, AnaTrueParticlePD* part);
   
 }
 
