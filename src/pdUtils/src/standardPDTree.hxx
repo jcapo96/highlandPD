@@ -26,6 +26,9 @@ namespace standardPDTree{
   void AddStandardVariables_CandidateGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
   void AddStandardVariables_CandidateGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
 
+  void AddStandardVariables_CandidateGGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
+  void AddStandardVariables_CandidateGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
+
 
   // Methods to fill the standard sets of variables in the output tree
   void FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters);
@@ -45,6 +48,9 @@ namespace standardPDTree{
 
   void FillStandardVariables_CandidateGDaughterReco(OutputManager& output, AnaParticlePD* part, Int_t index);
   void FillStandardVariables_CandidateGDaughterTrue(OutputManager& output, AnaParticlePD* part, Int_t index);  
+
+  void FillStandardVariables_CandidateGGDaughterReco(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
+  void FillStandardVariables_CandidateGGDaughterTrue(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);  
 
 
   // Enum with unique indexes for output tree variables  
@@ -147,6 +153,37 @@ namespace standardPDTree{
     seltrk_gdau_trueendproc,
     seltrk_gdau_truemom,
     seltrk_gdau_trueendmom,
+
+    // selected track gdaughters reco info
+    seltrk_ggdau_ndau,
+    seltrk_ggdau_posX,
+    seltrk_ggdau_posY,
+    seltrk_ggdau_posZ,
+    seltrk_ggdau_dirX,
+    seltrk_ggdau_dirY,
+    seltrk_ggdau_dirZ,
+    seltrk_ggdau_endposX,
+    seltrk_ggdau_endposY,
+    seltrk_ggdau_endposZ,
+    seltrk_ggdau_enddirX,
+    seltrk_ggdau_enddirY,
+    seltrk_ggdau_enddirZ,
+    seltrk_ggdau_length,
+    seltrk_ggdau_nhits,
+
+    // selected track ggdaughters info
+    seltrk_ggdau_truepdg,    
+    seltrk_ggdau_truendau,   
+    seltrk_ggdau_trueposX,
+    seltrk_ggdau_trueposY,    
+    seltrk_ggdau_trueposZ,    
+    seltrk_ggdau_trueendposX, 
+    seltrk_ggdau_trueendposY, 
+    seltrk_ggdau_trueendposZ, 
+    seltrk_ggdau_trueproc,   
+    seltrk_ggdau_trueendproc,
+    seltrk_ggdau_truemom,    
+    seltrk_ggdau_trueendmom, 
 
     // all particles in the event, true info
     ntracks,
