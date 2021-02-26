@@ -41,7 +41,7 @@ Recompute based on distance whether this is the beam particle or not
   baseAnalysis parameters
 ###############################################################################
 
-This ia a copy of the baseAnalysis parameters file in highland, such that we can overwrite them
+This is a copy of the baseAnalysis parameters file in highland, such that we can overwrite them
 
 
 Whether to initialize trees or not at the beginning of each configuration
