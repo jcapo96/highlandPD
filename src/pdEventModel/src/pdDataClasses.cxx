@@ -117,6 +117,7 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   }  
 
   Chi2Proton=kFloatUnassigned;
+  Chi2Muon=kFloatUnassigned;
   Chi2ndf=kIntUnassigned;
 
   for (int i=0; i<2; i++){
@@ -165,6 +166,7 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
 
   Chi2Proton = part.Chi2Proton;
+  Chi2Muon   = part.Chi2Muon;
   Chi2ndf    = part.Chi2ndf;
 
   truncLibo_dEdx = part.truncLibo_dEdx;
@@ -230,6 +232,7 @@ void AnaParticlePD::Print() const{
   std::cout << std::endl;
 
   std::cout << "Chi2Proton:              " << Chi2Proton << std::endl;
+  std::cout << "Chi2Muon:                " << Chi2Muon << std::endl;
   std::cout << "Chi2ndf:                 " << Chi2ndf << std::endl;
 
   std::cout << "CNN score:               " << CNNscore[0] << " " << CNNscore[1] << " " << CNNscore[2] << std::endl;

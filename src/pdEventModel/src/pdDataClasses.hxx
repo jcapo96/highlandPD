@@ -124,6 +124,7 @@ public:
   
   // PID variables
   Float_t Chi2Proton;
+  Float_t Chi2Muon;
   Float_t Chi2ndf;
 
   Float_t CNNscore[3];
