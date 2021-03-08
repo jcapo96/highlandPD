@@ -88,6 +88,7 @@ public:
 
   // Needed to get the index of the counters from standardPDTree 
   Int_t seltrk_ndau;
+  Int_t seltrk_ngdau;
   Int_t ntracks;  
 
   // Enum with unique indexes for output tree variables
@@ -108,6 +109,9 @@ public:
     seltrk_gdau_track,
     seltrk_gdau_mom_muon,
     seltrk_gdau_type,
+    seltrk_gdau_chi2_prot,
+    seltrk_gdau_chi2_muon,
+    seltrk_gdau_chi2_ndf,
 
     seltrk_ggdau_CNNscore0,
     seltrk_ggdau_CNNscore1,
