@@ -533,7 +533,7 @@ void standardPDTree::FillStandardVariables_CandidateDaughterTrue(OutputManager& 
   if (!dau) return;  
   AnaTrueParticle* dauTruePart = static_cast<AnaTrueParticle*>(dau->TrueObject);
   if(!dauTruePart) return;
-  
+
   output.FillVectorVar(seltrk_dau_truepdg,             dauTruePart->PDG);
   output.FillVectorVar(seltrk_dau_trueproc,     (Int_t)dauTruePart->ProcessStart);
   output.FillVectorVar(seltrk_dau_trueendproc,  (Int_t)dauTruePart->ProcessEnd);

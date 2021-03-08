@@ -75,6 +75,7 @@ namespace standardPDTree{
     seltrk_length_alt,
     seltrk_length_raw,
     seltrk_ndau,
+    seltrk_ngdau,
     seltrk_dqdx,
     seltrk_dedx,
     seltrk_dedx_raw,
