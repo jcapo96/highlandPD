@@ -65,7 +65,8 @@ public:
 
   enum EDownscaleMode { kMax = 1, kMaxMean = 2, kMean = 3 };
   
-  void produce(std::vector<AnaHitPD*>& hits); //override;
+  //  void produce(std::vector<AnaHitPD*>& hits); //override;
+  void produce(std::vector<AnaHitPD*>& hits, std::vector<AnaWireCNN>& wires);
   void FillHits(const AnaEventPD& evt, std::vector<AnaHitPD*>& hitPtrList);
 
 
@@ -74,6 +75,10 @@ public:
   
   bool setWireDriftDataFromHit(const AnaHitPD& hit);
 
+
+  bool setWireDriftData(const std::vector<AnaWireCNN>& wires);
+  
+  
   void resizeView(size_t wires,size_t drifts);
 
   std::vector<float> setWireData(std::vector<float> const& adc, size_t wireIdx) const;

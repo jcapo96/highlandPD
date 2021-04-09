@@ -251,6 +251,8 @@ void kaonAnalysis::DefineMicroTrees(bool addBase){
   //AddToyVarF(      output(), seltrk_chi2_ndf,        "candidate chi2 ndf");
     
   seltrk_ndau = standardPDTree::seltrk_ndau;
+  seltrk_ngdau = standardPDTree::seltrk_ngdau;
+
   AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,kaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,kaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_chi2_muon,   "candidate daughters chi2 proton",            seltrk_ndau,kaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
@@ -259,6 +261,9 @@ void kaonAnalysis::DefineMicroTrees(bool addBase){
   AddVar3D3MF(output(), seltrk_gdau_CNNscore,    "gdaughters CNN score",          seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
   AddVarMI(   output(), seltrk_gdau_type,        "gdaughters track or shower",    seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
   AddVarMF(   output(), seltrk_gdau_mom_muon,    "gdaughters mom my range, muon", seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
+  AddVarMF(   output(), seltrk_gdau_chi2_prot,   "gdaughters chi2 proton",        seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
+  AddVarMF(   output(), seltrk_gdau_chi2_muon,   "gdaughters chi2 ndf",           seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
+  AddVarMF(   output(), seltrk_gdau_chi2_ndf,    "gdaughters chi2 ndf",           seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
 
   AddVar3DMF(output(), seltrk_ggdau_CNNscore0, "gdaughters CNN score 0", seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS);
   AddVar3DMF(output(), seltrk_ggdau_CNNscore1, "gdaughters CNN score 1", seltrk_ndau, kaonAnalysisConstants::NMAXSAVEDDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS, kaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS);
@@ -333,7 +338,6 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
     Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
     for (Int_t idau = 0; idau < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDDAUGHTERS,ndau); idau++){      
       AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[idau]);
-
       // These are standard variables for the PD analysis
       standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
       standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
@@ -344,7 +348,6 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
       output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
 
       // ---------- Save information about all (max kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS) gdaughters in the candidate --------------
-          
       Int_t ngdau = (Int_t)dau->DaughtersIDs.size();
       for (Int_t jgdau = 0; jgdau < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS,ngdau); jgdau++){
 	AnaParticlePD* gdau = static_cast<AnaParticlePD*>(dau->Daughters[jgdau]);
@@ -354,8 +357,11 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
 	output().Fill3DMatrixVarFromArray(seltrk_gdau_CNNscore,        gdau->CNNscore,     -1, jgdau, 3);
 	output().FillMatrixVar           (seltrk_gdau_type,     (Int_t)gdau->Type,         -1, jgdau   );
 	output().FillMatrixVar           (seltrk_gdau_mom_muon, pdAnaUtils::ComputeRangeMomentum(gdau->Length,13), -1, jgdau   );
-
-	// ---------- Save information about all (max kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS) gdaughters in the candidate --------------
+	output().FillMatrixVar           (seltrk_gdau_chi2_prot,       gdau->Chi2Proton,   -1, jgdau);
+	output().FillMatrixVar           (seltrk_gdau_chi2_muon,       gdau->Chi2Muon,     -1, jgdau);
+	output().FillMatrixVar           (seltrk_gdau_chi2_ndf,        gdau->Chi2ndf,      -1, jgdau);
+	
+	// ---------- Save information about all (max kaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS) gdaughters in the candidate --------------
 	Int_t nggdau = (Int_t)gdau->DaughtersIDs.size();
 	for (UInt_t jggdau = 0; jggdau < std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS,nggdau); jggdau++){
 	  AnaParticlePD* ggdau = static_cast<AnaParticlePD*>(gdau->Daughters[jggdau]);
@@ -363,11 +369,13 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
 	  standardPDTree::FillStandardVariables_CandidateGGDaughterTrue(output(), ggdau, jgdau, jggdau);
 
 	  output().Fill3DMatrixVar(seltrk_ggdau_CNNscore0, ggdau->CNNscore[0], -1, jgdau, jggdau); 
-	  output().Fill3DMatrixVar(seltrk_ggdau_CNNscore0, ggdau->CNNscore[1], -1, jgdau, jggdau); 
-	  output().Fill3DMatrixVar(seltrk_ggdau_CNNscore0, ggdau->CNNscore[2], -1, jgdau, jggdau); 
+	  output().Fill3DMatrixVar(seltrk_ggdau_CNNscore1, ggdau->CNNscore[1], -1, jgdau, jggdau); 
+	  output().Fill3DMatrixVar(seltrk_ggdau_CNNscore2, ggdau->CNNscore[2], -1, jgdau, jggdau); 
 	}
-      }
 
+	output().IncrementCounter(seltrk_ngdau);
+      }
+      for(int g = ngdau; g < kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS; g++)output().IncrementCounter(seltrk_ngdau);
       output().IncrementCounter(seltrk_ndau);
     } 
 

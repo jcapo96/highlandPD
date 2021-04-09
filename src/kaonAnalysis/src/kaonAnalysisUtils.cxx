@@ -22,40 +22,87 @@ void kaonAnaUtils::AddCustomCategories(){
   std::reverse(part_colors, part_colors + NPART);
 
   anaUtils::_categ->AddObjectCategory("daughter", standardPDTree::seltrk_ndau, "seltrk_ndau", -100, 
-                                      NPART, part_types, part_codes, part_colors); 
+                                      NPART, part_types, part_codes, part_colors);
+  
+  // --------- gdaughter category ----------------
+  anaUtils::_categ->AddObjectCategory("gdaughter", standardPDTree::seltrk_ngdau, "seltrk_ngdau", -100, 
+                                      NPART, part_types, part_codes, part_colors);
 }
 
 //********************************************************************
 void kaonAnaUtils::FillCustomCategories(AnaEventB* event, AnaParticle* part){
 //********************************************************************
-
-  if (!part->TrueObject) return;  
-  AnaTrueParticlePD*  truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);  
-  if (!truePart) return;
-
-
+  
   // --------- daughter category ------------------------
   
   for (Int_t i = 0; i<std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDDAUGHTERS,(Int_t)part->Daughters.size()); i++){
-    kaonAnaUtils::FillDaughterCategory(event, static_cast<AnaTrueParticlePD*>(part->Daughters[i]->TrueObject));
+    AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[i]);
+    kaonAnaUtils::FillDaughterCategory(event, dau);
+
+    // --------- gdaughter category ------------------------
+    Int_t ngdau = std::min((Int_t)kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS,(Int_t)dau->Daughters.size());
+    for (Int_t j = 0; j < ngdau; j++){
+      AnaParticlePD* gdau = static_cast<AnaParticlePD*>(dau->Daughters[j]);
+      kaonAnaUtils::FillGDaughterCategory(event, gdau);
+    }
+    if(ngdau < (Int_t)kaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS){
+      AnaParticlePD* dummy = new AnaParticlePD();
+      for(Int_t j = ngdau; j < (Int_t)kaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS; j++){
+	kaonAnaUtils::FillGDaughterCategory(event,dummy);
+      }
+      delete dummy;
+    }
   }
 }
 
 //********************************************************************
-void kaonAnaUtils::FillDaughterCategory(AnaEventB* event, AnaTrueParticlePD* truePart){
+void kaonAnaUtils::FillDaughterCategory(AnaEventB* event, AnaParticlePD* dau){
 //********************************************************************
 
-  if (!truePart) return; 
+  if (!dau) return;  
+  AnaTrueParticle* dauTruePart = static_cast<AnaTrueParticle*>(dau->TrueObject);
   
-  if      (truePart->PDG == 13  ) anaUtils::_categ->SetObjectCode("daughter", 13  );
-  else if (truePart->PDG == 11  ) anaUtils::_categ->SetObjectCode("daughter", 11  );
-  else if (truePart->PDG == 111 ) anaUtils::_categ->SetObjectCode("daughter", 111 );
-  else if (truePart->PDG == -321) anaUtils::_categ->SetObjectCode("daughter", -321);
-  else if (truePart->PDG == -13 ) anaUtils::_categ->SetObjectCode("daughter", -13 );
-  else if (truePart->PDG == -11 ) anaUtils::_categ->SetObjectCode("daughter", -11 );
-  else if (truePart->PDG == 211 ) anaUtils::_categ->SetObjectCode("daughter", 211 );
-  else if (truePart->PDG == 321 ) anaUtils::_categ->SetObjectCode("daughter", 321 );
-  else if (truePart->PDG == 2212) anaUtils::_categ->SetObjectCode("daughter", 2212);
-  else                            anaUtils::_categ->SetObjectCode("daughter", 10  );
+  //if there is no trueObject associated to the object we can't avoid adding the
+  //object to the category, since the category follows the seltrk_ndau counter and
+  //the seltrk_ndau counter is incremented despite of the trueObject existing or not
+  if(!dauTruePart)                     anaUtils::_categ->SetObjectCode("daughter", 10  );
+  else{
+    if      (dauTruePart->PDG == 13  ) anaUtils::_categ->SetObjectCode("daughter", 13  );
+    else if (dauTruePart->PDG == 11  ) anaUtils::_categ->SetObjectCode("daughter", 11  );
+    else if (dauTruePart->PDG == 111 ) anaUtils::_categ->SetObjectCode("daughter", 111 );
+    else if (dauTruePart->PDG == -321) anaUtils::_categ->SetObjectCode("daughter", -321);
+    else if (dauTruePart->PDG == -13 ) anaUtils::_categ->SetObjectCode("daughter", -13 );
+    else if (dauTruePart->PDG == -11 ) anaUtils::_categ->SetObjectCode("daughter", -11 );
+    else if (dauTruePart->PDG == 211 ) anaUtils::_categ->SetObjectCode("daughter", 211 );
+    else if (dauTruePart->PDG == 321 ) anaUtils::_categ->SetObjectCode("daughter", 321 );
+    else if (dauTruePart->PDG == 2212) anaUtils::_categ->SetObjectCode("daughter", 2212);
+    else                               anaUtils::_categ->SetObjectCode("daughter", 10  );
+  }
+    
+}
+
+//********************************************************************
+void kaonAnaUtils::FillGDaughterCategory(AnaEventB* event, AnaParticlePD* gdau){
+//********************************************************************
+  
+  if(!gdau) return;  
+  AnaTrueParticle* gdauTruePart = static_cast<AnaTrueParticle*>(gdau->TrueObject);
+
+  //if there is no trueObject associated to the object we can't avoid adding the
+  //object to the category, since the category follows the seltrk_ngdau counter and
+  //the seltrk_ngdau counter is incremented despite of the trueObject existing or not
+  if(!gdauTruePart)                     anaUtils::_categ->SetObjectCode("gdaughter", 10  );
+  else{
+    if      (gdauTruePart->PDG == 13  ) anaUtils::_categ->SetObjectCode("gdaughter", 13  );
+    else if (gdauTruePart->PDG == 11  ) anaUtils::_categ->SetObjectCode("gdaughter", 11  );
+    else if (gdauTruePart->PDG == 111 ) anaUtils::_categ->SetObjectCode("gdaughter", 111 );
+    else if (gdauTruePart->PDG == -321) anaUtils::_categ->SetObjectCode("gdaughter", -321);
+    else if (gdauTruePart->PDG == -13 ) anaUtils::_categ->SetObjectCode("gdaughter", -13 );
+    else if (gdauTruePart->PDG == -11 ) anaUtils::_categ->SetObjectCode("gdaughter", -11 );
+    else if (gdauTruePart->PDG == 211 ) anaUtils::_categ->SetObjectCode("gdaughter", 211 );
+    else if (gdauTruePart->PDG == 321 ) anaUtils::_categ->SetObjectCode("gdaughter", 321 );
+    else if (gdauTruePart->PDG == 2212) anaUtils::_categ->SetObjectCode("gdaughter", 2212);
+    else                                anaUtils::_categ->SetObjectCode("gdaughter", 10  );
+  }
 
 }
