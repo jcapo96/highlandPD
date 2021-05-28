@@ -558,11 +558,10 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
   Int_t nTrueParts                 = event->nTrueParticles;
 
   for (Int_t i=0;i<nTrueParts;i++){
-    if (trueParticles[i]->ID == ID){
-      return static_cast<AnaTrueParticlePD*>(trueParticles[i]);
+    if(trueParticles[i]->ID == ID){
+	return static_cast<AnaTrueParticlePD*>(trueParticles[i]);
+      }
     }
-  }
-
   return NULL;
 }
 
