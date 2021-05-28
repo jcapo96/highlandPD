@@ -8,6 +8,7 @@ ToyBoxPD::ToyBoxPD():ToyBoxB(){
   TrueVertex=NULL;
   Vertex=NULL;
   MainTrack=NULL;
+  Candidates.clear();
   DaughterDistanceToVertex.clear();
 } 
 
@@ -38,6 +39,7 @@ void ToyBoxPD::ResetBase(){
   TrueVertex=NULL;
   Vertex=NULL;
   MainTrack=NULL;
+  Candidates.clear();
   DaughterDistanceToVertex.clear();
   SoftReset();  // just reset internal stuff
 }  

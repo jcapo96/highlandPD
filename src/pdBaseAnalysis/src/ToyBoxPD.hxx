@@ -32,6 +32,9 @@ public:
   /// The MainTrack (the beam particle in general)
   AnaParticlePD* MainTrack;
 
+  /// Vector of candidates
+  std::vector<AnaParticlePD*> Candidates;
+
   // Distance from the MainTrack to its daughters
   std::vector<Float_t> DaughterDistanceToVertex;
 };
