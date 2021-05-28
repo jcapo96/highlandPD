@@ -4,6 +4,9 @@
 #include "baseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
+#include "kaonTree.hxx"
+#include "kaonAnalysisUtils.hxx"
+#include "kaonClasses.hxx"
 
 
 /* This is an example of analysis in ProtoDUNE-SP detector 
@@ -19,11 +22,13 @@
 
 namespace kaonAnalysisConstants{
 
-  const UInt_t NMAXSAVEDPARTICLES   = 20;
-  const UInt_t NMAXSAVEDDAUGHTERS   = 20;
-  const UInt_t NMAXSAVEDGDAUGHTERS  = 5;
-  const UInt_t NMAXSAVEDGGDAUGHTERS = 5;
-
+  const UInt_t NMAXSAVEDPARTICLES      = 20;
+  const UInt_t NMAXSAVEDDAUGHTERS      = 20;
+  const UInt_t NMAXSAVEDGDAUGHTERS     = 5;
+  const UInt_t NMAXSAVEDGGDAUGHTERS    = 5;
+  const UInt_t NMAXSAVEDHITSDAUGHTERS  = 6000;
+  const UInt_t NMAXSAVEDTRUECANDIDATES = 10;
+  const UInt_t NMAXSAVEDCANDIDATES     = 10;
 }
 
 class kaonAnalysis: public baseAnalysis {
@@ -49,6 +54,8 @@ class kaonAnalysis: public baseAnalysis {
   //--------------------
 
   bool Initialize();
+  bool InitializeSpill(); //temporary solution for filling truthtree
+  void FinalizeSpill(); //temporary solution for filling truthtree
   void InitializeBunch();
   void FillCategories();
   void DefineInputConverters();
@@ -86,40 +93,9 @@ private:
 
 public:
 
-  // Needed to get the index of the counters from standardPDTree 
-  Int_t seltrk_ndau;
-  Int_t seltrk_ngdau;
-  Int_t ntracks;  
-
-  // Enum with unique indexes for output tree variables
-  enum enumStandardMicroTrees_kaonAnalysis{
-    seltrk_CNNscore =     standardPDTree::enumStandardMicroTreesLast_standardPDTree,
-    seltrk_truedaukaons,
-    seltrk_truedaukaon_nmu,
-    seltrk_chi2_prot,
-    seltrk_chi2_muon,
-    seltrk_chi2_ndf,
-
-    seltrk_dau_CNNscore,
-    seltrk_dau_chi2_prot,
-    seltrk_dau_chi2_muon,
-    seltrk_dau_chi2_ndf,
-
-    seltrk_gdau_CNNscore,
-    seltrk_gdau_track,
-    seltrk_gdau_mom_muon,
-    seltrk_gdau_type,
-    seltrk_gdau_chi2_prot,
-    seltrk_gdau_chi2_muon,
-    seltrk_gdau_chi2_ndf,
-
-    seltrk_ggdau_CNNscore0,
-    seltrk_ggdau_CNNscore1,
-    seltrk_ggdau_CNNscore2,
-
-    enumStandardMicroTreesLast_kaonAnalysis
-  };
-
+  // kaon counters
+  kaonCounters _counters;
+  
   enum enumConf_kaonAnalysis{
     detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
     dedx_syst,
