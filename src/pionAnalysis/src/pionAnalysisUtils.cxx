@@ -22,8 +22,9 @@ void pionAnaUtils::AddCustomCategories(){
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
 
-  anaUtils::_categ->AddObjectCategory("daupionana", standardPDTree::seltrk_ndau, "seltrk_ndau", -100, 
-                                      NPART, part_types, part_codes, part_colors);
+  anaUtils::_categ->AddObjectCategory("daupionana", standardPDTree::seltrk_ndau, "seltrk_ndau",
+                                      NPART, part_types, part_codes, part_colors,
+				      1, -100);
 
 
   /*
