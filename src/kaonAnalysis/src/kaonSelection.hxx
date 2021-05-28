@@ -1,6 +1,7 @@
 #ifndef kaonSelection_h
 #define kaonSelection_h
 
+#include "kaonAnalysis.hxx"
 #include "SelectionBase.hxx"
 #include "Parameters.hxx"
 #include "ToyBoxPD.hxx"
@@ -34,6 +35,91 @@ protected:
   // TODO. Not used
   Int_t _KaonRangeCutIndex;
   Int_t _KaonRangeStepIndex;
+};
+
+class BeamFilterCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamFilterCut();}
+};
+
+//---- Steps and actions for the analysis
+class GetKaonsAction: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new GetKaonsAction();}
+};
+
+class GetDaughtersAction: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new GetDaughtersAction();}
+};
+
+class EventHasKaonCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new EventHasKaonCut();}
+};
+
+class DaughterIsKaonCandidateCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new DaughterIsKaonCandidateCut();}
+};
+
+class MuonIsTrackCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new MuonIsTrackCut();}
+};
+
+class MuonChi2Cut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new MuonChi2Cut();}
+};
+
+class MuonCNNCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new MuonCNNCut();}
+};
+
+class MuonRangeMomCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new MuonRangeMomCut();}
+};
+
+class MuonFromDecayCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new MuonFromDecayCut();}
+};
+
+class KaonCNNCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new KaonCNNCut();}
+};
+
+class KaonMuonAngleCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new KaonMuonAngleCut();}
 };
 
 #endif
