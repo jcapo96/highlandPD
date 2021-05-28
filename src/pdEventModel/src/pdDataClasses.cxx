@@ -126,7 +126,8 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   }
     
   Length_alt = kFloatUnassigned;
-
+  Generation = kIntUnassigned;
+  
   for (int i=0; i<3; i++){
     Hits[i].clear();
   }
@@ -248,6 +249,7 @@ AnaTrueParticlePD::AnaTrueParticlePD():AnaTrueParticle(){
 
   Pi0_decay_ID.clear();
   Origin  = kIntUnassigned;
+  Generation  = kIntUnassigned;
   Matched = false;
   LengthInTPC   = kFloatUnassigned;
   MomentumInTPC = kFloatUnassigned;

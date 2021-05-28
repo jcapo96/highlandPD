@@ -139,6 +139,9 @@ public:
   /// Alternate length
   Float_t Length_alt;
 
+  /// Generation of the particle (primary particle, daughter, granddaughter, etc.)
+  Int_t Generation;
+
   // ---- OBSOLETE PID VARIABLES ----------
   
   /// Particle ID hypothesis used in the fit (if any)
@@ -184,6 +187,9 @@ public:
 
   /// Origin
   Int_t  Origin;
+
+  /// Generation
+  Int_t Generation;
 
   /// The particle length inside the TPC
   Float_t LengthInTPC;
