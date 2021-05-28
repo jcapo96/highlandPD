@@ -1108,13 +1108,32 @@ void pdAnaUtils::ComputeParticleCNN(AnaParticlePD& part){
     _cnn= new CNNUtils();
   }
 
+  std::vector<AnaWireCNN> wires;
+  
   for (auto & hit: part.Hits[2]){
     std::vector<AnaHitPD*> hits;
     hits.push_back(&hit);
-    _cnn->produce(hits);
+    _cnn->produce(hits,wires);
   }
   //  _cnn->ComputeParticleCNN(part);
 }
+
+//***************************************************************
+void pdAnaUtils::ComputeParticleCNN(std::vector<AnaWireCNN>& wires, AnaParticlePD& part){
+//***************************************************************
+
+  if (!_cnn){
+    _cnn= new CNNUtils();
+  }
+
+  for (auto & hit: part.Hits[2]){
+    std::vector<AnaHitPD*> hits;
+    hits.push_back(&hit);
+    _cnn->produce(hits, wires);
+  }
+  //  _cnn->ComputeParticleCNN(part);
+}
+
 
 //***************************************************************
 void pdAnaUtils::DumpCNNTimes(){

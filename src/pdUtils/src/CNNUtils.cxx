@@ -213,19 +213,22 @@ void CNNUtils::ComputeParticleCNN(AnaParticlePD& part){
 }
 
 //*******************************************************
-void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
+void CNNUtils::produce(std::vector<AnaHitPD*>& hits, std::vector<AnaWireCNN>& wires){
 //*******************************************************  
 
 //  _tutils->printTime("time 0");
 
   _tutils->accumulateTime(0);
 
-#ifndef CompileTP
+#ifndef CompileTF
   // sleep for 0.09 seconds to simulate the effect of TF when this is not enabled
   std::this_thread::sleep_for(std::chrono::milliseconds(9));
   _tutils->accumulateTime(1);
   return;  
 #endif
+
+
+  setWireDriftData(wires);
   
   AnaHitPD* last_hit=NULL;
   std::vector< std::pair<unsigned int, float> > points;
@@ -233,7 +236,7 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits){
     points.emplace_back(hit->WireID.Wire, hit->PeakTime);
 
     // 
-    setWireDriftDataFromHit(*hit);
+    //    setWireDriftDataFromHit(*hit);
     last_hit=hit;
   }
 
@@ -371,6 +374,97 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
     
   return true;
 }
+
+//*******************************************************
+bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires){
+//*******************************************************  
+
+  if (debug_levelA>=1) std::cout << wspacesA(2) << "setWireDriftData"<< std::endl;   
+
+  size_t nwires = 480;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
+  size_t ndrifts = 6000;//det_prop.NumberTimeSamples();    anselmo
+
+  _tutils->accumulateTime(10);
+
+  // 1. 
+  resizeView(nwires, ndrifts);
+
+  _tutils->accumulateTime(11);
+
+
+  bool allWrong = true;
+  for (auto const& wire : wires) {  // loop over my_recob::Wire
+    
+    
+    size_t w_idx = wire.wire;  
+    
+    std::vector<Float_t> adc(ndrifts,0);
+    for (size_t i=0;i<wire.adcs.size();i++){
+      if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. i, adcs[i] = " << i << " " << wire.adcs[i] << " " << std::endl;   
+      adc[wire.time+i] = wire.adcs[i];
+    }
+    
+    if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. w_idx, adcs[i].size(), adc.size() = " << w_idx << " " << wire.adcs.size() << " " << adc.size()<< std::endl;   
+    
+    // 2. 
+    auto wire_data = setWireData(adc, w_idx);
+    _tutils->accumulateTime(12);
+    //--------------------------
+    size_t l=0;
+    size_t non0_values=0;;
+    size_t gt0_values=0;;
+    for (auto v : wire_data) {
+      if (v!=0){
+        if (debug_levelA>=4) std::cout << wspacesA(8) << "setWireDriftData. Non 0 adc values in that channel. l, v = " << l << " " << v << std::endl;   
+        non0_values++;
+        if (v>0) gt0_values++;
+      }
+      l++;
+    }
+    
+    if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. wire_data.size() = " << wire_data.size() << std::endl;
+    if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. #non 0 adc values, >0 values = " << non0_values << " " << gt0_values << std::endl;   
+    //--------------------------
+    
+    
+    if (wire_data.empty()) {  // anselmo
+      std::cout << "Wire data not set." << std::endl;
+      return false; // also not critical, try to set other wires
+    }
+    fAlgView.fWireDriftData[w_idx] = wire_data;  // anselmo
+    fAlgView.fWireChannels[w_idx] = wire.wire;  // TODO, wire or channel ?
+    
+    //--------------------------  
+    fAdcSumOverThr = 0;
+    fAdcAreaOverThr = 0;
+    
+    for (auto v : adc) {
+      if (v >= fAdcSumThr) {
+        fAdcSumOverThr += v;
+        fAdcAreaOverThr++;
+      }
+    }
+    if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. fAdcSumOverThr, fAdcSumAreaThr = " << fAdcSumOverThr << " " << fAdcAreaOverThr << std::endl;   
+
+
+    if (debug_levelA>=10){ 
+      for (auto v : wireData(w_idx)) {
+        std::cout << wspacesA(8) << "setWireDriftData. fAlgView.fWireDriftData[w_idx] = " << v << std::endl;   
+      }
+    }    
+  }
+
+  //--------------------------
+
+      
+  //applyBlur();
+  //addWhiteNoise();
+  //addCoherentNoise();
+    
+  return true;
+}
+
+
 
 //*******************************************************
 void CNNUtils::resizeView(size_t wires,size_t drifts){

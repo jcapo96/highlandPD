@@ -138,7 +138,8 @@ namespace pdAnaUtils{
 
 
   void ComputeParticleCNN(AnaParticlePD& part);
-
+  void ComputeParticleCNN(std::vector<AnaWireCNN>& wires, AnaParticlePD& part);
+  
   void DumpCNNTimes();
 }
 
