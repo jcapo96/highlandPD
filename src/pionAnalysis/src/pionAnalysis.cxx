@@ -114,7 +114,7 @@ pionAnalysis::pionAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version (not yet properly done)
-  ND::versioning().AddPackage("pionAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PIONANALYSISROOT")));
+  //  ND::versioning().AddPackage("pionAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PIONANALYSISROOT")));
 }
 
 //********************************************************************
@@ -150,6 +150,20 @@ void pionAnalysis::Finalize(){
   pdAnaUtils::DumpCNNTimes();
 
 }
+
+//********************************************************************
+void pionAnalysis::DefineProductions(){
+//********************************************************************
+
+  // Add the different productions
+  /*
+  ND::versioning().AddProduction(ProdId::MCC5,       "MCC5",     "v0r0",    "v1r0");
+  ND::versioning().AddProduction(ProdId::MCC6,       "MCC6",     "v0r0",    "v1r0");
+  ND::versioning().AddProduction(ProdId::MCC7,       "MCC7",     "v0r0",    "v1r0");
+  ND::versioning().AddProduction(ProdId::PDSPProd2,  "PDSPProd2","v08_40",  "v08_40");
+  */
+}
+
 
 //********************************************************************
 void pionAnalysis::DefineInputConverters(){
@@ -343,7 +357,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   //  AddVarFixVF( output(), seltrk_dedx_exp,"candidate expected dEdx for different hypothesis",4);
   
   //new variables added for reproducing Jake/Fraceska plots
-  AddVar3VF(       output(), seltrk_CNNscore,        "candidate reconstructed CNN score");
+  //  AddVar3VF(       output(), seltrk_CNNscore,        "candidate reconstructed CNN score");
   AddToyVarF(      output(), seltrk_chi2_prot,       "candidate chi2 proton");
   AddToyVarF(      output(), seltrk_chi2_ndf,        "candidate chi2 ndf");
   AddToyVarF(      output(), seltrk_hit0_dedx,       "candidate dedx variated");
@@ -353,8 +367,8 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   
   seltrk_ndau = standardPDTree::seltrk_ndau;
   //  AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
-  AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,NMAXSAVEDDAUGHTERS);
-  AddVarMaxSizeVF( output(), seltrk_dau_chi2_ndf,    "candidate daughters chi2 ndf",               seltrk_ndau,NMAXSAVEDDAUGHTERS);
+  //  AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,NMAXSAVEDDAUGHTERS);
+  //  AddVarMaxSizeVF( output(), seltrk_dau_chi2_ndf,    "candidate daughters chi2 ndf",               seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_vtxdistance, "candidate daughters distance to vtx",        seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVI( output(), seltrk_dau_type,        "candidate daughters type(track=0, shower=1)",seltrk_ndau,NMAXSAVEDDAUGHTERS);
 
@@ -363,7 +377,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarVF(     output(), seltrk_dau_hit0_dedx,      "candidate daughter dedx variated",          NMAXSAVEDDAUGHTERS);
   AddToyVarVF(     output(), seltrk_dau_hit0_cnn,      "candidate daughter CNN variated",          NMAXSAVEDDAUGHTERS);
 
-  AddToyVarMF(     output(), seltrk_dau_CNNscore, "candidate daughter CNN varied",NMAXSAVEDDAUGHTERS,3);
+  //  AddToyVarMF(     output(), seltrk_dau_CNNscore, "candidate daughter CNN varied",NMAXSAVEDDAUGHTERS,3);
 
 
   AddVarMaxSizeVI(  output(), pixel_wire,             "pixel wire", npixels, 400);
@@ -539,7 +553,7 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
       AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
       output().FillToyVectorVar(seltrk_dau_truncLibo_dEdx,  dau->truncLibo_dEdx, i);
       for (size_t j=0;j<3;j++)
-        output().FillToyMatrixVar(seltrk_dau_CNNscore, dau->CNNscore[j],i, j);
+        //        output().FillToyMatrixVar(seltrk_dau_CNNscore, dau->CNNscore[j],i, j);
       if (!dau->Hits[2].empty()){
         output().FillToyVectorVar(seltrk_dau_hit0_dqdx, dau->Hits[2][0].dQdx,  i);
         output().FillToyVectorVar(seltrk_dau_hit0_dedx, dau->Hits[2][0].dEdx,  i);

@@ -933,7 +933,7 @@ void hitPionTreeConverter::FillInfo(AnaSpill* spill){
   spill->DataQuality = MakeDataQuality();
   spill->Beam = MakeBeam();
 
-  spill->GeomID = (UInt_t)ND::hgman().GetCurrentGeomID();
+  //  spill->GeomID = (UInt_t)ND::hgman().GetCurrentGeomID();
   
   // data quality info
   FillDQInfo(static_cast<AnaDataQuality*>(spill->DataQuality));

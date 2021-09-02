@@ -103,7 +103,7 @@ kaonAnalysis::kaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version (not yet properly done)
-  ND::versioning().AddPackage("kaonAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("KAONANALYSISROOT")));
+  //  ND::versioning().AddPackage("kaonAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("KAONANALYSISROOT")));
 }
 
 //********************************************************************

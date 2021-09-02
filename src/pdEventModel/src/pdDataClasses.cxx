@@ -260,7 +260,7 @@ void AnaParticlePD::Print() const{
   
   std::cout << "RangeMomentum:           " << RangeMomentum[0] << " " << RangeMomentum[1] << std::endl;
 
-  std::cout << "Stored hits in plane 2:  " << Hits[2].size() << std::endl;    
+  std::cout << "Stored hits in plane 0,1,2:  " << Hits[0].size() << " " << Hits[1].size() << " " << Hits[2].size() << std::endl;    
 }
 
 //********************************************************************
@@ -474,7 +474,7 @@ AnaEventPD::AnaEventPD(const AnaEventPD& event):AnaEvent(event){
 AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunchPD& bunch):AnaEvent(spill,bunch) {
 //*****************************************************************************
 
-//  CNNwires = bunch.CNNwires;
+  CNNwires = bunch.CNNwires;
 }
 
 //********************************************************************

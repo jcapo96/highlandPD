@@ -1,5 +1,6 @@
 #include "CNNUtils.hxx"
 #include "timeUtils.hxx"
+#include "Parameters.hxx"
 #include <chrono>
 #include <thread>
 
@@ -32,6 +33,47 @@ std::string wspacesA(size_t n){
       fNNet->Run(inps);
 
 */
+
+
+
+  std::pair<Int_t, Int_t> wire_mapping[12][3]=    {std::pair<Int_t,Int_t>(0,799),   
+                                                   std::pair<Int_t,Int_t>(800  , 1599),   
+                                                   std::pair<Int_t,Int_t>(1600 , 2079),   
+                                                   std::pair<Int_t,Int_t>(0    , 799),    
+                                                   std::pair<Int_t,Int_t>(800  , 1599),   
+                                                   std::pair<Int_t,Int_t>(2080 , 2559),   
+                                                   std::pair<Int_t,Int_t>(2560 , 3359),   
+                                                   std::pair<Int_t,Int_t>(3360 , 4159),   
+                                                   std::pair<Int_t,Int_t>(4160 , 4639),   
+                                                   std::pair<Int_t,Int_t>(2560 , 3359),   
+                                                   std::pair<Int_t,Int_t>(3360 , 4159),   
+                                                   std::pair<Int_t,Int_t>(4640 , 5119),   
+                                                   std::pair<Int_t,Int_t>(5120 , 5919),   
+                                                   std::pair<Int_t,Int_t>(5920 , 6719),   
+                                                   std::pair<Int_t,Int_t>(6720 , 7199),   
+                                                   std::pair<Int_t,Int_t>(5120 , 5919),   
+                                                   std::pair<Int_t,Int_t>(5920 , 6719),   
+                                                   std::pair<Int_t,Int_t>(7200 , 7679),   
+                                                   std::pair<Int_t,Int_t>(7680 , 8479),   
+                                                   std::pair<Int_t,Int_t>(8480 , 9279),   
+                                                   std::pair<Int_t,Int_t>(9280 , 9759),   
+                                                   std::pair<Int_t,Int_t>(7680 , 8479),   
+                                                   std::pair<Int_t,Int_t>(8480 , 9279),   
+                                                   std::pair<Int_t,Int_t>(9760 , 10239), 
+                                                   std::pair<Int_t,Int_t>(10240 , 11039),
+                                                   std::pair<Int_t,Int_t>(11040 , 11839),
+                                                   std::pair<Int_t,Int_t>(11840 , 12319),
+                                                   std::pair<Int_t,Int_t>(10240 , 11039),
+                                                   std::pair<Int_t,Int_t>(11040 , 11839),
+                                                   std::pair<Int_t,Int_t>(12320 , 12799),
+                                                   std::pair<Int_t,Int_t>(12800 , 13599),
+                                                   std::pair<Int_t,Int_t>(13600 , 14399),
+                                                   std::pair<Int_t,Int_t>(14400 , 14879),
+                                                   std::pair<Int_t,Int_t>(12800 , 13599),
+                                                   std::pair<Int_t,Int_t>(13600 , 14399),
+                                                   std::pair<Int_t,Int_t>(14880 , 15359)};
+
+
 //*******************************************************
 CNNUtils::CNNUtils():
   fDownscaleMode(kMax),
@@ -68,8 +110,9 @@ CNNUtils::CNNUtils():
   */
   
 //*******************************************************
-  
-  fNNetModelFilePath = "cnn.pb";
+
+
+  fNNetModelFilePath =   (std::string)getenv("PDUTILSROOT")+"/data/"+ND::params().GetParameterS("pdUtils.CNN.PBfile");
   //  fNNetOutputs = "";
   
   if (fNNet) delete fNNet;
@@ -224,11 +267,8 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits, std::vector<AnaWireCNN>& wi
   // sleep for 0.09 seconds to simulate the effect of TF when this is not enabled
   std::this_thread::sleep_for(std::chrono::milliseconds(9));
   _tutils->accumulateTime(1);
-  return;  
+  //  return;  
 #endif
-
-
-  setWireDriftData(wires);
   
   AnaHitPD* last_hit=NULL;
   std::vector< std::pair<unsigned int, float> > points;
@@ -240,6 +280,16 @@ void CNNUtils::produce(std::vector<AnaHitPD*>& hits, std::vector<AnaWireCNN>& wi
     last_hit=hit;
   }
 
+
+  if (debug_levelA>=1){
+    std::cout << " CNNUtils.cxx: produce. Processing hit: "  << std::endl;
+    last_hit->Print();
+  }
+  
+  size_t tpc = GetWireTPC(last_hit->WireID.Wire);
+
+  setWireDriftData(wires,tpc, last_hit->WireID.Plane);
+  
   _tutils->accumulateTime(1);
   
   //  _tutils->printTime("time 1");
@@ -345,7 +395,7 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
     return false; // also not critical, try to set other wires
   }
   fAlgView.fWireDriftData[w_idx] = wire_data;  // anselmo
-  fAlgView.fWireChannels[w_idx] = hit.Channel;
+  fAlgView.fWireChannels[w_idx] = hit.Channel;  
   
   //--------------------------  
   fAdcSumOverThr = 0;
@@ -376,9 +426,13 @@ bool CNNUtils::setWireDriftDataFromHit(const AnaHitPD& hit){
 }
 
 //*******************************************************
-bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires){
+bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires, Int_t hit_tpc, Int_t hit_plane){
 //*******************************************************  
 
+
+  // Set all wave forms for a given TPC and PLANE 
+
+  
   if (debug_levelA>=1) std::cout << wspacesA(2) << "setWireDriftData"<< std::endl;   
 
   size_t nwires = 480;//fGeometry->Nwires(plane, tpc, cryo);   anselmo
@@ -386,25 +440,51 @@ bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires){
 
   _tutils->accumulateTime(10);
 
-  // 1. 
+  // 1. Give the appropriate size to the vectors and matrices used for storing the wave forms
   resizeView(nwires, ndrifts);
 
   _tutils->accumulateTime(11);
 
+  if (debug_levelA>=2) std::cout << wspacesA(4) << "setWireDriftData. #wires = " << wires.size() << " hit tpc, plane = " << hit_tpc << " " << hit_plane << std::endl;   
 
+  // LOOP OVER WIRES
   bool allWrong = true;
-  for (auto const& wire : wires) {  // loop over my_recob::Wire
+  size_t iw=0;
+  for (auto const& wire : wires) {  // loop over the wires
+
+    size_t tpc   = GetWireTPC(wire.wire);
+    size_t plane = GetWirePlane(wire.wire);
+
+    if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. wire = " << wire.wire << " --> tpc, plane = " << tpc << " " << plane << std::endl;   
     
+
+    // Skip the were if it is not in the correct TPC and plane
+    if (tpc != hit_tpc || plane != hit_plane){
+      if (debug_levelA>=2) std::cout << wspacesA(6) << "setWireDriftData. i, wire, #adcs = " << iw << " " << wire.wire << " " << " " << wire.adcs.size()
+                                     << " --> skip: tpc, plane = " << tpc << " " << plane << std::endl;         
+      continue;
+    }
+    Int_t wireChannelNumber=0;
+    //    auto wireChannelNumber = wire.Channel();  // TODO. Get the cannel number for that wire
+
+    // Need a wire index between 0 and 479
+    size_t w_idx = GetWireIndex(wire.wire);
+
+    if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. w_idx = " << w_idx << std::endl;   
     
-    size_t w_idx = wire.wire;  
-    
+    // Fill the adc vector 
     std::vector<Float_t> adc(ndrifts,0);
     for (size_t i=0;i<wire.adcs.size();i++){
-      if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. i, adcs[i] = " << i << " " << wire.adcs[i] << " " << std::endl;   
+      if (debug_levelA>=4) std::cout << wspacesA(8) << "setWireDriftData. i, adcs[i] = " << i << " " << wire.adcs[i] << " " << std::endl;   
       adc[wire.time+i] = wire.adcs[i];
     }
     
     if (debug_levelA>=3) std::cout << wspacesA(6) << "setWireDriftData. w_idx, adcs[i].size(), adc.size() = " << w_idx << " " << wire.adcs.size() << " " << adc.size()<< std::endl;   
+
+
+    
+    if (debug_levelA>=2) std::cout << wspacesA(6) << "setWireDriftData. i, wire, w_idx, #adcs = " << iw << " " << wire.wire << " " << w_idx << " " << wire.adcs.size() << std::endl;   
+    iw++;
     
     // 2. 
     auto wire_data = setWireData(adc, w_idx);
@@ -429,10 +509,10 @@ bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires){
     
     if (wire_data.empty()) {  // anselmo
       std::cout << "Wire data not set." << std::endl;
-      return false; // also not critical, try to set other wires
+      continue; // also not critical, try to set other wires
     }
-    fAlgView.fWireDriftData[w_idx] = wire_data;  // anselmo
-    fAlgView.fWireChannels[w_idx] = wire.wire;  // TODO, wire or channel ?
+    fAlgView.fWireDriftData[w_idx] = wire_data;  
+    fAlgView.fWireChannels[w_idx]  = wireChannelNumber;    // NOT REALLY USED
     
     //--------------------------  
     fAdcSumOverThr = 0;
@@ -464,12 +544,18 @@ bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires){
   return true;
 }
 
-
-
 //*******************************************************
 void CNNUtils::resizeView(size_t wires,size_t drifts){
 //*******************************************************
 
+  /*
+    Resize the vectors and matrices 
+
+     - fWireChannels  (#wires)
+     - fWireDriftData  (#wires x #ChachedDrifts)
+   */
+
+  
   _tutils->accumulateTime(15);
 
   if (debug_levelA>=2) std::cout << wspacesA(4) << "resizeView. total drifts, total wires = " << drifts << " " << wires << std::endl;   
@@ -485,6 +571,8 @@ void CNNUtils::resizeView(size_t wires,size_t drifts){
   result.fWireChannels.resize(wires, 4294967295); 
   result.fWireDriftData.resize(wires, std::vector<float>(result.fNCachedDrifts, fAdcZero));   
 
+  if (debug_levelA>=2) std::cout << wspacesA(4) << "resizeView.  final fWireDriftData (NxM) = " << wires << " x " << result.fNCachedDrifts << std::endl;   
+  
   _tutils->accumulateTime(17);
 
   if (fCalibrateLifetime) {
@@ -510,10 +598,25 @@ void CNNUtils::resizeView(size_t wires,size_t drifts){
 //*******************************************************
 std::vector<float> CNNUtils::setWireData(std::vector<float> const& adc, size_t wireIdx) const{
 //*******************************************************
-  
-  if (debug_levelA>=2) std::cout << wspacesA(4) << "setWireData. wireIdx, fAlgView.fWireDriftData.size() = " << wireIdx << " " << fAlgView.fWireDriftData.size() << std::endl;   
-  
-  if (wireIdx >= fAlgView.fWireDriftData.size()) return std::vector<float>();//std::nullopt;
+
+  /* RETURNS THE ADC VECTOR FOR A GIVEN WIRE, BUT DOES NOT SET IT. SEVERAL OPTIONS
+     1. wireIndx > fAlgView.fWireDriftData.size() --> returns empty vector
+     2. adc.empty()                               --> returns empty vector; 
+     3. fDownscaleFullView = true                 --> returns a downscaled version of the input adc vector
+     4. fDownscaleFullView = false: 
+        4.1. adc.size() <= wData.size()                --> returns input adc vector
+        4.2. adc.size() > wData.size()                 --> returns first wData.size() from input adc vector  
+   */
+
+  if (debug_levelA>=3) std::cout << wspacesA(4) << "setWireData. wireIdx, fAlgView.fWireDriftData.size() = " << wireIdx << " " << fAlgView.fWireDriftData.size() << std::endl;   
+
+  // Nothing to do if the wire index is above the size of the vector
+  if (wireIdx >= fAlgView.fWireDriftData.size()){
+    if (debug_levelA>=3) std::cout << wspacesA(4) << "setWireData. wireIdx >= fAlgView.fWireDriftData.size() --> THERE IS A PROBLEM !!!"<< std::endl;
+    return std::vector<float>();//std::nullopt;  
+  }
+
+  if (debug_levelA>=3) std::cout << wspacesA(4) << "setWireData --> OK !!!"<< std::endl;
   auto& wData = fAlgView.fWireDriftData[wireIdx];
   
   if (fDownscaleFullView) {
@@ -524,10 +627,12 @@ std::vector<float> CNNUtils::setWireData(std::vector<float> const& adc, size_t w
     if (debug_levelA>=4) std::cout << wspacesA(8) << "setWireData. adc.size(). fWireDriftData[wireIdx].size() = " << adc.size() << " " << wData.size()<< std::endl;             
     if (adc.empty()) { std::vector<float>();}//std::nullopt; }
     else if (adc.size() <= wData.size()){
+      // Returns the entire input vector
       if (debug_levelA>=4) std::cout << wspacesA(8) << "setWireData. 1. adc.size() " << adc.size() << std::endl;
       return adc;
     }
     else {
+      // Returns only a fraction of the input vector
       if (debug_levelA>=4) std::cout << wspacesA(8) << "setWireData. 2. adc.size() " << adc.size() << std::endl;                
       return std::vector<float>(adc.begin(), adc.begin() + wData.size());
     }
@@ -887,3 +992,58 @@ std::vector<float> nnet2::TfModelInterface::Run(std::vector<std::vector<float>> 
   */
   return std::vector<float>();
 }
+
+
+
+//*******************************************************
+size_t CNNUtils::GetWireTPC(Int_t wire){
+//*******************************************************
+
+  Int_t tpcs[6]={1,5,9,2,6,10};
+
+  for (size_t i = 0;i<6;i++){
+    Int_t tpc = tpcs[i];
+    for (size_t plane = 0;plane<3;plane++){
+      if (wire>wire_mapping[tpc][plane].first && wire<=wire_mapping[tpc][plane].second)
+        return tpc;       
+    }
+  }
+  return 0;
+}
+
+//*******************************************************
+size_t CNNUtils::GetWirePlane(Int_t wire){
+//*******************************************************
+
+
+  Int_t tpcs[6]={1,5,9,2,6,10};
+
+  for (size_t i = 0;i<6;i++){
+    Int_t tpc = tpcs[i];
+    for (size_t plane = 0;plane<3;plane++){
+      if (wire>wire_mapping[tpc][plane].first && wire<=wire_mapping[tpc][plane].second)
+        return plane;       
+    }
+  }
+  return 0;
+
+}
+
+
+//*******************************************************
+size_t CNNUtils::GetWireIndex(Int_t wire){
+//*******************************************************
+
+  Int_t tpcs[6]={1,5,9,2,6,10};
+
+  for (size_t i = 0;i<6;i++){
+    Int_t tpc = tpcs[i];
+    for (size_t plane = 0;plane<3;plane++){
+      if (wire>wire_mapping[tpc][plane].first && wire<=wire_mapping[tpc][plane].second)
+        return wire-wire_mapping[tpc][plane].first;       
+    }
+  }
+  return 0;
+  
+}
+

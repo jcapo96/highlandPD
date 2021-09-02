@@ -100,7 +100,7 @@ stoppingProtonAnalysis::stoppingProtonAnalysis(AnalysisAlgorithm* ana) : baseAna
 //********************************************************************
 
   // Add the package version
-  ND::versioning().AddPackage("stoppingProtonAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("STOPPINGPROTONANALYSISROOT")));
+  //  ND::versioning().AddPackage("stoppingProtonAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("STOPPINGPROTONANALYSISROOT")));
 }
 
 //********************************************************************

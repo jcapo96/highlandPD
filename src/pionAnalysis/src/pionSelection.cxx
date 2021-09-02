@@ -152,6 +152,8 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   for(UInt_t i = 0; i < box.MainTrack->Daughters.size(); i++){
     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
 
+    //    daughter->Print();
+    
     if(daughter->Type           == AnaParticlePD::kTrack &&
        daughter->UniqueID       != -999 &&
        daughter->truncLibo_dEdx <= cut_dEdx){
@@ -160,7 +162,9 @@ bool NoPionDaughterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
       // when the selection gets to this point and the CNN is around the cut value
       if (_cnnSystematicEnabled){
         if (fabs(daughter->CNNscore[0]-cut_CNNTrackScore)<_cnnRecomputeCut){
-          pdAnaUtils::ComputeParticleCNN(*daughter);
+          event.Print();
+          pdAnaUtils::ComputeParticleCNN((static_cast<AnaEventPD*>(&event))->CNNwires,*daughter);
+          //          pdAnaUtils::ComputeParticleCNN(*daughter);
         }
       }            
       if (daughter->CNNscore[0]    > cut_CNNTrackScore){        

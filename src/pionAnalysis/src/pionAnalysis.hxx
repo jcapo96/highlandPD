@@ -24,6 +24,7 @@ class pionAnalysis: public baseAnalysis {
   virtual ~pionAnalysis(){}
 
   //---- These are mandatory functions
+  void DefineProductions();
   void DefineSelections();
   void DefineCorrections();
   void DefineSystematics();

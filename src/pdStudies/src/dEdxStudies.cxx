@@ -20,7 +20,7 @@ dEdxStudies::dEdxStudies(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version (not yet properly done)
-  ND::versioning().AddPackage("pdStudies", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PDSTUDIESROOT")));
+  //  ND::versioning().AddPackage("pdStudies", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PDSTUDIESROOT")));
 }
 
 //********************************************************************
