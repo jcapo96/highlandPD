@@ -113,7 +113,7 @@ pionAnalysis::pionAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version (not yet properly done)
-  ND::versioning().AddPackage("pionAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PIONANALYSISROOT")));
+  //  ND::versioning().AddPackage("pionAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PIONANALYSISROOT")));
 }
 
 //********************************************************************
@@ -149,6 +149,20 @@ void pionAnalysis::Finalize(){
   pdAnaUtils::DumpCNNTimes();
 
 }
+
+//********************************************************************
+void pionAnalysis::DefineProductions(){
+//********************************************************************
+
+  // Add the different productions
+  /*
+  ND::versioning().AddProduction(ProdId::MCC5,       "MCC5",     "v0r0",    "v1r0");
+  ND::versioning().AddProduction(ProdId::MCC6,       "MCC6",     "v0r0",    "v1r0");
+  ND::versioning().AddProduction(ProdId::MCC7,       "MCC7",     "v0r0",    "v1r0");
+  ND::versioning().AddProduction(ProdId::PDSPProd2,  "PDSPProd2","v08_40",  "v08_40");
+  */
+}
+
 
 //********************************************************************
 void pionAnalysis::DefineInputConverters(){
