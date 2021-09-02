@@ -35,19 +35,17 @@ void kaonSelection::DefineSteps(){
   //secondary kaon selection
   AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsAction()        );
   AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonCut(),  true);
-  //AddStep(StepBase::kAction,   "get a vector of daughters",  new GetDaughtersAction()    );
   //split the selection in branches, one for each possible candidate
   AddSplit(kaonAnalysisConstants::NMAXSAVEDCANDIDATES);
   //next cuts have to be applied to each branch
   for(int i = 0; i < (int)kaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
-    //AddStep(i, StepBase::kCut, "daughter is kaon candidate", new DaughterIsKaonCandidateCut(), true);
     AddStep(i, StepBase::kCut, "kaon daughter is a track",   new MuonIsTrackCut(),             true);
-    //AddStep(i, StepBase::kCut, "kaon daughter is muon-like", new MuonFromDecayCut(),           true);
     AddStep(i, StepBase::kCut, "kaon daughter chi2 cut",     new MuonChi2Cut(),                true);
     AddStep(i, StepBase::kCut, "kaon daughter CNN cut",      new MuonCNNCut(),                 true);
     AddStep(i, StepBase::kCut, "kaon daughter mom cut",      new MuonRangeMomCut(),            true);
     AddStep(i, StepBase::kCut, "kaon CNN cut",               new KaonCNNCut(),                 true);
     AddStep(i, StepBase::kCut, "kaon-muon angle cut",        new KaonMuonAngleCut(),           true);
+    AddStep(i, StepBase::kCut, "kaon-muon distance cut",     new KaonMuonDistanceCut(),        true);
   }
 
   //Set the branch aliases to the different branches 
@@ -79,14 +77,24 @@ bool BeamFilterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
       if(beam->BeamParticle->TrueObject){
 	//cast the beam particle
 	AnaTrueParticlePD* beamTruePart = static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
-        if(beamTruePart->PDG==211 || beamTruePart->PDG==321 || beamTruePart->PDG==2212)return true;
+        if(abs(beamTruePart->PDG)==13 || abs(beamTruePart->PDG)==211 || abs(beamTruePart->PDG)==321 || abs(beamTruePart->PDG)==2212)return true;
       }
     }
+  }
+  //for data
+  else{
+    bool hadron = false;
+    for(int i = 0; i < beam->PDGs.size(); i++){
+      if(beam->PDGs[i] == 211 || beam->PDGs[i] == 321 || beam->PDGs[i] == 2212){
+	hadron = true;
+	break;
+      }
+    }
+    if(hadron)return true;
   }
   
   return false;
 }
-
 
 //**************************************************
 bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
@@ -97,41 +105,19 @@ bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   // Cast the ToyBox to the appropriate type
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB); 
     
-  // Loop over daughters and granddaughters add them to the candidates vector
-  // if they have a single daughter
-  for(int i = 0; i < (int)box.MainTrack->Daughters.size(); i++){
-    //cast the daughter in the appropiate class
-    AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-    if(dau->Daughters.size() == 1)box.Candidates.push_back(dau);
-    for(int j = 0; j < (int)dau->Daughters.size(); j++){
-      //cast the daughter in the appropiate class
-      AnaParticlePD* gdau = static_cast<AnaParticlePD*>(dau->Daughters[j]);
-      if(gdau->Daughters.size() == 1)box.Candidates.push_back(gdau);
-    }
+  // Get the array of parts from the event
+  AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
+  int nParts           = static_cast<AnaEventB*>(&event)->nParticles;
+
+  //look over the particles in the event
+  for(int i = 0; i < nParts; i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    if(part->isPandora)continue; //skip beam particle
+    if(part->Daughters.size() == 1)box.Candidates.push_back(part);
   }
   
   return true;  
 }
-
-//**************************************************
-bool GetDaughtersAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  (void)event;
-  
-  // Cast the ToyBox to the appropriate type
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB); 
-    
-  // Loop over daughters and add them to the candidates vector
-  for(int i = 0; i < std::min((int)box.MainTrack->Daughters.size(),(int)kaonAnalysisConstants::NMAXSAVEDDAUGHTERS); i++){
-    //cast the daughter in the appropiate class
-    AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.MainTrack->Daughters[i]);
-    box.Candidates.push_back(dau);
-  }
-  
-  return true;  
-}
-
 
 //**************************************************
 bool EventHasKaonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
@@ -148,29 +134,6 @@ bool EventHasKaonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //if the main track has at least a single daughter with a single daughter, pass
   if (box.Candidates.size()>0) return true;
   else return false;
-}
-
-//**************************************************
-bool DaughterIsKaonCandidateCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  (void)event;
-
-  //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
-
-  // Main track must exist
-  if (!box.MainTrack) return false;
-  
-  //get the current branch  
-  std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
-
-  //check if there is no daughter for this branch
-  if(branchesIDs[0] >= box.Candidates.size())return false;
-
-  AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]);
-  if(dau->Daughters.size() == 1)return true;
-  else return false; 
 }
 
 //**************************************************
@@ -207,6 +170,11 @@ bool MuonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   //if there is kaon, cut in its daughter chi2
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
+  /*std::pair<double,int> prot_result = pdAnaUtils::Chi2PID(*dau,2212);
+  std::pair<double,int> muon_result = pdAnaUtils::Chi2PID(*dau,13);
+  dau->Chi2Proton = prot_result.first;
+  dau->Chi2Muon   = muon_result.first;
+  dau->Chi2ndf    = muon_result.second;*/
   if(dau->Chi2Muon / dau->Chi2ndf < 10)return true;
   else return false; 
 }
@@ -249,27 +217,6 @@ bool MuonRangeMomCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 }
 
 //**************************************************
-bool MuonFromDecayCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-  
-  (void)event;
-
-  //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
-
-  //get the current branch  
-  std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
-
-  //if there is kaon, check that its daughter is a muon from kaon decay
-  AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
-  double mom = pdAnaUtils::ComputeRangeMomentum(dau->Length,13);
-  if(dau->Chi2Muon / dau->Chi2ndf < 10 &&
-     dau->CNNscore[0] > 0.6 && 
-     abs(mom-0.22) < 0.02)return true;
-  else return false; 
-}
-
-//**************************************************
 bool KaonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
   
@@ -307,6 +254,27 @@ bool KaonMuonAngleCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   else return false; 
 }
 
+//**************************************************
+bool KaonMuonDistanceCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+  
+  (void)event;
+
+  //cast the box
+  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+
+  //get the current branch  
+  std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
+
+  //if there is kaon, cut on the distance between it and its daughter muon
+  AnaParticlePD* kaon = box.Candidates[branchesIDs[0]];
+  AnaParticlePD* muon = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
+  double dis = 0;
+  for(int i = 0; i < 3; i++)dis = dis + pow(kaon->PositionEnd[i] - muon->PositionStart[i],2);
+  dis = sqrt(dis);
+  if(dis < 10)return true;
+  else return false; 
+}
 
 //**************************************************
 void kaonSelection::InitializeEvent(AnaEventC& eventC){

@@ -50,6 +50,7 @@ TFile* dEdX_template_file = new TFile( (std::string(getenv("PDUTILSROOT"))+"/dat
 std::map< int, TProfile* > templates;
 
 TProfile* ProtonTemplate = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
+TProfile* MuonTemplate   = (TProfile*)dEdX_template_file->Get( "dedx_range_mu" );
 /*
 templates[ 211 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_pi"  );
 templates[ 321 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_ka"  );
@@ -240,17 +241,18 @@ Float_t pdAnaUtils::ComputePIDA(const AnaParticlePD &track) {
 Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 //********************************************************************
 
+  int plane = 2;
 
-  Int_t plane=2;
+  if(part.Hits[plane].size() < 1)return -1;
+  
+  double kinetic = 0;
+  double res     = 0;
 
-  int nhits=part.Hits[plane].size();
-  double kinetic=0;
-  double res=0;
-  for (int j=0;j<nhits;j++){
-    double dedxi = part.Hits[plane][j].dEdx_calib;
-//    double dedxi = part.dEdx[plane][i];
-    double Residualrangei = part.Hits[plane][j].ResidualRange;
-    kinetic = kinetic + dedxi * (Residualrangei - res);
+  for(int i = 0; i < part.Hits[plane].size(); i++){
+    if(part.Hits[plane][i].dEdx_calib > 1000. || part.Hits[plane][i].dEdx_calib==-999)continue;
+    double dedxi = part.Hits[plane][i].dEdx_calib;
+    double Residualrangei = part.Hits[plane][i].ResidualRange;
+    kinetic = kinetic + dedxi * abs(Residualrangei - res);
     res = Residualrangei;
   }
 
@@ -611,15 +613,22 @@ void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters
 
 
 //*****************************************************************************
-std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile * profile ){
+std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const int pdg ){
 //*****************************************************************************	
 
   double pid_chi2 = 0.; 
   int npt = 0;
 
   Int_t plane=2;
+
+  TProfile* profile;
   
-  profile = ProtonTemplate;
+  if(pdg == 2212)profile = ProtonTemplate;
+  else if(pdg == 13)profile = MuonTemplate;
+  else{
+    std::cout << "no profile for pdg " << pdg << std::endl;
+    return std::make_pair(9999., -1);
+  }
   
   if( part.Hits[plane].size() < 1 )
     return std::make_pair(9999., -1);
@@ -627,7 +636,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, TProfile
   //Ignore first and last point
   for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
     //Skip large pulse heights
-    if( part.Hits[plane][i].dEdx_calib > 1000. )
+    if( part.Hits[plane][i].dEdx_calib > 1000. || part.Hits[plane][i].dEdx_calib==-999)
       continue;
 
     int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
@@ -1022,6 +1031,67 @@ Float_t pdAnaUtils::ComputeCalibrateddQdX(Float_t prim_dqdx, const TVector3& pos
 
   
   return scaled_corrected_dq_dx;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::ComputeDistanceMotherDaughter(AnaParticlePD* mother, AnaParticlePD* daughter){
+//***************************************************************
+
+  if(!mother || !daughter){
+    std::cout << "ComputeDistanceMotherDaughter: one of the particles does not exist" << std::endl;
+    std::cout << "Returning -999" << std::endl;
+    return -999.;
+  }
+  
+  double dis = 0;
+  for(int i = 0; i < 3; i++)dis = dis + pow(mother->PositionEnd[i] - daughter->PositionStart[i],2);
+  dis = sqrt(dis);
+  return dis;
+}
+  
+//***************************************************************
+Float_t pdAnaUtils::ComputeCosMotherDaughter(AnaParticlePD* mother, AnaParticlePD* daughter){
+//***************************************************************
+
+  if(!mother || !daughter){
+    std::cout << "ComputeCosMotherDaughter: one of the particles does not exist" << std::endl;
+    std::cout << "Returning -999" << std::endl;
+    return -999.;
+  }
+  
+  double cos = 0;
+  for(int i = 0; i < 3; i++)cos = cos + mother->DirectionEnd[i] * daughter->DirectionStart[i];
+  return cos;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::ComputeAveragedEdxOverResRange(AnaParticlePD* part, double maxresrange){
+//***************************************************************
+
+  if(!part){
+    std::cout << "ComputeAveragedEdxOverResRange: particle does not exist" << std::endl;
+    std::cout << "Returning -999" << std::endl;
+    return -999.;
+  }
+  
+  if(part->Hits[2].empty()){
+    //std::cout << "ComputeAveragedEdxOverResRange: has no hits" << std::endl;
+    //std::cout << "Returning -999" << std::endl;
+    return -999.;
+  }
+
+  double sumdedx = 0;
+  int nhits      = 0;
+  for(int i = 0; i < part->Hits[2].size(); i++){
+    if(part->Hits[2][i].ResidualRange < maxresrange){
+      if(part->Hits[2][i].dEdx_calib != -999 && part->Hits[2][i].dEdx_calib < 1000){
+	sumdedx += part->Hits[2][i].dEdx_calib;
+	nhits++;
+      }
+    }
+  }
+
+  return sumdedx/nhits;
 }
 
 //***************************************************************

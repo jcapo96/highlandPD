@@ -73,6 +73,9 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
   AddVarF(    output, seltrk_dedx,           "candidate average dEdx");
   AddVarF(    output, seltrk_dedx_raw,       "candidate average dEdx");
   AddVar3VF(  output, seltrk_CNNscore,       "candidate reconstructed CNN score");
+  AddVarF(    output, seltrk_chi2_prot,      "candidate chi2 prot");
+  AddVarF(    output, seltrk_chi2_muon,      "candidate chi2 muon");
+  AddVarF(    output, seltrk_chi2_ndf,       "candidate chi2 ndf");
   //AddVarFixMF(output, seltrk_pid,            "candidate PID variables", 3,8);
   //AddVarFixMF(output, seltrk_calo,           "candidate CALO variables",3,5); 
 }
@@ -356,6 +359,9 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
   output.FillVectorVarFromArray(seltrk_dir,      part->DirectionStart, 3);
   output.FillVectorVarFromArray(seltrk_enddir,   part->DirectionEnd, 3);
   output.FillVectorVarFromArray(seltrk_CNNscore, part->CNNscore,3);
+  output.FillVar(seltrk_chi2_prot,               part->Chi2Proton);
+  output.FillVar(seltrk_chi2_muon,               part->Chi2Muon);
+  output.FillVar(seltrk_chi2_ndf,                part->Chi2ndf);
 
   //for (int i=0;i<3;i++){
   //  output.FillMatrixVarFromArray(seltrk_pid,    part->PID[i],  i, 8);

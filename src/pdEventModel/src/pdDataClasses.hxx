@@ -4,9 +4,11 @@
 #include "DataClasses.hxx"
 #include "ParticleId.hxx"
 
-
 const UInt_t NMAXHITSPERPLANE        = 300;
 const UInt_t NMAXHITSPERPLANE_SELTRK = 2500;
+
+//forward declarations
+class AnaDetectorInfoPD;
 
 class AnaWireID{
 public:
@@ -104,11 +106,23 @@ public:
       kTrack
   };
 
+  /// MotherID
+  Int_t ParentID;
+
   /// Track or Shower
   PartTypeEnum Type;
 
+  /// Forced Track ID
+  Int_t TrackID;
+
+  /// Forced shower ID
+  Int_t ShowerID;
+
   /// Is this the beam particle according to Pandora ?
   bool isPandora;
+
+  /// Is this the beam particle or a descendant according to Pandora ?
+  bool BeamOrigin;
 
   ///  Pandora beam particle that passes geometric cuts
   bool isBeamPart;
@@ -128,6 +142,8 @@ public:
   Float_t Chi2ndf;
 
   Float_t CNNscore[3];
+  Float_t vtx_CNN_michelscore;
+  Int_t   vtx_CNN_NHits;
   
   /// CALO variables
   Float_t CALO[3][10];
@@ -279,23 +295,23 @@ public:
 // Extension of AnaBunch to include the APA wire wafeforms, needed to recompute the CNN 
 class AnaBunchPD: public AnaBunch{
 public :
-
+  
   AnaBunchPD();
   virtual ~AnaBunchPD();
-
+  
   /// Clone this object.
   virtual AnaBunchPD* Clone() {
     return new AnaBunchPD(*this);
   }
-
+  
   /// Dump the object to screen.
   virtual void Print() const;
-
+  
 protected:
-
+  
   /// Copy constructor is protected, as Clone() should be used to copy this object.
   AnaBunchPD(const AnaBunchPD& bunch);
-
+  
 public:
 
   std::vector<AnaWireCNN> CNNwires;
@@ -319,10 +335,44 @@ protected:
 
 public:
 
+  //AnaDetectorInfoPD* DetInfo;
+
 };
 
 
-// Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN 
+/// Class to store relevant detector information for analysis and systematic calculations
+class AnaDetectorInfoPD{
+public :
+  
+  AnaDetectorInfoPD();
+  virtual ~AnaDetectorInfoPD();
+  
+  /// Clone this object.
+  virtual AnaDetectorInfoPD* Clone() {
+    return new AnaDetectorInfoPD(*this);
+  }
+  
+  /// Dump the object to screen.
+  virtual void Print() const;
+  
+protected:
+  
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaDetectorInfoPD(const AnaDetectorInfoPD& detinfo);
+  
+public:
+
+  double SamplingRate;
+  double T0;
+  double eLifeTime;
+  double ModBoxA;
+  double ModBoxB;
+
+};
+
+
+// Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN
+// and the AnaDetectorInfoPD 
 class AnaEventPD: public AnaEvent{
 public :
 
@@ -348,8 +398,7 @@ protected:
 public:
 
   std::vector<AnaWireCNN> CNNwires;
+  AnaDetectorInfoPD* DetInfo;
 };
-
-
 
 #endif

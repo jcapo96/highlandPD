@@ -16,7 +16,7 @@ need to be enabled in baseAnalysis parameter file
 This is the parent systematic of the three above
  < kaonAnalysis.Systematics.EnabledEdxCalib         = 0 >  
 
- < kaonAnalysis.Systematics.EnabledBeamComposition  = 0 >
+ < kaonAnalysis.Systematics.EnabledBeamComposition  = 1 >
  < kaonAnalysis.Systematics.EnabledTrackEff         = 0 >
 
 --- Corrections -----------
