@@ -19,7 +19,7 @@
 #include <iostream>
 #include <set>
 #include "InputConverter.hxx"
-#include "GeometryManager.hxx"
+//#include "GeometryManager.hxx"
 
 #include "pdDataClasses.hxx"
 
