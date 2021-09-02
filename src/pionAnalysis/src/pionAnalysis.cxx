@@ -29,6 +29,7 @@
 #include "pionTreeConverter.hxx"
 #include "hitPionTreeConverter.hxx"
 #include "highlandPDMiniTreeConverter.hxx"
+#include "PDSPAnalyzerTreeConverter.hxx"
 //#include "LArSoftTreeConverter.hxx"
 
 // PionAnalysis from Jake and Francesca
@@ -173,9 +174,9 @@ void pionAnalysis::DefineInputConverters(){
    */
   
   // add a single converter (a copy of the one in highland/baseAnalysis)
-  input().AddConverter("pionana",        new hitPionTreeConverter());
-  input().AddConverter("minitree",       new highlandPDMiniTreeConverter("highlandana/MiniTree"));
-  input().AddConverter("minitree2",      new highlandPDMiniTreeConverter("kaonana/MiniTree"));
+  input().AddConverter("pionana",          new hitPionTreeConverter());
+  input().AddConverter("minitree",         new highlandPDMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("pduneana",         new PDSPAnalyzerTreeConverter());
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
@@ -343,7 +344,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
 
   // -------- Add additional variables to the analysis tree ----------------------
   
-  AddVarF(  output(), seltrk_truebeta,    "candidate true beta");
+  /*  AddVarF(  output(), seltrk_truebeta,    "candidate true beta");
   AddVarF(  output(), seltrk_truemom_tpc, "candidate true momentum at TPC entrance");
   AddVarF(  output(), seltrk_kinetic,     "candidate kinetic energy");
   AddVarI(  output(), seltrk_broken,      "candidate was broken");
@@ -384,7 +385,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddVarMF(         output(), pixel_adc,              "pixel adc",  npixels,-400, 200);
 
   
-  AddVarI(  output(), trk_pandora,      "trk is pandora candidate");
+  AddVarI(  output(), trk_pandora,      "trk is pandora candidate");*/
 }
 
 //********************************************************************
@@ -451,27 +452,27 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
     standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
-    output().FillVar(trk_pandora,(Int_t)part->isPandora);
+    //output().FillVar(trk_pandora,(Int_t)part->isPandora);
     output().IncrementCounter(ntracks);
   }
 
   // ---------- Additional candidate variables --------------
   if (box().MainTrack){        
-    output().FillVar(seltrk_broken,                (Int_t)(box().MainTrack->NDOF==8888));
-    output().FillVar(seltrk_kinetic,               pdAnaUtils::ComputeKineticEnergy(*box().MainTrack));              
+    //output().FillVar(seltrk_broken,                (Int_t)(box().MainTrack->NDOF==8888));
+    //output().FillVar(seltrk_kinetic,               pdAnaUtils::ComputeKineticEnergy(*box().MainTrack));              
 
     // Extrapolation to z=0
-    Float_t posz[3]={0};
-    output().FillVectorVarFromArray(seltrk_pos_z0, pdAnaUtils::ExtrapolateToZ(box().MainTrack,0,posz), 3); //default extrapolates to 0    
+    //Float_t posz[3]={0};
+    //output().FillVectorVarFromArray(seltrk_pos_z0, pdAnaUtils::ExtrapolateToZ(box().MainTrack,0,posz), 3); //default extrapolates to 0    
 
-    Float_t diflength = sqrt(pow(posz[0]-box().MainTrack->PositionStart[0],2) + pow(posz[1]-box().MainTrack->PositionStart[1],2) + pow(posz[2]-box().MainTrack->PositionStart[2],2));
-    output().FillVar(seltrk_length_z0,             box().MainTrack->Length + diflength);
+    //Float_t diflength = sqrt(pow(posz[0]-box().MainTrack->PositionStart[0],2) + pow(posz[1]-box().MainTrack->PositionStart[1],2) + pow(posz[2]-box().MainTrack->PositionStart[2],2));
+    //output().FillVar(seltrk_length_z0,             box().MainTrack->Length + diflength);
     
     //    output().FillVar(seltrk_mom_muon_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 13));
     //    output().FillVar(seltrk_mom_prot_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 2212));
     
     //Jake/Franceska variable    
-    //    output().FillVectorVarFromArray(seltrk_CNNscore,       box().MainTrack->CNNscore,3);
+    //output().FillVectorVarFromArray(seltrk_CNNscore,       box().MainTrack->CNNscore,3);
 
     // ---------- Save information about all (max NMAXSAVEDDAUGHTERS) daughters in the candidate --------------
     Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
@@ -484,26 +485,26 @@ void pionAnalysis::FillMicroTrees(bool addBase){
 
       //Jake/Franceska variables
       //      output().FillMatrixVarFromArray(seltrk_dau_CNNscore,  dau->CNNscore,         3); 
-      //      output().FillVectorVar(seltrk_dau_chi2_prot,          dau->Chi2Proton);
-      //      output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
+      //output().FillVectorVar(seltrk_dau_chi2_prot,          dau->Chi2Proton);
+      //output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
       //      output().FillVectorVar(seltrk_dau_vtxdistance,        box().DaughterDistanceToVertex[i]);
-      output().FillVectorVar(seltrk_dau_type,               dau->Type);
+      //output().FillVectorVar(seltrk_dau_type,               dau->Type);
       
       output().IncrementCounter(seltrk_ndau);
     }    
 
     // ---------- Additional truth information -----------
-    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
-    if (truePart){
-      output().FillVar(seltrk_truemom_tpc,              truePart->MomentumInTPC);
-      if (anaUtils::GetParticleMass(ParticleId::GetParticle(truePart->PDG))>0)
-        output().FillVar(seltrk_truebeta,          anaUtils::ComputeBetaGamma(truePart->Momentum, ParticleId::GetParticle(truePart->PDG)));
-    }
+    //AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
+    //if (truePart){
+    //  output().FillVar(seltrk_truemom_tpc,              truePart->MomentumInTPC);
+    //  if (anaUtils::GetParticleMass(ParticleId::GetParticle(truePart->PDG))>0)
+    //    output().FillVar(seltrk_truebeta,          anaUtils::ComputeBetaGamma(truePart->Momentum, ParticleId::GetParticle(truePart->PDG)));
+    //}
   }
 
 
 
-  std::vector<AnaWireCNN>& wires = static_cast<AnaBunchPD*>(GetSpill().Bunches[0])->CNNwires;
+  /*std::vector<AnaWireCNN>& wires = static_cast<AnaBunchPD*>(GetSpill().Bunches[0])->CNNwires;
   
   for (size_t i = 0;i<wires.size();i++){
     if (i>=400) break;
@@ -513,7 +514,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
       output().FillMatrixVar(pixel_adc, wires[i].adcs[j] , -1, j); 
     }
     output().IncrementCounter(npixels);
-  }
+    }*/
 
 
 
@@ -535,7 +536,7 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
   // Fill the common variables  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
 
-  // Toy variables, since there is a systematic variation associated to them
+  /*  // Toy variables, since there is a systematic variation associated to them
   if (box().MainTrack){
     output().FillToyVar(seltrk_chi2_prot, box().MainTrack->Chi2Proton);
     output().FillToyVar(seltrk_chi2_ndf,  box().MainTrack->Chi2ndf);
@@ -561,7 +562,7 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
 
 
     }
-  }
+    }*/
 }
 
 //********************************************************************
