@@ -116,7 +116,7 @@ namespace pdAnaUtils{
   bool isBeamLike(AnaParticlePD* part, AnaBeamPD* beam);
   
   // Compute the PID chi2 and ndf for protons
-  std::pair< double, int > Chi2PID(const AnaParticlePD& part, TProfile * profile );
+  std::pair< double, int > Chi2PID(const AnaParticlePD& part, const int pdg);
 
   // Methods to compute the beam PDG variables (cannot be used with the piontree since it does not contain TOF and CKOV info)
   std::vector< int > GetPID( const AnaBeamPD& beam, double nominal_momentum );
@@ -132,6 +132,15 @@ namespace pdAnaUtils{
 
   // Calibrated dQdx
   Float_t ComputeCalibrateddQdX(Float_t prim_dqdx, const TVector3& pos);
+
+  // Distance mother daughter
+  Float_t ComputeDistanceMotherDaughter(AnaParticlePD* mother, AnaParticlePD* daughter);
+  
+  // Cos mother daughter
+  Float_t ComputeCosMotherDaughter(AnaParticlePD* mother, AnaParticlePD* daughter);
+
+  // Average dEdx
+  Float_t ComputeAveragedEdxOverResRange(AnaParticlePD* part, double maxresrange = 9999);
 
   // Compute the wire pitch taking into account the direction of the particle
   Float_t Compute3DWirePitch(Int_t planeKey, const TVector3& dir);
