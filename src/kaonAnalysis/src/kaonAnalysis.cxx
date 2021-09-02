@@ -26,6 +26,7 @@
 #include "kaonClasses.hxx"
 
 #include "HighlandMiniTreeConverter.hxx"
+#include "PDSPAnalyzerTreeConverter.hxx"
 
 /*
   A highland Analysis inherits in ultimate instance from AnalysisAlgorithm. 
@@ -123,6 +124,8 @@ bool kaonAnalysis::Initialize(){
   // Define standard categories for color drawing
   anaUtils::AddStandardCategories();        // This is for the candidate particle
   anaUtils::AddStandardCategories("beam");  // This is for the Beam Instrumentation particle
+  anaUtils::AddStandardCategories("bestcandidate");  // This is for the best candidate of each event
+  anaUtils::AddStandardCategories("bestcandidatedau");  // This is for the best candidate of each event
   anaUtils::AddStandardObjectCategories("daughter",standardPDTree::seltrk_ndau,"seltrk_ndau",1);  // This is for the daughters of the selected track
   anaUtils::AddStandardObjectCategories("all",standardPDTree::ntracks,"ntracks",1);  // This is for all the tracks in the event
 
@@ -183,7 +186,9 @@ void kaonAnalysis::DefineInputConverters(){
    */
   
   // add a single converter (a copy of the one in highland/baseAnalysis)
-  input().AddConverter("minitree", new HighlandMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("minitree",         new HighlandMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("minitreefiltered", new HighlandMiniTreeConverter("MiniTree"));
+  input().AddConverter("PDSPAnalyzerTree", new PDSPAnalyzerTreeConverter());
 }
 
 //********************************************************************
@@ -236,6 +241,7 @@ void kaonAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   //---- Define additional systematics (kaonAnalysys/src/systematics) -----
+  eweight().AddEventWeight(kBeam, "beamComp", new BeamCompositionWeight());
 }
 
 //********************************************************************
@@ -250,6 +256,9 @@ void kaonAnalysis::DefineConfigurations(){
   baseAnalysis::DefineConfigurations();
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
+  if(_enableAllSystConfig){
+    if(ND::params().GetParameterI("kaonAnalysis.Systematics.EnabledBeamComposition"))conf().EnableEventWeight(kBeam,all_syst);
+  }
 }
 
 //********************************************************************
@@ -293,6 +302,11 @@ void kaonAnalysis::DefineMicroTrees(bool addBase){
   kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),kaonAnalysisConstants::NMAXSAVEDCANDIDATES);
   kaonTree::AddKaonVariables_KaonCandidatesHitsReco(output(),kaonAnalysisConstants::NMAXSAVEDCANDIDATES);
   kaonTree::AddKaonVariables_KaonCandidatesTrue    (output(),kaonAnalysisConstants::NMAXSAVEDCANDIDATES);
+
+  // -------- Add best candidate variables ----------------------
+  kaonTree::AddKaonVariables_KaonBestCandidateReco    (output());
+  kaonTree::AddKaonVariables_KaonBestCandidateHitsReco(output());
+  kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
 }
 
 //********************************************************************
@@ -397,6 +411,24 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
       kaonTree::FillKaonVariables_KaonCandidatesTrue    (output(), box().Candidates[i]);
       output().IncrementCounter(kaonTree::candidates);
     } 
+  }
+
+  //get the kaon selection and get the branch with a larger AccumLevel
+  SelectionBase* ksel = sel().GetSelection("kaonSelection");
+  int branchmax = 0;
+  int max       = 0;  
+  for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
+    if(ksel->GetAccumCutLevel(ibranch) > max){
+      max = ksel->GetAccumCutLevel(ibranch);
+      branchmax = ibranch;
+    }
+  }
+
+  // ---------- best kaon candidate variables --------------
+  if(box().Candidates.size()>0){
+    kaonTree::FillKaonVariables_KaonBestCandidateReco    (output(), box().Candidates[branchmax]);
+    kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(output(), box().Candidates[branchmax]);
+    kaonTree::FillKaonVariables_KaonBestCandidateTrue    (output(), box().Candidates[branchmax]);
   }
 
   //associate candidates with true kaons
@@ -504,6 +536,24 @@ void kaonAnalysis::FillCategories(){
       kaonAnaUtils::FillGDaughterKaonCategory("candidatedaumuon",&GetEvent(), box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]),-1,-1);
     }
   }
+
+  //get the kaon selection and get the branch with a larger AccumLevel
+  SelectionBase* ksel = sel().GetSelection("kaonSelection");
+  int branchmax = 0;
+  int max       = 0;  
+  for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
+    if(ksel->GetAccumCutLevel(ibranch) > max){
+      max = ksel->GetAccumCutLevel(ibranch);
+      branchmax = ibranch;
+    }
+  }
+
+  // ---------- best kaon candidate variables --------------
+  if(box().Candidates.size()>0){
+    anaUtils::FillCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[branchmax]), "bestcandidate");
+    anaUtils::FillCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[branchmax]->Daughters[0]), "bestcandidatedau");
+  }
+
 
   // For the beam track
   AnaParticleB* beamPart = static_cast<AnaBeam*>(GetSpill().Beam)->BeamParticle;

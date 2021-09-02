@@ -24,7 +24,7 @@ set (LARSOFTREADER_DIR "${CMAKE_SOURCE_DIR}/src/LArSoftReader/src/${LARSOFT_PROD
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17")
+set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17 -DCOMPILETF=${COMPILETF}")
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 
@@ -76,6 +76,7 @@ find_package(EIGEN REQUIRED)
 message("EIGEN include directories: ${EIGEN_INCLUDE_DIRS}")
 message("EIGEN libraries:           ${EIGEN_LIBRARIES}")
 
+set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17 -DCOMPILETF=${COMPILETF}")
 
 #-------------------------------------------------------
 #----- include directories -----------------------------
@@ -172,6 +173,11 @@ target_include_directories(kaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandP
 target_link_libraries(kaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS kaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(kaonMiniTree.exe ${CMAKE_SOURCE_DIR}/src/kaonAnalysis/app/RunKaonMiniTree.cxx)
+target_include_directories(kaonMiniTree.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(kaonMiniTree.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS kaonMiniTree.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 add_executable(CreateMiniTreePionAna.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunCreateMiniTree.cxx)
 target_include_directories(CreateMiniTreePionAna.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(CreateMiniTreePionAna.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
@@ -209,7 +215,8 @@ add_dependencies(dedx.exe CreateMiniTreePionAna.exe )
 add_dependencies(CreateMiniTreePionAna.exe proton.exe)
 add_dependencies(proton.exe                pion.exe)
 add_dependencies(pion.exe                  kaon.exe)
-add_dependencies(kaon.exe                  highlandPD)
+add_dependencies(kaon.exe                  kaonMiniTree.exe)
+add_dependencies(kaonMiniTree.exe          highlandPD)
 add_dependencies(highlandPD                ch_rootmap)
 add_dependencies(ch_rootmap                highlandPD_dicts)
 add_dependencies(highlandPD_dicts          include)

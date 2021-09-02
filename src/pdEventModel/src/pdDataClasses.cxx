@@ -96,9 +96,14 @@ void AnaHitPD::Print() const{
 AnaParticlePD::AnaParticlePD():AnaParticle(){
 //********************************************************************
 
+  ParentID = kIntUnassigned;
+  TrackID  = kIntUnassigned;
+  ShowerID = kIntUnassigned;
+
   Type = kUnknown;
-  isBeamPart    = false;
-  isPandora = false;
+  isBeamPart = false;
+  isPandora  = false;
+  BeamOrigin = false;
 
   FitPDG        = kFloatUnassigned;
 
@@ -115,6 +120,8 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
 
     CNNscore[i]=kFloatUnassigned;
   }  
+  vtx_CNN_michelscore=kFloatUnassigned;
+  vtx_CNN_NHits=kIntUnassigned;
 
   Chi2Proton=kFloatUnassigned;
   Chi2Muon=kFloatUnassigned;
@@ -144,9 +151,14 @@ AnaParticlePD::~AnaParticlePD(){
 AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 //********************************************************************
 
+  ParentID       = part.ParentID;
+  TrackID        = part.ParentID;
+  ShowerID       = part.ParentID;
+
   Type           = part.Type;
   isBeamPart     = part.isBeamPart;
   isPandora      = part.isPandora;
+  BeamOrigin     = part.BeamOrigin;
 
   FitPDG         = part.FitPDG;
 
@@ -164,7 +176,8 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
     CNNscore[i]=part.CNNscore[i];
   }
-
+  vtx_CNN_michelscore=part.vtx_CNN_michelscore;
+  vtx_CNN_NHits=part.vtx_CNN_NHits;
 
   Chi2Proton = part.Chi2Proton;
   Chi2Muon   = part.Chi2Muon;
@@ -193,8 +206,12 @@ void AnaParticlePD::Print() const{
   AnaParticle::Print();
   
   std::cout << "-------- AnaParticlePD --------- " << std::endl;
+  std::cout << "ParentID:                " << ParentID << std::endl;
   std::cout << "Type:                    " << Type << std::endl;
+  std::cout << "Forced track ID:         " << TrackID << std::endl;
+  std::cout << "Forced shower ID:        " << ShowerID << std::endl;
   std::cout << "isPandora:               " << isPandora << std::endl;
+  std::cout << "BeamOrigin:              " << BeamOrigin << std::endl;
   std::cout << "PassBeamCut:             " << isBeamPart << std::endl;
 
   std::cout << "FitPDG:                  " << FitPDG << std::endl;
@@ -237,6 +254,9 @@ void AnaParticlePD::Print() const{
   std::cout << "Chi2ndf:                 " << Chi2ndf << std::endl;
 
   std::cout << "CNN score:               " << CNNscore[0] << " " << CNNscore[1] << " " << CNNscore[2] << std::endl;
+  
+  std::cout << "vtx CNN michelscore:     " << vtx_CNN_michelscore << std::endl;
+  std::cout << "vtx CNN NHits:           " << vtx_CNN_NHits << std::endl;
   
   std::cout << "RangeMomentum:           " << RangeMomentum[0] << " " << RangeMomentum[1] << std::endl;
 
@@ -467,3 +487,39 @@ void AnaEventPD::Print() const{
   std::cout << "#wires:      " << CNNwires.size() << std::endl;
 }
 
+//********************************************************************
+AnaDetectorInfoPD::AnaDetectorInfoPD(){
+//********************************************************************
+
+  eLifeTime = kDoubleUnassigned;
+  ModBoxA   = kDoubleUnassigned;
+  ModBoxB   = kDoubleUnassigned;
+  
+}
+
+//********************************************************************
+AnaDetectorInfoPD::~AnaDetectorInfoPD(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaDetectorInfoPD::AnaDetectorInfoPD(const AnaDetectorInfoPD& detinfo){
+//********************************************************************
+
+  eLifeTime = detinfo.eLifeTime;
+  ModBoxA   = detinfo.ModBoxA;
+  ModBoxB   = detinfo.ModBoxB;
+}
+
+//********************************************************************
+void AnaDetectorInfoPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaDetectorInfoPD --------- " << std::endl;
+
+  std::cout << "e- lifetime:      " << eLifeTime << std::endl;
+  std::cout << "ModBoxA:          " << ModBoxA << std::endl;
+  std::cout << "ModBoxB:          " << ModBoxB << std::endl;
+  
+}
