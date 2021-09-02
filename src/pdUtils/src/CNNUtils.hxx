@@ -7,7 +7,7 @@
 #include "tf_graph.hxx"
 #include "timeUtils.hxx"
 
-const int debug_levelA=-1;
+const int debug_levelA=2;
 
 struct DataProviderAlgView {
   unsigned int fNWires;
@@ -76,7 +76,7 @@ public:
   bool setWireDriftDataFromHit(const AnaHitPD& hit);
 
 
-  bool setWireDriftData(const std::vector<AnaWireCNN>& wires);
+  bool setWireDriftData(const std::vector<AnaWireCNN>& wires, Int_t TPC, Int_t plane);
   
   
   void resizeView(size_t wires,size_t drifts);
@@ -107,6 +107,11 @@ public:
 
   void ComputeParticleCNN(AnaParticlePD& part);
 
+
+  size_t GetWireIndex(Int_t wire);
+  size_t GetWireTPC(Int_t wire);
+  size_t GetWirePlane(Int_t wire);
+  
 public:
   timeUtils* _tutils;
   
