@@ -10,8 +10,9 @@
 #ifndef Graph_h
 #define Graph_h
 
-
-//#define CompileTF
+#if COMPILETF == 1
+#define CompileTF
+#endif
 
 #include <memory>
 #include <vector>
