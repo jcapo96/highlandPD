@@ -24,7 +24,7 @@ set (LARSOFTREADER_DIR "${CMAKE_SOURCE_DIR}/src/LArSoftReader/src/${LARSOFT_PROD
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17")
+set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17 -DCOMPILETF=${COMPILETF}")
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 
@@ -76,6 +76,7 @@ find_package(EIGEN REQUIRED)
 message("EIGEN include directories: ${EIGEN_INCLUDE_DIRS}")
 message("EIGEN libraries:           ${EIGEN_LIBRARIES}")
 
+set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17 -DCOMPILETF=${COMPILETF}")
 
 #-------------------------------------------------------
 #----- include directories -----------------------------

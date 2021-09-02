@@ -161,6 +161,7 @@ void pionAnaUtils::FillDaupionanaCategory(AnaEventB* event, AnaTrueParticlePD* t
     if (!trueBeamDaughter) continue;
     for(UInt_t j = 0; j < trueBeamDaughter->Daughters.size(); j++){
       AnaTrueParticlePD* trueBeamGrandDaughter = pdAnaUtils::GetTrueParticle(event, trueBeamDaughter->Daughters[j]);
+      if (!trueBeamGrandDaughter) continue;
       if (trueBeamGrandDaughter->ID == truePart->ID){
         true_grand_daughter=true;
         break;
