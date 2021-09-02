@@ -3,4 +3,7 @@
  < pdUtils.SCE.EnableSimEfieldSCE  = 1   >	
  < pdUtils.SCE.EnableCalSpatialSCE = 1   >	
  < pdUtils.SCE.EnableCalEfieldSCE  = 1   >
- < pdUtils.SCE.Efield              = 500 >	
+ < pdUtils.SCE.Efield              = 500 >
+
+--- CNN --------------
+ < pdUtils.CNN.PBfile              = cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoduneBeamAndCosmicsMCC11.pb >
