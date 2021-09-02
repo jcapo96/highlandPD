@@ -2,3 +2,6 @@
    * NODEPHEADERS for MAC
    * TENSORFLOW stuff
      -> I Think it would be good to have the opportunity of compiling HighLAND with and without tensorflow depending on what the analyzer wants to do (flag variable on CMakeList?)
+
+- create a pdBaseConverter
+  * there are too many functions on the PDSPAnalizerConverter that the user does not need. The intermediante class would make it easier for the user.
