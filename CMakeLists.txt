@@ -65,7 +65,7 @@ message("TENSORFLOW include directories: ${TENSORFLOW_INCLUDE_DIRS}")
 message("TENSORFLOW libraries:           ${TENSORFLOW_LIBRARIES}")
 
 #------ PROTOBUF------------------
-find_package(PROTOBUF REQUIRED)
+find_package(HPROTOBUF REQUIRED)
 
 message("PROTOBUF include directories: ${PROTOBUF_INCLUDE_DIRS}")
 message("PROTOBUF libraries:           ${PROTOBUF_LIBRARIES}")
@@ -101,8 +101,8 @@ foreach(file0 ${dict_src})
   string(REPLACE "${dir}/"     "" file2 ${file0})
   string(REPLACE _LinkDef.h    "" file3 ${file2})  
 
-  root_generate_dictionary(dict/${file3}_Dict NODEPHEADERS ${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
-#  root_generate_dictionary(dict/${file3}_Dict ${dir}/${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
+#  root_generate_dictionary(dict/${file3}_Dict NODEPHEADERS ${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
+  root_generate_dictionary(dict/${file3}_Dict ${dir}/${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
 
   list(APPEND dict_list ${dir}/${file3}.cxx dict/${file3}_Dict.cxx)
   list(APPEND dict_src  ${CMAKE_BINARY_DIR}/dict/${file3}_Dict.cxx)
