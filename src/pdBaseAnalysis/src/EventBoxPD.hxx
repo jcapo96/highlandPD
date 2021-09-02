@@ -2,7 +2,8 @@
 #define EventBoxPD_hxx
 
 #include "BaseDataClasses.hxx"
-#include "EventBoxUtils.hxx"
+//#include "EventBoxUtils.hxx"
+#include "EventBoxId.hxx"
 
 /*
   The EventBox is used to store objects that are use many times when processing a single event, and 
