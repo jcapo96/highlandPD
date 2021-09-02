@@ -1,5 +1,6 @@
 #include "CNNUtils.hxx"
 #include "timeUtils.hxx"
+#include "Parameters.hxx"
 #include <chrono>
 #include <thread>
 
@@ -68,8 +69,9 @@ CNNUtils::CNNUtils():
   */
   
 //*******************************************************
-  
-  fNNetModelFilePath = "cnn.pb";
+
+
+  fNNetModelFilePath =   (std::string)getenv("PDUTILSROOT")+"/data/"+ND::params().GetParameterS("pdUtils.CNN.PBfile");
   //  fNNetOutputs = "";
   
   if (fNNet) delete fNNet;
