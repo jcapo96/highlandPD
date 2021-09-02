@@ -161,6 +161,7 @@ void pionAnalysis::DefineInputConverters(){
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",        new hitPionTreeConverter());
   input().AddConverter("minitree",       new highlandPDMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("minitree2",      new highlandPDMiniTreeConverter("kaonana/MiniTree"));
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
 
@@ -341,7 +342,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   //  AddVarFixVF( output(), seltrk_dedx_exp,"candidate expected dEdx for different hypothesis",4);
   
   //new variables added for reproducing Jake/Fraceska plots
-  AddVar3VF(       output(), seltrk_CNNscore,        "candidate reconstructed CNN score");
+  //  AddVar3VF(       output(), seltrk_CNNscore,        "candidate reconstructed CNN score");
   AddToyVarF(      output(), seltrk_chi2_prot,       "candidate chi2 proton");
   AddToyVarF(      output(), seltrk_chi2_ndf,        "candidate chi2 ndf");
   AddToyVarF(      output(), seltrk_hit0_dedx,       "candidate dedx variated");
@@ -351,8 +352,8 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   
   seltrk_ndau = standardPDTree::seltrk_ndau;
   //  AddVarMaxSize3MF(output(), seltrk_dau_CNNscore,    "candidate daughters reconstructed CNN score",seltrk_ndau,NMAXSAVEDDAUGHTERS);
-  AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,NMAXSAVEDDAUGHTERS);
-  AddVarMaxSizeVF( output(), seltrk_dau_chi2_ndf,    "candidate daughters chi2 ndf",               seltrk_ndau,NMAXSAVEDDAUGHTERS);
+  //  AddVarMaxSizeVF( output(), seltrk_dau_chi2_prot,   "candidate daughters chi2 proton",            seltrk_ndau,NMAXSAVEDDAUGHTERS);
+  //  AddVarMaxSizeVF( output(), seltrk_dau_chi2_ndf,    "candidate daughters chi2 ndf",               seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVF( output(), seltrk_dau_vtxdistance, "candidate daughters distance to vtx",        seltrk_ndau,NMAXSAVEDDAUGHTERS);
   AddVarMaxSizeVI( output(), seltrk_dau_type,        "candidate daughters type(track=0, shower=1)",seltrk_ndau,NMAXSAVEDDAUGHTERS);
 
@@ -456,7 +457,7 @@ void pionAnalysis::FillMicroTrees(bool addBase){
     //    output().FillVar(seltrk_mom_prot_z0,           pdAnaUtils::ComputeRangeMomentum(box().MainTrack->Length + diflength, 2212));
     
     //Jake/Franceska variable    
-    output().FillVectorVarFromArray(seltrk_CNNscore,       box().MainTrack->CNNscore,3);
+    //    output().FillVectorVarFromArray(seltrk_CNNscore,       box().MainTrack->CNNscore,3);
 
     // ---------- Save information about all (max NMAXSAVEDDAUGHTERS) daughters in the candidate --------------
     Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
@@ -469,8 +470,8 @@ void pionAnalysis::FillMicroTrees(bool addBase){
 
       //Jake/Franceska variables
       //      output().FillMatrixVarFromArray(seltrk_dau_CNNscore,  dau->CNNscore,         3); 
-      output().FillVectorVar(seltrk_dau_chi2_prot,          dau->Chi2Proton);
-      output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
+      //      output().FillVectorVar(seltrk_dau_chi2_prot,          dau->Chi2Proton);
+      //      output().FillVectorVar(seltrk_dau_chi2_ndf,           dau->Chi2ndf);
       //      output().FillVectorVar(seltrk_dau_vtxdistance,        box().DaughterDistanceToVertex[i]);
       output().FillVectorVar(seltrk_dau_type,               dau->Type);
       
