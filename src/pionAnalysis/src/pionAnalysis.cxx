@@ -362,7 +362,7 @@ void pionAnalysis::DefineMicroTrees(bool addBase){
   AddToyVarVF(     output(), seltrk_dau_hit0_dedx,      "candidate daughter dedx variated",          NMAXSAVEDDAUGHTERS);
   AddToyVarVF(     output(), seltrk_dau_hit0_cnn,      "candidate daughter CNN variated",          NMAXSAVEDDAUGHTERS);
 
-  AddToyVarMF(     output(), seltrk_dau_CNNscore, "candidate daughter CNN varied",NMAXSAVEDDAUGHTERS,3);
+  //  AddToyVarMF(     output(), seltrk_dau_CNNscore, "candidate daughter CNN varied",NMAXSAVEDDAUGHTERS,3);
 
 
   AddVarMaxSizeVI(  output(), pixel_wire,             "pixel wire", npixels, 400);
@@ -538,7 +538,7 @@ void pionAnalysis::FillToyVarsInMicroTrees(bool addBase){
       AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
       output().FillToyVectorVar(seltrk_dau_truncLibo_dEdx,  dau->truncLibo_dEdx, i);
       for (size_t j=0;j<3;j++)
-        output().FillToyMatrixVar(seltrk_dau_CNNscore, dau->CNNscore[j],i, j);
+        //        output().FillToyMatrixVar(seltrk_dau_CNNscore, dau->CNNscore[j],i, j);
       if (!dau->Hits[2].empty()){
         output().FillToyVectorVar(seltrk_dau_hit0_dqdx, dau->Hits[2][0].dQdx,  i);
         output().FillToyVectorVar(seltrk_dau_hit0_dedx, dau->Hits[2][0].dEdx,  i);
