@@ -75,23 +75,10 @@ protected:
   Int_t _previousSubrunID;
   Int_t _previousRefEventID;
 
-  bool _byHits;
-  
  protected:
-
-  // TChains   
-  TChain *eventsTree;
-  TChain *FileIndexTree;
-
-  Int_t Entries; 
-  Int_t Counter; 
-
   Bool_t _isMC;
   std::string _softwareVersion;
-
 }; 
-
-
 
 #endif
 

@@ -20,11 +20,8 @@ pdBaseConverter::pdBaseConverter(const std::string& name):InputConverter(name){
 bool pdBaseConverter::Initialize(){
 //********************************************************************
 
-
   AddChain(_treeName);
-  eventsTree = GetChain(_treeName);
-  
-  fChain = eventsTree;
+  fChain = GetChain(_treeName);
   
   // Set object pointer
   InitializeVariables();
@@ -41,10 +38,7 @@ bool pdBaseConverter::Initialize(){
 pdBaseConverter::~pdBaseConverter(){
 //********************************************************************
   
-  //destructor 
-  if(!fChain)return;
-
-  if(eventsTree)delete eventsTree->GetCurrentFile();
+  if(fChain)delete fChain->GetCurrentFile();
 }
 
 //****************************************************************************
@@ -54,10 +48,10 @@ bool pdBaseConverter::AddFileToTChain(const std::string& inputString){
   std::cout << "pdBaseConverter::AddFileToTChain(). Adding file: " << inputString << std::endl;
 
   // Chain only the directories we are interested in
-  if(eventsTree)eventsTree->AddFile(inputString.c_str());
+  if(fChain) fChain->AddFile(inputString.c_str());
   
   // Read one entry from the tree tree such that Run and Subrun are available
-  eventsTree->GetEntry(1);
+  fChain->GetEntry(1);
 
   // Make temporary object
   AnaEventInfo* evtInfo = MakeEventInfo();
@@ -100,7 +94,7 @@ bool pdBaseConverter::AddFileToTChain(const std::string& inputString){
 Int_t pdBaseConverter::ReadEntry(Long64_t& entry) {
 //*****************************************************************************
   
-  Int_t entry_temp = eventsTree->GetEntry(entry);
+  Int_t entry_temp = fChain->GetEntry(entry);
 
   return entry_temp;
 }
