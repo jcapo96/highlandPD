@@ -1,11 +1,4 @@
 #include "pdBaseConverter.hxx"
-#include "InputManager.hxx"
-#include "BasicUtils.hxx"
-#include "HighlandAnalysisUtils.hxx"
-#include "Parameters.hxx"
-#include "pdAnalysisUtils.hxx"
-#include "CalorimetryAlg.hxx"
-
 
 //********************************************************************
 pdBaseConverter::pdBaseConverter(const std::string& name):InputConverter(name){
@@ -66,7 +59,7 @@ bool pdBaseConverter::AddFileToTChain(const std::string& inputString){
   // Read one entry from the tree tree such that Run and Subrun are available
   eventsTree->GetEntry(1);
 
-
+  // Make temporary object
   AnaEventInfo* evtInfo = MakeEventInfo();
 
   // general event info
@@ -95,9 +88,7 @@ bool pdBaseConverter::AddFileToTChain(const std::string& inputString){
   _isMC = (bool)evtInfo->IsMC;
   if(!header().SetIsMC(_isMC)) return false;
 
-  _softwareVersion = "v09_24"; //not sure about this but not important
-
-
+  // delete temporary object
   delete evtInfo;
   
   // Sets the software version for this file
@@ -137,6 +128,10 @@ Int_t pdBaseConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 
   entry++;
 
+  if (entry%10000==0 || entry == _nentries || (entry%1000==0 && entry<10000) )
+    std::cout << "entry: " << entry << " of " << _nentries << " (" << (100*entry/_nentries) << "%)" << std::endl;
+
+  
   return entry_temp;
 }
 

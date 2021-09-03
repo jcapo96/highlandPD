@@ -1,10 +1,8 @@
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "InputManager.hxx"
-#include "BasicUtils.hxx"
-#include "HighlandAnalysisUtils.hxx"
 #include "Parameters.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "CalorimetryAlg.hxx"
+
 
 
 //********************************************************************
@@ -210,7 +208,7 @@ void PDSPAnalyzerTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& tr
 
 //*****************************************************************************
 void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles,
-						     AnaParticlePD* part, AnaBeamPD* beam){
+                                                     AnaParticlePD* part, AnaBeamPD* beam){
 //*****************************************************************************
 
   // This is the beam particle according to pandora
@@ -458,7 +456,7 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
 
 //*****************************************************************************
 void PDSPAnalyzerTreeConverter::FillDaughterParticleShowerInfo(std::vector<AnaTrueParticleB*>& trueParticles,
-							       Int_t itrk, AnaParticlePD* part){
+                                                               Int_t itrk, AnaParticlePD* part){
 //*****************************************************************************
 
   part->ShowerID  = (*reco_daughter_allShower_ID)[itrk];

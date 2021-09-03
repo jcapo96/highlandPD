@@ -67,8 +67,6 @@ class pdBaseConverter: public InputConverter{
   virtual void FillEventInfo(AnaEventInfo* info)=0;
   
 
-
-
 protected:
 
   AnaSpill* _spill;
@@ -92,11 +90,6 @@ protected:
   Bool_t _isMC;
   std::string _softwareVersion;
 
-   
-  // Header's
-  Int_t EventTime; 
-  Int_t TriggerWord; 
-  Float_t POTPerSpill; 
 }; 
 
 
