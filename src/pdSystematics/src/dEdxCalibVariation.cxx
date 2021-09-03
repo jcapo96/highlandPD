@@ -71,7 +71,7 @@ void dEdxCalibVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
       }
     }
     // Recompute the top level derived quantities
-    std::pair<double, int> chi2pid = pdAnaUtils::Chi2PID(*part, NULL);
+    std::pair<double, int> chi2pid = pdAnaUtils::Chi2PID(*part, 0);
     part->Chi2Proton  = chi2pid.first;
     part->Chi2ndf     = chi2pid.second;
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,dedx_vector);

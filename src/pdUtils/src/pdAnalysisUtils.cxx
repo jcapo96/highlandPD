@@ -248,11 +248,11 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
   double kinetic = 0;
   double res     = 0;
 
-  for(int i = 0; i < part.Hits[plane].size(); i++){
+  for(size_t i = 0; i < part.Hits[plane].size(); i++){
     if(part.Hits[plane][i].dEdx_calib > 1000. || part.Hits[plane][i].dEdx_calib==-999)continue;
     double dedxi = part.Hits[plane][i].dEdx_calib;
     double Residualrangei = part.Hits[plane][i].ResidualRange;
-    kinetic = kinetic + dedxi * abs(Residualrangei - res);
+    kinetic = kinetic + dedxi * fabs(Residualrangei - res);
     res = Residualrangei;
   }
 
@@ -538,7 +538,7 @@ void pdAnaUtils::ComputeDistanceToVertex(AnaParticlePD* part, std::vector<Float_
   if (!part) return;
   if (part->Daughters.empty()) return;
 
-  for(int i = 0; i < (int)part->Daughters.size(); i++){
+  for(size_t i = 0; i < part->Daughters.size(); i++){
     AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[i]);
 
     //compute distance between part and daughter. Assume dau can be reconstructed backwards
@@ -599,7 +599,7 @@ void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters
   counters.ntrue_beamdaughter_neutron=0;
   counters.ntrue_beamdaughter_nucleus=0;
 
-  for(UInt_t i = 0; i < trueBeamPart->Daughters.size(); i++){
+  for(size_t i = 0; i < trueBeamPart->Daughters.size(); i++){
     AnaTrueParticlePD* trueBeamDaughter = pdAnaUtils::GetTrueParticle(&event, trueBeamPart->Daughters[i]);
     if (!trueBeamDaughter) continue;
     if      (trueBeamDaughter->PDG==211)  counters.ntrue_beamdaughter_piplus++;
@@ -909,7 +909,7 @@ Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part)
   TVector3 disp(part->Hits[2][0].Position.X(),part->Hits[2][0].Position.Y(),part->Hits[2][0].Position.Z());
 
   // Add subsequent hits
-  for(int i = 1; i < (int)part->Hits[2].size(); ++i){
+  for(size_t i = 1; i < part->Hits[2].size(); ++i){
     if (part->Hits[2][i].Position.X() == -999) break;
     TVector3 pos(part->Hits[2][i].Position.X(),part->Hits[2][i].Position.Y(),part->Hits[2][i].Position.Z());
     disp -= pos;
@@ -1082,11 +1082,11 @@ Float_t pdAnaUtils::ComputeAveragedEdxOverResRange(AnaParticlePD* part, double m
 
   double sumdedx = 0;
   int nhits      = 0;
-  for(int i = 0; i < part->Hits[2].size(); i++){
+  for(size_t i = 0; i < part->Hits[2].size(); i++){
     if(part->Hits[2][i].ResidualRange < maxresrange){
       if(part->Hits[2][i].dEdx_calib != -999 && part->Hits[2][i].dEdx_calib < 1000){
-	sumdedx += part->Hits[2][i].dEdx_calib;
-	nhits++;
+        sumdedx += part->Hits[2][i].dEdx_calib;
+        nhits++;
       }
     }
   }

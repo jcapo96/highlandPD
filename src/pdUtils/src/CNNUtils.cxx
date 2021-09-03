@@ -36,42 +36,42 @@ std::string wspacesA(size_t n){
 
 
 
-  std::pair<Int_t, Int_t> wire_mapping[12][3]=    {std::pair<Int_t,Int_t>(0,799),   
-                                                   std::pair<Int_t,Int_t>(800  , 1599),   
-                                                   std::pair<Int_t,Int_t>(1600 , 2079),   
-                                                   std::pair<Int_t,Int_t>(0    , 799),    
-                                                   std::pair<Int_t,Int_t>(800  , 1599),   
-                                                   std::pair<Int_t,Int_t>(2080 , 2559),   
-                                                   std::pair<Int_t,Int_t>(2560 , 3359),   
-                                                   std::pair<Int_t,Int_t>(3360 , 4159),   
-                                                   std::pair<Int_t,Int_t>(4160 , 4639),   
-                                                   std::pair<Int_t,Int_t>(2560 , 3359),   
-                                                   std::pair<Int_t,Int_t>(3360 , 4159),   
-                                                   std::pair<Int_t,Int_t>(4640 , 5119),   
-                                                   std::pair<Int_t,Int_t>(5120 , 5919),   
-                                                   std::pair<Int_t,Int_t>(5920 , 6719),   
-                                                   std::pair<Int_t,Int_t>(6720 , 7199),   
-                                                   std::pair<Int_t,Int_t>(5120 , 5919),   
-                                                   std::pair<Int_t,Int_t>(5920 , 6719),   
-                                                   std::pair<Int_t,Int_t>(7200 , 7679),   
-                                                   std::pair<Int_t,Int_t>(7680 , 8479),   
-                                                   std::pair<Int_t,Int_t>(8480 , 9279),   
-                                                   std::pair<Int_t,Int_t>(9280 , 9759),   
-                                                   std::pair<Int_t,Int_t>(7680 , 8479),   
-                                                   std::pair<Int_t,Int_t>(8480 , 9279),   
-                                                   std::pair<Int_t,Int_t>(9760 , 10239), 
-                                                   std::pair<Int_t,Int_t>(10240 , 11039),
-                                                   std::pair<Int_t,Int_t>(11040 , 11839),
-                                                   std::pair<Int_t,Int_t>(11840 , 12319),
-                                                   std::pair<Int_t,Int_t>(10240 , 11039),
-                                                   std::pair<Int_t,Int_t>(11040 , 11839),
-                                                   std::pair<Int_t,Int_t>(12320 , 12799),
-                                                   std::pair<Int_t,Int_t>(12800 , 13599),
-                                                   std::pair<Int_t,Int_t>(13600 , 14399),
-                                                   std::pair<Int_t,Int_t>(14400 , 14879),
-                                                   std::pair<Int_t,Int_t>(12800 , 13599),
-                                                   std::pair<Int_t,Int_t>(13600 , 14399),
-                                                   std::pair<Int_t,Int_t>(14880 , 15359)};
+std::pair<Int_t, Int_t> wire_mapping[12][3]=    {{std::pair<Int_t,Int_t>(0,799),   
+                                                  std::pair<Int_t,Int_t>(800  , 1599),   
+                                                  std::pair<Int_t,Int_t>(1600 , 2079)},   
+                                                 {std::pair<Int_t,Int_t>(0    , 799),    
+                                                  std::pair<Int_t,Int_t>(800  , 1599),   
+                                                  std::pair<Int_t,Int_t>(2080 , 2559)},   
+                                                 {std::pair<Int_t,Int_t>(2560 , 3359),   
+                                                  std::pair<Int_t,Int_t>(3360 , 4159),   
+                                                  std::pair<Int_t,Int_t>(4160 , 4639)},   
+                                                 {std::pair<Int_t,Int_t>(2560 , 3359),   
+                                                  std::pair<Int_t,Int_t>(3360 , 4159),   
+                                                  std::pair<Int_t,Int_t>(4640 , 5119)},   
+                                                 {std::pair<Int_t,Int_t>(5120 , 5919),   
+                                                  std::pair<Int_t,Int_t>(5920 , 6719),   
+                                                  std::pair<Int_t,Int_t>(6720 , 7199)},   
+                                                 {std::pair<Int_t,Int_t>(5120 , 5919),   
+                                                  std::pair<Int_t,Int_t>(5920 , 6719),   
+                                                  std::pair<Int_t,Int_t>(7200 , 7679)},   
+                                                 {std::pair<Int_t,Int_t>(7680 , 8479),   
+                                                  std::pair<Int_t,Int_t>(8480 , 9279),   
+                                                  std::pair<Int_t,Int_t>(9280 , 9759)},   
+                                                 {std::pair<Int_t,Int_t>(7680 , 8479),   
+                                                  std::pair<Int_t,Int_t>(8480 , 9279),   
+                                                  std::pair<Int_t,Int_t>(9760 , 10239)}, 
+                                                 {std::pair<Int_t,Int_t>(10240 , 11039),
+                                                  std::pair<Int_t,Int_t>(11040 , 11839),
+                                                  std::pair<Int_t,Int_t>(11840 , 12319)},
+                                                 {std::pair<Int_t,Int_t>(10240 , 11039),
+                                                  std::pair<Int_t,Int_t>(11040 , 11839),
+                                                  std::pair<Int_t,Int_t>(12320 , 12799)},
+                                                 {std::pair<Int_t,Int_t>(12800 , 13599),
+                                                  std::pair<Int_t,Int_t>(13600 , 14399),
+                                                  std::pair<Int_t,Int_t>(14400 , 14879)},
+                                                 {std::pair<Int_t,Int_t>(12800 , 13599),
+                                                  std::pair<Int_t,Int_t>(13600 , 14399),
+                                                  std::pair<Int_t,Int_t>(14880 , 15359)}};
 
 
 //*******************************************************
@@ -448,7 +448,6 @@ bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires, Int_t hit_
   if (debug_levelA>=2) std::cout << wspacesA(4) << "setWireDriftData. #wires = " << wires.size() << " hit tpc, plane = " << hit_tpc << " " << hit_plane << std::endl;   
 
   // LOOP OVER WIRES
-  bool allWrong = true;
   size_t iw=0;
   for (auto const& wire : wires) {  // loop over the wires
 
@@ -459,7 +458,7 @@ bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires, Int_t hit_
     
 
     // Skip the were if it is not in the correct TPC and plane
-    if (tpc != hit_tpc || plane != hit_plane){
+    if (tpc != hit_tpc || (Int_t)plane != hit_plane){
       if (debug_levelA>=2) std::cout << wspacesA(6) << "setWireDriftData. i, wire, #adcs = " << iw << " " << wire.wire << " " << " " << wire.adcs.size()
                                      << " --> skip: tpc, plane = " << tpc << " " << plane << std::endl;         
       continue;
