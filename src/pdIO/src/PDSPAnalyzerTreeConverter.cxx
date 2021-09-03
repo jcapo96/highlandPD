@@ -8,168 +8,23 @@
 
 
 //********************************************************************
-PDSPAnalyzerTreeConverter::PDSPAnalyzerTreeConverter():InputConverter("pduneana/beamana"){
+PDSPAnalyzerTreeConverter::PDSPAnalyzerTreeConverter():pdBaseConverter("pduneana/beamana"){
 //********************************************************************
-
-  //constructor
-  _spill = NULL;
-
-  _isMC = false;
-  _softwareVersion = "";
-
-  _previousFile = "";
-  _previousRunID = -1;
-  _previousSubrunID = -1;
-  _previousRefEventID = -1;
-
 
   //true matching flag. True if byHits matching desired, false if byE matching desired
   _byHits = true;
-}
-
-//********************************************************************
-bool PDSPAnalyzerTreeConverter::Initialize(){
-//********************************************************************
-  
-  std::string folder= "pduneana";
-  
-  AddChain(folder+"/beamana");
-  eventsTree = GetChain(folder+"/beamana");
-  
-  fChain = eventsTree;
-  
-  // Set object pointer
-  InitializeVariables();
-
-  // Set branch addresses and branch pointers
-  if (!fChain) return false;
-  fCurrent = -1;
-  SetBranchAddresses();
-  
-  return true;
-}
-
-//********************************************************************
-PDSPAnalyzerTreeConverter::~PDSPAnalyzerTreeConverter(){
-//********************************************************************
-  
-  //destructor 
-  if(!fChain)return;
-
-  if(eventsTree)delete eventsTree->GetCurrentFile();
-}
-
-//****************************************************************************
-bool PDSPAnalyzerTreeConverter::AddFileToTChain(const std::string& inputString){
-//****************************************************************************
-
-  std::cout << "PDSPAnalyzerTreeConverter::AddFileToTChain(). Adding file: " << inputString << std::endl;
-
-  // Chain only the directories we are interested in
-  if(eventsTree)eventsTree->AddFile(inputString.c_str());
-  
-  // Read one entry from the tree tree such that Run and Subrun are available
-  eventsTree->GetEntry(1);
-  
-  // Make sure the current file has not the same run and subrun number as the previous
-  if (_previousRunID==run &&  _previousSubrunID==subrun && _previousRefEventID>= event){
-    std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "PDSPAnalyzerTreeConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
-    std::cout << "                                           and no higher event number !!!" << std::endl;
-    std::cout << "   - this file:     " << inputString << std::endl;
-    std::cout << "   - previous file: " << _previousFile << std::endl;
-    std::cout << "Please verify the input file list !!!" << std::endl;
-    std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
-    exit(1);
-  }
-  
-  // The previous attributes
-  _previousFile         = inputString;
-  _previousRunID        = run;
-  _previousSubrunID     = subrun;
-  _previousRefEventID   = event;
-  
-  // Set the data/MC mode and return false when mixing data and MC files
-  _isMC = (bool)MC;
-  if(!header().SetIsMC(_isMC)) return false;
 
   _softwareVersion = "v09_24"; //not sure about this but not important
-
-  // Sets the software version for this file
-  return header().SetSoftwareVersion(_softwareVersion);
-}
-
-
-//*****************************************************************************
-Int_t PDSPAnalyzerTreeConverter::ReadEntries(Long64_t& entry) {
-//*****************************************************************************
-  
-  Int_t entry_temp = eventsTree->GetEntry(entry);
-
-  return entry_temp;
 }
 
 //*****************************************************************************
-Int_t PDSPAnalyzerTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
+void PDSPAnalyzerTreeConverter::FillEventInfo(AnaEventInfo* info){
 //*****************************************************************************
 
-  Int_t entry_temp = ReadEntries(entry);
-
-  if(entry_temp > 0){
-    
-    // Create an instance of the Spill
-    spill = MakeSpill();
-    
-    // Cast it to AnaSpill
-    _spill = static_cast<AnaSpill*>(spill);
-    
-    // Fill the EventModel
-    FillInfo(_spill);
-  }
-  else{
-    std::cout << "Failed in reading entry " << entry << std::endl;
-  }
-
-  entry++;
-
-  return entry_temp;
-}
-
-//*****************************************************************************
-void PDSPAnalyzerTreeConverter::FillInfo(AnaSpill* spill){
-//*****************************************************************************
-
-  spill->EventInfo = MakeEventInfo();
-  AnaEventInfo& info = *static_cast<AnaEventInfo*>(spill->EventInfo);
-
-  info.Run    = run;
-  info.SubRun = subrun;
-  info.Event  = event;
-  info.IsMC   = MC;
-
-  spill->DataQuality = MakeDataQuality();
-  spill->Beam = MakeBeam();
-
-  // data quality info
-  FillDQInfo(static_cast<AnaDataQuality*>(spill->DataQuality));
-
-  // True information
-  FillTrueInfo(spill);
-
-  // beam related information (must be after true info)
-  FillBeamInfo(spill->TrueParticles, static_cast<AnaBeamPD*>(spill->Beam));
-  
-  // All information about each bunch (only one in pd) (reco info)
-  AnaBunch* bunch = MakeBunch();
-  spill->Bunches.push_back(bunch);
-  FillBunchInfo(spill->TrueParticles, bunch, static_cast<AnaBeamPD*>(spill->Beam));
-}
-
-//*****************************************************************************
-void PDSPAnalyzerTreeConverter::FillDQInfo(AnaDataQuality* dq){
-//*****************************************************************************
-
-  dq->GoodDaq = true;
+  info->Run    = run;
+  info->SubRun = subrun;
+  info->Event  = event;
+  info->IsMC   = MC;
 }
 
 //*****************************************************************************

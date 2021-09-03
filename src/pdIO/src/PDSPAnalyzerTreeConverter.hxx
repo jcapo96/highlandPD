@@ -18,50 +18,26 @@
 #include <stdio.h>
 #include <iostream>
 #include <set>
-#include "InputConverter.hxx"
+#include "pdBaseConverter.hxx"
 //#include "GeometryManager.hxx"
 
 #include "pdDataClasses.hxx"
 
 using namespace std;
 
-class PDSPAnalyzerTreeConverter: public InputConverter{
+class PDSPAnalyzerTreeConverter: public pdBaseConverter{
 
  public:
 
   PDSPAnalyzerTreeConverter();
-  virtual ~PDSPAnalyzerTreeConverter();
+  virtual ~PDSPAnalyzerTreeConverter(){}
 
-  virtual bool Initialize();
-  virtual Int_t GetSpill(Long64_t& entry, AnaSpillC*& spill);
-  Int_t GetEvent(Long64_t& entry, AnaEventC*& event){(void)entry;(void)event; return 0;}
-
-  /// Record the POT for the current spill, based on information in the AnaBeam
-  /// member of the current AnaSpill.
-  void IncrementPOTBySpill(){return;}
-
-  virtual Int_t ReadEntries(Long64_t& entry);
-  virtual bool AddFileToTChain(const std::string& inputString);
-  void InitializeVariables();
-  void SetBranchAddresses();
-
-  //----------------
-  virtual AnaSpillB*          MakeSpill()       { return new AnaSpill(); }
-  virtual AnaBunch*           MakeBunch()       { return new AnaBunch(); }
-  virtual AnaBeamPD*          MakeBeam()        { return new AnaBeamPD(); }
-  virtual AnaDataQualityB*    MakeDataQuality() { return new AnaDataQuality(); }
-  virtual AnaEventInfoB*      MakeEventInfo()   { return new AnaEventInfo(); }
-  virtual AnaTrigger*         MakeTrigger()     { return new AnaTrigger(); }
-
-  virtual AnaTrueParticlePD*  MakeTrueParticle(){ return new AnaTrueParticlePD(); }
-  virtual AnaTrueVertex*      MakeTrueVertex()  { return new AnaTrueVertex(); }
-  virtual AnaParticlePD*      MakeParticle()    { return new AnaParticlePD(); }
+  virtual void InitializeVariables();
+  virtual void SetBranchAddresses();
 
   // ----------------------------
 
-  virtual void FillInfo(AnaSpill* spill);
-
-  virtual void FillDQInfo(AnaDataQuality* dq);
+  virtual void FillEventInfo(AnaEventInfo* info);
 
   virtual void FillTrueInfo(AnaSpill* spill);
   virtual void FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* truePart);
@@ -84,26 +60,9 @@ class PDSPAnalyzerTreeConverter: public InputConverter{
 
 protected:
 
-  AnaSpill* _spill;
-  
-  std::string _previousFile;
-  Int_t _previousRunID;
-  Int_t _previousSubrunID;
-  Int_t _previousRefEventID;
-
   bool _byHits;
   
  protected:
-
-  // TChains   
-  TChain *eventsTree;
-  TChain *FileIndexTree;
-
-  Int_t Entries; 
-  Int_t Counter; 
-
-  Bool_t _isMC;
-  std::string _softwareVersion;
 
   // Declaration of leaf types
   // Meta data
