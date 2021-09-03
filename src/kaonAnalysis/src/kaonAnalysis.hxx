@@ -6,7 +6,7 @@
 #include "standardPDTree.hxx"
 #include "kaonTree.hxx"
 #include "kaonAnalysisUtils.hxx"
-#include "kaonClasses.hxx"
+#include "kaonDataClasses.hxx"
 
 
 /* This is an example of analysis in ProtoDUNE-SP detector 
