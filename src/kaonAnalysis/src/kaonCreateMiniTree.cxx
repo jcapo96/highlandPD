@@ -1,4 +1,4 @@
-#include "kaonMiniTree.hxx"
+#include "kaonCreateMiniTree.hxx"
 #include "InputManager.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 #include "Parameters.hxx"
@@ -6,7 +6,7 @@
 #include <iomanip>
 
 //********************************************************************
-kaonMiniTree::kaonMiniTree(int argc, char *argv[]):SimpleLoopBase(argc, argv){
+kaonCreateMiniTree::kaonCreateMiniTree(int argc, char *argv[]):SimpleLoopBase(argc, argv){
 //********************************************************************
 
   // Add the package version (not yet properly done)
@@ -18,7 +18,7 @@ kaonMiniTree::kaonMiniTree(int argc, char *argv[]):SimpleLoopBase(argc, argv){
 }
 
 //********************************************************************
-bool kaonMiniTree::Initialize(){
+bool kaonCreateMiniTree::Initialize(){
 //********************************************************************
   
   _totalEntries=0;
@@ -30,7 +30,7 @@ bool kaonMiniTree::Initialize(){
 }
 
 //********************************************************************
-void kaonMiniTree::DefineOutputTree(){
+void kaonCreateMiniTree::DefineOutputTree(){
 //********************************************************************
 
   // Add a new tree called "MiniTree"
@@ -46,7 +46,7 @@ void kaonMiniTree::DefineOutputTree(){
 
 
 //********************************************************************
-bool kaonMiniTree::Process(){
+bool kaonCreateMiniTree::Process(){
 //********************************************************************
 
   // Set the tree to fill
@@ -59,7 +59,6 @@ bool kaonMiniTree::Process(){
 
   // MC
   if(_spill->GetIsMC()){
-    std::cout << "MC" << std::endl;
     // Only considered beam hadrons
     AnaParticleB* BeamPart = static_cast<AnaBeam*>(_spill->Beam)->BeamParticle;
     AnaTrueParticlePD* TrueBeamPart = static_cast<AnaTrueParticlePD*>(BeamPart->TrueObject);
@@ -99,7 +98,7 @@ bool kaonMiniTree::Process(){
 }
 
 //********************************************************************
-void kaonMiniTree::Finalize(){
+void kaonCreateMiniTree::Finalize(){
 //********************************************************************
 
   // Delete Spills for the last entry
@@ -110,7 +109,7 @@ void kaonMiniTree::Finalize(){
 }
 
 //********************************************************************
-void kaonMiniTree::FillMiniTree(){
+void kaonCreateMiniTree::FillMiniTree(){
 //********************************************************************
 
   // Copy arrays into std::vectors
@@ -121,7 +120,7 @@ void kaonMiniTree::FillMiniTree(){
 }
 
 //********************************************************************
-bool kaonMiniTree::RecoCandidateExists(){
+bool kaonCreateMiniTree::RecoCandidateExists(){
 //********************************************************************
 
   bool itExists = false;
@@ -144,7 +143,7 @@ bool kaonMiniTree::RecoCandidateExists(){
 }
 
 //********************************************************************
-bool kaonMiniTree::TruthCandidateExists(){
+bool kaonCreateMiniTree::TruthCandidateExists(){
 //********************************************************************
 
   bool itExists = false;
