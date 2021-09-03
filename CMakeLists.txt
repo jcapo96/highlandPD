@@ -12,6 +12,8 @@ file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/dict")
 # ----- Options for reading LArSoft files --------------
 #-------------------------------------------------------
 
+#currently not used
+
 set (LARSOFT_PRODUCTION PDSPProd2)
 set (LARSOFT_DATAMC_DIR mc)
 
@@ -21,10 +23,9 @@ set (LARSOFTREADER_DIR "${CMAKE_SOURCE_DIR}/src/LArSoftReader/src/${LARSOFT_PROD
 # ----- Check the access to CVMFS  ---------------------
 #-------------------------------------------------------
 
-find_package(CVMFS REQUIRED)
+find_package(CVMFS)
 
 message("CVMFS found: ${COMPILETF}")
-
 
 #-------------------------------------------------------
 # ----- Set cmake options ------------------------------
