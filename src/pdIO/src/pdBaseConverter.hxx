@@ -38,11 +38,10 @@ class pdBaseConverter: public InputConverter{
   /// member of the current AnaSpill.
   void IncrementPOTBySpill(){return;}
 
-  virtual Int_t ReadEntries(Long64_t& entry);
+  virtual Int_t ReadEntry(Long64_t& entry);
   virtual bool AddFileToTChain(const std::string& inputString);
   virtual void InitializeVariables()=0;
   virtual void SetBranchAddresses()=0;
-
   
   //----------------
   virtual AnaSpill*           MakeSpill()       { return new AnaSpill(); }
@@ -55,17 +54,17 @@ class pdBaseConverter: public InputConverter{
   virtual AnaTrueParticlePD*  MakeTrueParticle(){ return new AnaTrueParticlePD(); }
   virtual AnaTrueVertex*      MakeTrueVertex()  { return new AnaTrueVertex(); }
   virtual AnaParticlePD*      MakeParticle()    { return new AnaParticlePD(); }
-
   // ----------------------------
 
   virtual void FillInfo(AnaSpill* spill);
   virtual void FillDQInfo(AnaDataQuality* dq);
   
-  virtual void FillTrueInfo(AnaSpill* spill)=0;
-  virtual void FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam)=0;
-  virtual void FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam)=0;
-  virtual void FillEventInfo(AnaEventInfo* info)=0;
-  
+  // ---- pure virtual methods to be inplemented in derived class  ----
+  virtual void FillTrueInfo(AnaSpill* spill) = 0;
+  virtual void FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam) = 0;
+  virtual void FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam) = 0;
+  virtual void FillEventInfo(AnaEventInfo* info) = 0;
+  //-----------------
 
 protected:
 

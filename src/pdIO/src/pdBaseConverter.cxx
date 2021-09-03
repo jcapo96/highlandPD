@@ -97,7 +97,7 @@ bool pdBaseConverter::AddFileToTChain(const std::string& inputString){
 
 
 //*****************************************************************************
-Int_t pdBaseConverter::ReadEntries(Long64_t& entry) {
+Int_t pdBaseConverter::ReadEntry(Long64_t& entry) {
 //*****************************************************************************
   
   Int_t entry_temp = eventsTree->GetEntry(entry);
@@ -109,7 +109,7 @@ Int_t pdBaseConverter::ReadEntries(Long64_t& entry) {
 Int_t pdBaseConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 //*****************************************************************************
 
-  Int_t entry_temp = ReadEntries(entry);
+  Int_t entry_temp = ReadEntry(entry);
 
   if(entry_temp > 0){
     
