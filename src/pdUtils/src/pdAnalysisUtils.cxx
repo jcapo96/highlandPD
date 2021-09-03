@@ -252,7 +252,7 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
     if(part.Hits[plane][i].dEdx_calib > 1000. || part.Hits[plane][i].dEdx_calib==-999)continue;
     double dedxi = part.Hits[plane][i].dEdx_calib;
     double Residualrangei = part.Hits[plane][i].ResidualRange;
-    kinetic = kinetic + dedxi * abs(Residualrangei - res);
+    kinetic = kinetic + dedxi * fabs(Residualrangei - res);
     res = Residualrangei;
   }
 
