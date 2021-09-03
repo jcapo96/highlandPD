@@ -75,8 +75,8 @@ bool BeamFilterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   if(event.GetIsMC()){
     if(beam->BeamParticle){
       if(beam->BeamParticle->TrueObject){
-	//cast the beam particle
-	AnaTrueParticlePD* beamTruePart = static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
+        //cast the beam particle
+        AnaTrueParticlePD* beamTruePart = static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
         if(abs(beamTruePart->PDG)==13 || abs(beamTruePart->PDG)==211 || abs(beamTruePart->PDG)==321 || abs(beamTruePart->PDG)==2212)return true;
       }
     }
@@ -84,10 +84,10 @@ bool BeamFilterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //for data
   else{
     bool hadron = false;
-    for(int i = 0; i < beam->PDGs.size(); i++){
+    for(size_t i = 0; i < beam->PDGs.size(); i++){
       if(beam->PDGs[i] == 211 || beam->PDGs[i] == 321 || beam->PDGs[i] == 2212){
-	hadron = true;
-	break;
+        hadron = true;
+        break;
       }
     }
     if(hadron)return true;
@@ -212,7 +212,7 @@ bool MuonRangeMomCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //if there is kaon, cut in its daughter range mom
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
   double mom = pdAnaUtils::ComputeRangeMomentum(dau->Length,13);
-  if(abs(mom-0.22) < 0.02)return true;
+  if(fabs(mom-0.22) < 0.02)return true;
   else return false; 
 }
 

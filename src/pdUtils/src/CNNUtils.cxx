@@ -458,7 +458,7 @@ bool CNNUtils::setWireDriftData(const std::vector<AnaWireCNN>& wires, Int_t hit_
     
 
     // Skip the were if it is not in the correct TPC and plane
-    if (tpc != hit_tpc || (Int_t)plane != hit_plane){
+    if ((Int_t)tpc != hit_tpc || (Int_t)plane != hit_plane){
       if (debug_levelA>=2) std::cout << wspacesA(6) << "setWireDriftData. i, wire, #adcs = " << iw << " " << wire.wire << " " << " " << wire.adcs.size()
                                      << " --> skip: tpc, plane = " << tpc << " " << plane << std::endl;         
       continue;

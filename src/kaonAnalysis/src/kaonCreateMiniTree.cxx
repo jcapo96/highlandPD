@@ -76,18 +76,18 @@ bool kaonCreateMiniTree::Process(){
     // Only beam hadrons considered
     AnaBeamPD* Beam = static_cast<AnaBeamPD*>(_spill->Beam);
     bool hadron = false;
-    for(int i = 0; i < Beam->PDGs.size(); i++){
+    for(size_t i = 0; i < Beam->PDGs.size(); i++){
       if(Beam->PDGs[i] == 211 || Beam->PDGs[i] == 2212 || Beam->PDGs[i] == 321){
-	hadron = true;
-	break;
+        hadron = true;
+        break;
       }
     }
     if(hadron){
       // The spill is saved when there are candidates 
       if(RecoCandidateExists()){    
-	// Fill the minitree
-	FillMiniTree();
-	_savedEntries++;
+        // Fill the minitree
+        FillMiniTree();
+        _savedEntries++;
       }
     }
   }
@@ -129,7 +129,7 @@ bool kaonCreateMiniTree::RecoCandidateExists(){
   AnaBunchPD* Bunch = static_cast<AnaBunchPD*>(_spill->Bunches[0]);
 
   //loop over particles
-  for(int i = 1; i < Bunch->Particles.size(); i++){ //skip first particle because it is the primary
+  for(size_t i = 1; i < Bunch->Particles.size(); i++){ //skip first particle because it is the primary
     AnaParticlePD* Part = static_cast<AnaParticlePD*>(Bunch->Particles[i]);
     if(Part->DaughtersIDs.size()==1 && Part->BeamOrigin){
       itExists = true;
@@ -148,7 +148,7 @@ bool kaonCreateMiniTree::TruthCandidateExists(){
 
   bool itExists = false;
   //loop over true particles
-  for(int i = 1; i < _spill->TrueParticles.size(); i++){ //skip first particle because it is the primary
+  for(size_t i = 1; i < _spill->TrueParticles.size(); i++){ //skip first particle because it is the primary
     AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(_spill->TrueParticles[i]);
     if(truePart->PDG==321 || truePart->Origin==4){
       itExists = true;
