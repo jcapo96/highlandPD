@@ -7,23 +7,7 @@
 #ifndef PDSPAnalyzerTreeConverter_h
 #define PDSPAnalyzerTreeConverter_h
 
-#include <TROOT.h>
-#include <TChain.h>
-#include <TFile.h>
-#include <TClonesArray.h>
-#include <TRefArray.h>
-#include <TRef.h>
-#include <sstream>
-#include <fstream>
-#include <stdio.h>
-#include <iostream>
-#include <set>
 #include "pdBaseConverter.hxx"
-//#include "GeometryManager.hxx"
-
-#include "pdDataClasses.hxx"
-
-using namespace std;
 
 class PDSPAnalyzerTreeConverter: public pdBaseConverter{
 
@@ -45,7 +29,6 @@ class PDSPAnalyzerTreeConverter: public pdBaseConverter{
   virtual void FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart);
 
   virtual void FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam);
-
   virtual void FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam);
 
   virtual void FillBeamParticleInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaParticlePD* part, AnaBeamPD* beam);
@@ -71,7 +54,7 @@ protected:
   Int_t           event;
   Int_t           MC;
   // True beam info
-    Int_t           true_beam_PDG;
+  Int_t           true_beam_PDG;
   Double_t        true_beam_mass;
   Int_t           true_beam_ID;
   string          *true_beam_endProcess;
@@ -666,12 +649,6 @@ protected:
   TBranch *b_beam_inst_nFibersP3; //!
   TBranch *b_beam_inst_nMomenta; //!
   TBranch *b_beam_inst_valid; //!                                                                             
-  
-  
-  // Header's
-  Int_t EventTime; 
-  Int_t TriggerWord; 
-  Float_t POTPerSpill; 
 }; 
 
 
