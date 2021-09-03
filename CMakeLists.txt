@@ -83,7 +83,6 @@ set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-
 #-------------------------------------------------------
 
 file(GLOB highlandPD_inc ${CMAKE_SOURCE_DIR}/src/*/src
-                         ${CMAKE_SOURCE_DIR}/src/*/src/corrections
 #                         ${LARSOFTREADER_DIR} ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}
                          ${CMAKE_BINARY_DIR}/dict)
 
@@ -127,8 +126,7 @@ endforeach(file0)
 #-------- the highlandPD library -------------------------
 #-------------------------------------------------------
 
-file(GLOB highlandPD_src  ${CMAKE_SOURCE_DIR}/src/*/src/*.cxx
-                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.cxx) 
+file(GLOB highlandPD_src  ${CMAKE_SOURCE_DIR}/src/*/src/*.cxx)
 #                          ${LARSOFTREADER_DIR}/LArSoft*.cxx
 #                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
 
@@ -145,8 +143,7 @@ set(HIGHLAND_PD_LIBRARIES "-L${CMAKE_BINARY_DIR} -lhighlandPD")
 #----- highlandPD includes -------------------------------
 #-------------------------------------------------------
 
-file(GLOB highlandPD_inc2 ${CMAKE_SOURCE_DIR}/src/*/src/*.hxx
-                          ${CMAKE_SOURCE_DIR}/src/*/src/corrections/*.hxx) 
+file(GLOB highlandPD_inc2 ${CMAKE_SOURCE_DIR}/src/*/src/*.hxx)
 #                          ${LARSOFTREADER_DIR}/*.hxx
 #                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/*.h)
 
