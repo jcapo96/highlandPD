@@ -405,7 +405,7 @@ void kaonAnalysis::FillMicroTrees(bool addBase){
 
   // ---------- kaon candidates variables --------------
   if(box().Candidates.size()>0){
-    for(int i = 0; i < (int)box().Candidates.size(); i++){
+    for(int i = 0; i < std::min((int)box().Candidates.size(),(int)kaonAnalysisConstants::NMAXSAVEDCANDIDATES); i++){
       kaonTree::FillKaonVariables_KaonCandidatesReco    (output(), box().Candidates[i]);
       kaonTree::FillKaonVariables_KaonCandidatesHitsReco(output(), box().Candidates[i]);
       kaonTree::FillKaonVariables_KaonCandidatesTrue    (output(), box().Candidates[i]);
