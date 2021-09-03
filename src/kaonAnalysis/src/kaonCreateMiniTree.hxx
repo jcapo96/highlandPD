@@ -1,16 +1,16 @@
-#ifndef kaonMiniTree_h
-#define kaonMiniTree_h
+#ifndef kaonCreateMiniTree_h
+#define kaonCreateMiniTree_h
 
 #include "SimpleLoopBase.hxx"
 #include "pdDataClasses.hxx"
 #include "InputManager.hxx"
 #include <set>
 
-class kaonMiniTree: public SimpleLoopBase {
+class kaonCreateMiniTree: public SimpleLoopBase {
  public:
 
-  kaonMiniTree(int argc, char *argv[]);
-  virtual ~kaonMiniTree(){}
+  kaonCreateMiniTree(int argc, char *argv[]);
+  virtual ~kaonCreateMiniTree(){}
 
 protected:
 
@@ -37,6 +37,9 @@ protected:
 
 
 protected:
+
+  Int_t _totalEntries;
+  Int_t _savedEntries;
 
   bool _saveCandidates;
 
