@@ -18,6 +18,15 @@ set (LARSOFT_DATAMC_DIR mc)
 set (LARSOFTREADER_DIR "${CMAKE_SOURCE_DIR}/src/LArSoftReader/src/${LARSOFT_PRODUCTION}")
 
 #-------------------------------------------------------
+# ----- Check the access to CVMFS  ---------------------
+#-------------------------------------------------------
+
+find_package(CVMFS REQUIRED)
+
+message("CVMFS found: ${COMPILETF}")
+
+
+#-------------------------------------------------------
 # ----- Set cmake options ------------------------------
 #-------------------------------------------------------
 
@@ -75,8 +84,6 @@ find_package(EIGEN REQUIRED)
 
 message("EIGEN include directories: ${EIGEN_INCLUDE_DIRS}")
 message("EIGEN libraries:           ${EIGEN_LIBRARIES}")
-
-set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17 -DCOMPILETF=${COMPILETF}")
 
 #-------------------------------------------------------
 #----- include directories -----------------------------
