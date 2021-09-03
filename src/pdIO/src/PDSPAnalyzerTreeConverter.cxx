@@ -334,7 +334,7 @@ void PDSPAnalyzerTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& tr
   //                So the actual number of particles is half of the size of the vector
 
   // The daughter tracks
-  for(UInt_t i = 0; i < reco_daughter_allTrack_ID->size(); i++){
+  for(size_t i = 0; i < reco_daughter_allTrack_ID->size(); i++){
     AnaParticlePD* dautrk = MakeParticle();
     FillDaughterPFPInfo(i, dautrk);
     FillDaughterParticleTrackInfo(trueParticles, i, dautrk);
@@ -343,7 +343,7 @@ void PDSPAnalyzerTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& tr
   }
 
   // The daughter showers
-  for(UInt_t i = 0; i < reco_daughter_allShower_ID->size(); i++){
+  for(size_t i = 0; i < reco_daughter_allShower_ID->size(); i++){
     AnaParticlePD* dausho = MakeParticle();
     FillDaughterPFPInfo(i, dausho);
     FillDaughterParticleShowerInfo(trueParticles, i, dausho);
@@ -400,8 +400,8 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
   //TVector3 point;
   //point.SetXYZ(0,0,0);//no spatial information on the input tree
 
-  for(UInt_t plane = 2; plane < 3; plane++){   // only the collection plane 
-    for(UInt_t j = 0; j < (int)reco_beam_dEdX_SCE->size(); j++){
+  for(size_t plane = 2; plane < 3; plane++){   // only the collection plane 
+    for(size_t j = 0; j < reco_beam_dEdX_SCE->size(); j++){
       // Add hits
       AnaHitPD hit;//(plane,0,0,0, point);
 
@@ -550,9 +550,9 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
   part->AveragedEdx = 0;
   part->AveragedQdx = 0;
   Int_t ncontrib=0;
-  for(UInt_t plane = 2; plane < 3; plane++){   // only the last slice 
+  for(size_t plane = 2; plane < 3; plane++){   // only the last slice 
     UInt_t nHits = std::min((int)NMAXHITSPERPLANE,(int)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size());
-    for(UInt_t j = 0; j < nHits; j++){   
+    for(size_t j = 0; j < nHits; j++){   
       dedx = (*reco_daughter_allTrack_dEdX_SCE)[itrk][j];
       dqdx = (*reco_daughter_allTrack_dQdX_SCE)[itrk][j];
       dedx_cal = (*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk][j];
