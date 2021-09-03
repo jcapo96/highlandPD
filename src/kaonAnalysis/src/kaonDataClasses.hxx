@@ -1,5 +1,5 @@
-#ifndef kaonClasses_hxx
-#define kaonClasses_hxx
+#ifndef kaonDataClasses_hxx
+#define kaonDataClasses_hxx
 
 #include "pdDataClasses.hxx"
 #include "ParticleId.hxx"

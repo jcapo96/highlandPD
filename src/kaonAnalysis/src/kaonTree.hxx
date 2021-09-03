@@ -4,7 +4,7 @@
 #include "OutputManager.hxx"
 #include "baseAnalysis.hxx"
 #include "pdDataClasses.hxx"
-#include "kaonClasses.hxx"
+#include "kaonDataClasses.hxx"
 #include "standardPDTree.hxx"
 
 namespace kaonTree{

@@ -1,6 +1,6 @@
-#define kaonClasses_C
+#define kaonDataClasses_C
 
-#include "kaonClasses.hxx"
+#include "kaonDataClasses.hxx"
 
 const Double_t kDoubleUnassigned = -999.;
 const Int_t    kIntUnassigned = -999;

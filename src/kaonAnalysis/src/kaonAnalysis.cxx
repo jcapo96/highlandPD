@@ -23,7 +23,7 @@
 #include "kaonSelection.hxx"
 #include "kaonAnalysisUtils.hxx"
 #include "pdDataClasses.hxx"
-#include "kaonClasses.hxx"
+#include "kaonDataClasses.hxx"
 
 #include "HighlandMiniTreeConverter.hxx"
 #include "PDSPAnalyzerTreeConverter.hxx"
