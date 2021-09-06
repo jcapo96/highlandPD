@@ -149,6 +149,7 @@ public:
     kBeam,
     kTrackEff,
     kCNN,
+    kBrokenTrack,
     enumSystLast_pionAnalysis
   };
   

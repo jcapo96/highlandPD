@@ -21,6 +21,7 @@
 #include "RecombinationVariation.hxx"
 #include "TrackEffWeight.hxx"
 #include "CNNVariation.hxx"
+#include "BrokenTrackWeight.hxx"
 
 #include "pionSelection.hxx"
 #include "pionAnalysisUtils.hxx"
@@ -256,6 +257,7 @@ void pionAnalysis::DefineSystematics(){
   // Weight systematics                                                                                
   eweight().AddEventWeight(kBeam,         "beamComp",     new BeamCompositionWeight());
   eweight().AddEventWeight(kTrackEff,     "trackEff",     new TrackEffWeight());
+  eweight().AddEventWeight(kBrokenTrack,  "brokenTrack",  new BrokenTrackWeight());
 }
 
 //********************************************************************
@@ -285,6 +287,7 @@ void pionAnalysis::DefineConfigurations(){
       
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableBeamComposition")) conf().EnableEventWeight(   kBeam,         all_syst);
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableTrackEff"))        conf().EnableEventWeight(   kTrackEff,     all_syst);
+    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableBrokenTrack"))     conf().EnableEventWeight(   kBrokenTrack,  all_syst);
   }
 
   if (_enableSingleVariationSystConf){
