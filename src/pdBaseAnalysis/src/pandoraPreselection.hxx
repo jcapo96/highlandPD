@@ -44,14 +44,23 @@ class FindPandoraTrackAction: public StepBase{
 };
 
 class CandidateExistsCut: public StepBase{
- public:
+public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new CandidateExistsCut();}
 };
 
+class BeamQualityCut: public StepBase{
+public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamQualityCut();}
+  bool useIsBeamLike;
+  BeamQualityCut(){ useIsBeamLike = (bool)ND::params().GetParameterI("pdBaseAnalysis.UseIsBeamLike");}
+};
+
 class CandidateIsBeamCut: public StepBase{
- public:
+public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new CandidateIsBeamCut();}
