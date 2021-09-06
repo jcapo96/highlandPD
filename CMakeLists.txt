@@ -183,10 +183,10 @@ target_include_directories(kaonCreateMiniTree.exe PRIVATE ${HIGHLAND_INCLUDE_DIR
 target_link_libraries(kaonCreateMiniTree.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS kaonCreateMiniTree.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
-add_executable(CreateMiniTreePionAna.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunCreateMiniTree.cxx)
-target_include_directories(CreateMiniTreePionAna.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreePionAna.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS CreateMiniTreePionAna.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+add_executable(CreateMiniTreePD.exe ${CMAKE_SOURCE_DIR}/src/pdIO/app/RunCreateMiniTreePD.cxx)
+target_include_directories(CreateMiniTreePD.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMiniTreePD.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMiniTreePD.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(proton.exe ${CMAKE_SOURCE_DIR}/src/stoppingProtonAnalysis/app/RunStoppingProtonAnalysis.cxx)
 target_include_directories(proton.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
@@ -216,8 +216,8 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
-add_dependencies(dedx.exe CreateMiniTreePionAna.exe )
-add_dependencies(CreateMiniTreePionAna.exe proton.exe)
+add_dependencies(dedx.exe                  CreateMiniTreePD.exe )
+add_dependencies(CreateMiniTreePD.exe      proton.exe)
 add_dependencies(proton.exe                pion.exe)
 add_dependencies(pion.exe                  kaon.exe)
 add_dependencies(kaon.exe                  kaonCreateMiniTree.exe)
