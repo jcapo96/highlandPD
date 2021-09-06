@@ -122,9 +122,6 @@ Int_t pdBaseConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 
   entry++;
 
-  if (entry%10000==0 || entry == _nentries || (entry%1000==0 && entry<10000) )
-    std::cout << "entry: " << entry << " of " << _nentries << " (" << (100*entry/_nentries) << "%)" << std::endl;
-
   
   return entry_temp;
 }
