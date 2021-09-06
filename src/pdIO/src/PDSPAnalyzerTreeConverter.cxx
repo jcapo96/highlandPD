@@ -166,6 +166,9 @@ void PDSPAnalyzerTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& tru
   // TODO
   if(_isMC){
     beam->BeamParticle->TrueObject = pdAnaUtils::GetTrueParticle(trueParticles, true_beam_ID);
+
+    // TODO. PDGs are empty for MC. Use the true PDG    
+    beam->PDGs.push_back(true_beam_PDG);  
   }
 }
 
