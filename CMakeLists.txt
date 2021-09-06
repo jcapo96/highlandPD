@@ -198,6 +198,11 @@ target_include_directories(dedx.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandP
 target_link_libraries(dedx.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS dedx.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(pdExampleAnalysis.exe ${CMAKE_SOURCE_DIR}/src/pdExampleAnalysis/app/RunpdExampleAnalysis.cxx)
+target_include_directories(pdExampleAnalysis.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(pdExampleAnalysis.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS pdExampleAnalysis.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 
 #-------------------------------------------------------
 #------- custom targets --------------------------------
@@ -219,7 +224,8 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 add_dependencies(dedx.exe CreateMiniTreePionAna.exe )
 add_dependencies(CreateMiniTreePionAna.exe proton.exe)
 add_dependencies(proton.exe                pion.exe)
-add_dependencies(pion.exe                  kaon.exe)
+add_dependencies(pion.exe                  pdExampleAnalysis.exe)
+add_dependencies(pdExampleAnalysis.exe     kaon.exe)
 add_dependencies(kaon.exe                  kaonCreateMiniTree.exe)
 add_dependencies(kaonCreateMiniTree.exe    highlandPD)
 add_dependencies(highlandPD                ch_rootmap)
