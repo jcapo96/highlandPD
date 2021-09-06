@@ -4,7 +4,7 @@
 
 /*
   This is the dEdx calibration variation, applying different variations at the hit level 
-  (this avoid redoing the it loop in several places). Those has to be added as daughters 
+  (this avoid redoing the hit loop in several places). Those have to be added as daughters 
   of this variation in the analysis algorithm. Some options are:
   - Lifetime
   - dQdxCalib
