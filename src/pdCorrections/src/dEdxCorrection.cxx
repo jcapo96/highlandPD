@@ -5,7 +5,7 @@
 //#define DEBUG
 
 //********************************************************************
-dEdxCorrection::dEdxCorrection():BinnedParams(std::string(getenv("PIONANALYSISROOT"))+"/data","dEdx", BinnedParams::k1D_SYMMETRIC){
+dEdxCorrection::dEdxCorrection():BinnedParams(std::string(getenv("PDCORRECTIONSROOT"))+"/data","dEdx", BinnedParams::k1D_SYMMETRIC){
 //********************************************************************
 
 }
