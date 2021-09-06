@@ -29,7 +29,7 @@
 
 #include "pionTreeConverter.hxx"
 #include "hitPionTreeConverter.hxx"
-#include "highlandPDMiniTreeConverter.hxx"
+#include "pdMiniTreeConverter.hxx"
 #include "PDSPAnalyzerTreeConverter.hxx"
 //#include "LArSoftTreeConverter.hxx"
 
@@ -176,7 +176,7 @@ void pionAnalysis::DefineInputConverters(){
   
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",          new hitPionTreeConverter());
-  input().AddConverter("minitree",         new highlandPDMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("minitree",         new pdMiniTreeConverter());
   input().AddConverter("pduneana",         new PDSPAnalyzerTreeConverter());
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }
@@ -233,14 +233,13 @@ void pionAnalysis::DefineSystematics(){
      The EventVariationManager (access with evar()) and the EventWeightManager (access with eweight()).     
    */
   
-  // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
+  // Some systematics could be defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
-  //---- Define additional systematics (pionAnalysys/src/systematics) -----
+  //---- Define additional systematics (highlandPD/src/pdSystematics/src/) -----
   evar().AddEventVariation(kLength,       "Length",       new LengthVariation());
+  evar().AddEventVariation(kCNN,          "CNN",          new CNNVariation());
 
-  evar().AddEventVariation(kCNN,    "CNN",    new CNNVariation());
-  /*
   // dEdx hit level variations
   evar().AddEventVariation(kLifetime,     "Lifetime",     new LifetimeVariation());
   evar().AddEventVariation(kdQdxCalib,    "dQdxCalib",    new dQdxCalibVariation());
@@ -253,7 +252,6 @@ void pionAnalysis::DefineSystematics(){
   dEdxCalib->AddDaughter(evar().GetEventVariation(kRecombination));    
   evar().AddEventVariation(kdEdxCalib,    "dEdxCalib",    dEdxCalib);
 
-  */
   // Weight systematics                                                                                
   eweight().AddEventWeight(kBeam,         "beamComp",     new BeamCompositionWeight());
   eweight().AddEventWeight(kTrackEff,     "trackEff",     new TrackEffWeight());
