@@ -1,9 +1,9 @@
-#include "highlandPDMiniTreeConverter.hxx"
+#include "pdMiniTreeConverter.hxx"
 
 
 
 //*****************************************************************************
-Int_t highlandPDMiniTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
+Int_t pdMiniTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 //*****************************************************************************
 
   Int_t status = MiniTreeConverter::GetSpill(entry, spill);
