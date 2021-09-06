@@ -22,7 +22,7 @@ namespace standardPDTree{
 
   void AddStandardVariables_CandidateDaughtersReco(OutputManager& output, UInt_t nmax);
   void AddStandardVariables_CandidateDaughtersTrue(OutputManager& output, UInt_t nmax);
-  void AddStandardVariables_CandidateDaughtersHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane);
+  void AddStandardVariables_CandidateDaughtersHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
 
   // Methods to fill the standard sets of variables in the output tree
   void FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters);
