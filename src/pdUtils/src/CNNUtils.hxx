@@ -3,7 +3,7 @@
 
 
 #include "pdDataClasses.hxx"
-#include "CalorimetryAlg.hxx"
+#include "pdCalorimetryUtils.hxx"
 #include "tf_graph.hxx"
 #include "timeUtils.hxx"
 
@@ -142,7 +142,7 @@ private:
 
 
   
-  calo::CalorimetryAlg fCalorimetryAlg;
+  pdCalorimetryUtils fCalo;
 
 
 

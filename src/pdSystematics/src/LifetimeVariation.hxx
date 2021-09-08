@@ -3,7 +3,7 @@
 
 #include "HitVariationBase.hxx"
 #include "BinnedParams.hxx"
-#include "CalorimetryAlg.hxx"
+#include "pdCalorimetryUtils.hxx"
 
 class LifetimeVariation: public HitVariationBase, public BinnedParams{
 public:
@@ -21,7 +21,7 @@ public:
   bool UndoSystematic(const AnaHitPD& original_hit, AnaHitPD& hit);
   
 protected:
-  calo::CalorimetryAlg fCalo;  
+  pdCalorimetryUtils fCalo;  
 };
 
 #endif

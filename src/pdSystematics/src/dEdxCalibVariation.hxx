@@ -2,7 +2,7 @@
 #define dEdxCalibVariation_h
 
 #include "EventVariationBase.hxx"
-#include "CalorimetryAlg.hxx"
+#include "pdCalorimetryUtils.hxx"
 
 class dEdxCalibVariation: public EventVariationBase{
 public:
@@ -24,7 +24,7 @@ protected:
   bool IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& part) const;
 
   // needed to recompute dEdx
-  calo::CalorimetryAlg fCalo;
+  pdCalorimetryUtils fCalo;
 };
 
 #endif

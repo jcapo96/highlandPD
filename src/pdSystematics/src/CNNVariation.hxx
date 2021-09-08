@@ -3,7 +3,7 @@
 
 #include "EventVariationBase.hxx"
 #include "BinnedParams.hxx"
-#include "CalorimetryAlg.hxx"
+#include "pdCalorimetryUtils.hxx"
 
 class CNNVariation: public EventVariationBase, BinnedParams{
 public:
@@ -25,7 +25,7 @@ protected:
   bool IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& part) const;
 
   // needed to recompute dEdx
-  calo::CalorimetryAlg fCalo;
+  pdCalorimetryUtils fCalo;
 
   Float_t _cnnRecomputeCut;
   

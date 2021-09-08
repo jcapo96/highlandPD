@@ -5,7 +5,7 @@
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
 
-#include "CalorimetryAlg.hxx"
+#include "pdCalorimetryUtils.hxx"
 //#include "pdMVA.hxx"
 
 
@@ -79,7 +79,7 @@ public:
   Int_t seltrk_ndau;
   Int_t ntracks;  
 
-  calo::CalorimetryAlg fCalo;
+  pdCalorimetryUtils fCalo;
   
   // Enum with unique indexes for output tree variables
   enum enumStandardMicroTrees_dEdxStudies{

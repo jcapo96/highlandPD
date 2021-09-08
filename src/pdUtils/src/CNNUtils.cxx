@@ -136,7 +136,7 @@ CNNUtils::CNNUtils():
     std::cout << "Using calibration constants:" << std::endl;
     for (size_t p = 0; p < fAmplCalibConst.size(); ++p) {
       try {
-        fAmplCalibConst[p] = 1.2e-3 * fCalorimetryAlg.ElectronsFromADCPeak(1.0, p);
+        fAmplCalibConst[p] = 1.2e-3 * fCalo.ElectronsFromADCPeak(1.0, p);
         std::cout << "   plane:" << p << " const:" << 1.0 / fAmplCalibConst[p] << std::endl;
       }
       catch (...) {
@@ -577,7 +577,7 @@ void CNNUtils::resizeView(size_t wires,size_t drifts){
   if (fCalibrateLifetime) {
     result.fLifetimeCorrFactors.resize(drifts);
     for (size_t t = 0; t < drifts; ++t) {
-      result.fLifetimeCorrFactors[t] = fCalorimetryAlg.LifetimeCorrection(t);
+      result.fLifetimeCorrFactors[t] = fCalo.LifetimeCorrection(t);
     }
   }
   /*
