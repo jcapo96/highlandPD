@@ -9,6 +9,8 @@
 
 - remove obsolete converters
 
+- DO you need to add several MiniTreeConverters depending on the location of the MiniTree inside the root file ?
+
 - think about versioning. For example issue a tag everytime we give a presentation
 
 - dependencies of packages and impact on parameters files
