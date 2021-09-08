@@ -4,7 +4,7 @@
 #include "EventVariationBase.hxx"
 #include "pdDataClasses.hxx"
 
-/// This is the base class for systematics applied at the it level
+/// This is the base class for systematics applied at the hit level
 /// - Variation: modify some aspect of the input data. The selection needs to be redone 
 ///   in general. This is what we call Toy Experiments
 
