@@ -13,7 +13,6 @@
 #include "dEdxDataCorrection.hxx"
 #include "BrokenTrackDataCorrection.hxx"
 
-#include "LengthVariation.hxx"
 #include "BeamCompositionWeight.hxx"
 #include "LifetimeVariation.hxx"
 #include "dQdxCalibVariation.hxx"
@@ -237,7 +236,6 @@ void pionAnalysis::DefineSystematics(){
   baseAnalysis::DefineSystematics();
 
   //---- Define additional systematics (highlandPD/src/pdSystematics/src/) -----
-  evar().AddEventVariation(kLength,       "Length",       new LengthVariation());
   evar().AddEventVariation(kCNN,          "CNN",          new CNNVariation());
 
   // dEdx hit level variations
@@ -271,8 +269,6 @@ void pionAnalysis::DefineConfigurations(){
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if (_enableAllSystConfig){
-    if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLength"))           conf().EnableEventVariation(kLength,       all_syst);
-
     if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledEdxCalib")){
       if (ND::params().GetParameterI("pionAnalysis.Systematics.EnableLifetime"))         conf().EnableEventVariation(kLifetime,     all_syst);
       if (ND::params().GetParameterI("pionAnalysis.Systematics.EnabledQdxCalib"))        conf().EnableEventVariation(kdQdxCalib,    all_syst);

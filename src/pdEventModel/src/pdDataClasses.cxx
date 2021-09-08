@@ -474,7 +474,7 @@ AnaEventPD::AnaEventPD(const AnaEventPD& event):AnaEvent(event){
 AnaEventPD::AnaEventPD(const AnaSpillPD& spill, const AnaBunchPD& bunch):AnaEvent(spill,bunch) {
 //*****************************************************************************
 
-  CNNwires = bunch.CNNwires;
+  //CNNwires = bunch.CNNwires;
 }
 
 //********************************************************************
@@ -485,41 +485,4 @@ void AnaEventPD::Print() const{
 
   AnaEvent::Print();
   std::cout << "#wires:      " << CNNwires.size() << std::endl;
-}
-
-//********************************************************************
-AnaDetectorInfoPD::AnaDetectorInfoPD(){
-//********************************************************************
-
-  eLifeTime = kDoubleUnassigned;
-  ModBoxA   = kDoubleUnassigned;
-  ModBoxB   = kDoubleUnassigned;
-  
-}
-
-//********************************************************************
-AnaDetectorInfoPD::~AnaDetectorInfoPD(){
-//********************************************************************
-
-}
-
-//********************************************************************
-AnaDetectorInfoPD::AnaDetectorInfoPD(const AnaDetectorInfoPD& detinfo){
-//********************************************************************
-
-  eLifeTime = detinfo.eLifeTime;
-  ModBoxA   = detinfo.ModBoxA;
-  ModBoxB   = detinfo.ModBoxB;
-}
-
-//********************************************************************
-void AnaDetectorInfoPD::Print() const{
-//********************************************************************
-
-  std::cout << "-------- AnaDetectorInfoPD --------- " << std::endl;
-
-  std::cout << "e- lifetime:      " << eLifeTime << std::endl;
-  std::cout << "ModBoxA:          " << ModBoxA << std::endl;
-  std::cout << "ModBoxB:          " << ModBoxB << std::endl;
-  
 }

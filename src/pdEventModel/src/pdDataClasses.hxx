@@ -7,8 +7,6 @@
 const UInt_t NMAXHITSPERPLANE        = 300;
 const UInt_t NMAXHITSPERPLANE_SELTRK = 2500;
 
-//forward declarations
-class AnaDetectorInfoPD;
 
 class AnaWireID{
 public:
@@ -335,44 +333,9 @@ protected:
 
 public:
 
-  //AnaDetectorInfoPD* DetInfo;
-
 };
-
-
-/// Class to store relevant detector information for analysis and systematic calculations
-class AnaDetectorInfoPD{
-public :
-  
-  AnaDetectorInfoPD();
-  virtual ~AnaDetectorInfoPD();
-  
-  /// Clone this object.
-  virtual AnaDetectorInfoPD* Clone() {
-    return new AnaDetectorInfoPD(*this);
-  }
-  
-  /// Dump the object to screen.
-  virtual void Print() const;
-  
-protected:
-  
-  /// Copy constructor is protected, as Clone() should be used to copy this object.
-  AnaDetectorInfoPD(const AnaDetectorInfoPD& detinfo);
-  
-public:
-
-  double SamplingRate;
-  double T0;
-  double eLifeTime;
-  double ModBoxA;
-  double ModBoxB;
-
-};
-
 
 // Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN
-// and the AnaDetectorInfoPD 
 class AnaEventPD: public AnaEvent{
 public :
 
@@ -398,7 +361,6 @@ protected:
 public:
 
   std::vector<AnaWireCNN> CNNwires;
-  AnaDetectorInfoPD* DetInfo;
 };
 
 #endif
