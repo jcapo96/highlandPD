@@ -4,7 +4,6 @@
 #include "HighlandAnalysisUtils.hxx"
 #include "Parameters.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "CalorimetryAlg.hxx"
 
 /*
 
