@@ -2,7 +2,7 @@
 #define kaonAnalysis_h
 
 #include "baseAnalysis.hxx"
-#include "ToyBoxPD.hxx"
+#include "ToyBoxKaon.hxx"
 #include "standardPDTree.hxx"
 #include "kaonTree.hxx"
 #include "kaonAnalysisUtils.hxx"
@@ -77,13 +77,13 @@ class kaonAnalysis: public baseAnalysis {
   }
 
   
-  /// Returns the ToyBoxPD
-  virtual const ToyBoxPD& box(Int_t isel=-1) const {return *static_cast<const ToyBoxPD*>(&boxB(isel));}
+  /// Returns the ToyBoxKaon
+  virtual const ToyBoxKaon& box(Int_t isel=-1) const {return *static_cast<const ToyBoxKaon*>(&boxB(isel));}
 
-  /// Returns the vertex for the ToyBoxPD
+  /// Returns the vertex for the ToyBoxKaon
   virtual AnaVertexB* GetVertex() const{return box().Vertex;}
 
-  /// Returns the true vertex for the ToyBoxPD
+  /// Returns the true vertex for the ToyBoxKaon
   virtual AnaTrueVertexB* GetTrueVertex() const {return box().TrueVertex;}
 
   /// Method to add our own categories for color drawing

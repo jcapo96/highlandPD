@@ -38,7 +38,6 @@ void pionSelection::DefineSteps(){
   AddStep(StepBase::kCut,    "candidate is track",         new CandidateIsTrackCut());
   AddStep(StepBase::kCut,    "pion track end",             new PionEndsAPA3Cut());
   //AddStep(StepBase::kCut,    "seltrk chi2 cut",            new PionPassChi2Cut());
-  //  AddStep(StepBase::kAction, "compute daughter distance",  new ComputeDaughterDistanceAction());  
   AddStep(StepBase::kCut,    "no pion daughter",           new NoPionDaughterCut());
 
   //Add a split to the trunk with 2 branches.
@@ -119,21 +118,6 @@ bool PionPassChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   if(box.MainTrack->Chi2Proton/box.MainTrack->Chi2ndf > cut_chi2) return true;
   else return false;
-}
-
-//**************************************************
-bool ComputeDaughterDistanceAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  (void)event;
-  
-  // Cast the ToyBox to the appropriate type
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB); 
-    
-  //compute distance between daughters and vertex
-  pdAnaUtils::ComputeDistanceToVertex(box.MainTrack, box.DaughterDistanceToVertex);
-
-  return true;  
 }
 
 //**************************************************

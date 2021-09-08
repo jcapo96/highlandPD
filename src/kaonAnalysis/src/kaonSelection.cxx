@@ -103,7 +103,7 @@ bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
   
   // Cast the ToyBox to the appropriate type
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB); 
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB); 
     
   // Get the array of parts from the event
   AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
@@ -126,7 +126,7 @@ bool EventHasKaonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   // Main track must exist
   if (!box.MainTrack) return false;
@@ -143,7 +143,7 @@ bool MuonIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
@@ -163,7 +163,7 @@ bool MuonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
@@ -186,7 +186,7 @@ bool MuonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
@@ -204,7 +204,7 @@ bool MuonRangeMomCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
@@ -223,7 +223,7 @@ bool KaonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
@@ -240,7 +240,7 @@ bool KaonMuonAngleCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
@@ -261,7 +261,7 @@ bool KaonMuonDistanceCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
 
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();

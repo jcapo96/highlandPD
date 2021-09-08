@@ -14,8 +14,9 @@
 - dependencies of packages and impact on parameters files
 
 - Review ToyBoxPD
-  * DaughterDistanceToVertex not used anymore in pionSelection. To be removed from ToyBoxPD
-  * Move Candidates from ToyBoxPD to ToyBoxKaon
+  * DaughterDistanceToVertex not used anymore in pionSelection. To be removed from ToyBoxPD => removed
+  * Move Candidates from ToyBoxPD to ToyBoxKaon => moved
+  * ToyBoxPD has a method called Reset that does exactly the same as the ToyBoxB class. I have copied equally to ToyBoxPD. Is it needed?
 
 - Review EventBoxPD
 

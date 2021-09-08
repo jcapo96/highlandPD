@@ -4,7 +4,7 @@
 #include "kaonAnalysis.hxx"
 #include "SelectionBase.hxx"
 #include "Parameters.hxx"
-#include "ToyBoxPD.hxx"
+#include "ToyBoxKaon.hxx"
 #include "EventBoxPD.hxx"
 #include "EventBoxId.hxx"
 #include "SystId.hxx"
@@ -19,7 +19,7 @@ class kaonSelection: public SelectionBase{
   //---- These are mandatory functions
   void DefineSteps();
   void DefineDetectorFV(){SetDetectorFV(SubDetId::kSubdet1_1);} //dummy (not needed for this particular selection)
-  ToyBoxB* MakeToyBox(){return new ToyBoxPD();}
+  ToyBoxB* MakeToyBox(){return new ToyBoxKaon();}
   void InitializeEvent(AnaEventC&);
 
   // These ones are also mandatory, although only used in some cases. A dummy implementation is enough if many cases  

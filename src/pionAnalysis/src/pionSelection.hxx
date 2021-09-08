@@ -44,13 +44,6 @@ protected:
 };
 
 
-class ComputeDaughterDistanceAction: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new ComputeDaughterDistanceAction();}
-};
-
 class BeamPionCut: public StepBase{
  public:
   using StepBase::Apply;
