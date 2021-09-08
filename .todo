@@ -22,7 +22,9 @@
 
 - Review cut indices in the header file of the selections. They are not currently used
 
-- AnaDetectorInfoPD in pdDataClasses not used
+- AnaDetectorInfoPD in pdDataClasses not used => removed
+
+- Shall we clean up the pdDataClasses using forward declarations and explain a little bit about them so the user can understand the different relations?
 
 - Review pdSystematics
   * CNNVariation  
