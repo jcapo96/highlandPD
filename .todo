@@ -10,3 +10,25 @@
 - remove obsolete converters
 
 - think about versioning. For example issue a tag everytime we give a presentation
+
+- dependencies of packages and impact on parameters files
+
+- Review ToyBoxPD
+  * DaughterDistanceToVertex not used anymore in pionSelection. To be removed from ToyBoxPD
+  * Move Candidates from ToyBoxPD to ToyBoxKaon
+
+- Review EventBoxPD
+
+- Review cut indices in the header file of the selections. They are not currently used
+
+- AnaDetectorInfoPD in pdDataClasses not used
+
+- Review pdSystematics
+  * CNNVariation  
+  * HitVariation
+  * LengthVariation
+
+- Review pdCorrections
+  * BeamMomSmearingCorrection: seedValue
+  * dEdxCorrection: obsolete ?
+  * dEdxDataCorrection: obsolete ?
