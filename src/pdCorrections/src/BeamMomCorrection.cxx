@@ -20,23 +20,21 @@ void BeamMomCorrection::Apply(AnaSpillC& spillC){
   if (spill.GetIsMC())
     return;
 
-  // Get particle beam
+  // Get beam particle
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(spill.Beam);
-  AnaParticle* part = static_cast<AnaParticle*>(beam->BeamParticle);
-  if (!part)                        return; //?
+  AnaParticle* beamPart = static_cast<AnaParticle*>(beam->BeamParticle);
+  if (!beamPart) return;
     
   // The un-corrected particle
-  const AnaParticle* original = static_cast<const AnaParticle*>(part->Original);
- 
-  if (!original)                    return; //?
+  const AnaParticle* original = static_cast<const AnaParticle*>(beamPart->Original); 
+  if (!original) return; 
   
   float corr = 1.041883726;
       
-  part->Momentum = original->Momentum * corr;
+  beamPart->Momentum = original->Momentum * corr;
   beam->BeamMomentum = beam->BeamMomentum * corr;
   
-  //  std::cout << "old momentum " << original->Momentum << " || new momentum " << part->Momentum << std::endl;
-
+  //  std::cout << "old momentum " << original->Momentum << " || new momentum " << beamPart->Momentum << std::endl;
 }
 
 

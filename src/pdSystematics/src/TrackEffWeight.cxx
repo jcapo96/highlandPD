@@ -48,7 +48,8 @@ bool TrackEffWeight::IsRelevantTrueObject(const AnaEventC& event, const AnaTrueO
   (void)event;
   
   const AnaTrueParticleB& truePart = *static_cast<const AnaTrueParticleB*>(&trueObj);
-  
+
+  // consider only charged true particles with momenta below 0.4 (as an example)
   if(truePart.Charge==0) return false;
   if(truePart.Momentum<0.4) return false;
     

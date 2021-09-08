@@ -27,14 +27,14 @@ void BeamMomSmearingCorrection::Apply(AnaSpillC& spillC){
   // Get beam
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(spill.Beam);
 
-  // Get particle
-  AnaParticle* part = static_cast<AnaParticle*>(beam->BeamParticle);
-  if (!part)                        return; //?
+  // Get beam particle
+  AnaParticle* beamPart = static_cast<AnaParticle*>(beam->BeamParticle);
+  if (!beamPart)                        return; //?
     
   float smearing = 0.04;
       
-  part->Momentum = static_cast<AnaTrueParticle*>(part->TrueObject)->Momentum + _random.Gaus(0,smearing);
-  beam->BeamMomentum = part->Momentum;
+  beamPart->Momentum = static_cast<AnaTrueParticle*>(beamPart->TrueObject)->Momentum + _random.Gaus(0,smearing);
+  beam->BeamMomentum = beamPart->Momentum;
   
   //std::cout << "old momentum " << static_cast<AnaTrueParticle*>(part->TrueObject)->Momentum << " || new momentum " << beam->BeamMomentum << std::endl;
 

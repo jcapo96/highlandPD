@@ -121,9 +121,9 @@ void pdExampleAnalysis::DefineInputConverters(){
      which define the allowed input file formats.
   */
   
-  input().AddConverter("minitree",         new HighlandMiniTreeConverter("highlandana/MiniTree"));
-  input().AddConverter("pduneana",         new PDSPAnalyzerTreeConverter());
- 
+
+  input().AddConverter("pduneana",         new PDSPAnalyzerTreeConverter()); 
+
 }
 
 //********************************************************************
@@ -202,7 +202,7 @@ void pdExampleAnalysis::DefineMicroTrees(bool addBase){
       There is always a Micro-Tree call "ana" which should contain the basic info to understand our selection. 
       The user can add extra Micro-Trees by adding configurations to the analysis (see DefineConfigurations method above).
 
-      Here we give an example of different variables that can be added. Have a look at highlandTools/src/OutputManager.hxx
+      Here we give an example of different variables that can be added. Have a look at highland/src/highland2/highlandTools/src/OutputManager.hxx
       to see all available methods.
   */
 
@@ -232,7 +232,7 @@ void pdExampleAnalysis::DefineMicroTrees(bool addBase){
   standardPDTree::AddStandardVariables_AllParticlesTrue(output(),pdExampleAnalysisConstants::NMAXSAVEDPARTICLES);
 
   // Add additional variables manually, (should have been defined in pdExampleAnalysis.hxx)
-  // Have a look at highlandTools/src/OutputManager.hxx to see all available methods.
+  // Have a look at highland/src/highland2/highlandTools/src/OutputManager.hxx to see all available methods.
   AddVarF(output(), seltrk_csdarange_prot, "CSDA range proton hypothesis from beam momentum");
 
   // set counters for vector/matrix arrays
@@ -262,7 +262,7 @@ void pdExampleAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
 
   /*  In this method we fill all toy-independent variables (all except the ones added with AddToy...) defined in the method DefineMicroTrees.
-      This method is called once all toys has been run, what means that the value of all variables for the last toy will be saved. 
+      This method is called once all toys have been run, what means that the value of all variables for the last toy will be saved. 
       This is not a problem for variables that are not expected to change from a toy to another.
   */
 

@@ -28,7 +28,7 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
   // retrieve the end position in Z
   Float_t endpos_z = box.MainTrack->PositionEnd[2];
 
-  // noting to do for tracks in first APA
+  // nothing to do for tracks in first APA upstream of the conflictive region
   if (endpos_z < 222) return eventWeight;
 
   // fraction of tracks above 222 which end in the 222-234 region

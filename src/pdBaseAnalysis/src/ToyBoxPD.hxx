@@ -5,7 +5,7 @@
 #include "pdDataClasses.hxx"
 
 
-/* This is the container used to pass information from one step to another in the selection. In inherits from the base class in highland/src/psyche/psycheCore. 
+/* This is the container used to pass information from one step to another in the selection. It inherits from the base class in highland/src/psyche/psycheCore. 
 */
 
 
