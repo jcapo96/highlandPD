@@ -113,7 +113,7 @@ bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   for(int i = 0; i < nParts; i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     if(part->isPandora)continue; //skip beam particle
-    if(part->Daughters.size() == 1)box.Candidates.push_back(part);
+    if(part->Daughters.size() == 1 && part->ParentID != -1)box.Candidates.push_back(part);
   }
   
   return true;  

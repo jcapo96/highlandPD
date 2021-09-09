@@ -138,8 +138,6 @@ bool kaonCreateMiniTree::RecoCandidateExists(){
   }
   
   return itExists;
-
-
 }
 
 //********************************************************************
@@ -150,7 +148,7 @@ bool kaonCreateMiniTree::TruthCandidateExists(){
   //loop over true particles
   for(size_t i = 1; i < _spill->TrueParticles.size(); i++){ //skip first particle because it is the primary
     AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(_spill->TrueParticles[i]);
-    if(truePart->PDG==321 || truePart->Origin==4){
+    if(truePart->PDG==321 && truePart->Origin==4){
       itExists = true;
       break;
     }

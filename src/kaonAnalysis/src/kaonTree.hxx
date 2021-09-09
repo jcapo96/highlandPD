@@ -27,7 +27,9 @@ namespace kaonTree{
   void AddKaonVariables_KaonBestCandidateReco(OutputManager& output);
   void AddKaonVariables_KaonBestCandidateHitsReco(OutputManager& output, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void AddKaonVariables_KaonBestCandidateTrue(OutputManager& output);
-  
+
+  void AddKaonVariables_CosmicsReco(OutputManager& output, UInt_t nmax);
+  void AddKaonVariables_CosmicsTrue(OutputManager& output, UInt_t nmax);
 
   // Methods to fill the kaonAnalysis sets of variables in the output tree
   void FillKaonVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* dau);
@@ -41,13 +43,16 @@ namespace kaonTree{
   //void FillKaonVariables_TrueKaonCandidates(OutputManager& output, AnaTrueParticlePD* truePart);
   void FillKaonVariables_TrueKaonCandidates(OutputManager& output, const kaonAnaTrueVertex& kvtx);
 
-  void FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaParticlePD* part);
+  void FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
   void FillKaonVariables_KaonCandidatesHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void FillKaonVariables_KaonCandidatesTrue(OutputManager& output, AnaParticlePD* part);
 
-  void FillKaonVariables_KaonBestCandidateReco(OutputManager& output, AnaParticlePD* part);
+  void FillKaonVariables_KaonBestCandidateReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
   void FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part);
+
+  void FillKaonVariables_CosmicsReco(OutputManager& output, AnaParticlePD* part);
+  void FillKaonVariables_CosmicsTrue(OutputManager& output, AnaParticlePD* part);
 
   // Enum with unique indexes for output tree variables  
   enum enumKaonMicroTrees{
@@ -160,7 +165,7 @@ namespace kaonTree{
     truekaon_truemuon_truepur,
 
     //kaon candidates info
-    candidates,
+    ncandidates,
     candidates_generation,
     candidates_ndau,
     candidates_pos,
@@ -175,6 +180,7 @@ namespace kaonTree{
     candidates_chi2_prot,
     candidates_chi2_muon,
     candidates_chi2_ndf,
+    candidates_distance_mother,
     candidates_distance_dau,
     candidates_cos_dau,
     candidates_averagedEdx,
@@ -194,6 +200,7 @@ namespace kaonTree{
     candidates_truendau,
     candidates_truegeneration,
     candidates_truepdg,
+    candidates_trueorigin,
     candidates_truepos,
     candidates_trueendpos,
     candidates_trueproc,
@@ -255,6 +262,7 @@ namespace kaonTree{
     bestcandidate_chi2_prot,
     bestcandidate_chi2_muon,
     bestcandidate_chi2_ndf,
+    bestcandidate_distance_mother,
     bestcandidate_distance_dau,
     bestcandidate_cos_dau,
     bestcandidate_averagedEdx,
@@ -317,6 +325,37 @@ namespace kaonTree{
     bestcandidate_dau_trueendproc,
     bestcandidate_dau_truemom,
     bestcandidate_dau_trueendmom,
+
+    //cosmic info
+    ncosmics,
+    cosmics_generation,
+    cosmics_ndau,
+    cosmics_pos,
+    cosmics_dir,
+    cosmics_endpos,
+    cosmics_enddir,
+    cosmics_length,
+    cosmics_mom_muon,
+    cosmics_mom_prot,
+    cosmics_type,
+    cosmics_CNNscore,
+    cosmics_chi2_prot,
+    cosmics_chi2_muon,
+    cosmics_chi2_ndf,
+    cosmics_averagedEdx,
+    cosmics_nhits,
+
+    //cosmics true info
+    cosmics_truendau,
+    cosmics_truegeneration,
+    cosmics_truepdg,
+    cosmics_trueorigin,
+    cosmics_truepos,
+    cosmics_trueendpos,
+    cosmics_trueproc,
+    cosmics_trueendproc,
+    cosmics_truemom,
+    cosmics_trueendmom,
 
     enumKaonMicroTreesLast
   };

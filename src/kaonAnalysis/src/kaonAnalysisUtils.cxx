@@ -67,7 +67,7 @@ void kaonAnaUtils::AddCustomCategories(){
 				      NPART_gdkaon, part_types_gdkaon, part_codes_gdkaon, part_colors_gdkaon,
 				      2, -100, kaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
 
-  anaUtils::_categ->AddObjectCategory("candidatedaumuon", kaonTree::candidates, "candidates", 
+  anaUtils::_categ->AddObjectCategory("candidatedaumuon", kaonTree::ncandidates, "ncandidates", 
 				      NPART_gdkaon, part_types_gdkaon, part_codes_gdkaon, part_colors_gdkaon,
 				      1, -100);
 

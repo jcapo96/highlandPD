@@ -32,9 +32,6 @@ class kaonSelection: public SelectionBase{
 
 protected:
 
-  // TODO. Not used
-  Int_t _KaonRangeCutIndex;
-  Int_t _KaonRangeStepIndex;
 };
 
 class BeamFilterCut: public StepBase{
