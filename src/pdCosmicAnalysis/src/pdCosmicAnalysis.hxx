@@ -1,5 +1,5 @@
-#ifndef kaonCosmicAnalysis_h
-#define kaonCosmicAnalysis_h
+#ifndef pdCosmicAnalysis_h
+#define pdCosmicAnalysis_h
 
 #include "baseAnalysis.hxx"
 #include "ToyBoxKaon.hxx"
@@ -20,17 +20,17 @@
  */
 
 
-namespace kaonCosmicAnalysisConstants{
+namespace pdCosmicAnalysisConstants{
 
   const UInt_t NMAXSAVEDCOSMICS        = 50;
   const UInt_t NMAXSAVEDTRUECANDIDATES = 10;
   const UInt_t NMAXSAVEDCANDIDATES     = 10;
 }
 
-class kaonCosmicAnalysis: public baseAnalysis {
+class pdCosmicAnalysis: public baseAnalysis {
  public:
-  kaonCosmicAnalysis(AnalysisAlgorithm* ana=NULL);
-  virtual ~kaonCosmicAnalysis(){}
+  pdCosmicAnalysis(AnalysisAlgorithm* ana=NULL);
+  virtual ~pdCosmicAnalysis(){}
 
   //---- These are mandatory functions
   void DefineSelections();
@@ -88,7 +88,7 @@ private:
 
 public:
 
-  enum enumConf_kaonCosmicAnalysis{
+  enum enumConf_pdCosmicAnalysis{
     detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
     dedx_syst,
     Lifetime_syst,
@@ -96,10 +96,10 @@ public:
     Recombination_syst,
     dEdxCalib_syst,
     TrackEff_syst,
-    enumConfLast_kaonCosmicAnalysis
+    enumConfLast_pdCosmicAnalysis
   };
 
-  enum enumSyst_kaonCosmicAnalysis{
+  enum enumSyst_pdCosmicAnalysis{
     kLength=0,
     kLifetime,
     kdQdxCalib,
@@ -107,7 +107,7 @@ public:
     kdEdxCalib,
     kBeam,
     kTrackEff,
-    enumSystLast_kaonCosmicAnalysis
+    enumSystLast_pdCosmicAnalysis
   };  
 };
 
