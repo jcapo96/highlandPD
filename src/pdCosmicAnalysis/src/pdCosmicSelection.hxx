@@ -1,7 +1,6 @@
-#ifndef kaonCosmicSelection_h
-#define kaonCosmicSelection_h
+#ifndef pdCosmicSelection_h
+#define pdCosmicSelection_h
 
-#include "kaonAnalysis.hxx"
 #include "SelectionBase.hxx"
 #include "Parameters.hxx"
 #include "ToyBoxKaon.hxx"
@@ -11,10 +10,10 @@
 #include "SubDetId.hxx"
 
 
-class kaonCosmicSelection: public SelectionBase{
+class pdCosmicSelection: public SelectionBase{
  public:
-  kaonCosmicSelection(bool forceBreak=true);
-  virtual ~kaonCosmicSelection(){}
+  pdCosmicSelection(bool forceBreak=true);
+  virtual ~pdCosmicSelection(){}
 
   //---- These are mandatory functions
   void DefineSteps();

@@ -1,4 +1,4 @@
-#include "kaonCosmicAnalysis.hxx"
+#include "pdCosmicAnalysis.hxx"
 #include "Parameters.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
@@ -19,10 +19,8 @@
 #include "RecombinationVariation.hxx"
 #include "TrackEffWeight.hxx"
 
-#include "kaonCosmicSelection.hxx"
-#include "kaonAnalysisUtils.hxx"
+#include "pdCosmicSelection.hxx"
 #include "pdDataClasses.hxx"
-#include "kaonDataClasses.hxx"
 
 #include "HighlandMiniTreeConverter.hxx"
 #include "PDSPAnalyzerTreeConverter.hxx"
@@ -31,7 +29,7 @@
   A highland Analysis inherits in ultimate instance from AnalysisAlgorithm. 
   In this particular case an intermediate class baseAnalysis is used, 
   which does all the work that is common for ProtoDUNE analysis 
-  Then kaonCosmicAnalysis inherits from baseAnalysis, which inherits from AnalysisAlgorithm.
+  Then pdCosmicAnalysis inherits from baseAnalysis, which inherits from AnalysisAlgorithm.
   
   The class that does the loops (over events, over toys, etc) is AnalysisLoop (under highland/src/highland/highlandTools/src). 
   There you can see the analysis flow, which is as follows
@@ -98,15 +96,15 @@
 
 
 //********************************************************************
-kaonCosmicAnalysis::kaonCosmicAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
+pdCosmicAnalysis::pdCosmicAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version (not yet properly done)
-  //  ND::versioning().AddPackage("kaonCosmicAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("KAONANALYSISROOT")));
+  //  ND::versioning().AddPackage("pdCosmicAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PDANALYSISROOT")));
 }
 
 //********************************************************************
-bool kaonCosmicAnalysis::Initialize(){
+bool pdCosmicAnalysis::Initialize(){
 //********************************************************************
 
   /* In this method we Initialize everything that requires access to parameters in the parameters file. 
@@ -118,7 +116,7 @@ bool kaonCosmicAnalysis::Initialize(){
   if(!baseAnalysis::Initialize()) return false;
 
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
-  SetMinAccumCutLevelToSave(ND::params().GetParameterI("kaonCosmicAnalysis.MinAccumLevelToSave"));
+  SetMinAccumCutLevelToSave(ND::params().GetParameterI("pdCosmicAnalysis.MinAccumLevelToSave"));
 
   // Define standard categories for color drawing
   anaUtils::AddStandardObjectCategories("cosmic",kaonTree::ncosmics,"ncosmics",1);  // This is for all the cosmics
@@ -131,7 +129,7 @@ bool kaonCosmicAnalysis::Initialize(){
 }
 
 //********************************************************************
-bool kaonCosmicAnalysis::InitializeSpill(){
+bool pdCosmicAnalysis::InitializeSpill(){
 //********************************************************************
   
   /*this method is not mandatory, but filling the truth tree requires at least to have a true vertex
@@ -169,7 +167,7 @@ bool kaonCosmicAnalysis::InitializeSpill(){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::DefineInputConverters(){
+void pdCosmicAnalysis::DefineInputConverters(){
 //********************************************************************
 
   /*  InputConverters are the objects that read the input file (any format) and fill the internal highland event model.
@@ -183,7 +181,7 @@ void kaonCosmicAnalysis::DefineInputConverters(){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::DefineSelections(){
+void pdCosmicAnalysis::DefineSelections(){
 //********************************************************************
 
   /* In this method the user will add to the SelectionManager (accessed by  sel() ) the selections to be run, 
@@ -201,11 +199,11 @@ void kaonCosmicAnalysis::DefineSelections(){
   // - Pointer to the selection. The argument in the constructor (false) indicates the 
   //   step sequence is not broken when a cut is not passed. In this way we can save intermediate information for events 
   //   not passing the entire selection
-  sel().AddSelection("kaonCosmicSelection", "kaon cosmic selection", new kaonCosmicSelection(false));     // true/false for forcing break  
+  sel().AddSelection("pdCosmicSelection", "pd cosmic selection", new pdCosmicSelection(false));     // true/false for forcing break  
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::DefineCorrections(){
+void pdCosmicAnalysis::DefineCorrections(){
 //********************************************************************
 
   /* Corrections modify some aspect of the input data (real data or MC). 
@@ -220,7 +218,7 @@ void kaonCosmicAnalysis::DefineCorrections(){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::DefineSystematics(){
+void pdCosmicAnalysis::DefineSystematics(){
 //********************************************************************
 
   /* There are two types of systematic propagation methods: variations and weights, which are added to two different managers 
@@ -232,7 +230,7 @@ void kaonCosmicAnalysis::DefineSystematics(){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::DefineConfigurations(){
+void pdCosmicAnalysis::DefineConfigurations(){
 //********************************************************************
 
   /*  A "configuration" is defined by the systematics that are enabled, the number of toys being run and the random seed 
@@ -244,12 +242,12 @@ void kaonCosmicAnalysis::DefineConfigurations(){
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if(_enableAllSystConfig){
-    if(ND::params().GetParameterI("kaonCosmicAnalysis.Systematics.EnabledBeamComposition"))conf().EnableEventWeight(kBeam,all_syst);
+    if(ND::params().GetParameterI("pdCosmicAnalysis.Systematics.EnabledBeamComposition"))conf().EnableEventWeight(kBeam,all_syst);
   }
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::DefineMicroTrees(bool addBase){
+void pdCosmicAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
 
   /*  We call Micro-trees to the standard analysis trees appearing in the output file. 
@@ -266,17 +264,17 @@ void kaonCosmicAnalysis::DefineMicroTrees(bool addBase){
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  kaonTree::AddKaonVariables_CosmicsReco(output(),kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
-  kaonTree::AddKaonVariables_CosmicsTrue(output(),kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
+  kaonTree::AddKaonVariables_CosmicsReco(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
+  kaonTree::AddKaonVariables_CosmicsTrue(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
 
   // -------- Add candidates variables ----------------------
-  kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
-  kaonTree::AddKaonVariables_KaonCandidatesHitsReco(output(),kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
-  kaonTree::AddKaonVariables_KaonCandidatesTrue    (output(),kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesHitsReco(output(),pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesTrue    (output(),pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::DefineTruthTree(){
+void pdCosmicAnalysis::DefineTruthTree(){
 //********************************************************************
 
   /*  The "truth" tree also appears in the output file. It contains all events in which we are interested in regardless on whether 
@@ -287,11 +285,11 @@ void kaonCosmicAnalysis::DefineTruthTree(){
   baseAnalysis::DefineTruthTree();
 
   // Add specific variables for the kaon candidates
-  kaonTree::AddKaonVariables_TrueKaonCandidates(output(), kaonCosmicAnalysisConstants::NMAXSAVEDTRUECANDIDATES);
+  kaonTree::AddKaonVariables_TrueKaonCandidates(output(), pdCosmicAnalysisConstants::NMAXSAVEDTRUECANDIDATES);
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::InitializeBunch(){
+void pdCosmicAnalysis::InitializeBunch(){
 //********************************************************************
 
   /* In ProtoDUNE a beam Bunch corresponds to a single event. At the beginning of the event the counters are computed
@@ -299,7 +297,7 @@ void kaonCosmicAnalysis::InitializeBunch(){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::FillMicroTrees(bool addBase){
+void pdCosmicAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
   
   /*  In this method we fill all toy-independent variables (all except the ones added with AddToy...) defined in the method DefineMicroTrees. 
@@ -316,7 +314,7 @@ void kaonCosmicAnalysis::FillMicroTrees(bool addBase){
   Int_t nparts   = 0;
   Int_t ncosmics = 0;
   
-  while(ncosmics < (Int_t)kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
+  while(ncosmics < (Int_t)pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[nparts]);
     if(part->ParentID==-1){
       kaonTree::FillKaonVariables_CosmicsReco(output(), part);
@@ -329,7 +327,7 @@ void kaonCosmicAnalysis::FillMicroTrees(bool addBase){
 
   // ---------- kaon candidates variables --------------
   if(box().Candidates.size()>0){
-    for(int i = 0; i < std::min((int)box().Candidates.size(),(int)kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES); i++){
+    for(int i = 0; i < std::min((int)box().Candidates.size(),(int)pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES); i++){
       AnaParticlePD* parent = static_cast<AnaParticlePD*>(anaUtils::GetParticleByID(GetBunch(), box().Candidates[i]->ParentID));
       kaonTree::FillKaonVariables_KaonCandidatesReco    (output(), box().Candidates[i], parent);
       kaonTree::FillKaonVariables_KaonCandidatesHitsReco(output(), box().Candidates[i]);
@@ -340,7 +338,7 @@ void kaonCosmicAnalysis::FillMicroTrees(bool addBase){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::FillToyVarsInMicroTrees(bool addBase){
+void pdCosmicAnalysis::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
 
   /*  In this method we fill all toy-dependent variables (the ones added with AddToy...) defined in the method DefineMicroTrees. 
@@ -360,7 +358,7 @@ void kaonCosmicAnalysis::FillToyVarsInMicroTrees(bool addBase){
 }
 
 //********************************************************************
-bool kaonCosmicAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
+bool pdCosmicAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
   /* To avoid unecessary events in the "truth" tree in this method we define the condition to include or not a given 
@@ -374,7 +372,7 @@ bool kaonCosmicAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
+void pdCosmicAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
   // Fill the common variables (highland/src/highland2/baseAnalysis)
@@ -386,7 +384,7 @@ void kaonCosmicAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::FillCategories(){
+void pdCosmicAnalysis::FillCategories(){
 //********************************************************************
 
   /* This method fills the micro-tree variables related with event/object categories for color drawing. 
@@ -409,7 +407,7 @@ void kaonCosmicAnalysis::FillCategories(){
   Int_t nparts   = 0;
   Int_t ncosmics = 0;
   
-  while(ncosmics < (Int_t)kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
+  while(ncosmics < (Int_t)pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[nparts]);
     if(part->ParentID == -1){
       anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(part), "cosmic", 1);
@@ -420,7 +418,7 @@ void kaonCosmicAnalysis::FillCategories(){
 }
 
 //********************************************************************
-void kaonCosmicAnalysis::FinalizeSpill(){
+void pdCosmicAnalysis::FinalizeSpill(){
 //********************************************************************
   
   /*this method is not mandatory, but filling the truth tree requires at least to have a true vertex in the spill.

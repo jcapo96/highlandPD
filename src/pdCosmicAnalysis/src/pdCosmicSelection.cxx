@@ -1,5 +1,4 @@
-#include "kaonCosmicSelection.hxx"
-#include "kaonCosmicAnalysis.hxx"
+#include "pdCosmicSelection.hxx"
 #include "kaonSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
@@ -16,13 +15,13 @@
 
 
 //********************************************************************
-kaonCosmicSelection::kaonCosmicSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
+pdCosmicSelection::pdCosmicSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
 //********************************************************************
 
 }
 
 //********************************************************************
-void kaonCosmicSelection::DefineSteps(){
+void pdCosmicSelection::DefineSteps(){
 //********************************************************************
 
   // Steps must be added in the right order
@@ -31,26 +30,10 @@ void kaonCosmicSelection::DefineSteps(){
 
   //secondary kaon selection
   AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsAction()                  );
-  AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonFromCosmicCut(),  true);
+  //  AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonFromCosmicCut(),  true);
   //split the selection in branches, one for each possible candidate
-  AddSplit(kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
-  //next cuts have to be applied to each branch
-  for(int i = 0; i < (int)kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
-    AddStep(i, StepBase::kCut, "kaon daughter is a track",   new MuonIsTrackCut(),             true);
-    AddStep(i, StepBase::kCut, "kaon daughter chi2 cut",     new MuonChi2Cut(),                true);
-    AddStep(i, StepBase::kCut, "kaon daughter CNN cut",      new MuonCNNCut(),                 true);
-    AddStep(i, StepBase::kCut, "kaon daughter mom cut",      new MuonRangeMomCut(),            true);
-    AddStep(i, StepBase::kCut, "kaon CNN cut",               new KaonCNNCut(),                 true);
-    AddStep(i, StepBase::kCut, "kaon-muon angle cut",        new KaonMuonAngleCut(),           true);
-    AddStep(i, StepBase::kCut, "kaon-muon distance cut",     new KaonMuonDistanceCut(),        true);
-  }
+  SetBranchAlias(0,"cosmic",0);
 
-  //Set the branch aliases to the different branches 
-  for(int i = 0; i < (int)kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
-    std::stringstream ssi;
-    ssi << i;
-    SetBranchAlias(i,("possible candidate "+ssi.str()+"").c_str(),i);
-  }  
 
   // This number tells the selection to stop when a given accum level (accumulated cut level) is not passed. 
   // For example, 2 as argument would mean that selection is stopped for the current toy experiment when the 
@@ -60,21 +43,7 @@ void kaonCosmicSelection::DefineSteps(){
 }
 
 //**************************************************
-bool EventHasKaonFromCosmicCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-  
-  (void)event;
-
-  //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
-
-  //if the main track has at least a single daughter with a single daughter, pass
-  if (box.Candidates.size()>0) return true;
-  else return false;
-}
-
-//**************************************************
-void kaonCosmicSelection::InitializeEvent(AnaEventC& eventC){
+void pdCosmicSelection::InitializeEvent(AnaEventC& eventC){
 //**************************************************
 
   AnaEventB& event = *static_cast<AnaEventB*>(&eventC); 
