@@ -6,7 +6,7 @@
 
 const UInt_t NMAXHITSPERPLANE        = 300;
 const UInt_t NMAXHITSPERPLANE_SELTRK = 2500;
-
+const UInt_t NMAXCOSMICS             = 50;
 
 class AnaWireID{
 public:

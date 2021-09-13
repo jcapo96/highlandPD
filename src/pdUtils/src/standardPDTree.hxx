@@ -24,6 +24,9 @@ namespace standardPDTree{
   void AddStandardVariables_CandidateDaughtersTrue(OutputManager& output, UInt_t nmax);
   void AddStandardVariables_CandidateDaughtersHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
 
+  void AddStandardVariables_CosmicsReco(OutputManager& output, UInt_t nmax = NMAXCOSMICS);
+  void AddStandardVariables_CosmicsTrue(OutputManager& output, UInt_t nmax = NMAXCOSMICS);
+
   // Methods to fill the standard sets of variables in the output tree
   void FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters);
   
@@ -40,6 +43,9 @@ namespace standardPDTree{
   void FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticlePD* part);
   void FillStandardVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* part);  
   void FillStandardVariables_CandidateDaughterHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxsavedhits);
+
+  void FillStandardVariables_CosmicsReco(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_CosmicsTrue(OutputManager& output, AnaParticlePD* part);
 
   // Enum with unique indexes for output tree variables  
   enum enumStandardMicroTrees_standardPDTree{
@@ -183,6 +189,37 @@ namespace standardPDTree{
     beam_ckov_pressure,
     beam_npdgs,
     beam_pdgs,
+
+    //cosmic info
+    ncosmics,
+    cosmics_generation,
+    cosmics_ndau,
+    cosmics_pos,
+    cosmics_dir,
+    cosmics_endpos,
+    cosmics_enddir,
+    cosmics_length,
+    cosmics_mom_muon,
+    cosmics_mom_prot,
+    cosmics_type,
+    cosmics_CNNscore,
+    cosmics_chi2_prot,
+    cosmics_chi2_muon,
+    cosmics_chi2_ndf,
+    cosmics_averagedEdx,
+    cosmics_nhits,
+
+    //cosmics true info
+    cosmics_truendau,
+    cosmics_truegeneration,
+    cosmics_truepdg,
+    cosmics_trueorigin,
+    cosmics_truepos,
+    cosmics_trueendpos,
+    cosmics_trueproc,
+    cosmics_trueendproc,
+    cosmics_truemom,
+    cosmics_trueendmom,
     
     // global counters
     truebeamdau_npi0,
