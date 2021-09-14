@@ -3,21 +3,7 @@
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "baseToyMaker.hxx"
 
-#include "dEdxCorrection.hxx"
-#include "BeamMomCorrection.hxx"
-#include "BeamMomSmearingCorrection.hxx"
-#include "CryoWallBeamMomCorrection.hxx"
-#include "dEdxDataCorrection.hxx"
-#include "BrokenTrackDataCorrection.hxx"
-
-#include "BeamCompositionWeight.hxx"
-#include "LifetimeVariation.hxx"
-#include "dQdxCalibVariation.hxx"
-#include "dEdxCalibVariation.hxx"
-#include "RecombinationVariation.hxx"
-#include "TrackEffWeight.hxx"
 
 #include "pdCosmicSelection.hxx"
 #include "pdDataClasses.hxx"
@@ -119,11 +105,7 @@ bool pdCosmicAnalysis::Initialize(){
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("pdCosmicAnalysis.MinAccumLevelToSave"));
 
   // Define standard categories for color drawing
-  anaUtils::AddStandardObjectCategories("cosmic",standardPDTree::ncosmics,"ncosmics",1);  // This is for all the cosmics
-
-  // Add standard categories for the candidates
-  anaUtils::AddStandardObjectCategories("candidate"   ,kaonTree::ncandidates,"ncandidates",1);
-  anaUtils::AddStandardObjectCategories("candidatedau",kaonTree::ncandidates,"ncandidates",1);
+  anaUtils::AddStandardObjectCategories("cosmic",standardPDTree::ntracks,"ncosmics",1);  // This is for all the cosmics
 
   return true;
 }
@@ -136,32 +118,6 @@ bool pdCosmicAnalysis::InitializeSpill(){
     we are using this method to create and add a dummy vertex to the spill
   */
   if(!baseAnalysis::InitializeSpill())return false;
-
-  // Create a new truevertex for each true kaon
-  for(int i = 1; i < (int)GetSpill().TrueParticles.size(); i++){ //skip first particle because it is the primary
-    if(GetSpill().TrueParticles[i]->PDG==321){
-      kaonAnaTrueVertex* vtx = new kaonAnaTrueVertex();
-      //fill the vertex with the kaon
-      vtx->TrueParticlesVect.clear();
-      vtx->TrueParticlesVect.push_back(GetSpill().TrueParticles[i]);
-      //set the bunch value
-      vtx->Bunch = 1;
-      //get the end of the kaon
-      std::pair<Int_t, Int_t> result(0,-999);
-      if     (GetSpill().TrueParticles[i]->ProcessEnd==2){
-	result = kaonAnaUtils::GetKaonDecayMode(GetSpill().TrueParticles[i], GetSpill().TrueParticles);
-	vtx->DecayMode = result.first;
-      }
-      else if(GetSpill().TrueParticles[i]->ProcessEnd==3){
-	result = kaonAnaUtils::MuonFromKaonChain(GetSpill().TrueParticles[i], GetSpill().TrueParticles);
-	vtx->ChainMuon = result.first;
-      }
-      //if it finish in a muon, store it also in the truevertex
-      if(vtx->DecayMode == 1 || vtx->ChainMuon == 1)
-	vtx->TrueParticlesVect.push_back(pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles,result.second));
-      GetSpill().TrueVertices.push_back(static_cast<AnaTrueVertex*>(vtx));
-    }
-  }
 
   return true;
 }
@@ -264,13 +220,9 @@ void pdCosmicAnalysis::DefineMicroTrees(bool addBase){
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  standardPDTree::AddStandardVariables_CosmicsReco(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
-  standardPDTree::AddStandardVariables_CosmicsTrue(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
-
-  // -------- Add candidates variables ----------------------
-  kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
-  kaonTree::AddKaonVariables_KaonCandidatesHitsReco(output(),pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
-  kaonTree::AddKaonVariables_KaonCandidatesTrue    (output(),pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
+  standardPDTree::AddStandardVariables_AllParticlesReco(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
+  standardPDTree::AddStandardVariables_AllParticlesTrue(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
+  
 }
 
 //********************************************************************
@@ -284,8 +236,6 @@ void pdCosmicAnalysis::DefineTruthTree(){
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineTruthTree();
 
-  // Add specific variables for the kaon candidates
-  kaonTree::AddKaonVariables_TrueKaonCandidates(output(), pdCosmicAnalysisConstants::NMAXSAVEDTRUECANDIDATES);
 }
 
 //********************************************************************
@@ -317,24 +267,14 @@ void pdCosmicAnalysis::FillMicroTrees(bool addBase){
   while(ncosmics < (Int_t)pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[nparts]);
     if(part->ParentID==-1){
-      standardPDTree::FillStandardVariables_CosmicsReco(output(), part);
-      standardPDTree::FillStandardVariables_CosmicsTrue(output(), part);
-      output().IncrementCounter(standardPDTree::ncosmics);
+      standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
+      standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
+      output().IncrementCounter(standardPDTree::ntracks);
       ncosmics++;
     }
     nparts++;
   }
 
-  // ---------- kaon candidates variables --------------
-  if(box().Candidates.size()>0){
-    for(int i = 0; i < std::min((int)box().Candidates.size(),(int)pdCosmicAnalysisConstants::NMAXSAVEDCANDIDATES); i++){
-      AnaParticlePD* parent = static_cast<AnaParticlePD*>(anaUtils::GetParticleByID(GetBunch(), box().Candidates[i]->ParentID));
-      kaonTree::FillKaonVariables_KaonCandidatesReco    (output(), box().Candidates[i], parent);
-      kaonTree::FillKaonVariables_KaonCandidatesHitsReco(output(), box().Candidates[i]);
-      kaonTree::FillKaonVariables_KaonCandidatesTrue    (output(), box().Candidates[i]);
-      output().IncrementCounter(kaonTree::ncandidates);
-    } 
-  }
 }
 
 //********************************************************************
@@ -378,9 +318,6 @@ void pdCosmicAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
   // Fill the common variables (highland/src/highland2/baseAnalysis)
   baseAnalysis::FillTruthTreeBase(vtx);
 
-  // Fill true kaons candidate info
-  const kaonAnaTrueVertex& kvtx = static_cast<const kaonAnaTrueVertex&>(vtx);
-  kaonTree::FillKaonVariables_TrueKaonCandidates(output(), kvtx);
 }
 
 //********************************************************************
