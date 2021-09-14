@@ -126,30 +126,40 @@ void standardPDTree::AddStandardVariables_CandidateTrue(OutputManager& output){
 //********************************************************************
 void standardPDTree::AddStandardVariables_AllParticlesTrue(OutputManager& output, UInt_t nmax){
 //********************************************************************
-  
-  AddVarMaxSizeVI (output, trk_truendau,    "true number of daughters", ntracks, nmax);
-  AddVarMaxSizeVI (output, trk_truepdg,     "pdg code",                 ntracks, nmax);
-  AddVarMaxSize4MF(output, trk_truepos,     "true start position",      ntracks, nmax);
-  AddVarMaxSize4MF(output, trk_trueendpos,  "true end position",        ntracks, nmax);
-  AddVarMaxSizeVI (output, trk_trueendproc, "final process",            ntracks, nmax);
-  AddVarMaxSizeVI (output, trk_trueproc,    "initial process",          ntracks, nmax);
-  AddVarMaxSizeVF (output, trk_truemom,     "true momentum",            ntracks, nmax);
-  AddVarMaxSizeVF (output, trk_trueendmom,  "true end momentum",        ntracks, nmax);
+
+  AddVarMaxSizeVI (output, trk_truendau,       "#true ndaughters",   ntracks, nmax);
+  AddVarMaxSizeVI (output, trk_truegeneration, "true generation",    ntracks, nmax);
+  AddVarMaxSizeVI (output, trk_truepdg,        "true pdg",           ntracks, nmax);
+  AddVarMaxSizeVI (output, trk_trueorigin,     "true origin",        ntracks, nmax);
+  AddVarMaxSize4MF(output, trk_truepos,        "true position",      ntracks, nmax);
+  AddVarMaxSize4MF(output, trk_trueendpos,     "true end position",  ntracks, nmax);
+  AddVarMaxSizeVI (output, trk_trueproc,       "true process",ntracks, nmax);
+  AddVarMaxSizeVI (output, trk_trueendproc,    "true end process",   ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_truemom,        "true momentum",      ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_trueendmom,     "true end momentum",  ntracks, nmax);
+
 }
 
 //********************************************************************
 void standardPDTree::AddStandardVariables_AllParticlesReco(OutputManager& output, UInt_t nmax){
 //********************************************************************
 
-  AddVarMaxSizeVI(  output, trk_ndau,         "#daughters",              ntracks, nmax);
-  AddVarMaxSize4MF( output, trk_pos,          "start position",          ntracks, nmax);
-  AddVarMaxSize3MF( output, trk_dir,          "start direction",         ntracks, nmax);  
-  AddVarMaxSize4MF( output, trk_endpos,       "end position",            ntracks, nmax);
-  AddVarMaxSize3MF( output, trk_enddir,       "end direction",           ntracks, nmax);
-  AddVarMaxSizeVF(  output, trk_length,       "length",                  ntracks, nmax);
-  AddVarMaxSizeVF(  output, trk_mom_muon,     "range momentum (muon)",   ntracks, nmax);
-  AddVarMaxSizeVF(  output, trk_mom_prot,     "range momentum (proton)", ntracks, nmax);
-  //AddVarMaxSizeVF(  output, trk_dedx,         "average dedx",           ntracks,nmax);
+  AddVarMaxSizeVI (output, trk_ndau,         "#daughters",        ntracks, nmax);
+  AddVarMaxSize4MF(output, trk_pos,          "position",          ntracks, nmax); 
+  AddVarMaxSize3MF(output, trk_dir,          "direction",         ntracks, nmax);
+  AddVarMaxSize4MF(output, trk_endpos,       "position",          ntracks, nmax); 
+  AddVarMaxSize3MF(output, trk_enddir,       "direction",         ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_length,       "length",            ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_mom_muon,     "momentum (muon)",   ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_mom_prot,     "momentum (proton)", ntracks, nmax);
+  AddVarMaxSizeVI (output, trk_type,         "object type",       ntracks, nmax);
+  AddVarMaxSize3MF(output, trk_CNNscore,     "CNN score",         ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_chi2_prot,    "chi2 proton",       ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_chi2_muon,    "chi2 proton",       ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_chi2_ndf,     "chi2 ndf",          ntracks, nmax);
+  AddVarMaxSizeVF (output, trk_averagedEdx,  "average dEdx/hit",  ntracks, nmax);
+  AddVarMaxSizeVI (output, trk_nhits,        "#hits",             ntracks, nmax);
+
 }
 
 //********************************************************************
@@ -202,44 +212,7 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersHitsReco(OutputManag
 
   AddVarMF(output, seltrk_dau_hit_cnn,      "daughters hit cnn",            seltrk_ndau,-nmax,nmaxhitsperplane);
   AddVarMI(output, seltrk_dau_hit_ch,       "daughters hit channel",        seltrk_ndau,-nmax,nmaxhitsperplane);
-}
 
-//********************************************************************
-void standardPDTree::AddStandardVariables_CosmicsReco(OutputManager& output, UInt_t nmax){
-//********************************************************************
-
-  AddVarMaxSizeVI (output, cosmics_generation,   "cosmics generation",        ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_ndau,         "cosmics' daughters",        ncosmics, nmax);
-  AddVarMaxSize4MF(output, cosmics_pos,          "cosmics position",          ncosmics, nmax); 
-  AddVarMaxSize3MF(output, cosmics_dir,          "cosmics direction",         ncosmics, nmax);
-  AddVarMaxSize4MF(output, cosmics_endpos,       "cosmics position",          ncosmics, nmax); 
-  AddVarMaxSize3MF(output, cosmics_enddir,       "cosmics direction",         ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_length,       "cosmics length",            ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_mom_muon,     "cosmics momentum (muon)",   ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_mom_prot,     "cosmics momentum (proton)", ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_type,         "cosmics object type",       ncosmics, nmax);
-  AddVarMaxSize3MF(output, cosmics_CNNscore,     "cosmics CNN score",         ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_chi2_prot,    "cosmics chi2 proton",       ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_chi2_muon,    "cosmics chi2 proton",       ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_chi2_ndf,     "cosmics chi2 ndf",          ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_averagedEdx,  "cosmics average dEdx/hit",  ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_nhits,        "cosmics #hits",             ncosmics, nmax);
-}
-
-//********************************************************************
-void standardPDTree::AddStandardVariables_CosmicsTrue(OutputManager& output, UInt_t nmax){
-//********************************************************************
-
-  AddVarMaxSizeVI (output, cosmics_truendau,       "cosmics' true ndaughters",  ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_truegeneration, "cosmics true generation",   ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_truepdg,        "cosmics true pdg",          ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_trueorigin,     "cosmics true origin",       ncosmics, nmax);
-  AddVarMaxSize4MF(output, cosmics_truepos,        "cosmics true position",     ncosmics, nmax);
-  AddVarMaxSize4MF(output, cosmics_trueendpos,     "cosmics true end position", ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_trueproc,       "cosmic true process",       ncosmics, nmax);
-  AddVarMaxSizeVI (output, cosmics_trueendproc,    "cosmics true end process",  ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_truemom,        "cosmics true momentum",     ncosmics, nmax);
-  AddVarMaxSizeVF (output, cosmics_trueendmom,     "cosmics true end momentum", ncosmics, nmax);
 }
 
 //********************************************************************
@@ -311,16 +284,23 @@ void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& outpu
 //********************************************************************
 
   if (!part) return;
-  
-  output.FillVectorVar         (trk_ndau,    (Int_t)part->Daughters.size() );
-  output.FillMatrixVarFromArray(trk_pos,            part->PositionStart,  4);
-  output.FillMatrixVarFromArray(trk_dir,            part->DirectionStart, 3);
-  output.FillMatrixVarFromArray(trk_endpos,         part->PositionEnd,    4);
-  output.FillMatrixVarFromArray(trk_enddir,         part->DirectionEnd,   3);
-  output.FillVectorVar         (trk_length,         part->Length           );
-  output.FillVectorVar         (trk_mom_prot,       pdAnaUtils::ComputeRangeMomentum(part->Length,2212));
-  output.FillVectorVar         (trk_mom_muon,       pdAnaUtils::ComputeRangeMomentum(part->Length,13  ));
-  //output.FillVectorVar(trk_dedx,           part->AveragedEdx);  
+  output.FillVectorVar         (trk_generation,       part->Generation       );
+  output.FillVectorVar         (trk_ndau,      (Int_t)part->Daughters.size() );
+  output.FillMatrixVarFromArray(trk_pos,              part->PositionStart,  4);
+  output.FillMatrixVarFromArray(trk_dir,              part->DirectionStart, 3); 
+  output.FillMatrixVarFromArray(trk_endpos,           part->PositionEnd,    4);
+  output.FillMatrixVarFromArray(trk_enddir,           part->DirectionEnd,   3); 
+  output.FillVectorVar         (trk_length,           part->Length           );
+  output.FillVectorVar         (trk_mom_prot,         pdAnaUtils::ComputeRangeMomentum(part->Length,2212));
+  output.FillVectorVar         (trk_mom_muon,         pdAnaUtils::ComputeRangeMomentum(part->Length,13)  );
+  output.FillVectorVar         (trk_type,             part->Type             );
+  output.FillMatrixVarFromArray(trk_CNNscore,         part->CNNscore,       3); 
+  output.FillVectorVar         (trk_chi2_prot,        part->Chi2Proton       );
+  output.FillVectorVar         (trk_chi2_muon,        part->Chi2Muon         );
+  output.FillVectorVar         (trk_chi2_ndf,         part->Chi2ndf          );
+  output.FillVectorVar         (trk_nhits,            part->NHits            );
+  output.FillVectorVar         (trk_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
+
 }
   
 //********************************************************************
@@ -331,13 +311,16 @@ void standardPDTree::FillStandardVariables_AllParticlesTrue(OutputManager& outpu
   if (!part->TrueObject) return;
  
   AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
-  
+  if(!truePart) return;
+
   output.FillVectorVar         (trk_truendau,    (Int_t)truePart->Daughters.size());
+  output.FillVectorVar         (trk_truegeneration,     truePart->Generation      );
   output.FillVectorVar         (trk_truepdg,            truePart->PDG             );
+  output.FillVectorVar         (trk_trueorigin,         truePart->Origin          );
   output.FillMatrixVarFromArray(trk_truepos,            truePart->Position,      4);
   output.FillMatrixVarFromArray(trk_trueendpos,         truePart->PositionEnd,   4);
   output.FillVectorVar         (trk_trueproc,    (Int_t)truePart->ProcessStart    );
-  output.FillVectorVar         (trk_trueendproc, (Int_t)truePart->ProcessEnd      );    
+  output.FillVectorVar         (trk_trueendproc, (Int_t)truePart->ProcessEnd      );
   output.FillVectorVar         (trk_truemom,            truePart->Momentum        );
   output.FillVectorVar         (trk_trueendmom,         truePart->MomentumEnd     );
   
@@ -540,47 +523,4 @@ void standardPDTree::FillStandardVariables_CandidateDaughterHitsReco(OutputManag
       output.FillMatrixVar(seltrk_dau_hit_ch,        (Int_t)  dau->Hits[2][j].Channel,        -1, j-jmin);
     }
   }
-}
-
-//********************************************************************
-void standardPDTree::FillStandardVariables_CosmicsReco(OutputManager& output, AnaParticlePD* part){
-//********************************************************************
-
-  if (!part) return;
-  output.FillVectorVar         (cosmics_generation,       part->Generation       );
-  output.FillVectorVar         (cosmics_ndau,      (Int_t)part->Daughters.size() );
-  output.FillMatrixVarFromArray(cosmics_pos,              part->PositionStart,  4);
-  output.FillMatrixVarFromArray(cosmics_dir,              part->DirectionStart, 3); 
-  output.FillMatrixVarFromArray(cosmics_endpos,           part->PositionEnd,    4);
-  output.FillMatrixVarFromArray(cosmics_enddir,           part->DirectionEnd,   3); 
-  output.FillVectorVar         (cosmics_length,           part->Length           );
-  output.FillVectorVar         (cosmics_mom_prot,         pdAnaUtils::ComputeRangeMomentum(part->Length,2212));
-  output.FillVectorVar         (cosmics_mom_muon,         pdAnaUtils::ComputeRangeMomentum(part->Length,13)  );
-  output.FillVectorVar         (cosmics_type,             part->Type             );
-  output.FillMatrixVarFromArray(cosmics_CNNscore,         part->CNNscore,       3); 
-  output.FillVectorVar         (cosmics_chi2_prot,        part->Chi2Proton       );
-  output.FillVectorVar         (cosmics_chi2_muon,        part->Chi2Muon         );
-  output.FillVectorVar         (cosmics_chi2_ndf,         part->Chi2ndf          );
-  output.FillVectorVar         (cosmics_nhits,            part->NHits            );
-  output.FillVectorVar         (cosmics_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
-}
-
-//********************************************************************
-void standardPDTree::FillStandardVariables_CosmicsTrue(OutputManager& output, AnaParticlePD* part){
-//********************************************************************
-
-  if (!part) return;  
-  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
-  if(!truePart) return;
-
-  output.FillVectorVar         (cosmics_truendau,    (Int_t)truePart->Daughters.size());
-  output.FillVectorVar         (cosmics_truegeneration,     truePart->Generation      );
-  output.FillVectorVar         (cosmics_truepdg,            truePart->PDG             );
-  output.FillVectorVar         (cosmics_trueorigin,         truePart->Origin          );
-  output.FillMatrixVarFromArray(cosmics_truepos,            truePart->Position,      4);
-  output.FillMatrixVarFromArray(cosmics_trueendpos,         truePart->PositionEnd,   4);
-  output.FillVectorVar         (cosmics_trueproc,    (Int_t)truePart->ProcessStart    );
-  output.FillVectorVar         (cosmics_trueendproc, (Int_t)truePart->ProcessEnd      );
-  output.FillVectorVar         (cosmics_truemom,            truePart->Momentum        );
-  output.FillVectorVar         (cosmics_trueendmom,         truePart->MomentumEnd     );
 }
