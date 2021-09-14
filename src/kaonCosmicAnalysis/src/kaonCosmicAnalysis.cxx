@@ -121,7 +121,7 @@ bool kaonCosmicAnalysis::Initialize(){
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("kaonCosmicAnalysis.MinAccumLevelToSave"));
 
   // Define standard categories for color drawing
-  anaUtils::AddStandardObjectCategories("cosmic",standardPDTree::ncosmics,"ncosmics",1);  // This is for all the cosmics
+  anaUtils::AddStandardObjectCategories("cosmic",standardPDTree::ntracks,"ncosmics",1);  // This is for all the cosmics
 
   // Add standard categories for the candidates
   anaUtils::AddStandardObjectCategories("candidate"   ,kaonTree::ncandidates,"ncandidates",1);
@@ -266,8 +266,8 @@ void kaonCosmicAnalysis::DefineMicroTrees(bool addBase){
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  standardPDTree::AddStandardVariables_CosmicsReco(output(),kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
-  standardPDTree::AddStandardVariables_CosmicsTrue(output(),kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
+  standardPDTree::AddStandardVariables_AllParticlesReco(output(),kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
+  standardPDTree::AddStandardVariables_AllParticlesTrue(output(),kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
 
   // -------- Add candidates variables ----------------------
   kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),kaonCosmicAnalysisConstants::NMAXSAVEDCANDIDATES);
@@ -319,9 +319,9 @@ void kaonCosmicAnalysis::FillMicroTrees(bool addBase){
   while(ncosmics < (Int_t)kaonCosmicAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[nparts]);
     if(part->ParentID==-1){
-      standardPDTree::FillStandardVariables_CosmicsReco(output(), part);
-      standardPDTree::FillStandardVariables_CosmicsTrue(output(), part);
-      output().IncrementCounter(standardPDTree::ncosmics);
+      standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
+      standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
+      output().IncrementCounter(standardPDTree::ntracks);
       ncosmics++;
     }
     nparts++;
