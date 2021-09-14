@@ -42,3 +42,5 @@
   * we should move all the CNN stuff inside the CNN folder so it is a black box and the pdUtils forder is not full of files that no analyzer is going to touch.
   * we should move HitVariationBase to pdBaseAnalysis ==> DONE
   * we should create our own version of CalorimetryAlg (pdCalorimetryUtils) to be user-friendly with the most important calorimetry functions. Also we should think about how to propagate systematic with calorimetric information (electron lifetime, modified box parameters, etc) ===> first pass DONE
+- Several constants are defined in pdDataClasses.hxx, which are used in the standardPDTree. Should we move them to a namespace inside standardPDTree.hxx?
+
