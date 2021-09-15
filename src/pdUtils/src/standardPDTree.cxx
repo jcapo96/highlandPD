@@ -144,6 +144,7 @@ void standardPDTree::AddStandardVariables_AllParticlesTrue(OutputManager& output
 void standardPDTree::AddStandardVariables_AllParticlesReco(OutputManager& output, UInt_t nmax){
 //********************************************************************
 
+  AddVarMaxSizeVI (output, trk_generation,   "generation",        ntracks, nmax);  
   AddVarMaxSizeVI (output, trk_ndau,         "#daughters",        ntracks, nmax);
   AddVarMaxSize4MF(output, trk_pos,          "position",          ntracks, nmax); 
   AddVarMaxSize3MF(output, trk_dir,          "direction",         ntracks, nmax);
