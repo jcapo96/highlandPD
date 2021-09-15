@@ -28,6 +28,8 @@
 
 - Shall we clean up the pdDataClasses using forward declarations and explain a little bit about them so the user can understand the different relations?
 
+- Review PDCounters and AnaWireCNN in pdDataClasses
+
 - Review pdSystematics
   * CNNVariation  
   * HitVariation
