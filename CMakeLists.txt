@@ -168,6 +168,11 @@ endforeach(file0)
 #target_link_libraries(CreateMiniTree ${ROOT_LIBRARIES} "-L${CMAKE_BINARY_DIR} -lhighlandPD")
 #INSTALL(TARGETS CreateMiniTree DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(cosmics.exe ${CMAKE_SOURCE_DIR}/src/pdCosmicAnalysis/app/RunpdCosmicAnalysis.cxx)
+target_include_directories(cosmics.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(cosmics.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS cosmics.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 add_executable(pion.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunPionAnalysis.cxx)
 target_include_directories(pion.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(pion.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
@@ -226,6 +231,7 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
+add_dependencies(cosmics.exe               dedx.exe )
 add_dependencies(dedx.exe                  CreateMiniTreePD.exe )
 add_dependencies(CreateMiniTreePD.exe      proton.exe)
 add_dependencies(proton.exe                pion.exe)
