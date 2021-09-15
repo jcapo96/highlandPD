@@ -105,19 +105,7 @@ bool pdCosmicAnalysis::Initialize(){
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("pdCosmicAnalysis.MinAccumLevelToSave"));
 
   // Define standard categories for color drawing
-  anaUtils::AddStandardObjectCategories("cosmic",standardPDTree::ntracks,"ncosmics",1);  // This is for all the cosmics
-
-  return true;
-}
-
-//********************************************************************
-bool pdCosmicAnalysis::InitializeSpill(){
-//********************************************************************
-  
-  /*this method is not mandatory, but filling the truth tree requires at least to have a true vertex
-    we are using this method to create and add a dummy vertex to the spill
-  */
-  if(!baseAnalysis::InitializeSpill())return false;
+  anaUtils::AddStandardObjectCategories("cosmic",standardPDTree::ntracks,"ntracks",1);  // This is for all the cosmics
 
   return true;
 }
@@ -222,7 +210,7 @@ void pdCosmicAnalysis::DefineMicroTrees(bool addBase){
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::AddStandardVariables_AllParticlesReco(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
   standardPDTree::AddStandardVariables_AllParticlesTrue(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
-  
+
 }
 
 //********************************************************************
@@ -236,14 +224,6 @@ void pdCosmicAnalysis::DefineTruthTree(){
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineTruthTree();
 
-}
-
-//********************************************************************
-void pdCosmicAnalysis::InitializeBunch(){
-//********************************************************************
-
-  /* In ProtoDUNE a beam Bunch corresponds to a single event. At the beginning of the event the counters are computed
-   */
 }
 
 //********************************************************************
@@ -331,14 +311,6 @@ void pdCosmicAnalysis::FillCategories(){
      If this method is not implemented, the one from the base class (baseAnalysis::FillCategories()) will be called.      
   */
 
-  // for the candidates
-  if(box().Candidates.size()>0){
-    for(int i = 0; i < (int)box().Candidates.size(); i++){
-      anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]),              "candidate",   1);
-      anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]->Daughters[0]),"candidatedau",1);
-    }
-  }
-
   // For all particles in the event
   AnaParticleB** parts = GetEvent().Particles;
   Int_t nparts   = 0;
@@ -352,19 +324,4 @@ void pdCosmicAnalysis::FillCategories(){
     }
     nparts++;
   }
-}
-
-//********************************************************************
-void pdCosmicAnalysis::FinalizeSpill(){
-//********************************************************************
-  
-  /*this method is not mandatory, but filling the truth tree requires at least to have a true vertex in the spill.
-    Since the truevertices are not clonned, they are only deleted in the RawSpill. The true vertex we created was added
-    to the corrected spill and it has to be deleted from there. Were are using this method to delete it
-  */
-  baseAnalysis::FinalizeSpill();
-  for(int i = 0; i < (int)GetSpill().TrueVertices.size(); i++)
-    delete GetSpill().TrueVertices[i];
-  
-  GetSpill().TrueVertices.clear();
 }

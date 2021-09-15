@@ -18,10 +18,7 @@
 
 
 namespace pdCosmicAnalysisConstants{
-
   const UInt_t NMAXSAVEDCOSMICS        = 50;
-  const UInt_t NMAXSAVEDTRUECANDIDATES = 10;
-  const UInt_t NMAXSAVEDCANDIDATES     = 10;
 }
 
 class pdCosmicAnalysis: public baseAnalysis {
@@ -47,9 +44,6 @@ class pdCosmicAnalysis: public baseAnalysis {
   //--------------------
 
   bool Initialize();
-  bool InitializeSpill(); //temporary solution for filling truthtree
-  void FinalizeSpill(); //temporary solution for filling truthtree
-  void InitializeBunch();
   void FillCategories();
   void DefineInputConverters();
 
