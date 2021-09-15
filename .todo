@@ -37,8 +37,8 @@
 
 - Review pdCorrections
   * BeamMomSmearingCorrection: seedValue
-  * dEdxCorrection: obsolete ?
-  * dEdxDataCorrection: obsolete ?
+  * dEdxCorrection: obsolete ? ==> yes, we should delete it
+  * dEdxDataCorrection: obsolete ? ==> yes, we should delete it
 
 - Review pdUtils
   * we should move all the CNN stuff inside the CNN folder so it is a black box and the pdUtils forder is not full of files that no analyzer is going to touch.
