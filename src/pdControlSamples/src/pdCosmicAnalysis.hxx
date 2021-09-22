@@ -28,16 +28,12 @@ class pdCosmicAnalysis: public baseAnalysis {
 
   //---- These are mandatory functions
   void DefineSelections();
-  void DefineCorrections();
-  void DefineSystematics();
-  void DefineConfigurations();
   void DefineMicroTrees(bool addBase=true);
-  void DefineTruthTree();
 
   void FillMicroTrees(bool addBase=true);
-  void FillToyVarsInMicroTrees(bool addBase=true);
+  void FillToyVarsInMicroTrees(bool addBase=true){}
 
-  bool CheckFillTruthTree(const AnaTrueVertex& vtx);
+  bool CheckFillTruthTree(const AnaTrueVertex& vtx){return false;}
 
   using baseAnalysis::FillTruthTree;
   void FillTruthTree(const AnaTrueVertex& vtx);
@@ -77,6 +73,11 @@ class pdCosmicAnalysis: public baseAnalysis {
 
 private:
 
+
+  Float_t _cutLength;
+  Float_t _cutZmin;
+  Float_t _cutZmax;
+  
 public:
 
   enum enumConf_pdCosmicAnalysis{
