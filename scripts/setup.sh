@@ -5,7 +5,7 @@ fi
 
 
 # and this package to the highland package hierarchy (otherwise the parameters file will not be read)
-export HIGHLAND_PACKAGE_HIERARCHY=kaonAnalysis:pionAnalysis:stoppingProtonAnalysis:pdStudies:pdSystematics:pdBaseAnalysis:LArSoftReader:pdUtils:pdEventModel:$HIGHLAND_PACKAGE_HIERARCHY
+#export HIGHLAND_PACKAGE_HIERARCHY=stoppingProtonAnalysis:pdStudies:pdSystematics:pdBaseAnalysis:LArSoftReader:pdUtils:pdEventModel:$HIGHLAND_PACKAGE_HIERARCHY
 
 # automatically find the highland source directory
 export HIGHLANDPDPATH="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
