@@ -1,12 +1,12 @@
 --- Cut levels --------
 
-< pdCosmicAnalysis.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
+< pdControlSamples.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
 
---- selection cuts ------
+--- selection cuts for cosmics ------
 
-< pdCosmicAnalysis.Cuts.Zmin   = 0 >   // min starting Z of the track
-< pdCosmicAnalysis.Cuts.Zmax   = 222 > // max starting Z of the track
-< pdCosmicAnalysis.Cuts.Length = 100 > // minimum length of the track
+< pdControlSamples.Cosmics.Cuts.Zmin   = 0 >   // min starting Z of the track
+< pdControlSamples.Cosmics.Cuts.Zmax   = 222 > // max starting Z of the track
+< pdControlSamples.Cosmics.Cuts.Length = 100 > // minimum length of the track
 
 
 ###############################################################################
