@@ -14,6 +14,10 @@ public:
   using EventWeightBase::ComputeWeight;
   Weight_h ComputeWeight(const ToyExperiment& toy, const AnaEventC& event, const ToyBoxB& box);
 
+
+  /// Check whether a AnaRecObject is relevant for this systematic or not
+  virtual bool IsRelevantRecObject(const AnaEventC&, const AnaRecObjectC&) const;
+  
 };
 
 #endif
