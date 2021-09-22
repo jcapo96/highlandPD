@@ -47,3 +47,5 @@
 - Several constants are defined in pdDataClasses.hxx, which are used in the standardPDTree. Should we move them to a namespace inside standardPDTree.hxx?
 
 - The constructor of the pd analysis and the construnctor of the baseAnalysis do nothing. The only one that does something is the one of AnalysisAlgorithm. What is their utility?
+
+- Probably add a method DefineCategories to AnalysisAlgorithm

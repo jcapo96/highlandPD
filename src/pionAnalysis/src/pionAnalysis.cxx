@@ -176,6 +176,7 @@ void pionAnalysis::DefineInputConverters(){
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("pionana",          new hitPionTreeConverter());
   input().AddConverter("minitree",         new pdMiniTreeConverter());
+  input().AddConverter("minitree2",         new HighlandMiniTreeConverter("highlandana/MiniTree"));
   input().AddConverter("pduneana",         new PDSPAnalyzerTreeConverter());
   //  input().AddConverter("LArSoftTree",    new LArSoftTreeConverter());
 }

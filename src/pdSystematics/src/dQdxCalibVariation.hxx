@@ -20,8 +20,10 @@ public:
   bool UndoSystematic(const AnaHitPD& original_hit, AnaHitPD& hit);
 
 protected:
-  BinnedParams* _calibX;
-  BinnedParams* _calibYZ;
+  BinnedParams* _paramX;
+  BinnedParams* _paramYZ;
+  BinnedParams* _paramNQ;
+  BinnedParams* _paramCcal;
 };
 
 #endif

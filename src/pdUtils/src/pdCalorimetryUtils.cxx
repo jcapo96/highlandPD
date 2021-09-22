@@ -163,13 +163,10 @@ Float_t pdCalorimetryUtils::ModBoxCorrection(Float_t dQdx_e) 	const{
       dE/dx= (exp(βWion·(dQ/dx))−α)/β.      
   */
   
-  // Modified Box model correction has better behavior than the Birks
-  // correction at high values of dQ/dx.
-  
+  // Modified Box model correction has better behavior than the Birks correction at high values of dQ/dx.  
   // dq/dx should be in e/cm
   // dE/dx is returned in MeV/cm
-  
-  
+    
   Float_t kModBoxA        = fModBoxA;    
   Float_t kModBoxB        = fModBoxB;
   //   Float_t kGeVToElectrons = 4.237e7/5.2;  //anselmo

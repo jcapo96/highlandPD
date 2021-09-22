@@ -2,6 +2,7 @@
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pandoraPreselection.hxx"
+#include "pdSystId.hxx"
 
 //********************************************************************
 stoppingProtonSelection::stoppingProtonSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -183,3 +184,42 @@ void stoppingProtonSelection::DefineDetectorFV(){
     SetDetectorFV(SubDetId::kSubdet1_1);
 }
 
+//**************************************************
+bool stoppingProtonSelection::IsRelevantTrueObjectForSystematicInToy(const AnaEventC& event, const ToyBoxB& boxB, AnaTrueObjectC* trueObj, SystId_h systId, Int_t branch) const{
+//**************************************************
+
+  (void)event;
+  (void)branch;
+
+  // Cast the ToyBox to the appropriate type
+  const ToyBoxPD& box = *static_cast<const ToyBoxPD*>(&boxB); 
+
+
+  AnaTrueParticleB* trueTrack = static_cast<AnaTrueParticleB*>(trueObj);
+  
+  
+  // Apply to all objects,  not fine-tuning
+  //  if (!systTuning::APPLY_SYST_FINE_TUNING) return true;
+ 
+  // Main track "mode",  will only consider certain true tracks of interest
+
+  if(systId == pdSystId::kTrackEff){
+    if (box.MainTrack->GetTrueParticle()){
+      // At first order the inclusive selection only depends on the tracking efficiency of the proton candidate.
+      if (trueTrack->ID  == box.MainTrack->GetTrueParticle()->ID) return true; 
+    
+      // Consider also the case in which the muon candidate is not a true muon but this track it is
+      if (trueTrack->PDG == 2212 && box.MainTrack->GetTrueParticle()->PDG!=13) return true;     
+      
+      return false;
+
+    } 
+    // Apply for muon 
+    else if (trueTrack->PDG == 2212)  
+      return true;
+    
+    return false;
+  } 
+
+  return true;
+}
