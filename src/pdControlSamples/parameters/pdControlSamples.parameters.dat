@@ -1,0 +1,35 @@
+--- Cut levels --------
+
+< pdCosmicAnalysis.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
+
+--- selection cuts ------
+
+< pdCosmicAnalysis.Cuts.Zmin   = 0 >   // min starting Z of the track
+< pdCosmicAnalysis.Cuts.Zmax   = 222 > // max starting Z of the track
+< pdCosmicAnalysis.Cuts.Length = 100 > // minimum length of the track
+
+
+###############################################################################
+  baseAnalysis parameters
+###############################################################################
+
+This is a copy of the baseAnalysis parameters file in highland, such that we can overwrite them
+
+
+Whether to initialize trees or not at the beginning of each configuration
+
+ < baseAnalysis.InitializeTrees = 1 >	
+
+ --- Corrections ------------
+
+Disables all corrections regardless of the ones enabled below
+
+ < baseAnalysis.Corrections.DisableAllCorrections  = 0 >
+
+Apply all corrections even if they were already applied in the input file
+
+ < baseAnalysis.Corrections.ForceApplyCorrections  = 0 >
+
+Enable/Disable individual corrections
+
+
