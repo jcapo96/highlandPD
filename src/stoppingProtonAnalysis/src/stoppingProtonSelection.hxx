@@ -28,6 +28,8 @@ class stoppingProtonSelection: public SelectionBase{
 
   //------------------
 
+  bool IsRelevantTrueObjectForSystematicInToy(const AnaEventC&, const ToyBoxB&, AnaTrueObjectC*, SystId_h systId, Int_t branch=0) const;
+  
 protected:
 
   Int_t _ProtonRangeCutIndex;
