@@ -1,5 +1,5 @@
 #include "pdCosmicSelection.hxx"
-#include "kaonSelection.hxx"
+#include "secondaryKaonSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pandoraPreselection.hxx"

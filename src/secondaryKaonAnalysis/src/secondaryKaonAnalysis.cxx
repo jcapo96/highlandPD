@@ -1,0 +1,417 @@
+#include "secondaryKaonAnalysis.hxx"
+#include "Parameters.hxx"
+#include "CategoriesUtils.hxx"
+#include "BasicUtils.hxx"
+#include "pdAnalysisUtils.hxx"
+#include "baseToyMaker.hxx"
+
+#include "secondaryKaonSelection.hxx"
+#include "secondaryKaonFromBeamSelection.hxx"
+#include "secondaryKaonFromCosmicSelection.hxx"
+#include "kaonAnalysisUtils.hxx"
+#include "kaonDataClasses.hxx"
+
+#include "HighlandMiniTreeConverter.hxx"
+#include "PDSPAnalyzerTreeConverter.hxx"
+
+//********************************************************************
+secondaryKaonAnalysis::secondaryKaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
+//********************************************************************
+
+}
+
+//********************************************************************
+bool secondaryKaonAnalysis::Initialize(){
+//********************************************************************
+
+  // Initialize the baseAnalysis (highland/src/highland2/baseAnalysis)
+  if(!baseAnalysis::Initialize()) return false;
+
+  // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
+  SetMinAccumCutLevelToSave(ND::params().GetParameterI("secondaryKaonAnalysis.MinAccumLevelToSave"));
+
+  // Parameters
+  _AllSelection = ND::params().GetParameterI("secondaryKaonAnalysis.AllSelection");
+  _BeamSelection = ND::params().GetParameterI("secondaryKaonAnalysis.BeamSelection");
+  _CosmicSelection = ND::params().GetParameterI("secondaryKaonAnalysis.CosmicSelection");
+
+  // Define standard categories for color drawing
+  anaUtils::AddStandardCategories();        // This is for the candidate particle
+  anaUtils::AddStandardCategories("beam");  // This is for the Beam Instrumentation particle
+  //anaUtils::AddStandardCategories("bestcandidate");  // This is for the best candidate of each event
+  //anaUtils::AddStandardCategories("bestcandidatedau");  // This is for the best candidate of each event
+  //anaUtils::AddStandardObjectCategories("daughter",standardPDTree::seltrk_ndau,"seltrk_ndau",1);  // This is for the daughters of the selected track
+  //anaUtils::AddStandardObjectCategories("all",standardPDTree::ntracks,"ntracks",1);  // This is for all the tracks in the event
+
+  // Add standard categories for the candidates
+  anaUtils::AddStandardObjectCategories("candidate"   ,kaonTree::ncandidates,"ncandidates",1);
+  anaUtils::AddStandardObjectCategories("candidatedau",kaonTree::ncandidates,"ncandidates",1);
+
+  // Add our own categories (in secondaryKaonAnalysisUtils.cxx)
+  kaonAnaUtils::AddCustomCategories();
+
+  return true;
+}
+
+//********************************************************************
+bool secondaryKaonAnalysis::InitializeSpill(){
+//********************************************************************
+  
+  /*this method is not mandatory, but filling the truth tree requires at least to have a true vertex
+    we are using this method to create and add a dummy vertex to the spill
+  */
+  if(!baseAnalysis::InitializeSpill())return false;
+
+  // Create a new truevertex for each true kaon
+  for(int i = 1; i < (int)GetSpill().TrueParticles.size(); i++){ //skip first particle because it is the primary
+    if(GetSpill().TrueParticles[i]->PDG==321){
+      kaonAnaTrueVertex* vtx = new kaonAnaTrueVertex();
+      //fill the vertex with the kaon
+      vtx->TrueParticlesVect.clear();
+      vtx->TrueParticlesVect.push_back(GetSpill().TrueParticles[i]);
+      //set the bunch value
+      vtx->Bunch = 1;
+      //get the end of the kaon
+      std::pair<Int_t, Int_t> result(0,-999);
+      if     (GetSpill().TrueParticles[i]->ProcessEnd==2){
+	result = kaonAnaUtils::GetKaonDecayMode(GetSpill().TrueParticles[i], GetSpill().TrueParticles);
+	vtx->DecayMode = result.first;
+      }
+      else if(GetSpill().TrueParticles[i]->ProcessEnd==3){
+	result = kaonAnaUtils::MuonFromKaonChain(GetSpill().TrueParticles[i], GetSpill().TrueParticles);
+	vtx->ChainMuon = result.first;
+      }
+      //if it finish in a muon, store it also in the truevertex
+      if(vtx->DecayMode == 1 || vtx->ChainMuon == 1)
+	vtx->TrueParticlesVect.push_back(pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles,result.second));
+      GetSpill().TrueVertices.push_back(static_cast<AnaTrueVertex*>(vtx));
+    }
+  }
+
+  return true;
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::DefineInputConverters(){
+//********************************************************************
+
+  // add a single converter (a copy of the one in highland/baseAnalysis)
+  input().AddConverter("minitree",         new HighlandMiniTreeConverter("highlandana/MiniTree"));
+  input().AddConverter("minitreefiltered", new HighlandMiniTreeConverter("MiniTree"));
+  input().AddConverter("PDSPAnalyzerTree", new PDSPAnalyzerTreeConverter());
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::DefineSelections(){
+//********************************************************************
+
+  if(_AllSelection)   sel().AddSelection("secondaryKaonSelection",           "kaon selection",        new secondaryKaonSelection(false));     
+  if(_BeamSelection)  sel().AddSelection("secondaryKaonFromBeamSelection",   "kaon beam selection",   new secondaryKaonFromBeamSelection(false));     
+  if(_CosmicSelection)sel().AddSelection("secondaryKaonFromCosmicSelection", "kaon cosmic selection", new secondaryKaonFromCosmicSelection(false));
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::DefineCorrections(){
+//********************************************************************
+
+  baseAnalysis::DefineCorrections();
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::DefineSystematics(){
+//********************************************************************
+
+  // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
+  baseAnalysis::DefineSystematics();
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::DefineConfigurations(){
+//********************************************************************
+
+  // Some configurations are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
+  baseAnalysis::DefineConfigurations();
+
+  // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
+  if(_enableAllSystConfig){
+    if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnabledBeamComposition"))conf().EnableEventWeight(kBeam,all_syst);
+  }
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
+//********************************************************************
+
+  // -------- Add variables to the analysis tree ----------------------
+
+  // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
+  if (addBase) baseAnalysis::DefineMicroTrees(addBase);
+
+  // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  //standardPDTree::AddStandardVariables_CountersTrue(output());  
+  standardPDTree::AddStandardVariables_BeamReco(output());
+  standardPDTree::AddStandardVariables_BeamTrue(output());
+  standardPDTree::AddStandardVariables_CandidateTrue(output());
+  standardPDTree::AddStandardVariables_CandidateReco(output());
+  //standardPDTree::AddStandardVariables_CandidateHitsReco(output());
+  //standardPDTree::AddStandardVariables_CandidateDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  //standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  //standardPDTree::AddStandardVariables_CandidateDaughtersHitsReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS, secondaryKaonAnalysisConstants::NMAXSAVEDHITSDAUGHTERS);
+  //standardPDTree::AddStandardVariables_AllParticlesReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDPARTICLES);
+  //standardPDTree::AddStandardVariables_AllParticlesTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDPARTICLES);
+
+  // -------- Add additional variables to the analysis tree ----------------------
+  //kaonTree::AddKaonVariables_CandidateDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  //kaonTree::AddKaonVariables_CandidateGDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
+  //kaonTree::AddKaonVariables_CandidateGDaughtersReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
+  //kaonTree::AddKaonVariables_CandidateGGDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS, secondaryKaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS);
+  //kaonTree::AddKaonVariables_CandidateGGDaughtersReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS, secondaryKaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS);
+
+  // -------- Add candidates variables ----------------------
+  kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesHitsReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesTrue    (output(),secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
+
+  // -------- Add best candidate variables ----------------------
+  //kaonTree::AddKaonVariables_KaonBestCandidateReco    (output());
+  //kaonTree::AddKaonVariables_KaonBestCandidateHitsReco(output());
+  //kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::DefineTruthTree(){
+//********************************************************************
+
+  // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
+  baseAnalysis::DefineTruthTree();
+
+  // Add standard sets of variables for ProtoDUNE analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  //standardPDTree::AddStandardVariables_CountersTrue(output());
+  standardPDTree::AddStandardVariables_BeamTrue(    output());
+  
+  // Add specific variables for the kaon candidates
+  kaonTree::AddKaonVariables_TrueKaonCandidates(output(), secondaryKaonAnalysisConstants::NMAXSAVEDTRUECANDIDATES);
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
+//********************************************************************
+
+  // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
+  if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
+
+  // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
+  standardPDTree::FillStandardVariables_CandidateTrue(    output(), box().MainTrack);    
+  //standardPDTree::FillStandardVariables_CandidateHitsReco(output(), box().MainTrack);
+  
+  // Get all reconstructed parts in the event
+  //AnaParticleB** parts = GetEvent().Particles;
+  //Int_t nParts         = GetEvent().nParticles;
+  
+  // ---------- Save information about all (max secondaryKaonAnalysisConstants::NMAXSAVEDPARTICLES) recon parts in the event --------------
+  // These are standard variables for the PD analysis
+  /*for (Int_t i=0;i<std::min((Int_t)secondaryKaonAnalysisConstants::NMAXSAVEDPARTICLES,nParts); ++i){    
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    //skip seltrk 
+    if(part->isPandora)continue;
+    standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
+    standardPDTree::FillStandardVariables_AllParticlesTrue(output(), part);
+    output().IncrementCounter(standardPDTree::ntracks);
+    }*/
+
+  // ---------- Additional candidate variables --------------
+  if(box().MainTrack){        
+ 
+    /*// ---------- Save information about all (max secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS) daughters in the candidate --------------
+    Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
+    for (Int_t idau = 0; idau < std::min((Int_t)secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,ndau); idau++){      
+      AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[idau]);
+      // These are standard variables for the PD analysis
+      standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
+      standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
+      standardPDTree::FillStandardVariables_CandidateDaughterHitsReco(output(), dau, secondaryKaonAnalysisConstants::NMAXSAVEDHITSDAUGHTERS);
+      // Additional variables for kaon Analysis
+      kaonTree::FillKaonVariables_CandidateDaughterTrue(output(), box().MainTrack, dau);
+       
+      // ---------- Save information about all (max secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS) gdaughters in the candidate --------------
+      Int_t ngdau = (Int_t)dau->DaughtersIDs.size();
+      for (Int_t jgdau = 0; jgdau < std::min((Int_t)secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS,ngdau); jgdau++){
+	AnaParticlePD* gdau = static_cast<AnaParticlePD*>(dau->Daughters[jgdau]);
+	kaonTree::FillKaonVariables_CandidateGDaughterReco(output(), gdau, jgdau);
+	kaonTree::FillKaonVariables_CandidateGDaughterTrue(output(), gdau, jgdau);
+	
+	// ---------- Save information about all (max secondaryKaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS) gdaughters in the candidate --------------
+	Int_t nggdau = (Int_t)gdau->DaughtersIDs.size();
+	for (Int_t jggdau = 0; jggdau < (Int_t)std::min((Int_t)secondaryKaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS,nggdau); jggdau++){
+	  AnaParticlePD* ggdau = static_cast<AnaParticlePD*>(gdau->Daughters[jggdau]);
+	  kaonTree::FillKaonVariables_CandidateGGDaughterReco(output(), ggdau, jgdau, jggdau);
+	  kaonTree::FillKaonVariables_CandidateGGDaughterTrue(output(), ggdau, jgdau, jggdau);
+	}
+      }
+      output().IncrementCounter(standardPDTree::seltrk_ndau);
+      }*/ 
+  }
+ 
+  // ---------- kaon candidates variables --------------
+  if(box().Candidates.size()>0){
+    for(int i = 0; i < std::min((int)box().Candidates.size(),(int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES); i++){
+      AnaParticlePD* parent = static_cast<AnaParticlePD*>(anaUtils::GetParticleByID(GetBunch(), box().Candidates[i]->ParentID));
+      kaonTree::FillKaonVariables_KaonCandidatesReco    (output(), box().Candidates[i],parent);
+      kaonTree::FillKaonVariables_KaonCandidatesHitsReco(output(), box().Candidates[i]);
+      kaonTree::FillKaonVariables_KaonCandidatesTrue    (output(), box().Candidates[i]);
+      output().IncrementCounter(kaonTree::ncandidates);
+    } 
+  }
+  
+  /*  //get the kaon selection and get the branch with a larger AccumLevel
+  SelectionBase* ksel = sel().GetSelection("kaonSelection");
+  int branchmax = 0;
+  int max       = 0;  
+  for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
+  if(ksel->GetAccumCutLevel(ibranch) > max){
+  max = ksel->GetAccumCutLevel(ibranch);
+  branchmax = ibranch;
+  }
+  }
+
+  // ---------- best kaon candidate variables --------------
+  if(box().Candidates.size()>0){
+    AnaParticlePD* parent = static_cast<AnaParticlePD*>(anaUtils::GetParticleByID(GetBunch(), box().Candidates[branchmax]->ParentID));
+    kaonTree::FillKaonVariables_KaonBestCandidateReco    (output(), box().Candidates[branchmax], parent);
+    kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(output(), box().Candidates[branchmax]);
+    kaonTree::FillKaonVariables_KaonBestCandidateTrue    (output(), box().Candidates[branchmax]);
+  }
+  */
+  //associate candidates with true kaons
+  for(int i = 0; i < (int)box().Candidates.size(); i++){
+    if(!box().Candidates[i]->TrueObject)continue;
+    for(int j = 0; j < (int)GetSpill().TrueVertices.size(); j++){
+      if(box().Candidates[i]->TrueObject->ID == GetSpill().TrueVertices[j]->TrueParticlesVect[0]->ID){
+	static_cast<kaonAnaTrueVertex*>(GetSpill().TrueVertices[j])->Branch = i;
+      }
+    }
+  }
+  
+  //since accum_level is for candidates, true kaon candidates have an assigned accum_level
+  //despite having a candidate match. This gives problems with the efficiencies, because a 
+  //truekaon can have an accum_level assigned from a non matching candidate.
+  //For that reason we reset the accum_levels of true candidates without matching
+  //and the accum_level of truekaon with matching for all non-matching branches
+  for(int i = 0; i < (int)GetSpill().TrueVertices.size(); i++){
+    kaonAnaTrueVertex* kvtx = static_cast<kaonAnaTrueVertex*>(GetSpill().TrueVertices[i]);
+    if(kvtx->Branch==-999){
+      kvtx->AccumLevel[0][0] = std::min(*min_element(kvtx->AccumLevel[0].begin(), kvtx->AccumLevel[0].end()),2);
+      std::fill(kvtx->AccumLevel[0].begin()+1, kvtx->AccumLevel[0].end(), -2);
+    }
+    else {
+      kvtx->AccumLevel[0][0] = kvtx->AccumLevel[0][kvtx->Branch];
+      std::fill(kvtx->AccumLevel[0].begin()+1, kvtx->AccumLevel[0].end(), -2);
+    }
+  }
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
+//********************************************************************
+
+  // Fill the common variables  (highland/src/highland2/baseAnalysis)
+  if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
+}
+
+//********************************************************************
+bool secondaryKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
+//********************************************************************
+
+  (void) vtx; // to avoid warning for unused vtx variable
+  
+  // fill it allways for the moment
+  return true;
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
+//********************************************************************
+
+  // Fill the common variables (highland/src/highland2/baseAnalysis)
+  baseAnalysis::FillTruthTreeBase(vtx);
+
+  // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  standardPDTree::FillStandardVariables_BeamTrue(    output(), GetSpill().Beam);
+
+  // Fill true kaons candidate info
+  const kaonAnaTrueVertex& kvtx = static_cast<const kaonAnaTrueVertex&>(vtx);
+  kaonTree::FillKaonVariables_TrueKaonCandidates(output(), kvtx);
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::FillCategories(){
+//********************************************************************
+
+  // For the candidate
+  if (box().MainTrack){
+    anaUtils::FillCategories(          &GetEvent(), box().MainTrack,""); // method in highland/src/highland2/highlandUtils
+    //kaonAnaUtils::FillCustomCategories(&GetEvent(), box().MainTrack); 
+    //for(int i = 0; i < std::min((Int_t)secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,(Int_t)box().MainTrack->Daughters.size()); i++){
+    //  anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().MainTrack->Daughters[i]),"daughter",1);
+    //}
+  }
+
+  // for the candidates
+  if(box().Candidates.size()>0){
+    for(int i = 0; i < (int)box().Candidates.size(); i++){
+      anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]),              "candidate",   1);
+      anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]->Daughters[0]),"candidatedau",1);
+      kaonAnaUtils::FillGDaughterKaonCategory("candidatedaumuon",&GetEvent(), box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]),-1,-1);
+    }
+  }
+
+  /*  //get the kaon selection and get the branch with a larger AccumLevel
+  SelectionBase* ksel = sel().GetSelection("kaonSelection");
+  int branchmax = 0;
+  int max       = 0;  
+  for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
+    if(ksel->GetAccumCutLevel(ibranch) > max){
+      max = ksel->GetAccumCutLevel(ibranch);
+      branchmax = ibranch;
+    }
+  }
+
+  // ---------- best kaon candidate variables --------------
+  if(box().Candidates.size()>0){
+    anaUtils::FillCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[branchmax]), "bestcandidate");
+    anaUtils::FillCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[branchmax]->Daughters[0]), "bestcandidatedau");
+    }*/
+
+
+  // For the beam track
+  AnaParticleB* beamPart = static_cast<AnaBeam*>(GetSpill().Beam)->BeamParticle;
+  if (beamPart) anaUtils::FillCategories(&GetEvent(), beamPart, "beam"); // method in highland/src/highland2/highlandUtils
+
+  // For all particles in the event
+  //AnaParticleB** parts = GetEvent().Particles;
+  //Int_t nParts         = GetEvent().nParticles;
+  //for (Int_t i=0;i<std::min((Int_t)secondaryKaonAnalysisConstants::NMAXSAVEDPARTICLES,nParts); ++i){    
+  //  AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    //skip seltrk 
+    //if(part->isPandora)continue;
+    //anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(part), "all", 1);
+  //}
+}
+
+//********************************************************************
+void secondaryKaonAnalysis::FinalizeSpill(){
+//********************************************************************
+  
+  /*this method is not mandatory, but filling the truth tree requires at least to have a true vertex in the spill.
+    Since the truevertices are not clonned, they are only deleted in the RawSpill. The spill we created was added
+    to the corrected spill and it has to be deleted from there. Were are using this method to delete it
+  */
+  baseAnalysis::FinalizeSpill();
+  for(int i = 0; i < (int)GetSpill().TrueVertices.size(); i++)
+    delete GetSpill().TrueVertices[i];
+  
+  GetSpill().TrueVertices.clear();
+}
