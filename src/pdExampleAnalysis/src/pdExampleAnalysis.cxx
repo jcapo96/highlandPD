@@ -101,6 +101,9 @@ bool pdExampleAnalysis::Initialize(){
   // Initialize the baseAnalysis
   if(!baseAnalysis::Initialize()) return false;
 
+  // Save information about all tracks?
+  _saveAllTracks = ND::params().GetParameterI("pdExampleAnalysis.SaveAllTracks");
+
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("pdExampleAnalysis.MinAccumLevelToSave"));
 
@@ -121,7 +124,7 @@ void pdExampleAnalysis::DefineInputConverters(){
      which define the allowed input file formats.
   */
   
-
+  input().AddConverter("minitreefiltered", new HighlandMiniTreeConverter("MiniTree"));
   input().AddConverter("pduneana",         new PDSPAnalyzerTreeConverter()); 
 
 }

@@ -61,6 +61,7 @@ private:
 
   Int_t seltrk_ndau;
   Int_t ntracks;
+  bool  _saveAllTracks;
   
 public:
 
