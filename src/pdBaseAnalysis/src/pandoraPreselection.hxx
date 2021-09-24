@@ -1,7 +1,6 @@
 #ifndef pandoraPreselection_h
 #define pandoraPreselection_h
 
-//#include "duneExampleSelection.hxx"
 #include "SelectionBase.hxx"
 #include "Parameters.hxx"
 #include "ToyBoxPD.hxx"
