@@ -16,8 +16,8 @@ protected:
 protected:
 
   Float_t _cutLength;
-  Float_t _cutZmin;
-  Float_t _cutZmax;
+  Float_t _cutStartZmin;
+  Float_t _cutStartZmax;
 };
 
 #endif

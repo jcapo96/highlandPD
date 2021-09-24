@@ -4,9 +4,9 @@
 
 --- selection cuts for cosmics ------
 
-< pdControlSamples.Cosmics.Cuts.Zmin   = 0 >   // min starting Z of the track
-< pdControlSamples.Cosmics.Cuts.Zmax   = 222 > // max starting Z of the track
-< pdControlSamples.Cosmics.Cuts.Length = 100 > // minimum length of the track
+< pdControlSamples.Cosmics.Cuts.StartZmin = 0 >   // min starting Z of the track
+< pdControlSamples.Cosmics.Cuts.StartZmax = 222 > // max starting Z of the track
+< pdControlSamples.Cosmics.Cuts.Length    = 100 > // minimum length of the track
 
 If 0 --> clear the vector of hits in all particles
 

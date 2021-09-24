@@ -15,8 +15,8 @@ bool CreateMiniTreeCosmics::Initialize(){
   CreateMiniTreePD::Initialize();
   
   _cutLength = ND::params().GetParameterD("pdControlSamples.Cosmics.Cuts.Length");
-  _cutZmin   = ND::params().GetParameterD("pdControlSamples.Cosmics.Cuts.Zmin");
-  _cutZmax   = ND::params().GetParameterD("pdControlSamples.Cosmics.Cuts.Zmax");
+  _cutStartZmin   = ND::params().GetParameterD("pdControlSamples.Cosmics.Cuts.startZmin");
+  _cutStartZmax   = ND::params().GetParameterD("pdControlSamples.Cosmics.Cuts.startZmax");
   
   return true;
 }
@@ -30,7 +30,7 @@ bool CreateMiniTreeCosmics::CheckSaveParticle(const AnaParticleB& partB){
 
   if (part.ParentID==-1 &&
       part.Length > _cutLength &&
-      part.PositionStart[2]>_cutZmin && part.PositionStart[2]<_cutZmax){
+      part.PositionStart[2]>_cutStartZmin && part.PositionStart[2]<_cutStartZmax){
 
     return true;
   }
