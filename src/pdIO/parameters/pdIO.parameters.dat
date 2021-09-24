@@ -1,0 +1,5 @@
+
+
+If 0 --> clear the vector of hits in all particles
+
+< pdIO.MiniTree.SaveHits   = 0 >   
