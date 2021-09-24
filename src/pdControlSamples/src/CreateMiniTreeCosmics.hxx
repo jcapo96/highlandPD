@@ -1,49 +1,23 @@
-#ifndef cosmicsCreateMiniTree_h
-#define cosmicsCreateMiniTree_h
+#ifndef CreateMiniTreeCosmics_h
+#define CreateMiniTreeCosmics_h
 
-#include "SimpleLoopBase.hxx"
-#include "pdDataClasses.hxx"
-#include "InputManager.hxx"
-#include <set>
+#include "CreateMiniTreePD.hxx"
 
-class cosmicsCreateMiniTree: public SimpleLoopBase {
+class CreateMiniTreeCosmics: public CreateMiniTreePD {
  public:
 
-  cosmicsCreateMiniTree(int argc, char *argv[]);
-  virtual ~cosmicsCreateMiniTree(){}
+  CreateMiniTreeCosmics(int argc, char *argv[]);
+  virtual ~CreateMiniTreeCosmics(){}
 
 protected:
-
-  //---- These are mandatory functions
-  virtual bool Initialize     ();
-  virtual bool InitializeSpill(){return true;}
-
-  virtual void DefineOutputTree();
-
-  virtual void FinalizeSpill(){}
-  virtual void Finalize     ();
-
-  virtual bool Process();
-  //--------------------
-
-  virtual void FillMiniTree();
-
-  bool RecoCandidateExists();
-  bool TruthCandidateExists();
-
-  enum miniTreeIndex{
-    minitree = OutputManager::enumSpecialTreesLast+1
-  };
-
-
+  bool Initialize();
+  bool CheckSaveParticle(const AnaParticleB& part);
+  
 protected:
 
-  Int_t _totalEntries;
-  Int_t _savedEntries;
-
-  bool _saveCandidates;
-
-  AnaSpill* _spill;
+  Float_t _cutLength;
+  Float_t _cutZmin;
+  Float_t _cutZmax;
 };
 
 #endif
