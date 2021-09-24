@@ -1,25 +1,25 @@
-#include "pdCosmicAnalysis.hxx"
+#include "cosmicsAnalysis.hxx"
 #include "Parameters.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 #include "pdAnalysisUtils.hxx"
 
+#include "pdBaseSelection.hxx"
 
-#include "pdCosmicSelection.hxx"
 #include "pdDataClasses.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 #include "PDSPAnalyzerTreeConverter.hxx"
 
 //********************************************************************
-pdCosmicAnalysis::pdCosmicAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
+cosmicsAnalysis::cosmicsAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version (not yet properly done)
-  //  ND::versioning().AddPackage("pdCosmicAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PDANALYSISROOT")));
+  //  ND::versioning().AddPackage("cosmicsAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("PDANALYSISROOT")));
 }
 
 //********************************************************************
-bool pdCosmicAnalysis::Initialize(){
+bool cosmicsAnalysis::Initialize(){
 //********************************************************************
 
   // Initialize the baseAnalysis (highland/src/highland2/baseAnalysis)
@@ -39,7 +39,7 @@ bool pdCosmicAnalysis::Initialize(){
 }
 
 //********************************************************************
-void pdCosmicAnalysis::DefineInputConverters(){
+void cosmicsAnalysis::DefineInputConverters(){
 //********************************************************************
   
   // add a single converter (a copy of the one in highland/baseAnalysis)
@@ -49,27 +49,27 @@ void pdCosmicAnalysis::DefineInputConverters(){
 }
 
 //********************************************************************
-void pdCosmicAnalysis::DefineSelections(){
+void cosmicsAnalysis::DefineSelections(){
 //********************************************************************
 
   // Dummy selection for the moment
-  sel().AddSelection("pdCosmicSelection", "pd cosmic selection", new pdCosmicSelection(false));     // true/false for forcing break  
+  sel().AddSelection("pdBaseSelection", "dummy selection", new pdBaseSelection());
 }
 
 //********************************************************************
-void pdCosmicAnalysis::DefineMicroTrees(bool addBase){
+void cosmicsAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
 
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  standardPDTree::AddStandardVariables_AllParticlesReco(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
-  standardPDTree::AddStandardVariables_AllParticlesTrue(output(),pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS);
+  standardPDTree::AddStandardVariables_AllParticlesReco(output(),cosmicsAnalysisConstants::NMAXSAVEDCOSMICS);
+  standardPDTree::AddStandardVariables_AllParticlesTrue(output(),cosmicsAnalysisConstants::NMAXSAVEDCOSMICS);
 }
 
 //********************************************************************
-void pdCosmicAnalysis::FillMicroTrees(bool addBase){
+void cosmicsAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
@@ -80,9 +80,11 @@ void pdCosmicAnalysis::FillMicroTrees(bool addBase){
   Int_t ncosmics = 0;
   
   for(size_t nparts=0;nparts < GetEvent().nParticles;nparts++){
-    if (ncosmics == (Int_t)pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS) break;
+    if (ncosmics == (Int_t)cosmicsAnalysisConstants::NMAXSAVEDCOSMICS) break;
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[nparts]);
     if(part->ParentID==-1){
+
+      //      std::cout << nparts << " " << ncosmics << " " << part->Length << " " << part->PositionStart[2] << std::endl;
       if (part->Length>_cutLength && part->PositionStart[2]>_cutZmin && part->PositionStart[2]<_cutZmax){
     
         standardPDTree::FillStandardVariables_AllParticlesReco(output(), part);
@@ -96,16 +98,15 @@ void pdCosmicAnalysis::FillMicroTrees(bool addBase){
 }
 
 //********************************************************************
-void pdCosmicAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
+void cosmicsAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
   // Fill the common variables (highland/src/highland2/baseAnalysis)
   baseAnalysis::FillTruthTreeBase(vtx);
-
 }
 
 //********************************************************************
-void pdCosmicAnalysis::FillCategories(){
+void cosmicsAnalysis::FillCategories(){
 //********************************************************************
 
   // For all particles in the event
@@ -113,7 +114,7 @@ void pdCosmicAnalysis::FillCategories(){
   Int_t nparts   = 0;
   Int_t ncosmics = 0;
   
-  while(ncosmics < (Int_t)pdCosmicAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
+  while(ncosmics < (Int_t)cosmicsAnalysisConstants::NMAXSAVEDCOSMICS && nparts < GetEvent().nParticles){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[nparts]);
     if(part->ParentID == -1){
       anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(part), "cosmic", 1);

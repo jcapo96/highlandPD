@@ -1,9 +1,9 @@
-#ifndef pdCosmicAnalysis_h
-#define pdCosmicAnalysis_h
+#ifndef cosmicsAnalysis_h
+#define cosmicsAnalysis_h
 
 #include "baseAnalysis.hxx"
-#include "ToyBoxKaon.hxx"
 #include "standardPDTree.hxx"
+#include "ToyBoxPD.hxx"
 
 
 /* This is an example of analysis in ProtoDUNE-SP detector 
@@ -17,14 +17,14 @@
  */
 
 
-namespace pdCosmicAnalysisConstants{
+namespace cosmicsAnalysisConstants{
   const UInt_t NMAXSAVEDCOSMICS        = 50;
 }
 
-class pdCosmicAnalysis: public baseAnalysis {
+class cosmicsAnalysis: public baseAnalysis {
  public:
-  pdCosmicAnalysis(AnalysisAlgorithm* ana=NULL);
-  virtual ~pdCosmicAnalysis(){}
+  cosmicsAnalysis(AnalysisAlgorithm* ana=NULL);
+  virtual ~cosmicsAnalysis(){}
 
   //---- These are mandatory functions
   void DefineSelections();
@@ -58,10 +58,10 @@ class pdCosmicAnalysis: public baseAnalysis {
   virtual AnaEventC* MakeEvent(){
     return new AnaEventPD(GetSpill(),GetBunch());
   }
-  
-  /// Returns the ToyBoxKaon
-  virtual const ToyBoxKaon& box(Int_t isel=-1) const {return *static_cast<const ToyBoxKaon*>(&boxB(isel));}
 
+  /// Returns the ToyBoxPD
+  virtual const ToyBoxPD& box(Int_t isel=-1) const {return *static_cast<const ToyBoxPD*>(&boxB(isel));}
+  
   /// Returns the vertex for the ToyBoxKaon
   virtual AnaVertexB* GetVertex() const{return box().Vertex;}
 
@@ -80,7 +80,7 @@ private:
   
 public:
 
-  enum enumConf_pdCosmicAnalysis{
+  enum enumConf_cosmicsAnalysis{
     detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
     dedx_syst,
     Lifetime_syst,
@@ -88,10 +88,10 @@ public:
     Recombination_syst,
     dEdxCalib_syst,
     TrackEff_syst,
-    enumConfLast_pdCosmicAnalysis
+    enumConfLast_cosmicsAnalysis
   };
 
-  enum enumSyst_pdCosmicAnalysis{
+  enum enumSyst_cosmicsAnalysis{
     kLength=0,
     kLifetime,
     kdQdxCalib,
@@ -99,7 +99,7 @@ public:
     kdEdxCalib,
     kBeam,
     kTrackEff,
-    enumSystLast_pdCosmicAnalysis
+    enumSystLast_cosmicsAnalysis
   };  
 };
 

@@ -1,8 +1,8 @@
-#include "pdCosmicAnalysis.hxx"
+#include "cosmicsAnalysis.hxx"
 #include "AnalysisLoop.hxx"
 
 int main(int argc, char *argv[]){
-  pdCosmicAnalysis* ana = new pdCosmicAnalysis();
+  cosmicsAnalysis* ana = new cosmicsAnalysis();
   AnalysisLoop loop(ana, argc, argv); 
   loop.Execute();
 }

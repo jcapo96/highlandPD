@@ -1,6 +1,6 @@
-#include "cosmicsCreateMiniTree.hxx"
+#include "CreateMiniTreeCosmics.hxx"
 
 int main(int argc, char *argv[]){
-  cosmicsCreateMiniTree ana(argc, argv);
+  CreateMiniTreeCosmics ana(argc, argv);
   ana.Execute();
 }
