@@ -2,6 +2,7 @@
 #define CreateMiniTreePD_h
 
 #include "CreateMiniTree.hxx"
+#include "pdDataClasses.hxx"
 
 class CreateMiniTreePD: public CreateMiniTree {
  public:
@@ -11,6 +12,11 @@ class CreateMiniTreePD: public CreateMiniTree {
 
 protected:
 
+  virtual bool Initialize();
+  void FilterParticleInfo(AnaParticleB& part);
+  
+protected:
+  Bool_t _saveHits;  
 };
 
 #endif
