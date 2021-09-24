@@ -1,4 +1,4 @@
-#include "kaonCreateMiniTree.hxx"
+#include "CreateMiniTreeKaon.hxx"
 #include "InputManager.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 #include "Parameters.hxx"
@@ -6,13 +6,13 @@
 #include <iomanip>
 
 //********************************************************************
-kaonCreateMiniTree::kaonCreateMiniTree(int argc, char *argv[]):CreateMiniTree(argc, argv){
+CreateMiniTreeKaon::CreateMiniTreeKaon(int argc, char *argv[]):CreateMiniTreePD(argc, argv){
 //********************************************************************
 
 }
 
 //********************************************************************
-bool kaonCreateMiniTree::RecoCandidateExists(){
+bool CreateMiniTreeKaon::RecoCandidateExists(){
 //********************************************************************
 
   bool itExists = false;
@@ -34,7 +34,7 @@ bool kaonCreateMiniTree::RecoCandidateExists(){
 }
 
 //********************************************************************
-bool kaonCreateMiniTree::TruthCandidateExists(){
+bool CreateMiniTreeKaon::TruthCandidateExists(){
 //********************************************************************
 
   bool itExists = false;
@@ -51,7 +51,7 @@ bool kaonCreateMiniTree::TruthCandidateExists(){
 }
 
 //********************************************************************
-void kaonCreateMiniTree::DeleteUninterestingParticles(){
+void CreateMiniTreeKaon::DeleteUninterestingParticles(){
 //********************************************************************
 
   AnaBunchB* bunch = static_cast<AnaBunchB*>(_spill->Bunches[0]);
@@ -91,7 +91,7 @@ void kaonCreateMiniTree::DeleteUninterestingParticles(){
 }
 
 //********************************************************************
-void kaonCreateMiniTree::DeleteUninterestingTrueParticles(){
+void CreateMiniTreeKaon::DeleteUninterestingTrueParticles(){
 //********************************************************************
 
   // Keep the true particles associated to reconstructed particles and all its descendants

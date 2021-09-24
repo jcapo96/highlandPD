@@ -1,16 +1,16 @@
-#ifndef kaonCreateMiniTree_h
-#define kaonCreateMiniTree_h
+#ifndef CreateMiniTreeKaon_h
+#define CreateMiniTreeKaon_h
 
-#include "CreateMiniTree.hxx"
+#include "CreateMiniTreePD.hxx"
 #include "pdDataClasses.hxx"
 #include "InputManager.hxx"
 #include <set>
 
-class kaonCreateMiniTree: public CreateMiniTree {
+class CreateMiniTreeKaon: public CreateMiniTreePD {
  public:
 
-  kaonCreateMiniTree(int argc, char *argv[]);
-  virtual ~kaonCreateMiniTree(){}
+  CreateMiniTreeKaon(int argc, char *argv[]);
+  virtual ~CreateMiniTreeKaon(){}
 
 protected:
 
