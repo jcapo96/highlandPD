@@ -6,8 +6,7 @@
 #include "baseToyMaker.hxx"
 
 #include "secondaryKaonSelection.hxx"
-#include "secondaryKaonFromBeamSelection.hxx"
-#include "secondaryKaonFromCosmicSelection.hxx"
+#include "secondaryKaonXSSelection.hxx"
 #include "kaonAnalysisUtils.hxx"
 #include "kaonDataClasses.hxx"
 
@@ -31,16 +30,13 @@ bool secondaryKaonAnalysis::Initialize(){
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("secondaryKaonAnalysis.MinAccumLevelToSave"));
 
   // Parameters
-  _AllSelection = ND::params().GetParameterI("secondaryKaonAnalysis.AllSelection");
-  _BeamSelection = ND::params().GetParameterI("secondaryKaonAnalysis.BeamSelection");
-  _CosmicSelection = ND::params().GetParameterI("secondaryKaonAnalysis.CosmicSelection");
 
   // Define standard categories for color drawing
   anaUtils::AddStandardCategories();        // This is for the candidate particle
   anaUtils::AddStandardCategories("beam");  // This is for the Beam Instrumentation particle
   //anaUtils::AddStandardCategories("bestcandidate");  // This is for the best candidate of each event
   //anaUtils::AddStandardCategories("bestcandidatedau");  // This is for the best candidate of each event
-  //anaUtils::AddStandardObjectCategories("daughter",standardPDTree::seltrk_ndau,"seltrk_ndau",1);  // This is for the daughters of the selected track
+  anaUtils::AddStandardObjectCategories("daughter",standardPDTree::seltrk_ndau,"seltrk_ndau",1);  // This is for the daughters of the selected track
   //anaUtils::AddStandardObjectCategories("all",standardPDTree::ntracks,"ntracks",1);  // This is for all the tracks in the event
 
   // Add standard categories for the candidates
@@ -105,9 +101,8 @@ void secondaryKaonAnalysis::DefineInputConverters(){
 void secondaryKaonAnalysis::DefineSelections(){
 //********************************************************************
 
-  if(_AllSelection)   sel().AddSelection("secondaryKaonSelection",           "kaon selection",        new secondaryKaonSelection(false));     
-  if(_BeamSelection)  sel().AddSelection("secondaryKaonFromBeamSelection",   "kaon beam selection",   new secondaryKaonFromBeamSelection(false));     
-  if(_CosmicSelection)sel().AddSelection("secondaryKaonFromCosmicSelection", "kaon cosmic selection", new secondaryKaonFromCosmicSelection(false));
+  //sel().AddSelection("secondaryKaonSelection", "kaon selection", new secondaryKaonSelection(false));
+  sel().AddSelection("secondaryKaonXSSelection", "kaon selection", new secondaryKaonXSSelection(false));
 }
 
 //********************************************************************
@@ -148,20 +143,18 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  //standardPDTree::AddStandardVariables_CountersTrue(output());  
   standardPDTree::AddStandardVariables_BeamReco(output());
   standardPDTree::AddStandardVariables_BeamTrue(output());
   standardPDTree::AddStandardVariables_CandidateTrue(output());
   standardPDTree::AddStandardVariables_CandidateReco(output());
-  //standardPDTree::AddStandardVariables_CandidateHitsReco(output());
-  //standardPDTree::AddStandardVariables_CandidateDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
-  //standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
-  //standardPDTree::AddStandardVariables_CandidateDaughtersHitsReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS, secondaryKaonAnalysisConstants::NMAXSAVEDHITSDAUGHTERS);
+  standardPDTree::AddStandardVariables_CandidateHitsReco(output());
+  standardPDTree::AddStandardVariables_CandidateDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  standardPDTree::AddStandardVariables_CandidateDaughtersHitsReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS, secondaryKaonAnalysisConstants::NMAXSAVEDHITSDAUGHTERS);
   //standardPDTree::AddStandardVariables_AllParticlesReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDPARTICLES);
   //standardPDTree::AddStandardVariables_AllParticlesTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDPARTICLES);
 
   // -------- Add additional variables to the analysis tree ----------------------
-  //kaonTree::AddKaonVariables_CandidateDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS);
   //kaonTree::AddKaonVariables_CandidateGDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
   //kaonTree::AddKaonVariables_CandidateGDaughtersReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS);
   //kaonTree::AddKaonVariables_CandidateGGDaughtersTrue(output(),secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS, secondaryKaonAnalysisConstants::NMAXSAVEDGGDAUGHTERS);
@@ -186,7 +179,6 @@ void secondaryKaonAnalysis::DefineTruthTree(){
   baseAnalysis::DefineTruthTree();
 
   // Add standard sets of variables for ProtoDUNE analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  //standardPDTree::AddStandardVariables_CountersTrue(output());
   standardPDTree::AddStandardVariables_BeamTrue(    output());
   
   // Add specific variables for the kaon candidates
@@ -225,7 +217,7 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
   // ---------- Additional candidate variables --------------
   if(box().MainTrack){        
  
-    /*// ---------- Save information about all (max secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS) daughters in the candidate --------------
+    // ---------- Save information about all (max secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS) daughters in the candidate --------------
     Int_t ndau = (Int_t)box().MainTrack->Daughters.size();
     for (Int_t idau = 0; idau < std::min((Int_t)secondaryKaonAnalysisConstants::NMAXSAVEDDAUGHTERS,ndau); idau++){      
       AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[idau]);
@@ -234,7 +226,7 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
       standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
       standardPDTree::FillStandardVariables_CandidateDaughterHitsReco(output(), dau, secondaryKaonAnalysisConstants::NMAXSAVEDHITSDAUGHTERS);
       // Additional variables for kaon Analysis
-      kaonTree::FillKaonVariables_CandidateDaughterTrue(output(), box().MainTrack, dau);
+      /*kaonTree::FillKaonVariables_CandidateDaughterTrue(output(), box().MainTrack, dau);
        
       // ---------- Save information about all (max secondaryKaonAnalysisConstants::NMAXSAVEDGDAUGHTERS) gdaughters in the candidate --------------
       Int_t ngdau = (Int_t)dau->DaughtersIDs.size();
@@ -250,9 +242,9 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
 	  kaonTree::FillKaonVariables_CandidateGGDaughterReco(output(), ggdau, jgdau, jggdau);
 	  kaonTree::FillKaonVariables_CandidateGGDaughterTrue(output(), ggdau, jgdau, jggdau);
 	}
-      }
+	}*/
       output().IncrementCounter(standardPDTree::seltrk_ndau);
-      }*/ 
+    } 
   }
  
   // ---------- kaon candidates variables --------------
@@ -334,7 +326,7 @@ bool secondaryKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 void secondaryKaonAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
-
+  
   // Fill the common variables (highland/src/highland2/baseAnalysis)
   baseAnalysis::FillTruthTreeBase(vtx);
 

@@ -75,10 +75,6 @@ class secondaryKaonAnalysis: public baseAnalysis {
 
 private:
   
-  bool _AllSelection;
-  bool _BeamSelection;
-  bool _CosmicSelection;
-
 public:
 
   enum enumConf_secondaryKaonAnalysis{
