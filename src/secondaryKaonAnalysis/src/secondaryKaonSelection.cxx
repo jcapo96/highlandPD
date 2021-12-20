@@ -17,20 +17,24 @@ void secondaryKaonSelection::DefineSteps(){
   // if "true" is added to the constructor of the step,
   // the step sequence is broken if cut is not passed (default is "false")
 
-  //secondary kaon selection
+  //copy steps from pandoraPreselection
+  AddStep(StepBase::kAction,   "find Pandora track",         new FindPandoraTrackAction());// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kCut,      "candidate exists",           new CandidateExistsCut()    );// in pdBaseAnalysis/src/pandoraPreselection  
+  //select events using beam instrumentation
+  AddStep(StepBase::kCut,      "beam pdg filter",            new BeamFilterCut()         );
   AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsAction()        );
   AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonCut(),  true);
   //split the selection in branches, one for each possible candidate
   AddSplit(secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
   //next cuts have to be applied to each branch
   for(int i = 0; i < (int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
-    AddStep(i, StepBase::kCut, "kaon daughter is a track",   new MuonIsTrackCut(),             true);
-    AddStep(i, StepBase::kCut, "kaon daughter chi2 cut",     new MuonChi2Cut(),                true);
-    AddStep(i, StepBase::kCut, "kaon daughter CNN cut",      new MuonCNNCut(),                 true);
-    AddStep(i, StepBase::kCut, "kaon daughter mom cut",      new MuonRangeMomCut(),            true);
-    AddStep(i, StepBase::kCut, "kaon CNN cut",               new KaonCNNCut(),                 true);
-    AddStep(i, StepBase::kCut, "kaon-muon angle cut",        new KaonMuonAngleCut(),           true);
-    AddStep(i, StepBase::kCut, "kaon-muon distance cut",     new KaonMuonDistanceCut(),        true);
+    AddStep(i, StepBase::kCut, "kaon daughter is a track",   new MuonIsTrackCut(),           true);
+    AddStep(i, StepBase::kCut, "kaon daughter chi2 cut",     new MuonChi2Cut(10),            true);
+    AddStep(i, StepBase::kCut, "kaon daughter CNN cut",      new MuonCNNCut(0.6),            true);
+    AddStep(i, StepBase::kCut, "kaon daughter mom cut",      new MuonRangeMomCut(0.22,0.02), true);
+    AddStep(i, StepBase::kCut, "kaon CNN cut",               new KaonCNNCut(0.8),            true);
+    AddStep(i, StepBase::kCut, "kaon-muon angle cut",        new KaonMuonAngleCut(0.1),      true);
+    AddStep(i, StepBase::kCut, "kaon-muon distance cut",     new KaonMuonDistanceCut(20),    true);
   }
 
   //Set the branch aliases to the different branches 
@@ -45,6 +49,40 @@ void secondaryKaonSelection::DefineSteps(){
   // third cut (numbering starts at 0) is not passed. This is a way of saving time.
   // -1 means no preselection
   SetPreSelectionAccumLevel(-1);
+}
+
+//**************************************************
+bool BeamFilterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+  
+  (void)boxB;
+  
+  //get the beam
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+
+  //for MC
+  if(event.GetIsMC()){
+    if(beam->BeamParticle){
+      if(beam->BeamParticle->TrueObject){
+        //cast the beam particle
+        AnaTrueParticlePD* beamTruePart = static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
+        if(abs(beamTruePart->PDG)==13 || abs(beamTruePart->PDG)==211 || abs(beamTruePart->PDG)==321 || abs(beamTruePart->PDG)==2212)return true;
+      }
+    }
+  }
+  //for data
+  else{
+    bool hadron = false;
+    for(size_t i = 0; i < beam->PDGs.size(); i++){
+      if(beam->PDGs[i] == 211 || beam->PDGs[i] == 321 || beam->PDGs[i] == 2212){
+        hadron = true;
+        break;
+      }
+    }
+    if(hadron)return true;
+  }
+  
+  return false;
 }
 
 //**************************************************
@@ -63,6 +101,7 @@ bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //look over the particles in the event
   for(int i = 0; i < nParts; i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    if(part->isPandora)continue; //skip beam particle
     if(part->Daughters.size() == 1 && part->ParentID != -1)box.Candidates.push_back(part);
   }
   
@@ -106,7 +145,7 @@ bool MuonIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 bool MuonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+ 
   (void)event;
 
   //cast the box
@@ -117,12 +156,7 @@ bool MuonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   //if there is kaon, cut in its daughter chi2
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
-  /*std::pair<double,int> prot_result = pdAnaUtils::Chi2PID(*dau,2212);
-  std::pair<double,int> muon_result = pdAnaUtils::Chi2PID(*dau,13);
-  dau->Chi2Proton = prot_result.first;
-  dau->Chi2Muon   = muon_result.first;
-  dau->Chi2ndf    = muon_result.second;*/
-  if(dau->Chi2Muon / dau->Chi2ndf < 10)return true;
+  if(dau->Chi2Muon / dau->Chi2ndf > 0.21 && dau->Chi2Muon / dau->Chi2ndf < 7.3 && dau->Chi2Muon > 0)return true;
   else return false; 
 }
 
@@ -140,7 +174,7 @@ bool MuonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   //if there is kaon, cut in its daughter CNN score
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
-  if(dau->CNNscore[0] > 0.6)return true;
+  if(dau->CNNscore[0] > 0.42 && dau->CNNscore[0] < 0.96)return true;
   else return false; 
 }
 
@@ -159,7 +193,7 @@ bool MuonRangeMomCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //if there is kaon, cut in its daughter range mom
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
   double mom = pdAnaUtils::ComputeRangeMomentum(dau->Length,13);
-  if(fabs(mom-0.22) < 0.02)return true;
+  if(mom > 0.217 && mom < 0.237)return true;
   else return false; 
 }
 
@@ -176,7 +210,7 @@ bool KaonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //if there is kaon, cut on its CNN
-  if(box.Candidates[branchesIDs[0]]->CNNscore[0] > 0.8)return true;
+  if(box.Candidates[branchesIDs[0]]->CNNscore[0] > 0.61)return true;
   else return false; 
 }
 
@@ -197,7 +231,7 @@ bool KaonMuonAngleCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   AnaParticlePD* muon = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
   double cos = 0;
   for(int i = 0; i < 3; i++)cos = cos + kaon->DirectionEnd[i] * muon->DirectionStart[i];
-  if(cos < 0.1 )return true;
+  if(cos < 0.65)return true;
   else return false; 
 }
 
@@ -219,7 +253,7 @@ bool KaonMuonDistanceCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   double dis = 0;
   for(int i = 0; i < 3; i++)dis = dis + pow(kaon->PositionEnd[i] - muon->PositionStart[i],2);
   dis = sqrt(dis);
-  if(dis < 10)return true;
+  if(dis < 20)return true;
   else return false; 
 }
 
