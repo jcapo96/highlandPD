@@ -60,8 +60,10 @@ namespace standardPDTree{
     // selected track reco info
     seltrk_ndau,
     seltrk_pos,
+    seltrk_SCEpos,
     seltrk_endpos,
     seltrk_dir,
+    seltrk_SCEdir,
     seltrk_enddir,
     seltrk_costheta,
     seltrk_length,
