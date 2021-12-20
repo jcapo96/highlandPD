@@ -31,23 +31,4 @@ public:
 };
 
 
-class kaonCounters: public PDCounters{
-  
-public:
-  
-  kaonCounters(){
-    ntrue_offspring_kaons = 0;
-    ntrue_secondary_kaons = 0;
-    ntrue_tertiary_kaons = 0;
-    ntrue_overthree_kaons = 0;
-  }
-  virtual ~kaonCounters(){}
-  
-  Int_t ntrue_offspring_kaons;
-  Int_t ntrue_secondary_kaons;
-  Int_t ntrue_tertiary_kaons;
-  Int_t ntrue_overthree_kaons;
-};
-
-
 #endif
