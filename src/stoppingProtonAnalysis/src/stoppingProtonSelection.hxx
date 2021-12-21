@@ -39,28 +39,6 @@ protected:
 };
 
 
-
-class FindBeamTrackAction: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new FindBeamTrackAction();}
-};
-
-class BeamProtonCut: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new BeamProtonCut();}
-};
-/*
-class CandidateExistsCut: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new CandidateExistsCut();}
-};
-*/
 class BeamProtonAngleCut: public StepBase{
  public:
   using StepBase::Apply;

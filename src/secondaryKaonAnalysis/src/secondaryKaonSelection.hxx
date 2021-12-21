@@ -34,11 +34,11 @@ protected:
 };
 
 //---- Steps and actions for the analysis
-class BeamFilterCut: public StepBase{
+class BeamHadronCut: public StepBase{
  public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new BeamFilterCut();}
+  StepBase* MakeClone(){return new BeamHadronCut();}
 };
 
 class GetKaonsAction: public StepBase{

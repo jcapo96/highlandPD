@@ -9,7 +9,7 @@
 #include "hitPionTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 //#include "LArSoftTreeConverter.hxx"
-#include "pandoraPreselection.hxx"
+#include "pdBaseSelection.hxx"
 
 
 const UInt_t NMAXSAVEDPARTICLES=700;
@@ -80,7 +80,7 @@ void dEdxStudies::DefineSelections(){
   //   step sequence is not broken when a cut is not passed. In this way we can save intermediate information for events 
   //   not passing the entire selection
 
-  sel().AddSelection("pandoraPreselection", "pandora selection", new pandoraPreselection(false));     // true/false for forcing break  
+  sel().AddSelection("pdBaseSelection", "base selection", new pdBaseSelection(false));     // true/false for forcing break  
 }
 
 //********************************************************************

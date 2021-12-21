@@ -34,24 +34,45 @@ public:
   
 };
 
-
 /// A cut on event quality. Requires good beam and detector data quality flags.
 class EventQualityCut: public StepBase {
-    public:
-        using StepBase::Apply;
+public:
+  using StepBase::Apply;
+  
+  EventQualityCut(){
+    enableDQCut = (bool) ND::params().GetParameterI("pdBaseAnalysis.EnableDataQualityCut");
+    enableBeamQualityCut = (bool) ND::params().GetParameterI("pdBaseAnalysis.EnableBeamQualityCut");
+  }
+  
+  bool enableDQCut;
+  bool enableBeamQualityCut;
+  
+  /// Apply the event quality cut. See EventQualityCut class documentation
+  /// for details.
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new EventQualityCut();}
+};
 
-        EventQualityCut(){
-          enableDQCut = (bool) ND::params().GetParameterI("pdBaseAnalysis.EnableDataQualityCut");
-          enableBeamQualityCut = (bool) ND::params().GetParameterI("pdBaseAnalysis.EnableBeamQualityCut");
-        }
+class FindBeamTrackAction: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new FindBeamTrackAction();}
+};
 
-        bool enableDQCut;
-        bool enableBeamQualityCut;
+class BeamTrackExistsCut: public StepBase{
+public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamTrackExistsCut();}
+};
 
-        /// Apply the event quality cut. See EventQualityCut class documentation
-        /// for details.
-        bool Apply(AnaEventC& event, ToyBoxB& box) const;
-        StepBase* MakeClone(){return new EventQualityCut();}
+class BeamPDGCut: public StepBase{
+public:
+  using StepBase::StepBase;
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamPDGCut();}
 };
 
 #endif

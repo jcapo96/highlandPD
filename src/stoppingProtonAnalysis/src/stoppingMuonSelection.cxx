@@ -1,7 +1,7 @@
 #include "stoppingMuonSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pandoraPreselection.hxx"
+#include "pdBaseSelection.hxx"
 
 //********************************************************************
 stoppingMuonSelection::stoppingMuonSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -16,56 +16,24 @@ void stoppingMuonSelection::DefineSteps(){
   // Steps must be added in the right order
   // if "true" is added to the constructor of the step,
   // the step sequence is broken if cut is not passed (default is "false")
-  AddStep(StepBase::kAction, "find Pandora track",  new FindPandoraTrackAction());
-  AddStep(StepBase::kCut,    "beam track in TPC",   new CandidateExistsCut());
+  AddStep(StepBase::kAction, "find Pandora track",  new FindBeamTrackAction());
+  AddStep(StepBase::kCut,    "beam track in TPC",   new BeamTrackExistsCut());
   AddStep(StepBase::kCut,    "beam muon",           new BeamMuonCut());
-  AddStep(StepBase::kCut,    "pandora reco worked", new CandidateIsBeamCut());
+  //AddStep(StepBase::kCut,    "pandora reco worked", new CandidateIsBeamCut());
   AddStep(StepBase::kCut,    "muon CSDA range",     new MuonCSDARangeCut());
   
   SetBranchAlias(0,"trunk");
-  //AddStep(StepBase::kAction, "find vertex",          new FindVertexAction());  // action from duneExampleAnalysis package
-  //dunno why this action was being used. Commented for the moment
 }
 
 //**************************************************
 bool BeamMuonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
-  (void)boxB;
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+  BeamPDGCut* beamCut1 = new BeamPDGCut(211);
+  BeamPDGCut* beamCut2 = new BeamPDGCut(13);
 
-  // Use the true beam particle to discriminate between data and MC
-  AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject);
-
-  if (trueBeamPart){
-    // for MC
-    if (trueBeamPart->PDG==-13 || trueBeamPart->PDG==211) return true;
-  }
-  else{
-    // for real DATA
-    for(int i = 0; i < (int)beam->PDGs.size(); i++){
-      if (beam->PDGs[i] == 13 || beam->PDGs[i] == 211) return true;
-    }
-  }
-  return false;
-  /*(void)boxB;
-  
-  AnaBeam* beam = static_cast<AnaBeam*>(static_cast<AnaEventB*>(&event)->Beam);
-
-  if (event.GetIsMC()){
-    if (beam->BeamParticle){
-      if (beam->BeamParticle->TrueObject){       
-        if (abs(static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject)->PDG)==13 || abs(static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject)->PDG)==211) return true;
-        // If electron veto is off consier also electrons
-        if (!_electronVeto && abs(static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject)->PDG)==11) return true;
-      }
-    }
-    return false;
-  }
-  else{
-    if (beam->TOF>145 && beam->TOF<170) return true;
-    else return false;    
-    }*/
+  if(beamCut1->Apply(event,boxB) || beamCut2->Apply(event,boxB))return true;
+  else return false;
 }
 
 //**************************************************

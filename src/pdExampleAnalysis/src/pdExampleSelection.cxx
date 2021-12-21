@@ -1,7 +1,7 @@
 #include "pdExampleSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pandoraPreselection.hxx"
+#include "pdBaseSelection.hxx"
 
 //********************************************************************
 pdExampleSelection::pdExampleSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -16,27 +16,13 @@ void pdExampleSelection::DefineSteps(){
   // Steps must be added in the right order
   // if "true" is added to the constructor of the step,
   // the step sequence is broken if cut is not passed (default is "false")
-  AddStep(StepBase::kAction, "find Pandora track",           new FindPandoraTrackAction());
-  AddStep(StepBase::kCut,    "beam track in TPC",            new CandidateExistsCut());
-  AddStep(StepBase::kCut,    "beam particle is proton-like", new BeamIsProtonCut());
-  AddStep(StepBase::kCut,    "pandora reco worked",          new BeamQualityCut());
+  AddStep(StepBase::kAction, "find Pandora track",           new FindBeamTrackAction());
+  AddStep(StepBase::kCut,    "beam track in TPC",            new BeamTrackExistsCut());
+  //AddStep(StepBase::kCut,    "beam particle is proton-like", new BeamPDGCut(2212);
+  //AddStep(StepBase::kCut,    "pandora reco worked",          new BeamQualityCut());
   AddStep(StepBase::kCut,    "proton CSDA range",            new CSDARangeCut());
   
   SetBranchAlias(0,"trunk");
-}
-
-//**************************************************
-bool BeamIsProtonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  (void)boxB;
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-
-  for(int i = 0; i < (int)beam->PDGs.size(); i++){
-    if (beam->PDGs[i] == 2212) return true;
-  }
-
-  return false;
 }
 
 //**************************************************

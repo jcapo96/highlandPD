@@ -1,7 +1,7 @@
 #include "secondaryKaonSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pandoraPreselection.hxx"
+#include "pdBaseSelection.hxx"
 
 //********************************************************************
 secondaryKaonSelection::secondaryKaonSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -18,10 +18,10 @@ void secondaryKaonSelection::DefineSteps(){
   // the step sequence is broken if cut is not passed (default is "false")
 
   //copy steps from pandoraPreselection
-  AddStep(StepBase::kAction,   "find Pandora track",         new FindPandoraTrackAction());// in pdBaseAnalysis/src/pandoraPreselection  
-  AddStep(StepBase::kCut,      "candidate exists",           new CandidateExistsCut()    );// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kAction,   "find Pandora track",         new FindBeamTrackAction());// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kCut,      "candidate exists",           new BeamTrackExistsCut()    );// in pdBaseAnalysis/src/pandoraPreselection  
   //select events using beam instrumentation
-  AddStep(StepBase::kCut,      "beam pdg filter",            new BeamFilterCut()         );
+  AddStep(StepBase::kCut,      "beam pdg filter",            new BeamHadronCut()         );
   AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsAction()        );
   AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonCut(),  true);
   //split the selection in branches, one for each possible candidate
@@ -52,37 +52,18 @@ void secondaryKaonSelection::DefineSteps(){
 }
 
 //**************************************************
-bool BeamFilterCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+bool BeamHadronCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
   
-  (void)boxB;
-  
-  //get the beam
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+  BeamPDGCut* beamCut1 = new BeamPDGCut(13);
+  BeamPDGCut* beamCut2 = new BeamPDGCut(211);
+  BeamPDGCut* beamCut3 = new BeamPDGCut(321);
+  BeamPDGCut* beamCut4 = new BeamPDGCut(2212);
 
-  //for MC
-  if(event.GetIsMC()){
-    if(beam->BeamParticle){
-      if(beam->BeamParticle->TrueObject){
-        //cast the beam particle
-        AnaTrueParticlePD* beamTruePart = static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
-        if(abs(beamTruePart->PDG)==13 || abs(beamTruePart->PDG)==211 || abs(beamTruePart->PDG)==321 || abs(beamTruePart->PDG)==2212)return true;
-      }
-    }
-  }
-  //for data
-  else{
-    bool hadron = false;
-    for(size_t i = 0; i < beam->PDGs.size(); i++){
-      if(beam->PDGs[i] == 211 || beam->PDGs[i] == 321 || beam->PDGs[i] == 2212){
-        hadron = true;
-        break;
-      }
-    }
-    if(hadron)return true;
-  }
-  
-  return false;
+  if(beamCut1->Apply(event,boxB) || beamCut2->Apply(event,boxB) || 
+     beamCut4->Apply(event,boxB) || beamCut3->Apply(event,boxB))
+    return true;
+  else return false;
 }
 
 //**************************************************

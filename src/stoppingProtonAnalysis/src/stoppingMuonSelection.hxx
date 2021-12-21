@@ -38,15 +38,6 @@ protected:
 };
 
 
-/*
-class FindBeamTrackAction: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new FindBeamTrackAction();}
-};
-*/
-
 class BeamMuonCut: public StepBase{
  public:
   using StepBase::Apply;
@@ -57,14 +48,6 @@ class BeamMuonCut: public StepBase{
  protected:
   bool _electronVeto;  
 };
-/*
-class CandidateExistsCut: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new CandidateExistsCut();}
-};
-*/
 
 class BeamMuonAngleCut: public StepBase{
  public:
@@ -79,7 +62,6 @@ class MuonCSDARangeCut: public StepBase{
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new MuonCSDARangeCut();}
 };
-
 
 class MuonPIDACut: public StepBase{
  public:

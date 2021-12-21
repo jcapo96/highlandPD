@@ -2,7 +2,7 @@
 #include "secondaryKaonSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pandoraPreselection.hxx"
+#include "pdBaseSelection.hxx"
 
 //********************************************************************
 secondaryKaonXSSelection::secondaryKaonXSSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -15,8 +15,8 @@ void secondaryKaonXSSelection::DefineSteps(){
 //********************************************************************
 
   //copy steps from pandoraPreselection
-  AddStep(StepBase::kAction,   "find Pandora track",         new FindPandoraTrackAction());// in pdBaseAnalysis/src/pandoraPreselection  
-  AddStep(StepBase::kCut,      "Pandora track exists",       new CandidateExistsCut()    );// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kAction,   "find beam track",            new FindBeamTrackAction());// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kCut,      "Pandora track exists",       new BeamTrackExistsCut()    );// in pdBaseAnalysis/src/pandoraPreselection  
   //select events using beam instrumentation
   AddStep(StepBase::kCut,      "beam pdg filter"     ,       new BeamFilterForXSCut()    );
   AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsForXSAction()   );

@@ -2,7 +2,7 @@
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pionAnalysisUtils.hxx"
-#include "pandoraPreselection.hxx"
+#include "pdBaseSelection.hxx"
 #include "CNNUtils.hxx"
 
 
@@ -31,10 +31,10 @@ void pionSelection::DefineSteps(){
   // the step sequence is broken if cut is not passed (default is "false")
 
   //copy steps from pandoraPreselecion
-  AddStep(StepBase::kAction, "find Pandora track",         new FindPandoraTrackAction());          // in pdBaseAnalysis/src/pandoraPreselection  
-  AddStep(StepBase::kCut,    "candidate exists",           new CandidateExistsCut());              // in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kAction, "find Pandora track",         new FindBeamTrackAction()); // in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kCut,    "candidate exists",           new BeamTrackExistsCut());  // in pdBaseAnalysis/src/pandoraPreselection  
   AddStep(StepBase::kCut,    "beam is pion",               new BeamPionCut());
-  AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());              // in pdBaseAnalysis/src/pandoraPreselection  
+  //AddStep(StepBase::kCut,    "pandora reco worked",        new CandidateIsBeamCut());              // in pdBaseAnalysis/src/pandoraPreselection  
   AddStep(StepBase::kCut,    "candidate is track",         new CandidateIsTrackCut());
   AddStep(StepBase::kCut,    "pion track end",             new PionEndsAPA3Cut());
   //AddStep(StepBase::kCut,    "seltrk chi2 cut",            new PionPassChi2Cut());
@@ -62,15 +62,12 @@ void pionSelection::DefineSteps(){
 //**************************************************
 bool BeamPionCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
+  
+  BeamPDGCut* beamCut1 = new BeamPDGCut(211);
+  BeamPDGCut* beamCut2 = new BeamPDGCut(13);
 
-  (void)boxB;
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-
-  for(int i = 0; i < (int)beam->PDGs.size(); i++){
-    if (beam->PDGs[i] == 211) return true;
-  }
-
-  return false;
+  if(beamCut1->Apply(event,boxB) || beamCut2->Apply(event,boxB))return true;
+  else return false;
 }
 
 //**************************************************
