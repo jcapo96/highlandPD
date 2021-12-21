@@ -50,6 +50,8 @@
 
 - Probably add a method DefineCategories to AnalysisAlgorithm
 
-- Merge pdBaseSelection and pandoraPreselection
+- Merge pdBaseSelection and pandoraPreselection ==> DONE
 
 - Standarize whateverCodePD and pdWatheverCode
+
+- Think about the beam quality cuts (DeltaX, deltaY, deltaZ, cosTheta). It depents on each beam energy, run, etc. It is complicated to have a common cut for all analysis.
