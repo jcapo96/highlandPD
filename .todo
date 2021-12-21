@@ -51,3 +51,5 @@
 - Probably add a method DefineCategories to AnalysisAlgorithm
 
 - Merge pdBaseSelection and pandoraPreselection
+
+- Standarize whateverCodePD and pdWatheverCode
