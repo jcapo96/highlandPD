@@ -55,7 +55,7 @@ void CreateMiniTreeKaon::DeleteUninterestingParticles(){
 //********************************************************************
 
   AnaBunchB* bunch = static_cast<AnaBunchB*>(_spill->Bunches[0]);
-  _totalParticles += bunch->Particles.size();
+  //_totalParticles += bunch->Particles.size();
 
   std::vector<AnaParticleB*> goodParticles;
   std::vector<AnaParticleB*> badParticles; 
@@ -64,7 +64,7 @@ void CreateMiniTreeKaon::DeleteUninterestingParticles(){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(*it);
     //save the beam particle
     if(part->isPandora)goodParticles.push_back(static_cast<AnaParticleB*>(part));
-    //if it not the beam particle, only save candidates and relatives
+    //if it is not the beam particle, only save candidates and relatives
     else if(part->Daughters.size() == 1 && part->ParentID != -1){
       AnaParticleB* dau = static_cast<AnaParticleB*>(part->Daughters[0]);
       AnaParticleB* parent = (anaUtils::GetParticleByID(*bunch, part->ParentID));
@@ -87,7 +87,6 @@ void CreateMiniTreeKaon::DeleteUninterestingParticles(){
   }
 
   bunch->Particles = goodParticles;
-  _savedParticles += bunch->Particles.size();
 }
 
 //********************************************************************
@@ -100,8 +99,6 @@ void CreateMiniTreeKaon::DeleteUninterestingTrueParticles(){
 
   std::set<AnaTrueParticleB*> goodTrueParticles;
   std::vector<AnaTrueParticleB*> badTrueParticles;
-  _totalTrueParticles += _spill->TrueParticles.size();
-
 
   AnaTrueParticle* beampart = pdAnaUtils::FindBeamTrueParticle(*_spill);
   if(beampart)goodTrueParticles.insert(beampart);
@@ -136,5 +133,4 @@ void CreateMiniTreeKaon::DeleteUninterestingTrueParticles(){
   
   // Transfer from the set to the vector
   _spill->TrueParticles.assign(goodTrueParticles.begin(), goodTrueParticles.end());
-  _savedTrueParticles += _spill->TrueParticles.size();
 }

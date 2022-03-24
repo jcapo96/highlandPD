@@ -216,6 +216,7 @@ namespace kaonTree{
     candidates_dau_chi2_muon,
     candidates_dau_chi2_ndf,
     candidates_dau_calE,
+    candidates_dau_averagedEdx,
     candidates_dau_vtx_michelscore,
     candidates_dau_vtx_nhits,
 
@@ -237,6 +238,35 @@ namespace kaonTree{
     candidates_dau_trueendproc,
     candidates_dau_truemom,
     candidates_dau_trueendmom,
+
+    //kaon candidates dau info
+    candidates_gdau_ndau,
+    candidates_gdau_pos,
+    candidates_gdau_dir,
+    candidates_gdau_endpos,
+    candidates_gdau_enddir,
+    candidates_gdau_length,
+    candidates_gdau_mom_muon,
+    candidates_gdau_mom_prot,
+    candidates_gdau_type,
+    candidates_gdau_CNNscore,
+    candidates_gdau_chi2_prot,
+    candidates_gdau_chi2_muon,
+    candidates_gdau_chi2_ndf,
+    candidates_gdau_calE,
+    candidates_gdau_averagedEdx,
+    candidates_gdau_vtx_michelscore,
+    candidates_gdau_vtx_nhits,
+
+    //kaon candidates gdau true info
+    candidates_gdau_truendau,
+    candidates_gdau_truepdg,
+    candidates_gdau_truepos,
+    candidates_gdau_trueendpos,
+    candidates_gdau_trueproc,
+    candidates_gdau_trueendproc,
+    candidates_gdau_truemom,
+    candidates_gdau_trueendmom,
 
     //temporary solution for systematics
     //variables for storing the most advanced candidate in the selection

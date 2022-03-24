@@ -37,13 +37,6 @@ protected:
 };
 
 
-class BeamIsProtonCut: public StepBase{
- public:
-  using StepBase::Apply;
-  bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new BeamIsProtonCut();}
-};
-
 class CSDARangeCut: public StepBase{
  public:
   using StepBase::Apply;

@@ -101,6 +101,29 @@ bool CandidateIsBeamCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 }
 
 //**************************************************
+bool BeamPDGCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+
+  //Get the beam from the event and the beam particle
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+  AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+  if(!beamPart)return false;
+
+  if(event.GetIsMC()){
+    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(beamPart->TrueObject);
+    if(!truePart)return false;
+    if(abs(_PDG)==abs(truePart->PDG))return true;
+    else return false;
+  }
+  else{
+    if(std::find(beam->PDGs.begin(),beam->PDGs.end(),_PDG) != beam->PDGs.end())return true;
+    else return false;
+  }
+
+  return false;
+}
+
+//**************************************************
 void pandoraPreselection::InitializeEvent(AnaEventC& eventBB){
 //**************************************************
 

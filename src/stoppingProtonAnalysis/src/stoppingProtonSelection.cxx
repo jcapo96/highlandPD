@@ -1,7 +1,7 @@
 #include "stoppingProtonSelection.hxx"
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pandoraPreselection.hxx"
+#include "pdBaseSelection.hxx"
 #include "pdSystId.hxx"
 
 //********************************************************************
@@ -18,87 +18,12 @@ void stoppingProtonSelection::DefineSteps(){
   // if "true" is added to the constructor of the step,
   // the step sequence is broken if cut is not passed (default is "false")
   //AddStep(StepBase::kAction, "find main track",     new FindBeamTrackAction());  
-  AddStep(StepBase::kAction, "find Pandora track",  new FindPandoraTrackAction());
-  AddStep(StepBase::kCut,    "beam track in TPC",   new CandidateExistsCut());
-  AddStep(StepBase::kCut,    "beam protom",         new BeamProtonCut());
-  AddStep(StepBase::kCut,    "pandora reco worked", new CandidateIsBeamCut());
+  AddStep(StepBase::kAction, "find Pandora track",  new FindBeamTrackAction());
+  AddStep(StepBase::kCut,    "beam track in TPC",   new BeamPDGCut(2212));
+  //AddStep(StepBase::kCut,    "pandora reco worked", new CandidateIsBeamCut());
   AddStep(StepBase::kCut,    "proton CSDA range",   new ProtonCSDARangeCut());
   
   SetBranchAlias(0,"trunk");
-}
-
-//**************************************************
-bool FindBeamTrackAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  // The kaon candidate will be the most upstream track (lowest z stating position)
-  
-  // Cast the ToyBox to the appropriate type
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB); 
-
-  // Get the array of tracks from the event
-  AnaParticleB** tracks = static_cast<AnaEventB*>(&event)->Particles;
-  int nTracks           = static_cast<AnaEventB*>(&event)->nParticles;
-
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-  if (!beam->BeamParticle) return true;
-
-  Int_t ncand=0;
-  for (Int_t i=0;i<nTracks; ++i){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(tracks[i]);
-
-    if (event.GetIsMC()){ 
-      if (static_cast<AnaParticlePD*>(tracks[i])->Charge==-8888){
-        box.MainTrack = static_cast<AnaParticlePD*>(tracks[i]);
-        ncand++;
-        break;
-      }      
-    }
-    else{
-      Float_t dx = part->PositionStart[0]-beam->BeamParticle->PositionEnd[0];
-      Float_t dy = part->PositionStart[1]-beam->BeamParticle->PositionEnd[1];
-      //    std::cout << dx << " " << dy << " " << part->Length << " " << part->DirectionStart[2] << std::endl;
-      if (dx>-5 && dx<25 && dy>-10 && dy<10 && part->PositionStart[2]<100 && part->DirectionStart[2]>0.7 ){//&& part->Length>10){
-        //    if (dx>-5 && dx<25 && dy>-10 && dy<10 && part->PositionStart[2]<100 && part->DirectionStart[2]>0.7 && part->Length>10){   // Cut for run 5210
-        box.MainTrack = part;
-        ncand++;
-        break;
-      }
-    }
-  }
-  //  std::cout << ncand << std::endl;
-  
-  return true;
-}
-
-//**************************************************
-bool BeamProtonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
-
-  (void)boxB;
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-
-  for(int i = 0; i < (int)beam->PDGs.size(); i++){
-    if (beam->PDGs[i] == 2212) return true;
-  }
-
-  return false;
-
-  /*(void)boxB;
-  
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-
-  if (event.GetIsMC()){
-    if (beam->BeamParticle){
-      if (beam->BeamParticle->TrueObject)
-        if (static_cast<AnaTrueParticle*>(beam->BeamParticle->TrueObject)->PDG==2212) return true;
-    }
-    return false;
-  }
-  else{
-    if (beam->TOF>170 && beam->TOF<210) return true;
-    else return false;    
-    }*/
 }
 
 //**************************************************

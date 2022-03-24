@@ -43,7 +43,7 @@ AnaHitPD::AnaHitPD(){
   ResidualRange = kFloatUnassigned;
 
   Signal.clear();
-  CNN.resize(3);
+  //CNN.resize(3);
   CNN[0]=CNN[1]=CNN[2]=kFloatUnassigned;
 }
 
@@ -60,7 +60,7 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   Channel       = hit.Channel;
   View          = hit.View;
   Signal        = hit.Signal;
-  CNN.resize(3);
+  //CNN.resize(3);
   for (size_t i=0;i<3;i++)
     CNN[i]           = hit.CNN[i];
 
@@ -107,6 +107,15 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
 
   FitPDG        = kFloatUnassigned;
 
+  for(int i = 0; i < 4; i++){
+    PositionStartSCE[i]=kFloatUnassigned;
+    PositionEndSCE[i]=kFloatUnassigned;
+  }
+  for(int i = 0; i < 3; i++){
+    DirectionStartSCE[i]=kFloatUnassigned;
+    DirectionEndSCE[i]=kFloatUnassigned;
+  }
+
   for (Int_t i=0;i<3;i++){
     NHitsPerPlane[i] = kIntUnassigned;
     truncLibo_dEdx=kFloatUnassigned;
@@ -138,7 +147,6 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   for (int i=0; i<3; i++){
     Hits[i].clear();
   }
-  
 }
 
 //********************************************************************
@@ -159,6 +167,9 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   isBeamPart     = part.isBeamPart;
   isPandora      = part.isPandora;
   BeamOrigin     = part.BeamOrigin;
+
+  for(int i = 0; i < 4; i++)PositionStartSCE[i]=part.PositionStart[i];
+  for(int i = 0; i < 3; i++)DirectionStartSCE[i]=part.DirectionStart[i];
 
   FitPDG         = part.FitPDG;
 
@@ -196,7 +207,6 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   for (int i=0; i<3; i++){
     Hits[i] = part.Hits[i];
   }
-
 }
 
 //********************************************************************

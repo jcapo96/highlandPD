@@ -55,7 +55,9 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
 //********************************************************************
 
   AddVar4VF(  output, seltrk_pos,            "candidate reconstructed position");
+  AddVar4VD(  output, seltrk_SCEpos,         "candidate reconstructed position SCE corrected");
   AddVar3VF(  output, seltrk_dir,            "candidate reconstructed direction");
+  AddVar3VD(  output, seltrk_SCEdir,         "candidate reconstructed direction SCE corrected");
   AddVar4VF(  output, seltrk_endpos,         "candidate reconstructed end position");
   AddVar3VF(  output, seltrk_enddir,         "candidate reconstructed end direction");
   AddVarF(    output, seltrk_costheta,       "candidate reconstructed cos(theta)");
@@ -376,8 +378,10 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
   //output.FillVar(seltrk_length_raw,            part->Original->Length);
   output.FillVar(seltrk_costheta,                part->DirectionStart[2]);
   output.FillVectorVarFromArray(seltrk_pos,      part->PositionStart, 4);
+  output.FillVectorVarFromArray(seltrk_SCEpos,   part->PositionStartSCE, 4);
   output.FillVectorVarFromArray(seltrk_endpos,   part->PositionEnd, 4);
   output.FillVectorVarFromArray(seltrk_dir,      part->DirectionStart, 3);
+  output.FillVectorVarFromArray(seltrk_SCEdir,   part->DirectionStartSCE, 3);
   output.FillVectorVarFromArray(seltrk_enddir,   part->DirectionEnd, 3);
   output.FillVectorVarFromArray(seltrk_CNNscore, part->CNNscore,3);
   output.FillVar(seltrk_chi2_prot,               part->Chi2Proton);

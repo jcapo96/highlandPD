@@ -55,7 +55,8 @@ public:
   UInt_t Channel;
   Int_t  View;
 
-  std::vector<Float_t> CNN; //!
+  //std::vector<Float_t> CNN; //!
+  Float_t CNN[3];
   
   /// wave form associated to this hit
   std::vector<Float_t> Signal;  
@@ -124,6 +125,12 @@ public:
   ///  Pandora beam particle that passes geometric cuts
   bool isBeamPart;
 
+  /// Initial position and direction SCE corrected
+  double PositionStartSCE[4];
+  double PositionEndSCE[4];
+  double DirectionStartSCE[3];
+  double DirectionEndSCE[3];
+
   /// Vector of hits for each plane
   std::vector<AnaHitPD> Hits[3];
 
@@ -167,7 +174,7 @@ public:
   Float_t PID[3][10];
 
   /// PIDA
-  Float_t PIDA[3];  
+  Float_t PIDA[3]; 
 };
 
 /// AnaTrueParticle

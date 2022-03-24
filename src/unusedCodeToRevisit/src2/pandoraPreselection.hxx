@@ -67,4 +67,13 @@ public:
   CandidateIsBeamCut(){ useIsBeamLike = (bool)ND::params().GetParameterI("pdBaseAnalysis.UseIsBeamLike");}
 };
 
+class BeamPDGCut: public StepBase{
+public:
+  int _PDG;
+  BeamPDGCut(int PDG){_PDG = PDG;}
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamPDGCut(_PDG);}
+};
+
 #endif
