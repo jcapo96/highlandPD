@@ -118,6 +118,9 @@ namespace pdAnaUtils{
   // Compute the PID chi2 and ndf for protons
   std::pair< double, int > Chi2PID(const AnaParticlePD& part, const int pdg);
 
+  // Compute the PID chi2 and ndf for protons
+  std::pair< double, int > kaonPID(const AnaParticlePD& part);
+
   // Methods to compute the beam PDG variables (cannot be used with the piontree since it does not contain TOF and CKOV info)
   std::vector< int > GetPID( const AnaBeamPD& beam, double nominal_momentum );
   PossibleParticleCands2 GetPIDCandidates( const AnaBeamPD& beam, double nominal_momentum );

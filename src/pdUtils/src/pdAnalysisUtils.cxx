@@ -51,6 +51,7 @@ std::map< int, TProfile* > templates;
 
 TProfile* ProtonTemplate = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 TProfile* MuonTemplate   = (TProfile*)dEdX_template_file->Get( "dedx_range_mu" );
+TProfile* KaonTemplate   = (TProfile*)dEdX_template_file->Get( "dedx_range_ka" );
 /*
 templates[ 211 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_pi"  );
 templates[ 321 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_ka"  );
@@ -58,6 +59,8 @@ templates[ 13 ]   = (TProfile*)dEdX_template_file->Get( "dedx_range_mu"  );
 templates[ 2212 ] = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 */
 
+TFile* kaon_PID_file = new TFile( (std::string(getenv("PDUTILSROOT"))+"/data/kaon_PID.root").c_str(), "OPEN" );
+TH1F* kaon_PID = (TH1F*)kaon_PID_file->Get("kaon_PID");
 
 TFile* E_field_file = new TFile( (std::string(getenv("PDUTILSROOT"))+"/data/SCE_DataDriven_180kV_v3.root").c_str(), "OPEN" );
 
@@ -625,6 +628,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
   
   if(pdg == 2212)profile = ProtonTemplate;
   else if(pdg == 13)profile = MuonTemplate;
+  else if(pdg == 321)profile = KaonTemplate;
   else{
     std::cout << "no profile for pdg " << pdg << std::endl;
     return std::make_pair(9999., -1);
@@ -669,6 +673,44 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
     return std::make_pair(9999., -1);
 	  		
   return std::make_pair(pid_chi2, npt); 	
+}
+
+//*****************************************************************************
+std::pair<double,int> pdAnaUtils::kaonPID(const AnaParticlePD& part){
+//*****************************************************************************	
+
+  const Int_t max_bin = 11; // res range = 25;
+
+  Int_t plane = 2;
+
+  if(part.Hits[plane].size() < 1)
+    return std::make_pair(-999.,-999);
+  
+  //loop over histogram bins
+  double chi2 = 0;
+  int nbins = 0;
+  for(int ibin = 1; ibin < std::min((int)kaon_PID->GetNbinsX(),max_bin); ibin++){
+    double min_rr = kaon_PID->GetBinCenter(ibin)-kaon_PID->GetXaxis()->GetBinWidth(ibin)/2;
+    double max_rr = kaon_PID->GetBinCenter(ibin)+kaon_PID->GetXaxis()->GetBinWidth(ibin)/2;
+    //loop over hits
+    std::vector<double> dEdx_vector;
+    dEdx_vector.clear();
+    for(int ihit = 0; ihit < (int)part.Hits[plane].size(); ihit++){
+      if(part.Hits[plane][ihit].ResidualRange>min_rr && part.Hits[plane][ihit].ResidualRange<max_rr){
+	if(part.Hits[plane][ihit].dEdx_calib!=-999 && part.Hits[plane][ihit].dEdx_calib<1000){
+	  dEdx_vector.push_back(part.Hits[plane][ihit].dEdx_calib);
+	}
+      }
+    }
+    if(dEdx_vector.empty())break;
+    double dEdx       = TMath::Mean(dEdx_vector.begin(),dEdx_vector.end());
+    double dEdx_error = 0;//TMath::RMS(dEdx_vector.begin(),dEdx_vector.end());
+    chi2 = chi2 + pow(dEdx-kaon_PID->GetBinContent(ibin),2)/(pow(kaon_PID->GetBinError(ibin),2)+pow(dEdx_error,2));
+    nbins++;
+  }
+
+  if(nbins==0)return std::make_pair(-999.,-999);
+  else return std::make_pair(chi2,nbins);
 }
 
 //*****************************************************************************
