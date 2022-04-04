@@ -78,6 +78,8 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
   AddVarF(    output, seltrk_chi2_prot,      "candidate chi2 prot");
   AddVarF(    output, seltrk_chi2_muon,      "candidate chi2 muon");
   AddVarF(    output, seltrk_chi2_ndf,       "candidate chi2 ndf");
+  AddVarF(    output, seltrk_kaon_PID,       "candidate chi2 ndf");
+  AddVarI(    output, seltrk_kaon_PID_ndf,       "candidate chi2 ndf");
   //AddVarFixMF(output, seltrk_pid,            "candidate PID variables", 3,8);
   //AddVarFixMF(output, seltrk_calo,           "candidate CALO variables",3,5); 
 }
@@ -216,6 +218,96 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersHitsReco(OutputManag
   AddVarMF(output, seltrk_dau_hit_cnn,      "daughters hit cnn",            seltrk_ndau,-nmax,nmaxhitsperplane);
   AddVarMI(output, seltrk_dau_hit_ch,       "daughters hit channel",        seltrk_ndau,-nmax,nmaxhitsperplane);
 
+}
+
+//********************************************************************
+void standardPDTree::AddStandardVariables_CandidateGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters){
+//********************************************************************
+
+  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
+  AddVarMI   (output, seltrk_gdau_truepdg,     "gdaughters true pdg",                 seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI   (output, seltrk_gdau_truendau,    "gdaughters true number of daughters", seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_truepos,     "gdaughters true position",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_trueendpos,  "gdaughters true position",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI   (output, seltrk_gdau_trueproc,    "gdaughters true process",             seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI   (output, seltrk_gdau_trueendproc, "gdaughters true end process",         seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_truemom,     "gdaughters true mom",                 seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_trueendmom,  "gdaughters true end mom",             seltrk_ndau, -nmax, nmaxgdaughters);
+
+}
+
+
+//********************************************************************
+void standardPDTree::AddStandardVariables_CandidateGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters){
+//********************************************************************
+  
+  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
+  AddVarMI   (output, seltrk_gdau_ndau,         "gdaughters number of daughters", seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_pos,          "gdaughters position",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D3MF(output, seltrk_gdau_dir,          "gdaughters direction",           seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D4MF(output, seltrk_gdau_endpos,       "gdaughters end position",        seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D3MF(output, seltrk_gdau_enddir,       "gdaughters end direction",       seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_length,       "gdaughters length",              seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_mom_prot,     "gdaughters mom my range, muon",  seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_mom_muon,     "gdaughters mom my range, muon",  seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI   (output, seltrk_gdau_type,         "gdaughters track or shower",     seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3D3MF(output, seltrk_gdau_CNNscore,     "gdaughters CNN score",           seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_chi2_prot,    "gdaughters chi2 proton",         seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_chi2_muon,    "gdaughters chi2 ndf",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMF   (output, seltrk_gdau_chi2_ndf,     "gdaughters chi2 ndf",            seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVarMI   (output, seltrk_gdau_nhits,        "gdaughters nhits",               seltrk_ndau, -nmax, nmaxgdaughters);
+  AddVar3DMF (output, seltrk_gdau_hit_dedx,     "gdaughters hit dedx",            seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
+  AddVar3DMF (output, seltrk_gdau_hit_resrange, "gdaughters hit residual range",  seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
+}  
+
+//********************************************************************
+void standardPDTree::AddStandardVariables_CandidateGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters){
+//********************************************************************
+
+  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
+  AddVar3DMI(output, seltrk_ggdau_truepdg,     "ggdaughters true pdg",                 seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMI(output, seltrk_ggdau_truendau,    "ggdaughters true number of daughters", seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_trueposX,    "ggdaughters true position X",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_trueposY,    "ggdaughters true position Y",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_trueposZ,    "ggdaughters true position Z",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_trueendposX, "ggdaughters true position X",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_trueendposY, "ggdaughters true position Y",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_trueendposZ, "ggdaughters true position Z",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMI(output, seltrk_ggdau_trueproc,    "ggdaughters true process",             seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMI(output, seltrk_ggdau_trueendproc, "ggdaughters true end process",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_truemom,     "ggdaughters true mom",                 seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_trueendmom,  "ggdaughters true end mom",             seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+}
+
+//********************************************************************
+void standardPDTree::AddStandardVariables_CandidateGGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters){
+//********************************************************************
+
+  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
+  AddVar3DMI(output, seltrk_ggdau_ndau,      "ggdaughters number of daughters", seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_posX,      "ggdaughters position X",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_posY,      "ggdaughters position Y",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_posZ,      "ggdaughters position Z",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_dirX,      "ggdaughters direction X",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_dirY,      "ggdaughters direction Y",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_dirZ,      "ggdaughters direction Z",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_endposX,   "ggdaughters end position X",      seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_endposY,   "ggdaughters end position Y",      seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_endposZ,   "ggdaughters end position Z",      seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_enddirX,   "ggdaughters end direction X",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_enddirY,   "ggdaughters end direction Y",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_enddirZ,   "ggdaughters end direction Z",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_length,    "ggdaughters length",              seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_mom_muon,  "gdaughters mom range (muon)",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_mom_prot,  "gdaughters mom range (proton)",   seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMI(output, seltrk_ggdau_type,      "gdaughters object type",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_CNNscore0, "gdaughters CNN score 0",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_CNNscore1, "gdaughters CNN score 1",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_CNNscore2, "gdaughters CNN score 2",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_chi2_muon, "gdaughters chi2 muon",            seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_chi2_prot, "gdaughters chi2 proton",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMF(output, seltrk_ggdau_chi2_ndf,  "gdaughters chi2 ndf",             seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
+  AddVar3DMI(output, seltrk_ggdau_nhits,     "ggdaughters #hits",               seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
 }
 
 //********************************************************************
@@ -387,6 +479,9 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
   output.FillVar(seltrk_chi2_prot,               part->Chi2Proton);
   output.FillVar(seltrk_chi2_muon,               part->Chi2Muon);
   output.FillVar(seltrk_chi2_ndf,                part->Chi2ndf);
+  std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
+  output.FillVar(seltrk_kaon_PID,                (float)kaon_PID.first);
+  output.FillVar(seltrk_kaon_PID_ndf,            (int)kaon_PID.second);
 
   //for (int i=0;i<3;i++){
   //  output.FillMatrixVarFromArray(seltrk_pid,    part->PID[i],  i, 8);
@@ -528,4 +623,117 @@ void standardPDTree::FillStandardVariables_CandidateDaughterHitsReco(OutputManag
       output.FillMatrixVar(seltrk_dau_hit_ch,        (Int_t)  dau->Hits[2][j].Channel,        -1, j-jmin);
     }
   }
+}
+
+//********************************************************************
+void standardPDTree::FillStandardVariables_CandidateGDaughterReco(OutputManager& output, AnaParticlePD* gdau, Int_t gdau_index){
+//********************************************************************
+
+  if(!gdau) return;
+  
+  output.FillMatrixVar           (seltrk_gdau_ndau,     (Int_t)gdau->Daughters.size(), -1, gdau_index   );
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_pos,             gdau->PositionStart,    -1, gdau_index, 4);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_dir,             gdau->DirectionStart,   -1, gdau_index, 3);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_endpos,          gdau->PositionEnd,      -1, gdau_index, 4);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_enddir,          gdau->DirectionEnd,     -1, gdau_index, 3);
+  output.FillMatrixVar           (seltrk_gdau_length,          gdau->Length,           -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_type,     (Int_t)gdau->Type,             -1, gdau_index   );
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_CNNscore,        gdau->CNNscore,         -1, gdau_index, 3);
+  output.FillMatrixVar           (seltrk_gdau_chi2_prot,       gdau->Chi2Proton,       -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_chi2_muon,       gdau->Chi2Muon,         -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_chi2_ndf,        gdau->Chi2ndf,          -1, gdau_index   );
+  
+  output.FillMatrixVar           (seltrk_gdau_mom_prot,      pdAnaUtils::ComputeRangeMomentum(gdau->Length,2212), -1, gdau_index);
+  output.FillMatrixVar           (seltrk_gdau_mom_muon,      pdAnaUtils::ComputeRangeMomentum(gdau->Length,13  ), -1, gdau_index);
+
+  output.FillMatrixVar           (seltrk_gdau_nhits,    (Int_t)gdau->NHits,            -1, gdau_index   );
+  if(gdau->Hits[2].empty()){
+    for (int j = 0; j < (int)NMAXHITSPERPLANE; j++){
+      output.Fill3DMatrixVar(seltrk_gdau_hit_dedx,     (Float_t)-999., -1, gdau_index, j);
+      output.Fill3DMatrixVar(seltrk_gdau_hit_resrange, (Float_t)-999., -1, gdau_index, j);
+    }
+  }
+  else{
+    int jmin = std::max<int>(0,(int)gdau->Hits[2].size()-NMAXHITSPERPLANE);
+    int jmax = (int)gdau->Hits[2].size();
+    for (int j = jmin; j < jmax; j++){
+      output.Fill3DMatrixVar(seltrk_gdau_hit_dedx,      gdau->Hits[2][j].dEdx,          -1, gdau_index, j-jmin);
+      output.Fill3DMatrixVar(seltrk_gdau_hit_resrange,  gdau->Hits[2][j].ResidualRange, -1, gdau_index, j-jmin);
+    }
+  }
+}
+
+//********************************************************************
+void standardPDTree::FillStandardVariables_CandidateGDaughterTrue(OutputManager& output, AnaParticlePD* gdau, Int_t gdau_index){
+//********************************************************************
+
+  if(!gdau) return;  
+  AnaTrueParticle* gdauTruePart = static_cast<AnaTrueParticle*>(gdau->TrueObject);
+  if(!gdauTruePart) return;
+  
+  output.FillMatrixVar           (seltrk_gdau_truepdg,  (Int_t)gdauTruePart->PDG,              -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_truendau, (Int_t)gdauTruePart->Daughters.size(), -1, gdau_index   );
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_truepos,         gdauTruePart->Position,         -1, gdau_index, 4);
+  output.Fill3DMatrixVarFromArray(seltrk_gdau_trueendpos,      gdauTruePart->PositionEnd,      -1, gdau_index, 4);
+  output.FillMatrixVar           (seltrk_gdau_trueproc,        gdauTruePart->ProcessStart,     -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_trueendproc,     gdauTruePart->ProcessEnd,       -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_truemom,         gdauTruePart->Momentum,         -1, gdau_index   );
+  output.FillMatrixVar           (seltrk_gdau_trueendmom,      gdauTruePart->MomentumEnd,      -1, gdau_index   );
+}
+
+//********************************************************************
+void standardPDTree::FillStandardVariables_CandidateGGDaughterReco(OutputManager& output, AnaParticlePD* ggdau, Int_t gdau_index, Int_t ggdau_index){
+//********************************************************************
+
+  if(!ggdau) return;
+  
+  output.Fill3DMatrixVar(seltrk_ggdau_ndau,  (Int_t)ggdau->Daughters.size(),  -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_posX,         ggdau->PositionStart[0],  -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_posY,         ggdau->PositionStart[1],  -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_posZ,         ggdau->PositionStart[2],  -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_dirX,         ggdau->DirectionStart[0], -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_dirY,         ggdau->DirectionStart[1], -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_dirZ,         ggdau->DirectionStart[2], -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_endposX,      ggdau->PositionEnd[0],    -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_endposY,      ggdau->PositionEnd[1],    -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_endposZ,      ggdau->PositionEnd[2],    -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_enddirX,      ggdau->DirectionEnd[0],   -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_enddirY,      ggdau->DirectionEnd[1],   -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_enddirZ,      ggdau->DirectionEnd[2],   -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_length,       ggdau->Length,            -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_type,         ggdau->Type,              -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_CNNscore0,    ggdau->CNNscore[0],       -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_CNNscore1,    ggdau->CNNscore[1],       -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_CNNscore2,    ggdau->CNNscore[2],       -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_chi2_prot,    ggdau->Chi2Proton,        -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_chi2_muon,    ggdau->Chi2Muon,          -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_chi2_ndf,     ggdau->Chi2ndf,           -1, gdau_index, ggdau_index);
+
+  output.Fill3DMatrixVar(seltrk_ggdau_mom_prot, pdAnaUtils::ComputeRangeMomentum(ggdau->Length,2212), -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_mom_muon, pdAnaUtils::ComputeRangeMomentum(ggdau->Length,13  ), -1, gdau_index, ggdau_index);
+
+  output.Fill3DMatrixVar(seltrk_ggdau_nhits,        ggdau->NHits,             -1, gdau_index, ggdau_index);
+
+}
+
+//********************************************************************
+void standardPDTree::FillStandardVariables_CandidateGGDaughterTrue(OutputManager& output, AnaParticlePD* ggdau, Int_t gdau_index, Int_t ggdau_index){
+//********************************************************************
+
+  if(!ggdau) return;  
+  AnaTrueParticle* ggdauTruePart = static_cast<AnaTrueParticle*>(ggdau->TrueObject);
+  if(!ggdauTruePart) return;
+  
+  output.Fill3DMatrixVar(seltrk_ggdau_truepdg,  (Int_t)ggdauTruePart->PDG,              -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_truendau, (Int_t)ggdauTruePart->Daughters.size(), -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueposX,        ggdauTruePart->Position[0],      -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueposY,        ggdauTruePart->Position[1],      -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueposZ,        ggdauTruePart->Position[2],      -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueendposX,     ggdauTruePart->PositionEnd[0],   -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueendposY,     ggdauTruePart->PositionEnd[1],   -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueendposZ,     ggdauTruePart->PositionEnd[2],   -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueproc,        ggdauTruePart->ProcessStart,     -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueendproc,     ggdauTruePart->ProcessEnd,       -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_truemom,         ggdauTruePart->Momentum,         -1, gdau_index, ggdau_index);
+  output.Fill3DMatrixVar(seltrk_ggdau_trueendmom,      ggdauTruePart->MomentumEnd,      -1, gdau_index, ggdau_index);
 }
