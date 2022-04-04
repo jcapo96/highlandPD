@@ -36,12 +36,24 @@ AnaHitPD::AnaHitPD(){
   StartTick     = (UInt_t)kIntUnassigned;
   EndTick       = (UInt_t)kIntUnassigned; 
   
-  dQdx_NoSCE    = kFloatUnassigned;
-  dQdx          = kFloatUnassigned;
-  dEdx          = kFloatUnassigned;
-  dEdx_calib    = kFloatUnassigned;
+  dQdx_NoSCE = kFloatUnassigned;
+  dEdx_NoSCE = kFloatUnassigned;
+  ResidualRange_NoSCE = kFloatUnassigned;
+
+  dQdx_SCE = kFloatUnassigned;
+  dEdx_SCE = kFloatUnassigned;
+  ResidualRange_SCE = kFloatUnassigned;
+
+  dQdx_elife = kFloatUnassigned;
+  dEdx_elife = kFloatUnassigned;
+  ResidualRange_elife = kFloatUnassigned;
+
+  dQdx = kFloatUnassigned;
+  dEdx = kFloatUnassigned;
   ResidualRange = kFloatUnassigned;
 
+  dEdx_calib    = kFloatUnassigned;
+  
   Signal.clear();
   //CNN.resize(3);
   CNN[0]=CNN[1]=CNN[2]=kFloatUnassigned;
@@ -67,11 +79,23 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   StartTick     = hit.StartTick;
   EndTick       = hit.EndTick  ; 
   
-  dQdx_NoSCE     = hit.dQdx_NoSCE;
-  dQdx           = hit.dQdx;
-  dEdx           = hit.dEdx;
+  dQdx_NoSCE = hit.dQdx_NoSCE;
+  dEdx_NoSCE = hit.dEdx_NoSCE;
+  ResidualRange_NoSCE = hit.ResidualRange_NoSCE;
+
+  dQdx_SCE = hit.dQdx_SCE;
+  dEdx_SCE = hit.dEdx_SCE;
+  ResidualRange_SCE = hit.ResidualRange_SCE;
+
+  dQdx_elife = hit.dQdx_elife;
+  dEdx_elife = hit.dEdx_elife;
+  ResidualRange_elife = hit.ResidualRange_elife;
+
+  dQdx = hit.dQdx;
+  dEdx = hit.dEdx;
+  ResidualRange = hit.ResidualRange;
+
   dEdx_calib     = hit.dEdx_calib;
-  ResidualRange  = hit.ResidualRange;
 }
 
 //********************************************************************
@@ -101,6 +125,7 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   ShowerID = kIntUnassigned;
 
   Type = kUnknown;
+  IsCandidate = false;
   isBeamPart = false;
   isPandora  = false;
   BeamOrigin = false;
@@ -164,6 +189,7 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   ShowerID       = part.ParentID;
 
   Type           = part.Type;
+  IsCandidate    = part.IsCandidate;
   isBeamPart     = part.isBeamPart;
   isPandora      = part.isPandora;
   BeamOrigin     = part.BeamOrigin;
@@ -495,4 +521,34 @@ void AnaEventPD::Print() const{
 
   AnaEvent::Print();
   std::cout << "#wires:      " << CNNwires.size() << std::endl;
+}
+
+//********************************************************************
+AnaEventInfoPD::AnaEventInfoPD():AnaEventInfo(){
+//********************************************************************
+
+  NominalBeamMom = kFloatUnassigned;
+}
+
+//********************************************************************
+AnaEventInfoPD::~AnaEventInfoPD(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaEventInfoPD::AnaEventInfoPD(const AnaEventInfoPD& eventinfo):AnaEventInfo(eventinfo){
+//********************************************************************
+
+  NominalBeamMom = eventinfo.NominalBeamMom;
+}
+
+//********************************************************************
+void AnaEventInfoPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaEventInfoPD --------- " << std::endl;
+
+  AnaEventInfo::Print();
+  std::cout << "#NominalBeamMom:      " << NominalBeamMom << std::endl;
 }

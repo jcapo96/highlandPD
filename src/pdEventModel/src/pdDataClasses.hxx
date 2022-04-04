@@ -63,15 +63,28 @@ public:
 
   //------------------------------------------------------------
 
-  /// Residual range for each wire in each plane
+  /// Calorimetric information
+  /// No SCE correction
+  Float_t dQdx_NoSCE;
+  Float_t dEdx_NoSCE;
+  Float_t ResidualRange_NoSCE;
+
+  /// SCE correction
+  Float_t dQdx_SCE;
+  Float_t dEdx_SCE;
+  Float_t ResidualRange_SCE;
+
+  /// SCE correction + e⁻ lifetime correction
+  Float_t dQdx_elife;
+  Float_t dEdx_elife;
+  Float_t ResidualRange_elife;
+
+  /// SCE correction + e⁻ lifetime correction + XYZT correction + dEdx calibration
+  Float_t dQdx;
+  Float_t dEdx;
   Float_t ResidualRange;
 
-  /// dQdx for each wire in each plane
-  Float_t dQdx_NoSCE;  
-  Float_t dQdx;  
-
-  /// dEdx for each wire in each plane
-  Float_t dEdx;
+  /// deprecated but keep it for the moment to avoid errors
   Float_t dEdx_calib;
 
 };
@@ -106,6 +119,9 @@ public:
 
   /// MotherID
   Int_t ParentID;
+
+  /// for kaon analysis
+  bool IsCandidate;
 
   /// Track or Shower
   PartTypeEnum Type;
@@ -368,5 +384,33 @@ public:
 
   std::vector<AnaWireCNN> CNNwires;
 };
+
+// Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN
+class AnaEventInfoPD: public AnaEventInfo{
+public :
+
+  AnaEventInfoPD();
+  virtual ~AnaEventInfoPD();
+
+  /// Clone this object.
+  virtual AnaEventInfoPD* Clone() {
+    AnaEventInfoPD* eventinfo = new AnaEventInfoPD(*this);
+    return eventinfo;
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaEventInfoPD(const AnaEventInfoPD& eventinfo);
+
+public:
+
+  Float_t NominalBeamMom;
+};
+
+
 
 #endif

@@ -3,6 +3,7 @@
 #pragma link C++ class AnaBunchPD+;
 #pragma link C++ class AnaWireCNN+;
 #pragma link C++ class AnaEventPD+;
+#pragma link C++ class AnaEventInfoPD+;
 #pragma link C++ class AnaParticlePD+;
 #pragma link C++ class AnaTrueParticlePD+;
 #pragma link C++ class AnaBeamPD+;
