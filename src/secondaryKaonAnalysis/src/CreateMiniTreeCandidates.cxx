@@ -38,7 +38,14 @@ bool CreateMiniTreeCandidates::Process(){
     FillMiniTree();
     // Mark this spill as saved
     _lastSpillSaved=true;
-  }  
+  } 
+  
+  /*// Fill the minitree
+  if(SaveMiniTree()){
+    FillMiniTree();
+    // Mark this spill as saved
+    _lastSpillSaved=true;
+    } */ 
   
   return true;
 }
@@ -53,6 +60,10 @@ void CreateMiniTreeCandidates::DeleteAllButCandidates(){
   std::vector<AnaParticleB*> badParticles; 
   std::set<AnaTrueParticleB*> goodTrueParticles;
   
+  goodParticles.clear();
+  badParticles.clear();
+  goodTrueParticles.clear();
+
   //Save only selected candidates and its trueobjects, delete all the rest
   for(std::vector<AnaParticleB*>::iterator it = bunch->Particles.begin(); it != bunch->Particles.end(); it++){      
     AnaParticlePD* part = static_cast<AnaParticlePD*>(*it);
@@ -74,7 +85,7 @@ void CreateMiniTreeCandidates::DeleteAllButCandidates(){
 //********************************************************************
 bool CreateMiniTreeCandidates::IsCandidate(AnaParticlePD* part){
 //********************************************************************
-
+  
   AnaBunchB* bunch = static_cast<AnaBunchB*>(_spill->Bunches[0]);
 
   //beam filter
@@ -91,7 +102,7 @@ bool CreateMiniTreeCandidates::IsCandidate(AnaParticlePD* part){
   }
   else{
     for(int i = 0; i < (int)beam->PDGs.size(); i++){
-      if(beam->PDGs[i] == 211 || beam->PDGs[i] == 321 || beam->PDGs[i] == 2212){
+      if(beam->PDGs[i] == 211 || beam->PDGs[i] == 321 || beam->PDGs[i] == 2212 || beam->PDGs[i] == 13){
 	hadron = true;
 	break;
       }
@@ -104,7 +115,7 @@ bool CreateMiniTreeCandidates::IsCandidate(AnaParticlePD* part){
 
   //only one daughter
   if(part->DaughtersIDs.size()!=1)return false;
- 
+
   //get daughter
   AnaParticlePD* dau = NULL;
   for(int i = 0; i < (int)bunch->Particles.size(); i++){
@@ -119,29 +130,48 @@ bool CreateMiniTreeCandidates::IsCandidate(AnaParticlePD* part){
   if(dau->Type != 2)return false;
 
   //daughter chi2 cut
-  if(abs(dau->Chi2Muon/dau->Chi2ndf-3.75)>=3.75 || dau->Chi2Muon<0)return false;
+  if(dau->Chi2Muon/dau->Chi2ndf <= 0.64 || dau->Chi2Muon/dau->Chi2ndf >= 5.84 || dau->Chi2Muon<=0)return false;
 
   //daughter range mom cut
   double mom = pdAnaUtils::ComputeRangeMomentum(dau->Length,13);
-  if(abs(mom-0.227)>=0.010)return false;
+  if(mom <= 0.210 || mom >= 0.237)return false;
 
   //daughter CNN cut
-  if(abs(dau->CNNscore[0]-0.69)>=0.27)return false;
+  //if(abs(dau->CNNscore[0]-0.69)>=0.27)return false;
 
   //cos cut
   double cos = 0;
   for(int i = 0; i < 3; i++)cos = cos + part->DirectionEnd[i] * dau->DirectionStart[i];
-  if(cos>=0.65)return false;
+  if(cos <= -0.98 || cos >= 0.64)return false;
 
   //candidate CNN cut
-  if(part->CNNscore[0]<=0.61)return false;
+  //if(part->CNNscore[0]<=0.61)return false;
 
   //distance cut
   double dis = 0;
   for(int i = 0; i < 3; i++)dis = dis + pow(part->PositionEnd[i] - dau->PositionStart[i],2);
   dis = sqrt(dis);
-  if(dis>=20)return false;
+  if(dis <= 0 || dis >= 9.9)return false;
 
   //if we are here we've passed the selection
   return true;
+}
+
+//********************************************************************
+bool CreateMiniTreeCandidates::SaveMiniTree(){
+//********************************************************************
+  
+  bool save = false;
+
+  AnaBunchB* bunch = static_cast<AnaBunchB*>(_spill->Bunches[0]);
+  
+  for(std::vector<AnaParticleB*>::iterator it = bunch->Particles.begin(); it != bunch->Particles.end(); it++){      
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(*it);
+    if(IsCandidate(part)){
+      part->IsCandidate = true;
+      save = true;
+    }
+  }
+
+  return save;
 }

@@ -3,21 +3,12 @@
 
 #include "OutputManager.hxx"
 #include "baseAnalysis.hxx"
-#include "kaonDataClasses.hxx"
 #include "standardPDTree.hxx"
 
 namespace kaonTree{
 
   // Methods to add to the output tree the kaonAnalysis sets of variables
-  void AddKaonVariables_CandidateDaughtersTrue(OutputManager& output, UInt_t nmax);
-
-  void AddKaonVariables_CandidateGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
-  void AddKaonVariables_CandidateGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
-
-  void AddKaonVariables_CandidateGGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
-  void AddKaonVariables_CandidateGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
-
-  void AddKaonVariables_TrueKaonCandidates(OutputManager& output, UInt_t nmax);
+  void AddKaonVariables_TrueKaonCandidates(OutputManager& output);
 
   void AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t nmax);
   void AddKaonVariables_KaonCandidatesHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
@@ -28,16 +19,7 @@ namespace kaonTree{
   void AddKaonVariables_KaonBestCandidateTrue(OutputManager& output);
 
   // Methods to fill the kaonAnalysis sets of variables in the output tree
-  void FillKaonVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* dau);
-
-  void FillKaonVariables_CandidateGDaughterReco(OutputManager& output, AnaParticlePD* part, Int_t index);
-  void FillKaonVariables_CandidateGDaughterTrue(OutputManager& output, AnaParticlePD* part, Int_t index);  
-
-  void FillKaonVariables_CandidateGGDaughterReco(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
-  void FillKaonVariables_CandidateGGDaughterTrue(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);  
-
-  //void FillKaonVariables_TrueKaonCandidates(OutputManager& output, AnaTrueParticlePD* truePart);
-  void FillKaonVariables_TrueKaonCandidates(OutputManager& output, const kaonAnaTrueVertex& kvtx);
+  void FillKaonVariables_TrueKaonCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
 
   void FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
   void FillKaonVariables_KaonCandidatesHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
@@ -50,80 +32,8 @@ namespace kaonTree{
   // Enum with unique indexes for output tree variables  
   enum enumKaonMicroTrees{
 
-    seltrk_dau_truesecondary = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
-
-    // selected track gdaughters reco info
-    seltrk_gdau_ndau,
-    seltrk_gdau_pos,
-    seltrk_gdau_dir,
-    seltrk_gdau_endpos,
-    seltrk_gdau_enddir,
-    seltrk_gdau_length,
-    seltrk_gdau_mom_muon,
-    seltrk_gdau_mom_prot,
-    seltrk_gdau_type,
-    seltrk_gdau_CNNscore,
-    seltrk_gdau_chi2_prot,
-    seltrk_gdau_chi2_muon,
-    seltrk_gdau_chi2_ndf,
-    seltrk_gdau_nhits,
-    seltrk_gdau_hit_dedx,
-    seltrk_gdau_hit_resrange,
-    //seltrk_gdau_nhits2,
-    //seltrk_gdau_hit_dqdx_raw,    
-    
-    // selected track gdaughters true info
-    seltrk_gdau_truendau,
-    seltrk_gdau_truepdg,
-    seltrk_gdau_truepos,
-    seltrk_gdau_trueendpos,
-    seltrk_gdau_trueproc,
-    seltrk_gdau_trueendproc,
-    seltrk_gdau_truemom,
-    seltrk_gdau_trueendmom,
-
-    // selected track ggdaughters reco info
-    seltrk_ggdau_ndau,
-    seltrk_ggdau_posX,
-    seltrk_ggdau_posY,
-    seltrk_ggdau_posZ,
-    seltrk_ggdau_dirX,
-    seltrk_ggdau_dirY,
-    seltrk_ggdau_dirZ,
-    seltrk_ggdau_endposX,
-    seltrk_ggdau_endposY,
-    seltrk_ggdau_endposZ,
-    seltrk_ggdau_enddirX,
-    seltrk_ggdau_enddirY,
-    seltrk_ggdau_enddirZ,
-    seltrk_ggdau_length,
-    seltrk_ggdau_mom_muon,
-    seltrk_ggdau_mom_prot,
-    seltrk_ggdau_type,
-    seltrk_ggdau_CNNscore0,
-    seltrk_ggdau_CNNscore1,
-    seltrk_ggdau_CNNscore2,
-    seltrk_ggdau_chi2_prot,
-    seltrk_ggdau_chi2_muon,
-    seltrk_ggdau_chi2_ndf,
-    seltrk_ggdau_nhits,
-
-    // selected track ggdaughters info
-    seltrk_ggdau_truepdg,    
-    seltrk_ggdau_truendau,   
-    seltrk_ggdau_trueposX,
-    seltrk_ggdau_trueposY,    
-    seltrk_ggdau_trueposZ,    
-    seltrk_ggdau_trueendposX, 
-    seltrk_ggdau_trueendposY, 
-    seltrk_ggdau_trueendposZ, 
-    seltrk_ggdau_trueproc,   
-    seltrk_ggdau_trueendproc,
-    seltrk_ggdau_truemom,    
-    seltrk_ggdau_trueendmom, 
-
     //true kaon candidates info
-    truenkaons,
+    truenkaons = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
     truekaon_truemom,
     truekaon_trueendmom,
     truekaon_trueparentpdg,
@@ -160,7 +70,9 @@ namespace kaonTree{
     //kaon candidates info
     ncandidates,
     candidates_generation,
+    candidates_parentID,
     candidates_ndau,
+    candidates_nsisters,
     candidates_pos,
     candidates_dir,
     candidates_endpos,
@@ -171,8 +83,11 @@ namespace kaonTree{
     candidates_type,
     candidates_CNNscore,
     candidates_chi2_prot,
+    candidates_chi2_kaon,
     candidates_chi2_muon,
     candidates_chi2_ndf,
+    candidates_kaon_PID,
+    candidates_kaon_PID_ndf,
     candidates_distance_mother,
     candidates_distance_dau,
     candidates_cos_dau,
@@ -215,6 +130,8 @@ namespace kaonTree{
     candidates_dau_chi2_prot,
     candidates_dau_chi2_muon,
     candidates_dau_chi2_ndf,
+    candidates_dau_kaon_PID,
+    candidates_dau_kaon_PID_ndf,
     candidates_dau_calE,
     candidates_dau_averagedEdx,
     candidates_dau_vtx_michelscore,

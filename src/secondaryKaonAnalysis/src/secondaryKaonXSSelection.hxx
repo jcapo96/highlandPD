@@ -32,6 +32,10 @@ class secondaryKaonXSSelection: public SelectionBase{
 
 protected:
 
+private:
+
+  Int_t _BeamPDGFilter;
+
 };
 
 //---- Steps and actions for the analysis
@@ -40,6 +44,13 @@ class BeamFilterForXSCut: public StepBase{
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new BeamFilterForXSCut();}
+};
+
+class BeamQualityCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamQualityCut();}
 };
 
 class GetKaonsForXSAction: public StepBase{

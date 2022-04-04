@@ -2,107 +2,7 @@
 #include "pdAnalysisUtils.hxx"
 
 //********************************************************************
-void kaonTree::AddKaonVariables_CandidateDaughtersTrue(OutputManager& output, UInt_t nmax){
-//********************************************************************
-
-  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
-  AddVarMaxSizeVI(output,  seltrk_dau_truesecondary, "is this daughter a true secondary?", seltrk_ndau, nmax);
-}
-
-//********************************************************************
-void kaonTree::AddKaonVariables_CandidateGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters){
-//********************************************************************
-
-  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
-  AddVarMI   (output, seltrk_gdau_truepdg,     "gdaughters true pdg",                 seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMI   (output, seltrk_gdau_truendau,    "gdaughters true number of daughters", seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3D4MF(output, seltrk_gdau_truepos,     "gdaughters true position",            seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3D4MF(output, seltrk_gdau_trueendpos,  "gdaughters true position",            seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMI   (output, seltrk_gdau_trueproc,    "gdaughters true process",             seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMI   (output, seltrk_gdau_trueendproc, "gdaughters true end process",         seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_truemom,     "gdaughters true mom",                 seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_trueendmom,  "gdaughters true end mom",             seltrk_ndau, -nmax, nmaxgdaughters);
-
-}
-
-
-//********************************************************************
-void kaonTree::AddKaonVariables_CandidateGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters){
-//********************************************************************
-  
-  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
-  AddVarMI   (output, seltrk_gdau_ndau,         "gdaughters number of daughters", seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3D4MF(output, seltrk_gdau_pos,          "gdaughters position",            seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3D3MF(output, seltrk_gdau_dir,          "gdaughters direction",           seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3D4MF(output, seltrk_gdau_endpos,       "gdaughters end position",        seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3D3MF(output, seltrk_gdau_enddir,       "gdaughters end direction",       seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_length,       "gdaughters length",              seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_mom_prot,     "gdaughters mom my range, muon",  seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_mom_muon,     "gdaughters mom my range, muon",  seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMI   (output, seltrk_gdau_type,         "gdaughters track or shower",     seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3D3MF(output, seltrk_gdau_CNNscore,     "gdaughters CNN score",           seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_chi2_prot,    "gdaughters chi2 proton",         seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_chi2_muon,    "gdaughters chi2 ndf",            seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMF   (output, seltrk_gdau_chi2_ndf,     "gdaughters chi2 ndf",            seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVarMI   (output, seltrk_gdau_nhits,        "gdaughters nhits",               seltrk_ndau, -nmax, nmaxgdaughters);
-  AddVar3DMF (output, seltrk_gdau_hit_dedx,     "gdaughters hit dedx",            seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
-  AddVar3DMF (output, seltrk_gdau_hit_resrange, "gdaughters hit residual range",  seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
-}  
-
-
-
-//********************************************************************
-void kaonTree::AddKaonVariables_CandidateGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters){
-//********************************************************************
-
-  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
-  AddVar3DMI(output, seltrk_ggdau_truepdg,     "ggdaughters true pdg",                 seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMI(output, seltrk_ggdau_truendau,    "ggdaughters true number of daughters", seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_trueposX,    "ggdaughters true position X",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_trueposY,    "ggdaughters true position Y",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_trueposZ,    "ggdaughters true position Z",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_trueendposX, "ggdaughters true position X",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_trueendposY, "ggdaughters true position Y",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_trueendposZ, "ggdaughters true position Z",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMI(output, seltrk_ggdau_trueproc,    "ggdaughters true process",             seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMI(output, seltrk_ggdau_trueendproc, "ggdaughters true end process",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_truemom,     "ggdaughters true mom",                 seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_trueendmom,  "ggdaughters true end mom",             seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-}
-
-//********************************************************************
-void kaonTree::AddKaonVariables_CandidateGGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters){
-//********************************************************************
-
-  Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
-  AddVar3DMI(output, seltrk_ggdau_ndau,      "ggdaughters number of daughters", seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_posX,      "ggdaughters position X",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_posY,      "ggdaughters position Y",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_posZ,      "ggdaughters position Z",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_dirX,      "ggdaughters direction X",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_dirY,      "ggdaughters direction Y",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_dirZ,      "ggdaughters direction Z",         seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_endposX,   "ggdaughters end position X",      seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_endposY,   "ggdaughters end position Y",      seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_endposZ,   "ggdaughters end position Z",      seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_enddirX,   "ggdaughters end direction X",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_enddirY,   "ggdaughters end direction Y",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_enddirZ,   "ggdaughters end direction Z",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_length,    "ggdaughters length",              seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_mom_muon,  "gdaughters mom range (muon)",     seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_mom_prot,  "gdaughters mom range (proton)",   seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMI(output, seltrk_ggdau_type,      "gdaughters object type",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_CNNscore0, "gdaughters CNN score 0",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_CNNscore1, "gdaughters CNN score 1",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_CNNscore2, "gdaughters CNN score 2",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_chi2_muon, "gdaughters chi2 muon",            seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_chi2_prot, "gdaughters chi2 proton",          seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMF(output, seltrk_ggdau_chi2_ndf,  "gdaughters chi2 ndf",             seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-  AddVar3DMI(output, seltrk_ggdau_nhits,     "ggdaughters #hits",               seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
-}
-
-//********************************************************************
-void kaonTree::AddKaonVariables_TrueKaonCandidates(OutputManager& output, UInt_t nmax){
+void kaonTree::AddKaonVariables_TrueKaonCandidates(OutputManager& output){
 //********************************************************************
 
   AddVarF  (output, truekaon_truemom,        "true kaon candidate true momentum"     );
@@ -144,7 +44,9 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
 //********************************************************************
 
   AddVarMaxSizeVI (output, candidates_generation,   "candidates generation",        ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_parentID,     "candidates parent ID",         ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_ndau,         "candidates' daughters",        ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_nsisters,     "candidates' sistets",          ncandidates, nmax);
   AddVarMaxSize4MF(output, candidates_pos,          "candidates position",          ncandidates, nmax); 
   AddVarMaxSize3MF(output, candidates_dir,          "candidates direction",         ncandidates, nmax);
   AddVarMaxSize4MF(output, candidates_endpos,       "candidates position",          ncandidates, nmax); 
@@ -155,8 +57,11 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
   AddVarMaxSizeVI (output, candidates_type,         "candidates object type",       ncandidates, nmax);
   AddVarMaxSize3MF(output, candidates_CNNscore,     "candidates CNN score",         ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_chi2_prot,    "candidates chi2 proton",       ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_chi2_kaon,    "candidates chi2 kaon",         ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_chi2_muon,    "candidates chi2 proton",       ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_chi2_ndf,     "candidates chi2 ndf",          ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_kaon_PID,     "candidates kaon chi2",         ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_kaon_PID_ndf, "candidates kaon ndf",          ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_distance_mother, "candidates-mother distance",   ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_distance_dau,    "candidates-daughter distance", ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_cos_dau,         "candidates-daughter cos",      ncandidates, nmax);
@@ -179,6 +84,8 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
   AddVarMaxSizeVF (output, candidates_dau_chi2_prot,  "candidates daughter chi2 proton",       ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_dau_chi2_muon,  "candidates daughter chi2 proton",       ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_dau_chi2_ndf,   "candidates daughter chi2 ndf",          ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_kaon_PID,   "candidates daughter chi2 ndf",          ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_dau_kaon_PID_ndf, "candidates daughter chi2 ndf",          ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_dau_nhits,      "candidates daughter #hits",             ncandidates, nmax);
 
   AddVarMaxSizeVF (output, candidates_dau_averagedEdx,     "candidates dau average dEdx",                  ncandidates, nmax);
@@ -350,144 +257,10 @@ void kaonTree::AddKaonVariables_KaonBestCandidateTrue(OutputManager& output){
 }
 
 //********************************************************************
-void kaonTree::FillKaonVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* dau){
+void kaonTree::FillKaonVariables_TrueKaonCandidates(OutputManager& output, const AnaTrueParticlePD* truePart){
 //********************************************************************
 
-  int parentID  = -999;
-  int gparentID = -999;
-  int dparentID = -999;
-
-  if(part->TrueObject){
-    parentID  = static_cast<AnaTrueParticlePD*>(part->TrueObject)->ID;
-    gparentID = static_cast<AnaTrueParticlePD*>(part->TrueObject)->ParentID;
-  }
-
-  int isSecondary = 0;
-  dparentID = -999;
-  if(dau->TrueObject)dparentID = static_cast<AnaTrueParticlePD*>(dau->TrueObject)->ParentID;
-  if(dparentID == parentID && dparentID!=-999 && gparentID==0)isSecondary = 1;
-
-  output.FillVectorVar(seltrk_dau_truesecondary,isSecondary);
-}
-
-//********************************************************************
-void kaonTree::FillKaonVariables_CandidateGDaughterReco(OutputManager& output, AnaParticlePD* gdau, Int_t gdau_index){
-//********************************************************************
-
-  if(!gdau) return;
-  
-  output.FillMatrixVar           (seltrk_gdau_ndau,     (Int_t)gdau->Daughters.size(), -1, gdau_index   );
-  output.Fill3DMatrixVarFromArray(seltrk_gdau_pos,             gdau->PositionStart,    -1, gdau_index, 4);
-  output.Fill3DMatrixVarFromArray(seltrk_gdau_dir,             gdau->DirectionStart,   -1, gdau_index, 3);
-  output.Fill3DMatrixVarFromArray(seltrk_gdau_endpos,          gdau->PositionEnd,      -1, gdau_index, 4);
-  output.Fill3DMatrixVarFromArray(seltrk_gdau_enddir,          gdau->DirectionEnd,     -1, gdau_index, 3);
-  output.FillMatrixVar           (seltrk_gdau_length,          gdau->Length,           -1, gdau_index   );
-  output.FillMatrixVar           (seltrk_gdau_type,     (Int_t)gdau->Type,             -1, gdau_index   );
-  output.Fill3DMatrixVarFromArray(seltrk_gdau_CNNscore,        gdau->CNNscore,         -1, gdau_index, 3);
-  output.FillMatrixVar           (seltrk_gdau_chi2_prot,       gdau->Chi2Proton,       -1, gdau_index   );
-  output.FillMatrixVar           (seltrk_gdau_chi2_muon,       gdau->Chi2Muon,         -1, gdau_index   );
-  output.FillMatrixVar           (seltrk_gdau_chi2_ndf,        gdau->Chi2ndf,          -1, gdau_index   );
-  
-  output.FillMatrixVar           (seltrk_gdau_mom_prot,      pdAnaUtils::ComputeRangeMomentum(gdau->Length,2212), -1, gdau_index);
-  output.FillMatrixVar           (seltrk_gdau_mom_muon,      pdAnaUtils::ComputeRangeMomentum(gdau->Length,13  ), -1, gdau_index);
-
-  output.FillMatrixVar           (seltrk_gdau_nhits,    (Int_t)gdau->NHits,            -1, gdau_index   );
-  if(gdau->Hits[2].empty()){
-    for (int j = 0; j < (int)NMAXHITSPERPLANE; j++){
-      output.Fill3DMatrixVar(seltrk_gdau_hit_dedx,     (Float_t)-999., -1, gdau_index, j);
-      output.Fill3DMatrixVar(seltrk_gdau_hit_resrange, (Float_t)-999., -1, gdau_index, j);
-    }
-  }
-  else{
-    int jmin = std::max<int>(0,(int)gdau->Hits[2].size()-NMAXHITSPERPLANE);
-    int jmax = (int)gdau->Hits[2].size();
-    for (int j = jmin; j < jmax; j++){
-      output.Fill3DMatrixVar(seltrk_gdau_hit_dedx,      gdau->Hits[2][j].dEdx,          -1, gdau_index, j-jmin);
-      output.Fill3DMatrixVar(seltrk_gdau_hit_resrange,  gdau->Hits[2][j].ResidualRange, -1, gdau_index, j-jmin);
-    }
-  }
-}
-
-//********************************************************************
-void kaonTree::FillKaonVariables_CandidateGDaughterTrue(OutputManager& output, AnaParticlePD* gdau, Int_t gdau_index){
-//********************************************************************
-
-  if(!gdau) return;  
-  AnaTrueParticle* gdauTruePart = static_cast<AnaTrueParticle*>(gdau->TrueObject);
-  if(!gdauTruePart) return;
-  
-  output.FillMatrixVar           (seltrk_gdau_truepdg,  (Int_t)gdauTruePart->PDG,              -1, gdau_index   );
-  output.FillMatrixVar           (seltrk_gdau_truendau, (Int_t)gdauTruePart->Daughters.size(), -1, gdau_index   );
-  output.Fill3DMatrixVarFromArray(seltrk_gdau_truepos,         gdauTruePart->Position,         -1, gdau_index, 4);
-  output.Fill3DMatrixVarFromArray(seltrk_gdau_trueendpos,      gdauTruePart->PositionEnd,      -1, gdau_index, 4);
-  output.FillMatrixVar           (seltrk_gdau_trueproc,        gdauTruePart->ProcessStart,     -1, gdau_index   );
-  output.FillMatrixVar           (seltrk_gdau_trueendproc,     gdauTruePart->ProcessEnd,       -1, gdau_index   );
-  output.FillMatrixVar           (seltrk_gdau_truemom,         gdauTruePart->Momentum,         -1, gdau_index   );
-  output.FillMatrixVar           (seltrk_gdau_trueendmom,      gdauTruePart->MomentumEnd,      -1, gdau_index   );
-}
-
-//********************************************************************
-void kaonTree::FillKaonVariables_CandidateGGDaughterReco(OutputManager& output, AnaParticlePD* ggdau, Int_t gdau_index, Int_t ggdau_index){
-//********************************************************************
-
-  if(!ggdau) return;
-  
-  output.Fill3DMatrixVar(seltrk_ggdau_ndau,  (Int_t)ggdau->Daughters.size(),  -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_posX,         ggdau->PositionStart[0],  -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_posY,         ggdau->PositionStart[1],  -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_posZ,         ggdau->PositionStart[2],  -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_dirX,         ggdau->DirectionStart[0], -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_dirY,         ggdau->DirectionStart[1], -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_dirZ,         ggdau->DirectionStart[2], -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_endposX,      ggdau->PositionEnd[0],    -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_endposY,      ggdau->PositionEnd[1],    -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_endposZ,      ggdau->PositionEnd[2],    -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_enddirX,      ggdau->DirectionEnd[0],   -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_enddirY,      ggdau->DirectionEnd[1],   -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_enddirZ,      ggdau->DirectionEnd[2],   -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_length,       ggdau->Length,            -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_type,         ggdau->Type,              -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_CNNscore0,    ggdau->CNNscore[0],       -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_CNNscore1,    ggdau->CNNscore[1],       -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_CNNscore2,    ggdau->CNNscore[2],       -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_chi2_prot,    ggdau->Chi2Proton,        -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_chi2_muon,    ggdau->Chi2Muon,          -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_chi2_ndf,     ggdau->Chi2ndf,           -1, gdau_index, ggdau_index);
-
-  output.Fill3DMatrixVar(seltrk_ggdau_mom_prot, pdAnaUtils::ComputeRangeMomentum(ggdau->Length,2212), -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_mom_muon, pdAnaUtils::ComputeRangeMomentum(ggdau->Length,13  ), -1, gdau_index, ggdau_index);
-
-  output.Fill3DMatrixVar(seltrk_ggdau_nhits,        ggdau->NHits,             -1, gdau_index, ggdau_index);
-
-}
-
-//********************************************************************
-void kaonTree::FillKaonVariables_CandidateGGDaughterTrue(OutputManager& output, AnaParticlePD* ggdau, Int_t gdau_index, Int_t ggdau_index){
-//********************************************************************
-
-  if(!ggdau) return;  
-  AnaTrueParticle* ggdauTruePart = static_cast<AnaTrueParticle*>(ggdau->TrueObject);
-  if(!ggdauTruePart) return;
-  
-  output.Fill3DMatrixVar(seltrk_ggdau_truepdg,  (Int_t)ggdauTruePart->PDG,              -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_truendau, (Int_t)ggdauTruePart->Daughters.size(), -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueposX,        ggdauTruePart->Position[0],      -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueposY,        ggdauTruePart->Position[1],      -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueposZ,        ggdauTruePart->Position[2],      -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueendposX,     ggdauTruePart->PositionEnd[0],   -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueendposY,     ggdauTruePart->PositionEnd[1],   -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueendposZ,     ggdauTruePart->PositionEnd[2],   -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueproc,        ggdauTruePart->ProcessStart,     -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueendproc,     ggdauTruePart->ProcessEnd,       -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_truemom,         ggdauTruePart->Momentum,         -1, gdau_index, ggdau_index);
-  output.Fill3DMatrixVar(seltrk_ggdau_trueendmom,      ggdauTruePart->MomentumEnd,      -1, gdau_index, ggdau_index);
-}
-
-//********************************************************************
-void kaonTree::FillKaonVariables_TrueKaonCandidates(OutputManager& output, const kaonAnaTrueVertex& kvtx){
-//********************************************************************
-
-  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(kvtx.TrueParticlesVect[0]);
+  if(!truePart)return;
 
   output.FillVar               (truekaon_truemom,            truePart->Momentum        );
   output.FillVar               (truekaon_trueendmom,         truePart->MomentumEnd     );
@@ -496,16 +269,16 @@ void kaonTree::FillKaonVariables_TrueKaonCandidates(OutputManager& output, const
   output.FillVar               (truekaon_trueparentid,       truePart->ParentID        );
   output.FillVar               (truekaon_trueproc,           truePart->ProcessStart    ); 
   output.FillVar               (truekaon_trueendproc,        truePart->ProcessEnd      );
-  output.FillVar               (truekaon_truedecay,          kvtx.DecayMode            );
-  output.FillVar               (truekaon_truechainmuon,      kvtx.ChainMuon            );
+  //output.FillVar               (truekaon_truedecay,          kvtx.DecayMode            );
+  //output.FillVar               (truekaon_truechainmuon,      kvtx.ChainMuon            );
   output.FillVar               (truekaon_truendau,    (Int_t)truePart->Daughters.size()); 
   output.FillVectorVarFromArray(truekaon_truepos,            truePart->Position,      4);
   output.FillVectorVarFromArray(truekaon_trueendpos,         truePart->PositionEnd,   4);
   output.FillVectorVarFromArray(truekaon_truedir,            truePart->Direction,     3);
   output.FillVectorVarFromArray(truekaon_trueenddir,         truePart->DirectionEnd,  3);
-  output.FillVar               (truekaon_branch,      (Int_t)kvtx.Branch               ); 
+  //output.FillVar               (truekaon_branch,      (Int_t)kvtx.Branch               ); 
   
-  if(kvtx.TrueParticlesVect.size()>1){
+  /*if(kvtx.TrueParticlesVect.size()>1){
     AnaTrueParticlePD* trueDau = static_cast<AnaTrueParticlePD*>(kvtx.TrueParticlesVect[1]);
     if(trueDau){
       output.FillVar               (truekaon_truemuon_truemom,            trueDau->Momentum        );
@@ -520,7 +293,7 @@ void kaonTree::FillKaonVariables_TrueKaonCandidates(OutputManager& output, const
       output.FillVectorVarFromArray(truekaon_truemuon_truedir,            trueDau->Direction,     3);
       output.FillVectorVarFromArray(truekaon_truemuon_trueenddir,         trueDau->DirectionEnd,  3);
     }
-  }
+    }*/
 }
 
 //********************************************************************
@@ -529,7 +302,10 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
 
   if (!part) return;
   output.FillVectorVar         (candidates_generation,       part->Generation       );
+  output.FillVectorVar         (candidates_parentID,         part->ParentID      );
   output.FillVectorVar         (candidates_ndau,      (Int_t)part->Daughters.size() );
+  if(parent)
+    output.FillVectorVar         (candidates_nsisters,  (Int_t)parent->DaughtersIDs.size() );
   output.FillMatrixVarFromArray(candidates_pos,              part->PositionStart,  4);
   output.FillMatrixVarFromArray(candidates_dir,              part->DirectionStart, 3); 
   output.FillMatrixVarFromArray(candidates_endpos,           part->PositionEnd,    4);
@@ -540,8 +316,12 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_type,             part->Type             );
   output.FillMatrixVarFromArray(candidates_CNNscore,         part->CNNscore,       3); 
   output.FillVectorVar         (candidates_chi2_prot,        part->Chi2Proton       );
+  output.FillVectorVar         (candidates_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*part,321).first);
   output.FillVectorVar         (candidates_chi2_muon,        part->Chi2Muon         );
   output.FillVectorVar         (candidates_chi2_ndf,         part->Chi2ndf          );
+  std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
+  output.FillVectorVar         (candidates_kaon_PID,         (Float_t)kaon_PID.first);
+  output.FillVectorVar         (candidates_kaon_PID_ndf,     kaon_PID.second        );
   output.FillVectorVar         (candidates_nhits,            part->NHits            );
 
   output.FillVectorVar         (candidates_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
@@ -568,6 +348,9 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_dau_chi2_prot,        dau->Chi2Proton       );
   output.FillVectorVar         (candidates_dau_chi2_muon,        dau->Chi2Muon         );
   output.FillVectorVar         (candidates_dau_chi2_ndf,         dau->Chi2ndf          );
+  std::pair<double,int>kaon_PID_dau = pdAnaUtils::kaonPID(*dau);
+  output.FillVectorVar         (candidates_dau_kaon_PID,         (Float_t)kaon_PID_dau.first);
+  output.FillVectorVar         (candidates_dau_kaon_PID_ndf,     kaon_PID_dau.second        );
   output.FillVectorVar         (candidates_dau_nhits,            dau->NHits            );
 
   output.FillVectorVar         (candidates_dau_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(dau,5));

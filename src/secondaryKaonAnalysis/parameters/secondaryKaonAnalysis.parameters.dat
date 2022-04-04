@@ -1,16 +1,17 @@
 --- Cut levels --------
  < secondaryKaonAnalysis.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
 
---- Selections -------------
- < secondaryKaonAnalysis.AllSelection    = 0 >
- < secondaryKaonAnalysis.BeamSelection   = 1 >
- < secondaryKaonAnalysis.CosmicSelection = 0 >
+--- Selection -------------
+ < secondaryKaonAnalysis.XSSelection               = 0 >
+ < secondaryKaonAnalysis.XSSelection.BeamPDGFilter = 211 >
 
 --- Systematics ------------
 
 The single systematics configuration (when EnableSingle...SystConfigurations = 1)
 or the all systematics configuration (when EnableAllSystematics = 1)
 need to be enabled in baseAnalysis parameter file
+
+ < secondaryKaonAnalysis.Systematics.EnabledEdxKaon          = 0 >
 
  < secondaryKaonAnalysis.Systematics.EnableLength            = 0 >
 
@@ -21,8 +22,9 @@ need to be enabled in baseAnalysis parameter file
 This is the parent systematic of the three above
  < secondaryKaonAnalysis.Systematics.EnabledEdxCalib         = 0 >  
 
- < secondaryKaonAnalysis.Systematics.EnabledBeamComposition  = 1 >
+ < secondaryKaonAnalysis.Systematics.EnabledBeamComposition  = 0 >
  < secondaryKaonAnalysis.Systematics.EnabledTrackEff         = 0 >
+ < secondaryKaonAnalysis.Systematics.EnabledBeamPartIdEff    = 1 >
 
 --- Corrections -----------
 
@@ -99,5 +101,5 @@ Create configurations with a single systematic ( a configuration for each system
 
 Enable/disable the configuration with all systematics (or the ones selected above)
 
- < baseAnalysis.Configurations.EnableAllSystematics = 0 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 1 >
  

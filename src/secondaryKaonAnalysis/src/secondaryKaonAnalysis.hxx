@@ -4,19 +4,13 @@
 #include "baseAnalysis.hxx"
 #include "ToyBoxKaon.hxx"
 #include "standardPDTree.hxx"
+#include "pdDataClasses.hxx"
 #include "kaonTree.hxx"
 #include "kaonAnalysisUtils.hxx"
-#include "kaonDataClasses.hxx"
 
 
 namespace secondaryKaonAnalysisConstants{
 
-  const UInt_t NMAXSAVEDPARTICLES      = 20;
-  const UInt_t NMAXSAVEDDAUGHTERS      = 20;
-  const UInt_t NMAXSAVEDGDAUGHTERS     = 5;
-  const UInt_t NMAXSAVEDGGDAUGHTERS    = 5;
-  const UInt_t NMAXSAVEDHITSDAUGHTERS  = 6000;
-  const UInt_t NMAXSAVEDTRUECANDIDATES = 10;
   const UInt_t NMAXSAVEDCANDIDATES     = 10;
 }
 
@@ -36,15 +30,17 @@ class secondaryKaonAnalysis: public baseAnalysis {
   void FillMicroTrees(bool addBase=true);
   void FillToyVarsInMicroTrees(bool addBase=true);
 
-  bool CheckFillTruthTree(const AnaTrueVertex& vtx);
+  bool CheckFillTruthTree(const AnaTrueVertex& vtx){return true;}
+  bool CheckFillTruthTree(const AnaTrueParticlePD* part);
 
-  using baseAnalysis::FillTruthTree;
-  void FillTruthTree(const AnaTrueVertex& vtx);
+  //using baseAnalysis::FillTruthTree;
+  bool FinalizeConfiguration();
+  void FillTruthTree();
+  void FillTruthTree(const AnaTrueVertex& vtx){return;}
+  void FillTruthTree(const AnaTrueParticlePD& part);
   //--------------------
 
   bool Initialize();
-  bool InitializeSpill(); //temporary solution for filling truthtree
-  void FinalizeSpill(); //temporary solution for filling truthtree
   void FillCategories();
   void DefineInputConverters();
 
@@ -74,6 +70,9 @@ class secondaryKaonAnalysis: public baseAnalysis {
 
 
 private:
+
+  bool _xs_selection;
+  std::string _selection_name;
   
 public:
 

@@ -17,6 +17,7 @@ protected:
   bool Process();
 
   bool IsCandidate(AnaParticlePD* part);
+  bool SaveMiniTree();
 
   void DeleteAllButCandidates();
 };

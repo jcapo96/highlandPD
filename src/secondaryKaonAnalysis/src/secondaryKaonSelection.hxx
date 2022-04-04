@@ -28,93 +28,94 @@ class secondaryKaonSelection: public SelectionBase{
   Int_t GetRelevantTrueObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{IDs[0] = EventBoxPD::kCandidateAndDaughters;return 1;}
 
   //------------------
-
+  
 protected:
-
+  
 };
 
 //---- Steps and actions for the analysis
 class BeamHadronCut: public StepBase{
- public:
+public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new BeamHadronCut();}
 };
 
 class GetKaonsAction: public StepBase{
- public:
+public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new GetKaonsAction();}
 };
 
 class EventHasKaonCut: public StepBase{
- public:
+public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new EventHasKaonCut();}
 };
 
 class MuonIsTrackCut: public StepBase{
- public:
+public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new MuonIsTrackCut();}
 };
 
 class MuonChi2Cut: public StepBase{
- public:
-  double _cut_value;
-  MuonChi2Cut(double cut_value){_cut_value = cut_value;};
+public:
+  using StepBase::StepBase;
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new MuonChi2Cut(_cut_value);}
+  StepBase* MakeClone(){return new MuonChi2Cut();}
 };
 
 class MuonCNNCut: public StepBase{
- public:
-  double _cut_value;
-  MuonCNNCut(double cut_value){_cut_value = cut_value;};
+public:
+  using StepBase::StepBase;
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new MuonCNNCut(_cut_value);}
+  StepBase* MakeClone(){return new MuonCNNCut();}
 };
 
 class MuonRangeMomCut: public StepBase{
- public:
-  double _cut_value;
-  double _mean_value;
-  MuonRangeMomCut(double mean_value,double cut_value){_mean_value = mean_value; _cut_value = cut_value;};
+public:
+  using StepBase::StepBase;
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new MuonRangeMomCut(_mean_value,_cut_value);}
+  StepBase* MakeClone(){return new MuonRangeMomCut();}
 };
 
 class KaonCNNCut: public StepBase{
- public:
-  double _cut_value;
-  KaonCNNCut(double cut_value){_cut_value = cut_value;};
+public:
+  using StepBase::StepBase;
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new KaonCNNCut(_cut_value);}
+  StepBase* MakeClone(){return new KaonCNNCut();}
 };
 
 class KaonMuonAngleCut: public StepBase{
- public:
-  double _cut_value;
-  KaonMuonAngleCut(double cut_value){_cut_value = cut_value;};
+public:
+  using StepBase::StepBase;
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new KaonMuonAngleCut(_cut_value);}
+  StepBase* MakeClone(){return new KaonMuonAngleCut();}
 };
 
 class KaonMuonDistanceCut: public StepBase{
- public:
-  double _cut_value;
-  KaonMuonDistanceCut(double cut_value){_cut_value = cut_value;};
+public:
+  using StepBase::StepBase;
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new KaonMuonDistanceCut(_cut_value);}
+  StepBase* MakeClone(){return new KaonMuonDistanceCut();}
+};
+
+class ProtonChi2Cut: public StepBase{
+ public:
+  using StepBase::StepBase;
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new ProtonChi2Cut();}
 };
 
 #endif
