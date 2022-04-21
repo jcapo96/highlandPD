@@ -229,7 +229,8 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
 
   Length_alt = part.Length_alt;
- 
+  Generation = part.Generation;
+
   for (int i=0; i<3; i++){
     Hits[i] = part.Hits[i];
   }
@@ -326,6 +327,7 @@ AnaTrueParticlePD::AnaTrueParticlePD(const AnaTrueParticlePD& truePart):AnaTrueP
     Pi0_decay_ID.push_back(truePart.Pi0_decay_ID[i]);
  
   Origin = truePart.Origin;
+  Generation = truePart.Generation;
   Matched = truePart.Matched;
   LengthInTPC = truePart.LengthInTPC;
   MomentumInTPC = truePart.MomentumInTPC;
