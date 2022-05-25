@@ -144,7 +144,7 @@ void PDSPAnalyzerTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& tru
   beam->nFibers[0] = beam_inst_nFibersP1;
   beam->nFibers[1] = beam_inst_nFibersP2;
   beam->nFibers[2] = beam_inst_nFibersP3;    
-  beam->TOF = (*beam_inst_TOF)[0];
+  //beam->TOF = (*beam_inst_TOF)[0];
   
   // Create the BeamParticle object
   beam->BeamParticle = MakeParticle();
