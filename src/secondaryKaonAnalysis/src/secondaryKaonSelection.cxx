@@ -1,10 +1,10 @@
 #include "secondaryKaonSelection.hxx"
-#include "EventBoxPD.hxx"
+#include "EventBoxKaon.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pdBaseSelection.hxx"
 
 //********************************************************************
-secondaryKaonSelection::secondaryKaonSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
+secondaryKaonSelection::secondaryKaonSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxKaon) {
 //********************************************************************
 
 }
@@ -265,10 +265,9 @@ void secondaryKaonSelection::InitializeEvent(AnaEventC& eventC){
   AnaEventB& event = *static_cast<AnaEventB*>(&eventC); 
 
   // Create the appropriate EventBox if it does not exist yet
-  if (!event.EventBoxes[EventBoxId::kEventBoxPD])
-    event.EventBoxes[EventBoxId::kEventBoxPD] = new EventBoxPD();
+  if (!event.EventBoxes[EventBoxId::kEventBoxKaon])
+    event.EventBoxes[EventBoxId::kEventBoxKaon] = new EventBoxKaon();
 
-  boxUtils::FillCandidateAndDaughters(event);
-  boxUtils::FillTrueCandidateAndDaughters(event);
+  boxUtils::FillKaonCandidatesAndDaughters(event);
 }
 

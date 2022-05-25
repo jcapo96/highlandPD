@@ -266,6 +266,9 @@ namespace kaonTree{
     bestcandidate_dau_truemom,
     bestcandidate_dau_trueendmom,
 
+    //toy variables for systematic studies
+    bestcandidate_hit_resrange_toy,
+
     enumKaonMicroTreesLast
   };
 }

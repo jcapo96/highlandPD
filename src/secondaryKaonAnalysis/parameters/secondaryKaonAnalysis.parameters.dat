@@ -22,9 +22,11 @@ need to be enabled in baseAnalysis parameter file
 This is the parent systematic of the three above
  < secondaryKaonAnalysis.Systematics.EnabledEdxCalib         = 0 >  
 
- < secondaryKaonAnalysis.Systematics.EnabledBeamComposition  = 0 >
- < secondaryKaonAnalysis.Systematics.EnabledTrackEff         = 0 >
- < secondaryKaonAnalysis.Systematics.EnabledBeamPartIdEff    = 1 >
+ < secondaryKaonAnalysis.Systematics.EnableBeamComposition   = 0 >
+ < secondaryKaonAnalysis.Systematics.EnableTrackEff          = 0 >
+ < secondaryKaonAnalysis.Systematics.EnableBeamPartIdEff     = 1 >
+
+< secondaryKaonAnalysis.Systematics.EnableResidualRangeVar   = 1 >	
 
 --- Corrections -----------
 
@@ -78,7 +80,7 @@ No weights yet !!!
 --- Systematics ------------
 
 Number of toy experiments
- < baseAnalysis.Systematics.NumberOfToys = 100 >
+ < baseAnalysis.Systematics.NumberOfToys = 2 >
 
 The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
 

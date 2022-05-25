@@ -5,7 +5,7 @@
 #include "SelectionBase.hxx"
 #include "Parameters.hxx"
 #include "ToyBoxKaon.hxx"
-#include "EventBoxPD.hxx"
+#include "EventBoxKaon.hxx"
 #include "EventBoxId.hxx"
 #include "SystId.hxx"
 #include "SubDetId.hxx"
@@ -24,8 +24,8 @@ class secondaryKaonSelection: public SelectionBase{
   // These ones are also mandatory, although only used in some cases. A dummy implementation is enough if many cases  
   bool FillEventSummary(AnaEventC&, Int_t*){return false;}
   SampleId_h GetSampleId(){return UNASSIGNEDID;}
-  Int_t GetRelevantRecObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{ IDs[0] = EventBoxPD::kCandidateAndDaughters;return 1;}
-  Int_t GetRelevantTrueObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{IDs[0] = EventBoxPD::kCandidateAndDaughters;return 1;}
+  Int_t GetRelevantRecObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{ IDs[0] = EventBoxKaon::kCandidatesAndDaughters;return 1;}
+  Int_t GetRelevantTrueObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{IDs[0] = EventBoxKaon::kCandidatesAndDaughters;return 1;}
 
   //------------------
   

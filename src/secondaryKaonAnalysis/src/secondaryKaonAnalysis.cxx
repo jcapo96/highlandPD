@@ -14,6 +14,7 @@
 #include "PDSPAnalyzerTreeConverter.hxx"
 
 #include "dEdxKaonVariation.hxx"
+#include "ResidualRangeVariation.hxx"
 #include "BeamPartIdEffWeight.hxx"
 
 //********************************************************************
@@ -86,7 +87,7 @@ void secondaryKaonAnalysis::DefineSystematics(){
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
-  //evar().AddEventVariation(0, "dEdx kaon", new dEdxKaonVariation());
+  evar().AddEventVariation(0,"residual range variation",                new ResidualRangeVariation());
   eweight().AddEventWeight(0,"beam particle identification efficiency", new BeamPartIdEffWeight());
 }
 
@@ -99,8 +100,8 @@ void secondaryKaonAnalysis::DefineConfigurations(){
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if(_enableAllSystConfig){
-    //if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnabledEdxKaon"))conf().EnableEventVariation(0,all_syst);
-    if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnabledBeamPartIdEff"))conf().EnableEventWeight(0,all_syst);
+    if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnableResidualRangeVar"))conf().EnableEventVariation(0,all_syst);
+    if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnableBeamPartIdEff"))conf().EnableEventWeight(0,all_syst);
   }
 }
 
@@ -129,6 +130,9 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   kaonTree::AddKaonVariables_KaonBestCandidateReco    (output());
   kaonTree::AddKaonVariables_KaonBestCandidateHitsReco(output());
   kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
+
+  // -------- Add toy variables ---------------------------------
+  AddToyVarVF(output(), kaonTree::bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", NMAXHITSPERPLANE);
 }
 
 //********************************************************************
@@ -148,7 +152,7 @@ void secondaryKaonAnalysis::DefineTruthTree(){
 //********************************************************************
 void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
-
+  
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
 
@@ -196,6 +200,37 @@ void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
 
   // Fill the common variables  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
+
+  // ---------- best kaon candidate variables --------------
+  //get the kaon selection and get the branch with a larger AccumLevel
+  SelectionBase* ksel = sel().GetSelection(_selection_name.c_str()); //todo fix this
+  int branchmax = 0;
+  int max       = 0;  
+  for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
+    if(ksel->GetAccumCutLevel(ibranch) > max){
+      max = ksel->GetAccumCutLevel(ibranch);
+      branchmax = ibranch;
+    }
+  }
+ 
+  if(box().Candidates.size() == 0)return;
+
+  AnaParticlePD* best = box().Candidates[branchmax];
+  if(best->Hits[2].empty()){
+    for(int j = 0; j < NMAXHITSPERPLANE; j++){
+      output().FillToyVectorVar(kaonTree::bestcandidate_hit_resrange_toy,(Float_t)-999.,j);
+    }
+  }
+  else{
+    int jmin = std::max<int>(0,(int)best->Hits[2].size()-NMAXHITSPERPLANE);
+    int jmax = (int)best->Hits[2].size(); 
+    
+    std::cout << "TOY" << std::endl;
+    for(int j = jmin; j < jmax; j++){
+      //std::cout << j-jmin << " " << best->Hits[2][j].ResidualRange << std::endl;
+      output().FillToyVectorVar(kaonTree::bestcandidate_hit_resrange_toy,best->Hits[2][j].ResidualRange,j-jmin);
+    }
+  }
 }
 
 //********************************************************************
