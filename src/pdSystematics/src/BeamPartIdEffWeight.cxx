@@ -19,27 +19,36 @@ Weight_h BeamPartIdEffWeight::ComputeWeight(const ToyExperiment& toy, const AnaE
   // Initialy the weight is 1
   Weight_h eventWeight = 1;
 
-  // Get the true beam particle
+  // Get the true beam particle and the event info
   AnaTrueParticlePD* trueBeamPart = pdAnaUtils::GetTrueBeamParticle(event);
-  if (!trueBeamPart) return eventWeight;
+  const AnaEventInfoPD* EventInfo = static_cast<const AnaEventInfoPD*>(static_cast<const AnaEventB*>(&event)->EventInfo);
+  if(!trueBeamPart || !EventInfo) return eventWeight;
 
-  // Get the beam particle identification efficiency. It depends on pdg and nominal beam mom (to be added);
+  // Get the beam particle identification efficiency. It depends on pdg and nominal beam mom 
   BinnedParamsParams params;
   int index;
-  if(!GetBinValues(abs(trueBeamPart->PDG), trueBeamPart->Momentum, params, index))return eventWeight;  
+  
+  if(!GetBinValues(abs(trueBeamPart->PDG), EventInfo->NominalBeamMom, params, index))return eventWeight;  
 
   // Get the SystBox for this event, and the appropriate selection and branch
   SystBoxB* SystBox = GetSystBox(event,box.SelectionEnabledIndex,box.SuccessfulBranch);
-   
-  // Loop over all TrueParticles in the TPC
-  for (Int_t itrue=0;itrue< SystBox->nRelevantTrueObjects; itrue++){      
-    //    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(SystBox->RelevantTrueObjects[itrue]);            
 
-    // True-reco association done only once per event in EventWeightBase;
-    bool found = (SystBox->RelevantTrueObjectsReco[itrue]!=NULL);
+  bool found = false;
+  // Loop over all RecoParticles in the TPC
+  for(Int_t i = 0; i < SystBox->nRelevantRecObjects; i++){      
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(SystBox->RelevantRecObjects[i]);            
 
-    // compute the weight
-    eventWeight *= systUtils::ComputeEffLikeWeight(found, toy, GetIndex(), index, params);
+    //look for the beam particle
+    if(part->isPandora){
+      AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+      if(!truePart)break;
+      if(truePart->Origin==4)found = true;
+      else                   found = false;
+      
+      // compute the weight
+      eventWeight *= systUtils::ComputeEffLikeWeight(found, toy, GetIndex(), index, params);
+      break;
+    }
   }
 
   return eventWeight;
@@ -50,7 +59,7 @@ bool BeamPartIdEffWeight::IsRelevantTrueObject(const AnaEventC& event, const Ana
 //********************************************************************
 
   (void)event;
-  
+
   /*const AnaTrueParticleB& truePart = *static_cast<const AnaTrueParticleB*>(&trueObj);
 
   // consider only charged true particles with momenta below 0.4 (as an example)
