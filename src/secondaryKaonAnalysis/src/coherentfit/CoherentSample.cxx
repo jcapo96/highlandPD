@@ -28,6 +28,7 @@ CoherentSample::CoherentSample(){
   fMinuit = NULL;
   
   fh.clear();
+  fSystHist.clear();
 
   fIntegral.clear();
 
@@ -93,9 +94,9 @@ void CoherentSample::WriteToRootFile(const std::string& filename){
   rfile->WriteObject(&fIFit,"IFit_vector");
   rfile->WriteObject(&fCFit,"CFit_vector");
 
-  fClwFit->Write();
-  fCmpvFit->Write();
-  fCgwFit->Write();
+  if(fClwFit)fClwFit->Write();
+  if(fCmpvFit)fCmpvFit->Write();
+  if(fCgwFit)fCgwFit->Write();
   
   rfile->WriteObject(&fRR,"RR_vector");
 
@@ -454,6 +455,56 @@ void CoherentSample::CoherentFit(){
   }
 }
 
+//********************************************************************
+TGraphErrors* CoherentSample::GetMPVErrorBand(){
+//********************************************************************
+
+  //get covariance matrix
+  const int ndim = fMinuit->GetNumPars();
+  double matrix[ndim][ndim] = {0};
+  fMinuit->mnemat(&matrix[0][0],ndim);
+
+  //get hessian
+  TF1* J[5];
+  J[0] = new TF1("derA" ,CoherentFitUtils::ABCDRDerivativeA,0,60,6);
+  J[1] = new TF1("derB" ,CoherentFitUtils::ABCDRDerivativeB,0,60,6);
+  J[2] = new TF1("derC" ,CoherentFitUtils::ABCDRDerivativeC,0,60,6);
+  J[3] = new TF1("derD" ,CoherentFitUtils::ABCDRDerivativeD,0,60,6);
+  J[4] = new TF1("derR" ,CoherentFitUtils::ABCDRDerivativeR,0,60,6);
+  for(int i = 0; i < 5; i++)J[i]->SetParameters(fCmpvA.first,fCmpvB.first,fCmpvC.first,fCmpvD.first,fCmpvR.first,0);
+  TF1* mpvFit = NULL;
+  if(fType==SampleTypeEnum::kSignalPlusBackground)mpvFit = fSignal->GetCmpvFit();
+  else if(fType==SampleTypeEnum::kTrueSignal)mpvFit = fCmpvFit;
+  else return NULL;
+  
+  //compute error at each RR
+  std::vector<double> rr,rr_error,mpv,mpv_error;
+  rr.clear();
+  rr_error.clear();
+  mpv.clear();
+  mpv_error.clear();
+  double error    = 0;
+  double aux      = 0;
+  double v_aux[5] = {0};
+  for(int irr = 0; irr < fRR.size(); irr++){
+    rr.push_back(fRR[irr].first);
+    rr_error.push_back(fRR[irr].second);
+    mpv.push_back(mpvFit->Eval(fRR[irr].first));
+    for(int icolumn = 3; icolumn < 8; icolumn++){
+      for(int irow = 3; irow < 8; irow++)
+	aux += J[irow-3]->Eval(fRR[irr].first)*matrix[irow][icolumn];
+      v_aux[icolumn-3] = aux;
+      aux = 0;
+    }
+    for(int i = 0; i < 5; i++)error += v_aux[i]*J[i]->Eval(fRR[irr].first);
+    mpv_error.push_back(error);
+    std::cout << fRR[irr].first << " " << error << std::endl;
+    error = 0;
+  }
+
+  return new TGraphErrors(mpv.size(),&rr[0],&mpv[0],&rr_error[0],&mpv_error[0]);
+}
+  
 //********************************************************************
 void CoherentSample::CoherentFitSignal(){
 //********************************************************************
@@ -1573,7 +1624,7 @@ void CoherentSample::CoherentFitSignalPlusBackgroundQuadraticWidths(){
   fMinuit->mnparm(11, "b lw A" , vstart[11], step[11],   0, 10, ierflg);
   fMinuit->mnparm(12, "b lw B" , vstart[12], step[12], -10,  0, ierflg);
   fMinuit->mnparm(13, "b lw C" , vstart[13], step[13],   0, 10, ierflg);
-  fMinuit->mnparm(14, "b shift", vstart[14], step[14],   vstart[14]*0.95, vstart[14]*1.05, ierflg);//0,  0, ierflg);
+  fMinuit->mnparm(14, "b shift", vstart[14], step[14],   0,  0, ierflg);//vstart[14]*0.95, vstart[14]*1.05, ierflg);
   fMinuit->mnparm(15, "b gw A" , vstart[15], step[15],   0, 90, ierflg);
   fMinuit->mnparm(16, "b gw B" , vstart[16], step[16], -10,  0, ierflg);
   fMinuit->mnparm(17, "b gw C" , vstart[17], step[17],   0, 10, ierflg);

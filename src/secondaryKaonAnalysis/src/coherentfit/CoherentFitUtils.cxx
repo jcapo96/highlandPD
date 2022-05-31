@@ -31,49 +31,79 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill
 						      double bin_min, double bin_max, double bin_width){
 //********************************************
 
-  TH1F* h_dummy = CreateHistogram(bin_min,bin_max,bin_width);
-  std::vector<double> dEdx;
-  dEdx.clear();
-  
-  //fill histogram
-  double rr_0 = (RMIN+RMAX)/2;
-  double rr_r = (RMAX-RMIN)/2;
-  
-  //loop over candidates
-  for(int ientry = 0; ientry < t->GetEntries(); ientry++){
-    t->GetEntry(ientry);
-    AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
-    for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
-      AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
-      if(!part || (int)part->Hits[2].size()<2)continue;
-      if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
-	for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
-	  if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r){
-	    h_dummy->Fill(part->Hits[2][ihit].dEdx_calib);
-	    dEdx.push_back(part->Hits[2][ihit].dEdx_calib);
+  if(spill){
+    TH1F* h_dummy = CreateHistogram(bin_min,bin_max,bin_width);
+    std::vector<double> dEdx;
+    dEdx.clear();
+    
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    //loop over candidates
+    for(int ientry = 0; ientry < t->GetEntries(); ientry++){
+      t->GetEntry(ientry);
+      AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
+      for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
+	AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
+	if(!part || (int)part->Hits[2].size()<2)continue;
+	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
+	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
+	    if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r){
+	      h_dummy->Fill(part->Hits[2][ihit].dEdx);
+	      dEdx.push_back(part->Hits[2][ihit].dEdx);
+	    }
 	  }
 	}
       }
     }
+    
+    double mean = h_dummy->GetMean();
+    double rms  = h_dummy->GetRMS();
+    double new_bin_min = std::max(bin_min,floor(10*(mean - 1.5*rms))/10);
+    double new_bin_max = std::min(ceil(10*(mean + 1.5*rms))/10,20.);
+    
+    TH1F* h = CreateHistogram(new_bin_min,new_bin_max,bin_width);
+    for(int i = 0; i < (int)dEdx.size(); i++)h->Fill(dEdx[i]);
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("h_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
   }
-  
-  double mean = h_dummy->GetMean();
-  double rms  = h_dummy->GetRMS();
-  double new_bin_min = std::max(bin_min,floor(10*(mean - 1.5*rms))/10);
-  double new_bin_max = std::min(ceil(10*(mean + 1.5*rms))/10,20.);
-  
-  TH1F* h = CreateHistogram(new_bin_min,new_bin_max,bin_width);
-  for(int i = 0; i < (int)dEdx.size(); i++)h->Fill(dEdx[i]);
-  
-  //set histogram title
-  std::stringstream srl, srh;
-  srl << RMIN;
-  srh << RMAX;
-  std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
-  h->SetName(("h_"+srl.str()+"_"+srh.str()+"").c_str());
-  h->SetTitle((st).c_str());
+  else{
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    TH1F* h_dummy = GetHistogramFromResRangeSliceFromFlatTree(t,RMIN,RMAX,bin_min,bin_max,bin_width); 
 
-  return h;
+    //rebin
+    double mean = h_dummy->GetMean();
+    double rms  = h_dummy->GetRMS();
+    double new_bin_min = std::max(bin_min,floor(10*(mean - 1.5*rms))/10);
+    double new_bin_max = std::min(ceil(10*(mean + 1.5*rms))/10,20.);
+    int    new_nbins   = (new_bin_max-new_bin_min)/bin_width;
+    std::vector<double> bins;
+    bins.clear();
+    for(int i = 0; i < new_nbins+1; i++)bins.push_back(new_bin_min+i*bin_width);
+    TH1F* h = (TH1F*)h_dummy->Rebin(new_nbins,"rebin",&bins[0]);
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("h_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
 }
 
 //********************************************
@@ -82,47 +112,69 @@ TH1F* CoherentFitUtils::GetSignalHistogramFromResRangeSlice(TTree* t, AnaSpillB*
 							    const double Chi2Cut){
 //********************************************
 
-  if(!spill->GetIsMC()){
-    std::cout << "this MiniTree is not MC, can't get signal histogram!" << std::endl;
-    std::exit(1);
-  }
+  if(spill){
+    if(!spill->GetIsMC()){
+      std::cout << "this MiniTree is not MC, can't get signal histogram!" << std::endl;
+      std::exit(1);
+    }
+    
+    TH1F* h = (TH1F*)ha->Clone();
+    h->Reset();
 
-  TH1F* h = (TH1F*)ha->Clone();
-  h->Reset();
-
-  //fill histogram
-  double rr_0 = (RMIN+RMAX)/2;
-  double rr_r = (RMAX-RMIN)/2;
-  
-  //loop over candidates
-  for(int ientry = 0; ientry < t->GetEntries(); ientry++){
-    t->GetEntry(ientry);
-    AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
-    for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
-      AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
-      if(!part || (int)part->Hits[2].size()<2)continue;
-      if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
-	AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
-	if(!truePart)continue;
-	if(truePart->PDG==321 && truePart->ProcessEnd == 2){
-	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
-	    if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
-	      h->Fill(part->Hits[2][ihit].dEdx_calib);
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    //loop over candidates
+    for(int ientry = 0; ientry < t->GetEntries(); ientry++){
+      t->GetEntry(ientry);
+      AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
+      for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
+	AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
+	if(!part || (int)part->Hits[2].size()<2)continue;
+	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
+	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+	  if(!truePart)continue;
+	  if(truePart->PDG==321 && truePart->ProcessEnd == 2){
+	    for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
+	      if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
+		h->Fill(part->Hits[2][ihit].dEdx);
+	    }
 	  }
 	}
       }
     }
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hs_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
   }
-
-  //set histogram title
-  std::stringstream srl, srh;
-  srl << RMIN;
-  srh << RMAX;
-  std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
-  h->SetName(("hs_"+srl.str()+"_"+srh.str()+"").c_str());
-  h->SetTitle((st).c_str());
-
-  return h;
+  else{
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    TH1F* h = GetHistogramFromResRangeSliceFromFlatTree(t,
+							RMIN,RMAX,
+							ha->GetXaxis()->GetXmin(), ha->GetXaxis()->GetXmax(), ha->GetXaxis()->GetBinWidth(0),
+							"&& (bestcandidate_truepdg==321 && bestcandidate_trueendproc==2)"); 
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hs_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
 }
 
 //********************************************
@@ -131,46 +183,68 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
 								const double Chi2Cut){
 //********************************************
 
-  if(!spill->GetIsMC()){
-    std::cout << "this MiniTree is not MC, can't get background histogram!" << std::endl;
-    std::exit(1);
-  }
-
-  TH1F* h = (TH1F*)ha->Clone();
-  h->Reset();
-
-  //fill histogram
-  double rr_0 = (RMIN+RMAX)/2;
-  double rr_r = (RMAX-RMIN)/2;
-  
-  //loop over candidates
-  for(int ientry = 0; ientry < t->GetEntries(); ientry++){
-    t->GetEntry(ientry);
-    AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
-    for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
-      AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
-      if(!part || (int)part->Hits[2].size()<2)continue;
-      if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
-	AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
-	if(!truePart)continue;
-	if(truePart->PDG==321 && truePart->ProcessEnd == 2)continue;
-	for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
-	  if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
-	    h->Fill(part->Hits[2][ihit].dEdx_calib);
+  if(spill){
+    if(!spill->GetIsMC()){
+      std::cout << "this MiniTree is not MC, can't get background histogram!" << std::endl;
+      std::exit(1);
+    }
+    
+    TH1F* h = (TH1F*)ha->Clone();
+    h->Reset();
+    
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    //loop over candidates
+    for(int ientry = 0; ientry < t->GetEntries(); ientry++){
+      t->GetEntry(ientry);
+      AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
+      for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
+	AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
+	if(!part || (int)part->Hits[2].size()<2)continue;
+	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
+	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+	  if(!truePart)continue;
+	  if(truePart->PDG==321 && truePart->ProcessEnd == 2)continue;
+	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
+	    if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
+	      h->Fill(part->Hits[2][ihit].dEdx);
+	  }
 	}
       }
     }
-  }
   
-  //set histogram title
-  std::stringstream srl, srh;
-  srl << RMIN;
-  srh << RMAX;
-  std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
-  h->SetName(("hb_"+srl.str()+"_"+srh.str()+"").c_str());
-  h->SetTitle((st).c_str());
-
-  return h;
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hb_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
+  else{
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    TH1F* h = GetHistogramFromResRangeSliceFromFlatTree(t,
+							RMIN,RMAX,
+							ha->GetXaxis()->GetXmin(), ha->GetXaxis()->GetXmax(), ha->GetXaxis()->GetBinWidth(0),
+							"&& !(bestcandidate_truepdg==321 && bestcandidate_trueendproc==2)"); 
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hb_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
 }
 
 //********************************************
@@ -205,7 +279,7 @@ TH1F* CoherentFitUtils::GenerateBackgroundHistogramFromTrueSignal(TTree* t, AnaS
 	if(truePart->PDG==321 && truePart->ProcessEnd == 2){
 	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
 	    if(abs((part->Hits[2][ihit].ResidualRange-shift[ientry+ipart])-rr_0)<rr_r)
-	      h->Fill(part->Hits[2][ihit].dEdx_calib);
+	      h->Fill(part->Hits[2][ihit].dEdx);
 	  }
 	}
       }
@@ -221,6 +295,57 @@ TH1F* CoherentFitUtils::GenerateBackgroundHistogramFromTrueSignal(TTree* t, AnaS
   h->SetTitle((st).c_str());
 
   return h;
+}
+
+//********************************************
+TH1F* CoherentFitUtils::GetHistogramFromResRangeSliceFromFlatTree(TTree* t,
+								  const double RMIN, const double RMAX,
+								  double bin_min, double bin_max, double bin_width,
+								  std::string cut,
+								  bool is_toy, int itoy){
+//********************************************
+
+  std::stringstream ssr0, ssrr, ssitoy;
+  ssr0 << (RMIN+RMAX)/2;
+  ssrr << (RMAX-RMIN)/2;
+  ssitoy << itoy;
+  
+  TH1F* h = CreateHistogram(bin_min,bin_max,bin_width);
+  TH1F* h_dummy = CreateHistogram(bin_min,bin_max,bin_width);
+  h_dummy->SetTitle("h_dummy");
+  h_dummy->SetName("h_dummy");
+
+  for(int i = 0; i < NHITS; i++){
+    std::stringstream ssi;
+    ssi << i;
+
+    if(!is_toy){
+      t->Project("h_dummy",
+		 ("bestcandidate_hit_dedx["+ssi.str()+"]").c_str(),
+		 ("accum_level[0][]>8 && abs(bestcandidate_hit_resrange["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+"").c_str(),"");
+    }
+    else{
+      t->Project("h_dummy",
+		 ("bestcandidate_hit_dedx["+ssi.str()+"]").c_str(),
+		 ("accum_level["+ssitoy.str()+"][0]>8 && abs(bestcandidate_hit_resrange_toy["+ssitoy.str()+"]["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+"").c_str(),"");
+    } 
+    
+    h->Add(h_dummy);
+    h_dummy->Reset();
+  }
+
+  delete h_dummy;
+  return h;
+}
+
+//********************************************
+TH1F* CoherentFitUtils::GetToyHistogramFromResRangeSlice(TTree* t,
+							 const double RMIN, const double RMAX,
+							 double bin_min, double bin_max, double bin_width,
+							 const int itoy){
+//********************************************
+
+  return GetHistogramFromResRangeSliceFromFlatTree(t,RMIN,RMAX,bin_min,bin_max,bin_width,"",true,itoy);
 }
 
 //********************************************
@@ -483,6 +608,23 @@ Double_t CoherentFitUtils::ABCParametrization(Double_t *x, Double_t *par){
 }
 
 //********************************************
+Double_t CoherentFitUtils::QuadraticABCParametrization(Double_t *x, Double_t *par){
+//********************************************
+
+  Double_t A1 = par[0];
+  Double_t B1 = par[1];
+  Double_t C1 = par[2];
+  Double_t A2 = par[3];
+  Double_t B2 = par[4];
+  Double_t C2 = par[5];
+
+  double r1 = A1*pow(x[0],B1)+C1;
+  double r2 = A2*pow(x[0],B2)+C2;
+  
+  return sqrt(pow(r1,2)+pow(r2,2));
+}
+
+//********************************************
 Double_t CoherentFitUtils::ABCDRParametrization(Double_t *x, Double_t *par){
 //********************************************
 
@@ -499,20 +641,83 @@ Double_t CoherentFitUtils::ABCDRParametrization(Double_t *x, Double_t *par){
 }
 
 //********************************************
-Double_t CoherentFitUtils::QuadraticABCParametrization(Double_t *x, Double_t *par){
+Double_t CoherentFitUtils::ABCDRDerivativeA(Double_t *x, Double_t *par){
 //********************************************
 
-  Double_t A1 = par[0];
-  Double_t B1 = par[1];
-  Double_t C1 = par[2];
-  Double_t A2 = par[3];
-  Double_t B2 = par[4];
-  Double_t C2 = par[5];
+  Double_t A = par[0];
+  Double_t B = par[1];
+  Double_t C = par[2];
+  Double_t D = par[3];
+  Double_t R = par[4];
+  Double_t S = par[5];
 
-  double r1 = A1*pow(x[0],B1)+C1;
-  double r2 = A2*pow(x[0],B2)+C2;
+  Double_t xx = x[0]+S;
   
-  return sqrt(pow(r1,2)+pow(r2,2));
+  return pow(xx+R,B)*(log(xx)+C);
+}
+
+//********************************************
+Double_t CoherentFitUtils::ABCDRDerivativeB(Double_t *x, Double_t *par){
+//********************************************
+
+  Double_t A = par[0];
+  Double_t B = par[1];
+  Double_t C = par[2];
+  Double_t D = par[3];
+  Double_t R = par[4];
+  Double_t S = par[5];
+
+  Double_t xx = x[0]+S;
+  
+  return A*(log(xx)+C)*log(xx+R)*pow(xx+R,B);
+}
+
+//********************************************
+Double_t CoherentFitUtils::ABCDRDerivativeC(Double_t *x, Double_t *par){
+//********************************************
+
+  Double_t A = par[0];
+  Double_t B = par[1];
+  Double_t C = par[2];
+  Double_t D = par[3];
+  Double_t R = par[4];
+  Double_t S = par[5];
+
+  Double_t xx = x[0]+S;
+  
+  return A*pow(xx+R,B);
+}
+
+//********************************************
+Double_t CoherentFitUtils::ABCDRDerivativeD(Double_t *x, Double_t *par){
+//********************************************
+
+  Double_t A = par[0];
+  Double_t B = par[1];
+  Double_t C = par[2];
+  Double_t D = par[3];
+  Double_t R = par[4];
+  Double_t S = par[5];
+
+  Double_t xx = x[0]+S;
+  
+  return 1.;
+}
+
+//********************************************
+Double_t CoherentFitUtils::ABCDRDerivativeR(Double_t *x, Double_t *par){
+//********************************************
+
+  Double_t A = par[0];
+  Double_t B = par[1];
+  Double_t C = par[2];
+  Double_t D = par[3];
+  Double_t R = par[4];
+  Double_t S = par[5];
+
+  Double_t xx = x[0]+S;
+  
+  return A*B*pow(xx+R,B-1)*(log(xx)+C);
 }
 
 //********************************************

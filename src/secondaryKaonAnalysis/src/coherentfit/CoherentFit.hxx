@@ -9,6 +9,9 @@
 #include "TH1F.h"
 #include "TF1.h"
 
+const int NHITS = 100;
+const int NTOYS = 100;
+
 class CoherentFit{
 public:
   CoherentFit();
@@ -16,6 +19,8 @@ public:
 
   CoherentFit(const std::string& filename);
 
+  TTree* GetTreeFromRootFile();
+  
   void WriteToRootFile(const std::string& filename);
   
   void CreateCoherentSamples(const Double_t Chi2Cut);
@@ -36,6 +41,12 @@ public:
   
   void GenerateFakeBackground(const double RMIN, const double RMAX, const double STEP,
 			      const double Chi2Cut, const double shift_mean, const double shift_sigma);
+
+  void PropagateSystematicErrors();
+  void GenerateToySamples();
+  void GenerateToyHistograms(CoherentSample* ToySample, const int itoy);
+  void InitializeHistogramsForSystematicErrors();
+  void FitToySamples();
   
   void SequentialCoherentFit();
   void DataCoherentFit(const CoherentFit* c);
@@ -43,6 +54,7 @@ public:
   void SetParametersFromMCFit(const CoherentFit* c);
   
   void NormalizeHistograms();
+  void NormalizeHistograms(CoherentSample* cs);
 
   void SetBackgroundModel(CoherentSample::BackgroundModelEnum m) {fSignalPlusBackground->SetBackgroundModel(m);
                                                                   fBackground->SetBackgroundModel(m);
@@ -66,7 +78,7 @@ public:
   void ReplaceSignalSample(CoherentSample *s){delete fSignal; SetSignalSample(s);}
   void ReplaceBackgroundSample(CoherentSample *s){delete fBackground; SetBackgroundSample(s);}
 
-  bool GetIsMC() {return fSpill->GetIsMC();}
+  bool GetIsMC() {return fIsMC;}
   
 private:
 
@@ -74,8 +86,11 @@ private:
   
   TFile* fFile;
   
-  TTree* fMiniTree;
-
+  TTree* fTree;
+  bool fIsMiniTree;
+  bool fIsSystTree;
+  bool fIsMC;
+  
   AnaSpillB* fSpill;
 
   CoherentSample* fSignalPlusBackground;  
@@ -83,6 +98,13 @@ private:
   CoherentSample* fBackground;
   CoherentSample* fTrueSignal;
   CoherentSample* fTrueBackground;
+  std::vector<CoherentSample*> fToySamples;
+
+  TH1F* h_toy_A;
+  TH1F* h_toy_B;
+  TH1F* h_toy_C;
+  TH1F* h_toy_D;
+  TH1F* h_toy_R;
 };
 
 #endif

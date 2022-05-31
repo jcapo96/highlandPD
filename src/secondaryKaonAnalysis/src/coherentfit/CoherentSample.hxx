@@ -8,6 +8,7 @@
 #include "TH1F.h"
 #include "TF1.h"
 #include "TMinuit.h"
+#include "TGraphErrors.h"
 
 class CoherentSample{
 public:
@@ -173,6 +174,8 @@ public:
   void SetCFitStyle(int n){for(int i = 0; i < (int)fCFit.size(); i++)fCFit[i]->SetLineStyle(n);}
   void SetCFitColor(int n){for(int i = 0; i < (int)fCFit.size(); i++)fCFit[i]->SetLineColor(n);}
 
+  TGraphErrors* GetMPVErrorBand();
+  
 private:
 
   CoherentSample* fSignal;
@@ -188,6 +191,7 @@ private:
   TMinuit* fMinuit;
   
   std::vector<TH1F*> fh;
+  std::vector<std::vector<TH1F*>> fSystHist;
 
   std::vector<double> fIntegral;
   std::vector<double> fIIntegral;

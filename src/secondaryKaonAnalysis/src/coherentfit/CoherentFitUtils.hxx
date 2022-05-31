@@ -30,6 +30,17 @@ namespace CoherentFitUtils{
 						  const double RMIN, const double RMAX,
 						  const double Chi2Cut,
 						  const std::vector<double> shift);
+  
+  TH1F* GetHistogramFromResRangeSliceFromFlatTree(TTree* t,
+						  const double RMIN, const double RMAX,
+						  double bin_min = 0, double bin_max = 50, double bin_width = 0.1,
+						  std::string cut = "",
+						  bool is_toy = false, int itoy = -1);
+  
+  TH1F* GetToyHistogramFromResRangeSlice(TTree* t,
+					 const double RMIN, const double RMAX,
+					 double bin_min = 0, double bin_max = 50, double bin_width = 0.1,
+					 const int itoy = -1);
 
   Double_t GetFunctionNormalizationInsideHistogramBoundaries(const TH1F* h, const TF1* f);
   
@@ -41,8 +52,13 @@ namespace CoherentFitUtils{
   Double_t DoubleLangaus(Double_t *x, Double_t *par);
 
   Double_t ABCParametrization(Double_t *x, Double_t *par);
-  Double_t ABCDRParametrization(Double_t *x, Double_t *par);
   Double_t QuadraticABCParametrization(Double_t *x, Double_t *par);
+  Double_t ABCDRParametrization(Double_t *x, Double_t *par);
+  Double_t ABCDRDerivativeA(Double_t *x, Double_t *par);
+  Double_t ABCDRDerivativeB(Double_t *x, Double_t *par);
+  Double_t ABCDRDerivativeC(Double_t *x, Double_t *par);
+  Double_t ABCDRDerivativeD(Double_t *x, Double_t *par);
+  Double_t ABCDRDerivativeR(Double_t *x, Double_t *par);
 
   void GetABCParametrization(double &A, double &B, double &C,
 			     std::vector<std::pair<double,double>> X, std::vector<std::pair<double,double>> Y,
