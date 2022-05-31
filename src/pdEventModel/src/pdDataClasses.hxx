@@ -385,7 +385,7 @@ public:
   std::vector<AnaWireCNN> CNNwires;
 };
 
-// Extension of AnaEvent to include the APA wire wafeforms, needed to recompute the CNN
+// Extension of AnaEventInfo
 class AnaEventInfoPD: public AnaEventInfo{
 public :
 

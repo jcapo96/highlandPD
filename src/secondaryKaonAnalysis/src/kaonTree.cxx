@@ -558,7 +558,7 @@ void kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output
   else{
     int jmin = std::max<int>(0,(int)part->Hits[2].size()-nmaxhitsperplane);
     int jmax = (int)part->Hits[2].size(); 
-    
+    std::cout << "NO TOY" << std::endl;
     for (int j = jmin; j < jmax; j++){
       output.FillVectorVar(bestcandidate_hit_x,         (Float_t)part->Hits[2][j].Position.X(),    j-jmin);
       output.FillVectorVar(bestcandidate_hit_y,         (Float_t)part->Hits[2][j].Position.Y(),    j-jmin);
@@ -566,6 +566,7 @@ void kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output
       output.FillVectorVar(bestcandidate_hit_dedx,      (Float_t)part->Hits[2][j].dEdx,            j-jmin);
       output.FillVectorVar(bestcandidate_hit_dedx_cal,  (Float_t)part->Hits[2][j].dEdx_calib,      j-jmin);
       output.FillVectorVar(bestcandidate_hit_resrange,  (Float_t)part->Hits[2][j].ResidualRange,   j-jmin);
+      std::cout << j-jmin << " " << part->Hits[2][j].ResidualRange << std::endl;
     }
   }
   
