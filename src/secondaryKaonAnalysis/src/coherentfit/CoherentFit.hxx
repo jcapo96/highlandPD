@@ -7,6 +7,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1F.h"
+#include "TH2F.h"
 #include "TF1.h"
 
 const int NHITS = 100;
@@ -105,6 +106,7 @@ private:
   TH1F* h_toy_C;
   TH1F* h_toy_D;
   TH1F* h_toy_R;
+  TH2F* h_toy_dEdx_RR;
 };
 
 #endif

@@ -29,6 +29,7 @@ CoherentFit::CoherentFit(){
   h_toy_C = NULL;
   h_toy_D = NULL;
   h_toy_R = NULL;
+  h_toy_dEdx_RR = NULL;
 }
 
 //********************************************************************
@@ -65,7 +66,7 @@ CoherentFit::CoherentFit(const std::string& filename){
   h_toy_C = NULL;
   h_toy_D = NULL;
   h_toy_R = NULL;
-     
+  h_toy_dEdx_RR = NULL;
 }
 
 //********************************************************************
@@ -330,7 +331,7 @@ void CoherentFit::GenerateToyHistograms(CoherentSample* ToySample, const int ito
   double rmin = fSignalPlusBackground->GetRRVector()[0].first - step/2;
   double rmax = fSignalPlusBackground->GetRRVector()[0].first + step/2;
   
-  for(int irr = 0; irr < fSignalPlusBackground->GetRRVector().size(); irr++){
+  for(int irr = 0; irr < (int)fSignalPlusBackground->GetRRVector().size(); irr++){
     double bin_min   = fSignalPlusBackground->GetHistVector()[irr]->GetXaxis()->GetXmin();
     double bin_max   = fSignalPlusBackground->GetHistVector()[irr]->GetXaxis()->GetXmax();
     double bin_width = fSignalPlusBackground->GetHistVector()[irr]->GetXaxis()->GetBinWidth(0);
@@ -359,6 +360,7 @@ void CoherentFit::InitializeHistogramsForSystematicErrors(){
   h_toy_C = new TH1F("h_toy_C","h_toy_C",500,0.1*mpvC_mean,1.9*mpvC_mean);
   h_toy_D = new TH1F("h_toy_D","h_toy_D",500,0.1*mpvD_mean,1.9*mpvD_mean);
   h_toy_R = new TH1F("h_toy_R","h_toy_R",500,0.1*mpvR_mean,1.9*mpvR_mean);
+  h_toy_dEdx_RR = new TH2F("h_toy_dEdx_RR","h_toy_dEdx_RR",600,0,60,200,0,20);
 }
 
 //********************************************************************
@@ -396,6 +398,9 @@ void CoherentFit::FitToySamples(){
     h_toy_C->Fill(fToySamples[itoy]->GetSignal()->GetCmpvC().first);
     h_toy_D->Fill(fToySamples[itoy]->GetSignal()->GetCmpvD().first);
     h_toy_R->Fill(fToySamples[itoy]->GetSignal()->GetCmpvR().first);
+    for(int ibin = 0; ibin < 600; ibin++)
+      h_toy_dEdx_RR->Fill(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1),
+			  fToySamples[itoy]->GetSignal()->GetCmpvFit()->Eval(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1)));
   }
 
   TFile* rfile = new TFile("syst_histos.root","NEW");
@@ -404,6 +409,7 @@ void CoherentFit::FitToySamples(){
   h_toy_C->Write();
   h_toy_D->Write();
   h_toy_R->Write();
+  h_toy_dEdx_RR->Write();
   rfile->Close();
   
 }
