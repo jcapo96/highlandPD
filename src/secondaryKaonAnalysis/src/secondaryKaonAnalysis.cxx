@@ -113,7 +113,7 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
 
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
-
+    
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::AddStandardVariables_BeamReco(output());
   standardPDTree::AddStandardVariables_BeamTrue(output());
@@ -130,9 +130,9 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   kaonTree::AddKaonVariables_KaonBestCandidateReco    (output());
   kaonTree::AddKaonVariables_KaonBestCandidateHitsReco(output());
   kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
-
+  
   // -------- Add toy variables ---------------------------------
-  AddToyVarVF(output(), kaonTree::bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", NMAXHITSPERPLANE);
+  AddToyVarVF(output(), bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", 100);
 }
 
 //********************************************************************
@@ -155,7 +155,7 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
-
+  
   // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
@@ -213,23 +213,16 @@ void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
     }
   }
  
+  //if there is no candidate for this toy, skip
   if(box().Candidates.size() == 0)return;
-
+  
   AnaParticlePD* best = box().Candidates[branchmax];
-  if(best->Hits[2].empty()){
-    for(int j = 0; j < NMAXHITSPERPLANE; j++){
-      output().FillToyVectorVar(kaonTree::bestcandidate_hit_resrange_toy,(Float_t)-999.,j);
-    }
-  }
-  else{
-    int jmin = std::max<int>(0,(int)best->Hits[2].size()-NMAXHITSPERPLANE);
-    int jmax = (int)best->Hits[2].size(); 
-    
-    std::cout << "TOY" << std::endl;
-    for(int j = jmin; j < jmax; j++){
-      //std::cout << j-jmin << " " << best->Hits[2][j].ResidualRange << std::endl;
-      output().FillToyVectorVar(kaonTree::bestcandidate_hit_resrange_toy,best->Hits[2][j].ResidualRange,j-jmin);
-    }
+  //if candidate has no hits, skip
+  if(best->Hits[2].empty())
+    return;
+  
+  for(int ihit = 0; ihit < 100; ihit++){
+    output().FillToyVectorVar(bestcandidate_hit_resrange_toy,best->Hits[2][ihit].ResidualRange,ihit);
   }
 }
 

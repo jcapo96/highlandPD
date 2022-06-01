@@ -636,11 +636,11 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
   
   if( part.Hits[plane].size() < 1 )
     return std::make_pair(9999., -1);
-  
+
   //Ignore first and last point
   for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
     //Skip large pulse heights
-    if( part.Hits[plane][i].dEdx_calib > 1000. || part.Hits[plane][i].dEdx_calib==-999)
+    if( part.Hits[plane][i].dEdx > 1000. || part.Hits[plane][i].dEdx==-999)
       continue;
 
     int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
@@ -658,12 +658,12 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
         template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
       }
 
-      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx_calib * part.Hits[plane][i].dEdx_calib;      
-      dedx_res *= part.Hits[plane][i].dEdx_calib; 
+      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx * part.Hits[plane][i].dEdx;      
+      dedx_res *= part.Hits[plane][i].dEdx; 
       
       
       //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
-      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx_calib - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
+      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
             
       ++npt;      
     }	
@@ -671,7 +671,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
 		
   if( npt == 0 )	
     return std::make_pair(9999., -1);
-	  		
+	  	
   return std::make_pair(pid_chi2, npt); 	
 }
 

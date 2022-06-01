@@ -98,6 +98,12 @@ public:
     enumSystLast_secondaryKaonAnalysis
   };
   
+  enum enumKaonSystVarMicroTrees{
+
+    //true kaon candidates info
+    bestcandidate_hit_resrange_toy = kaonTree::enumKaonMicroTreesLast+1,
+  };
+  
 };
 
 #endif

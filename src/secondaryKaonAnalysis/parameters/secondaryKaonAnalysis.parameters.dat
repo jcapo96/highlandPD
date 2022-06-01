@@ -1,5 +1,5 @@
 --- Cut levels --------
- < secondaryKaonAnalysis.MinAccumLevelToSave = 0 >   // minimum accum level to save the event
+ < secondaryKaonAnalysis.MinAccumLevelToSave = 9 >   // minimum accum level to save the event
 
 --- Selection -------------
  < secondaryKaonAnalysis.XSSelection               = 0 >
@@ -80,7 +80,7 @@ No weights yet !!!
 --- Systematics ------------
 
 Number of toy experiments
- < baseAnalysis.Systematics.NumberOfToys = 2 >
+ < baseAnalysis.Systematics.NumberOfToys = 100 >
 
 The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
 
