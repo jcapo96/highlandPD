@@ -288,7 +288,7 @@ void CoherentFit::GenerateHistograms(const double RMIN, const double RMAX, const
 }
 
 //********************************************************************
-void CoherentFit::GenerateToySamples(){
+void CoherentFit::GenerateToySamples(const bool apply_toy_weights, const bool apply_toy_variations){
 //********************************************************************
 
   if(!fIsSystTree){
@@ -299,22 +299,29 @@ void CoherentFit::GenerateToySamples(){
   for(int itoy = 0; itoy < NTOYS; itoy++){
     std::cout << "toy sample " << itoy << std::endl;
     fToySamples.push_back(new CoherentSample(CoherentSample::SampleTypeEnum::kSignalPlusBackground));
-    GenerateToyHistograms(fToySamples.back(),itoy);
+    GenerateToyHistograms(fToySamples.back(),apply_toy_weights,apply_toy_variations,itoy);
   }
 
-  /*for(int i = 0; i < fSignalPlusBackground->GetRRVector().size(); i++){
+  for(int i = 0; i < fSignalPlusBackground->GetRRVector().size(); i++){
     for(int j = 0; j < fToySamples.size(); j++){
       fToySamples[j]->SetHistogramColor(j+1);
       fToySamples[j]->SetHistogramLineWidth(2);
-      if(j==0)fToySamples[j]->GetHistVector()[i]->Draw("histo");
+      std::stringstream ssj;
+      ssj << j+1;
+      fToySamples[j]->GetHistVector()[i]->SetTitle(("Toy "+ssj.str()+"").c_str());
+      if(j==0){
+	fToySamples[j]->GetHistVector()[i]->GetXaxis()->SetTitle("dEdx [MeV/cm]");
+	fToySamples[j]->GetHistVector()[i]->Draw("histo");
+      }
       else    fToySamples[j]->GetHistVector()[i]->Draw("histosame");
     }
+    gPad->BuildLegend();
     gPad->Update();gPad->WaitPrimitive();
-  }*/
+  }
 }
 
 //********************************************************************
-void CoherentFit::GenerateToyHistograms(CoherentSample* ToySample, const int itoy){
+void CoherentFit::GenerateToyHistograms(CoherentSample* ToySample, const bool apply_toy_weights, const bool apply_toy_variations, const int itoy){
 //********************************************************************
 
   if(!fIsSystTree){
@@ -338,7 +345,7 @@ void CoherentFit::GenerateToyHistograms(CoherentSample* ToySample, const int ito
     ToySample->AddToHistVector(CoherentFitUtils::GetToyHistogramFromResRangeSlice(fTree,
 										  rmin, rmax,
 										  bin_min, bin_max, bin_width,
-										  itoy));
+										  apply_toy_weights, apply_toy_variations, itoy));
     rmin += step;
     rmax += step;
   }
@@ -403,6 +410,29 @@ void CoherentFit::FitToySamples(){
 			  fToySamples[itoy]->GetSignal()->GetCmpvFit()->Eval(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1)));
   }
 
+  /*for(int i = 0; i < fSignalPlusBackground->GetRRVector().size(); i++){
+    for(int j = 0; j < fToySamples.size(); j++){
+      fToySamples[j]->SetHistogramColor(j+1);
+      fToySamples[j]->SetCFitColor(j+1);
+      fToySamples[j]->SetHistogramLineWidth(2);
+      std::stringstream ssj;
+      ssj << j+1;
+      fToySamples[j]->GetHistVector()[i]->SetTitle(("Toy "+ssj.str()+"").c_str());
+      fToySamples[j]->GetCFitVector()[i]->SetTitle(("Toy "+ssj.str()+" Fit").c_str());
+      if(j==0){
+	fToySamples[j]->GetHistVector()[i]->GetXaxis()->SetTitle("dEdx [MeV/cm]");
+	fToySamples[j]->GetHistVector()[i]->Draw("histo");
+	fToySamples[j]->GetCFitVector()[i]->Draw("same");
+      }
+      else{
+	fToySamples[j]->GetHistVector()[i]->Draw("histosame");
+	fToySamples[j]->GetCFitVector()[i]->Draw("same");
+      }
+    }
+    gPad->BuildLegend();
+    gPad->Update();gPad->WaitPrimitive();
+  }*/
+  
   TFile* rfile = new TFile("syst_histos.root","NEW");
   h_toy_A->Write();
   h_toy_B->Write();
@@ -432,10 +462,13 @@ void CoherentFit::DataCoherentFit(const CoherentFit* c){
 }
 
 //********************************************************************
-void CoherentFit::PropagateSystematicErrors(){
+void CoherentFit::PropagateSystematicErrors(const bool apply_toy_weights, const bool apply_toy_variations){
 //********************************************************************
-  
-  GenerateToySamples();
+
+  if(apply_toy_weights && !apply_toy_variations)std::cout << "propagating weight systematics" << std::endl;
+  if(!apply_toy_weights && apply_toy_variations)std::cout << "propagating variation systematics" << std::endl;
+  if(apply_toy_weights && apply_toy_variations) std::cout << "propagating all systematics" << std::endl;
+  GenerateToySamples(apply_toy_weights,apply_toy_variations);
   InitializeHistogramsForSystematicErrors();
   FitToySamples();
 }

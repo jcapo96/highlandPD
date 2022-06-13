@@ -11,7 +11,7 @@
 #include "TF1.h"
 
 const int NHITS = 100;
-const int NTOYS = 100;
+const int NTOYS = 3;
 
 class CoherentFit{
 public:
@@ -43,9 +43,9 @@ public:
   void GenerateFakeBackground(const double RMIN, const double RMAX, const double STEP,
 			      const double Chi2Cut, const double shift_mean, const double shift_sigma);
 
-  void PropagateSystematicErrors();
-  void GenerateToySamples();
-  void GenerateToyHistograms(CoherentSample* ToySample, const int itoy);
+  void PropagateSystematicErrors(bool apply_toy_weights = true, bool apply_toy_variations = true);
+  void GenerateToySamples(bool apply_toy_weights = true, bool apply_toy_variations = true);
+  void GenerateToyHistograms(CoherentSample* ToySample, bool apply_toy_weights = true, bool apply_toy_variations = true, const int itoy = -1);
   void InitializeHistogramsForSystematicErrors();
   void FitToySamples();
   

@@ -35,11 +35,12 @@ namespace CoherentFitUtils{
 						  const double RMIN, const double RMAX,
 						  double bin_min = 0, double bin_max = 50, double bin_width = 0.1,
 						  std::string cut = "",
-						  bool is_toy = false, int itoy = -1);
+						  const bool apply_toy_weights = false, const bool apply_toy_variations = false, int itoy = -1);
   
   TH1F* GetToyHistogramFromResRangeSlice(TTree* t,
 					 const double RMIN, const double RMAX,
 					 double bin_min = 0, double bin_max = 50, double bin_width = 0.1,
+					 const bool apply_toy_weights = false, const bool apply_toy_variations = false,
 					 const int itoy = -1);
 
   Double_t GetFunctionNormalizationInsideHistogramBoundaries(const TH1F* h, const TF1* f);
