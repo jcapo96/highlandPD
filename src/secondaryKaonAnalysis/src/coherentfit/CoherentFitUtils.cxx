@@ -302,7 +302,7 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSliceFromFlatTree(TTree* t,
 								  const double RMIN, const double RMAX,
 								  double bin_min, double bin_max, double bin_width,
 								  std::string cut,
-								  bool is_toy, int itoy){
+								  const bool apply_toy_weights, const bool apply_toy_variations, int itoy){
 //********************************************
 
   std::stringstream ssr0, ssrr, ssitoy;
@@ -319,17 +319,26 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSliceFromFlatTree(TTree* t,
     std::stringstream ssi;
     ssi << i;
 
-    if(!is_toy){
+    if(!apply_toy_weights && !apply_toy_variations){
       t->Project("h_dummy",
 		 ("bestcandidate_hit_dedx["+ssi.str()+"]").c_str(),
 		 ("accum_level[0][]>8 && abs(bestcandidate_hit_resrange["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+"").c_str(),"");
     }
-    else{
+    else if(!apply_toy_weights && apply_toy_variations){
       t->Project("h_dummy",
 		 ("bestcandidate_hit_dedx["+ssi.str()+"]").c_str(),
 		 ("accum_level["+ssitoy.str()+"][0]>8 && abs(bestcandidate_hit_resrange_toy["+ssitoy.str()+"]["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+"").c_str(),"");
     } 
-    
+    else if(apply_toy_weights && !apply_toy_variations){
+      t->Project("h_dummy",
+		 ("bestcandidate_hit_dedx["+ssi.str()+"]").c_str(),
+		 ("(accum_level["+ssitoy.str()+"][0]>8 && abs(bestcandidate_hit_resrange["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+")*weight_syst_total["+ssitoy.str()+"]").c_str(),"");
+    }
+    else{
+      t->Project("h_dummy",
+		 ("bestcandidate_hit_dedx["+ssi.str()+"]").c_str(),
+		 ("(accum_level["+ssitoy.str()+"][0]>8 && abs(bestcandidate_hit_resrange_toy["+ssitoy.str()+"]["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+")*weight_syst_total["+ssitoy.str()+"]").c_str(),"");
+    }
     h->Add(h_dummy);
     h_dummy->Reset();
   }
@@ -342,10 +351,15 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSliceFromFlatTree(TTree* t,
 TH1F* CoherentFitUtils::GetToyHistogramFromResRangeSlice(TTree* t,
 							 const double RMIN, const double RMAX,
 							 double bin_min, double bin_max, double bin_width,
+							 const bool apply_toy_weights, const bool apply_toy_variations,
 							 const int itoy){
 //********************************************
 
-  return GetHistogramFromResRangeSliceFromFlatTree(t,RMIN,RMAX,bin_min,bin_max,bin_width,"",true,itoy);
+  return GetHistogramFromResRangeSliceFromFlatTree(t,
+						   RMIN,RMAX,
+						   bin_min,bin_max,bin_width,
+						   "",
+						   apply_toy_weights,apply_toy_variations,itoy);
 }
 
 //********************************************
