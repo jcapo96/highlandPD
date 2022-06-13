@@ -360,7 +360,7 @@ void CoherentFit::InitializeHistogramsForSystematicErrors(){
   h_toy_C = new TH1F("h_toy_C","h_toy_C",500,0.1*mpvC_mean,1.9*mpvC_mean);
   h_toy_D = new TH1F("h_toy_D","h_toy_D",500,0.1*mpvD_mean,1.9*mpvD_mean);
   h_toy_R = new TH1F("h_toy_R","h_toy_R",500,0.1*mpvR_mean,1.9*mpvR_mean);
-  h_toy_dEdx_RR = new TH2F("h_toy_dEdx_RR","h_toy_dEdx_RR",600,0,60,200,0,20);
+  h_toy_dEdx_RR = new TH2F("h_toy_dEdx_RR","h_toy_dEdx_RR",5900,1,60,2000,0,20);
 }
 
 //********************************************************************
@@ -398,7 +398,7 @@ void CoherentFit::FitToySamples(){
     h_toy_C->Fill(fToySamples[itoy]->GetSignal()->GetCmpvC().first);
     h_toy_D->Fill(fToySamples[itoy]->GetSignal()->GetCmpvD().first);
     h_toy_R->Fill(fToySamples[itoy]->GetSignal()->GetCmpvR().first);
-    for(int ibin = 0; ibin < 600; ibin++)
+    for(int ibin = 0; ibin < 5900; ibin++)
       h_toy_dEdx_RR->Fill(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1),
 			  fToySamples[itoy]->GetSignal()->GetCmpvFit()->Eval(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1)));
   }
