@@ -302,7 +302,7 @@ void CoherentFit::GenerateToySamples(const bool apply_toy_weights, const bool ap
     GenerateToyHistograms(fToySamples.back(),apply_toy_weights,apply_toy_variations,itoy);
   }
 
-  for(int i = 0; i < fSignalPlusBackground->GetRRVector().size(); i++){
+  /*for(int i = 0; i < fSignalPlusBackground->GetRRVector().size(); i++){
     for(int j = 0; j < fToySamples.size(); j++){
       fToySamples[j]->SetHistogramColor(j+1);
       fToySamples[j]->SetHistogramLineWidth(2);
@@ -317,7 +317,7 @@ void CoherentFit::GenerateToySamples(const bool apply_toy_weights, const bool ap
     }
     gPad->BuildLegend();
     gPad->Update();gPad->WaitPrimitive();
-  }
+  }*/
 }
 
 //********************************************************************
@@ -392,12 +392,20 @@ void CoherentFit::NormalizeHistograms(CoherentSample* cs){
 void CoherentFit::FitToySamples(){
 //********************************************************************
 
+  //create toy signal and background
+  CoherentSample* toySignal = fSignal->Clone();
+  CoherentSample* toyBackground = fBackground->Clone();
+  
   for(int itoy = 0; itoy < NTOYS; itoy++){
     std::cout << "fitting toy sample " << itoy << std::endl;
-    //make toy sample point to original signal and background samples so it has starting values
-    fToySamples[itoy]->SetSignal(fSignal);
-    fToySamples[itoy]->SetBackground(fBackground);
+    //make toy sample point to toysignal and toybackground
+    fToySamples[itoy]->SetSignal(toySignal);
+    fToySamples[itoy]->SetBackground(toyBackground);
     fToySamples[itoy]->SetBackgroundModel(fSignalPlusBackground->GetBackgroundModel());
+    //initialize seed to original
+    fToySamples[itoy]->GetSignal()->SetCFitParameters(fSignal);
+    fToySamples[itoy]->GetBackground()->SetCFitParameters(fBackground);
+    //coherent fit
     fToySamples[itoy]->CoherentFit();
     //store results
     h_toy_A->Fill(fToySamples[itoy]->GetSignal()->GetCmpvA().first);

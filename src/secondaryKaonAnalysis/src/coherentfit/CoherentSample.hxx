@@ -30,6 +30,16 @@ public:
   CoherentSample(SampleTypeEnum type);
   virtual ~CoherentSample(){}
 
+  /// Clone this object.
+  CoherentSample* Clone() {
+    return new CoherentSample(*this);
+  }
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  CoherentSample(const CoherentSample &c);
+  
 public:
   
   void ComputeIntegral();
@@ -86,6 +96,8 @@ public:
   std::vector<TH1F*> GetHistVector() const {return fh;}
   void AddToHistVector(TH1F* h){fh.push_back(h);}
   void ResetHistVector(){fh.clear();}
+
+  std::vector<std::vector<TH1F*>> GetSystHistVector() const {return fSystHist;}
   
   std::vector<TF1*> GetIFitVector() const {return fIFit;}
   void AddToIFitVector(TF1* f){fIFit.push_back(f);}
@@ -159,7 +171,13 @@ public:
   void SetCgwC(std::pair<double,double> p){fCgwC = p;}
 
   std::pair<double,double> GetCshift() const {return fCshift;}
-  void SetCshift(std::pair<double,double> p){fCshift = p;} 
+  void SetCshift(std::pair<double,double> p){fCshift = p;}
+
+  std::pair<double,double> GetClwQa() const {return fClwQa;}
+  void SetClwQa(std::pair<double,double> p){fClwQa = p;}
+
+  std::pair<double,double> GetCgwQa() const {return fCgwQa;}
+  void SetCgwQa(std::pair<double,double> p){fCgwQa = p;} 
   
   std::vector<std::pair<double,double>> GetCnorm() const {return fCnorm;}
   void SetCnorm(std::vector<std::pair<double,double>> v){fCnorm = v;}
