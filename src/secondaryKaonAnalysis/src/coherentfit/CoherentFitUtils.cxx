@@ -342,7 +342,6 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSliceFromFlatTree(TTree* t,
     h->Add(h_dummy);
     h_dummy->Reset();
   }
-
   delete h_dummy;
   return h;
 }

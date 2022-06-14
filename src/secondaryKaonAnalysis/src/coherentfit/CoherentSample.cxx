@@ -77,6 +77,64 @@ CoherentSample::CoherentSample(CoherentSample::SampleTypeEnum type){
 }
 
 //********************************************************************
+CoherentSample::CoherentSample(const CoherentSample &c){
+//********************************************************************
+
+  fSignal = c.GetSignal();
+  fBackground = c.GetBackground();
+  fTrueSignal = c.GetTrueSignal();
+  fTrueBackground = c.GetTrueBackground();
+
+  fType = c.GetSampleType();
+  fBackgroundModel = c.GetBackgroundModel();
+
+  fChi2Cut = c.GetChi2Cut();
+  
+  fMinuit = NULL;
+  
+  fh = c.GetHistVector();
+  fSystHist = c.GetSystHistVector();
+
+  fIntegral = c.GetIntegralVector();
+
+  fIFit = c.GetIFitVector();
+  fCFit = c.GetCFitVector();
+
+  fClwFit  = c.GetClwFit();
+  fCmpvFit = c.GetCmpvFit();
+  fCgwFit  = c.GetCgwFit();
+
+  fRR = c.GetRRVector();
+  
+  fIlw = c.GetIlwVector();
+  fImpv = c.GetImpvVector();
+  fInorm = c.GetInormVector();
+  fIgw = c.GetIgwVector();
+  fIfw = c.GetIfwVector();
+
+  fClwA = c.GetClwA();
+  fClwB = c.GetClwB();
+  fClwC = c.GetClwC();
+  
+  fCmpvA = c.GetCmpvA();
+  fCmpvB = c.GetCmpvB();
+  fCmpvC = c.GetCmpvC();
+  fCmpvD = c.GetCmpvD();
+  fCmpvR = c.GetCmpvR();
+
+  fCgwA = c.GetCgwA();
+  fCgwB = c.GetCgwB();
+  fCgwC = c.GetCgwC();
+
+  fClwQa  = c.GetClwQa();
+  fCshift = c.GetCshift();
+  fCgwQa  = c.GetCgwQa();
+
+  fCnorm = c.GetCnorm();
+  
+}
+
+//********************************************************************
 void CoherentSample::WriteToRootFile(const std::string& filename){
 //********************************************************************
 

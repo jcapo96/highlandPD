@@ -11,7 +11,7 @@
 #include "TF1.h"
 
 const int NHITS = 100;
-const int NTOYS = 3;
+const int NTOYS = 100;
 
 class CoherentFit{
 public:
