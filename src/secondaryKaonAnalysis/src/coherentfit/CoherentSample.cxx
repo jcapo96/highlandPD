@@ -426,6 +426,24 @@ void CoherentSample::SetCFitParameters(const CoherentSample* sample){
   copysample->SetCshift(sample->GetCshift());
 }
 
+//********************************************************************
+void CoherentSample::SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma){
+//********************************************************************
+
+  this->fClwA.first   = r->Gaus(sample->GetClwA().first,sample->GetClwA().first*sigma);
+  this->fClwB.first   = r->Gaus(sample->GetClwB().first,sample->GetClwB().first*sigma);
+  this->fClwC.first   = r->Gaus(sample->GetClwC().first,sample->GetClwC().first*sigma);
+  this->fCmpvA.first  = r->Gaus(sample->GetCmpvA().first,sample->GetCmpvA().first*sigma);
+  this->fCmpvB.first  = r->Gaus(sample->GetCmpvB().first,sample->GetCmpvB().first*sigma);
+  this->fCmpvC.first  = r->Gaus(sample->GetCmpvC().first,sample->GetCmpvC().first*sigma);
+  this->fCmpvD.first  = r->Gaus(sample->GetCmpvD().first,sample->GetCmpvD().first*sigma);
+  this->fCmpvR.first  = r->Gaus(sample->GetCmpvR().first,sample->GetCmpvR().first*sigma);
+  this->fCgwA.first   = r->Gaus(sample->GetCgwA().first,sample->GetCgwA().first*sigma);
+  this->fCgwB.first   = r->Gaus(sample->GetCgwB().first,sample->GetCgwB().first*sigma);
+  this->fCgwC.first   = r->Gaus(sample->GetCgwC().first,sample->GetCgwC().first*sigma);
+  this->fCshift.first = r->Gaus(sample->GetCshift().first,sample->GetCshift().first*sigma);
+  this->fCnorm.push_back(std::make_pair(r->Gaus(sample->GetCnorm()[0].first,sample->GetCnorm()[0].first*sigma),0.));
+}
 
 //********************************************************************
 void CoherentSample::SequentialCoherentFit(){
@@ -1715,7 +1733,8 @@ void CoherentSample::CoherentFitSignalPlusBackgroundQuadraticWidths(){
 		      vstart[ipar+CPAR], step[ipar+CPAR], 0, 1, ierflg); //0.85, 0.88, ierflg);//
     //fMinuit->FixParameter(ipar+CPAR);
     }*/
-  fMinuit->mnparm(18, "norm" , vstart[18], step[18], 0.95*vstart[18], 1.05*vstart[18], ierflg);
+  //fMinuit->mnparm(18, "norm" , vstart[18], step[18], 0.95*vstart[18], 1.05*vstart[18], ierflg);
+  fMinuit->mnparm(18, "norm" , vstart[18], step[18], 0, 0, ierflg);
   
   
   // Now ready for minimization step

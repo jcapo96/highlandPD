@@ -288,6 +288,33 @@ void CoherentFit::GenerateHistograms(const double RMIN, const double RMAX, const
 }
 
 //********************************************************************
+void CoherentFit::ComputeSelfSystematicError(){
+//********************************************************************
+
+  TRandom3* r = new TRandom3();
+  r->SetSeed(1);
+
+  //generate toy samples
+  for(int itoy = 0; itoy < NTOYS; itoy++){
+    std::cout << "toy sample " << itoy << std::endl;
+    fToySamples.push_back(fSignalPlusBackground->Clone());
+    //generate seed values for fitting
+    fToySamples[itoy]->GetSignal()->SetCFitParametersWithVariations(fSignal,r,0.1);
+    fToySamples[itoy]->GetBackground()->SetCFitParametersWithVariations(fBackground,r,0.1);
+    //fit
+    fToySamples[itoy]->CoherentFit();
+    //store results
+    for(int ibin = 0; ibin < 5900; ibin++)
+      h_toy_dEdx_RR->Fill(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1),
+			  fToySamples[itoy]->GetSignal()->GetCmpvFit()->Eval(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1)));
+  }
+
+  TFile* rfile = new TFile("selfsyst.root","NEW");
+  h_toy_dEdx_RR->Write();
+  rfile->Close();
+}
+
+//********************************************************************
 void CoherentFit::GenerateToySamples(const bool apply_toy_weights, const bool apply_toy_variations){
 //********************************************************************
 
