@@ -9,6 +9,7 @@
 #include "TF1.h"
 #include "TMinuit.h"
 #include "TGraphErrors.h"
+#include "TRandom3.h"
 
 class CoherentSample{
 public:
@@ -46,6 +47,7 @@ public:
   void NormalizeHistograms();
   void NormalizeHistograms(std::vector<double> Integral);
   void SetCFitParameters(const CoherentSample* sample);
+  void SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma);
   
   void SequentialCoherentFit();
   void IncoherentFit();
