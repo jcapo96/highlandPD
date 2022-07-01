@@ -427,24 +427,63 @@ void CoherentSample::SetCFitParameters(const CoherentSample* sample){
 }
 
 //********************************************************************
-void CoherentSample::SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma){
+void CoherentSample::SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma,
+						     const bool apply_all_var,
+						     const bool apply_only_lw_var, 
+						     const bool apply_only_mpv_var, 
+						     const bool apply_only_gw_var,
+						     const bool apply_only_shift_var,
+						     const bool apply_only_norm_var){
 //********************************************************************
 
-  this->fClwA.first   = r->Gaus(sample->GetClwA().first,sample->GetClwA().first*sigma);
-  this->fClwB.first   = r->Gaus(sample->GetClwB().first,sample->GetClwB().first*sigma);
-  this->fClwC.first   = r->Gaus(sample->GetClwC().first,sample->GetClwC().first*sigma);
-  this->fCmpvA.first  = r->Gaus(sample->GetCmpvA().first,sample->GetCmpvA().first*sigma);
-  this->fCmpvB.first  = r->Gaus(sample->GetCmpvB().first,sample->GetCmpvB().first*sigma);
-  this->fCmpvC.first  = r->Gaus(sample->GetCmpvC().first,sample->GetCmpvC().first*sigma);
-  this->fCmpvD.first  = r->Gaus(sample->GetCmpvD().first,sample->GetCmpvD().first*sigma);
-  this->fCmpvR.first  = r->Gaus(sample->GetCmpvR().first,sample->GetCmpvR().first*sigma);
-  this->fCgwA.first   = r->Gaus(sample->GetCgwA().first,sample->GetCgwA().first*sigma);
-  this->fCgwB.first   = r->Gaus(sample->GetCgwB().first,sample->GetCgwB().first*sigma);
-  this->fCgwC.first   = r->Gaus(sample->GetCgwC().first,sample->GetCgwC().first*sigma);
-  this->fCshift.first = r->Gaus(sample->GetCshift().first,sample->GetCshift().first*sigma);
-  this->fCnorm.push_back(std::make_pair(r->Gaus(sample->GetCnorm()[0].first,sample->GetCnorm()[0].first*sigma),0.));
-}
+  if(apply_all_var && 
+     (apply_only_lw_var || apply_only_mpv_var || apply_only_gw_var || 
+      apply_only_shift_var || apply_only_norm_var)){
+    std::cout << "bad parameter configuration, check it!" << std::endl;
+    std::exit(1);
+  }
+  
+  //fill default values
+  this->fClwA.first     = sample->GetClwA().first;
+  this->fClwB.first     = sample->GetClwB().first;
+  this->fClwC.first     = sample->GetClwC().first;
+  this->fCmpvA.first    = sample->GetCmpvA().first;
+  this->fCmpvB.first    = sample->GetCmpvB().first;
+  this->fCmpvC.first    = sample->GetCmpvC().first;
+  this->fCmpvD.first    = sample->GetCmpvD().first;
+  this->fCmpvR.first    = sample->GetCmpvR().first;
+  this->fCgwA.first     = sample->GetCgwA().first;
+  this->fCgwB.first     = sample->GetCgwB().first;
+  this->fCgwC.first     = sample->GetCgwC().first;
+  this->fCshift.first   = sample->GetCshift().first;
+  this->fCnorm[0].first = sample->GetCnorm()[0].first;
+  
+  //apply desired variations
+  if(apply_all_var || apply_only_lw_var){
+    this->fClwA.first     = r->Gaus(sample->GetClwA().first,sample->GetClwA().first*sigma);
+    this->fClwB.first     = r->Gaus(sample->GetClwB().first,sample->GetClwB().first*sigma);
+    this->fClwC.first     = r->Gaus(sample->GetClwC().first,sample->GetClwC().first*sigma);
+  }
+  if(apply_all_var || apply_only_mpv_var){
+    this->fCmpvA.first    = r->Gaus(sample->GetCmpvA().first,sample->GetCmpvA().first*sigma);
+    //this->fCmpvB.first    = r->Gaus(sample->GetCmpvB().first,sample->GetCmpvB().first*sigma);
+    //this->fCmpvC.first    = r->Gaus(sample->GetCmpvC().first,sample->GetCmpvC().first*sigma);
+    //this->fCmpvD.first    = r->Gaus(sample->GetCmpvD().first,sample->GetCmpvD().first*sigma);
+    //this->fCmpvR.first    = r->Gaus(sample->GetCmpvR().first,sample->GetCmpvR().first*sigma);
+  }
+  if(apply_all_var || apply_only_gw_var){
+    this->fCgwA.first     = r->Gaus(sample->GetCgwA().first,sample->GetCgwA().first*sigma);
+    this->fCgwB.first     = r->Gaus(sample->GetCgwB().first,sample->GetCgwB().first*sigma);
+    this->fCgwC.first     = r->Gaus(sample->GetCgwC().first,sample->GetCgwC().first*sigma);
+  }
+  if(apply_all_var || apply_only_shift_var)
+    this->fCshift.first   = r->Gaus(sample->GetCshift().first,sample->GetCshift().first*sigma);
+  if(apply_all_var || apply_only_norm_var)
+    this->fCnorm[0].first = r->Gaus(sample->GetCnorm()[0].first,sample->GetCnorm()[0].first*sigma);
 
+  std::cout << this->fClwA.first << " " << this->fCmpvA.first << std::endl;
+}
+  
 //********************************************************************
 void CoherentSample::SequentialCoherentFit(){
 //********************************************************************
@@ -1734,7 +1773,7 @@ void CoherentSample::CoherentFitSignalPlusBackgroundQuadraticWidths(){
     //fMinuit->FixParameter(ipar+CPAR);
     }*/
   //fMinuit->mnparm(18, "norm" , vstart[18], step[18], 0.95*vstart[18], 1.05*vstart[18], ierflg);
-  fMinuit->mnparm(18, "norm" , vstart[18], step[18], 0, 0, ierflg);
+  fMinuit->mnparm(18, "norm" , vstart[18], step[18], 0.9*vstart[18], 1.1*vstart[18], ierflg);
   
   
   // Now ready for minimization step

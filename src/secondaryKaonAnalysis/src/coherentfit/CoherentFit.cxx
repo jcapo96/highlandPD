@@ -2,6 +2,7 @@
 #include "CoherentFitUtils.hxx"
 
 #include "TPad.h"
+#include "TSystem.h"
 #include "TCanvas.h"
 #include "TRandom3.h"
 
@@ -288,27 +289,50 @@ void CoherentFit::GenerateHistograms(const double RMIN, const double RMAX, const
 }
 
 //********************************************************************
-void CoherentFit::ComputeSelfSystematicError(){
+void CoherentFit::ComputeSelfSystematicError(const bool apply_all_var,
+					     const bool apply_only_s_lw_var,
+					     const bool apply_only_mpv_var,
+					     const bool apply_only_s_gw_var,
+					     const bool apply_only_b_lw_var,
+					     const bool apply_only_b_gw_var,
+					     const bool apply_only_shift_var,
+					     const bool apply_only_norm_var){
 //********************************************************************
 
   TRandom3* r = new TRandom3();
   r->SetSeed(1);
 
+  CoherentSample* ClonedSample = fSignalPlusBackground->Clone();
+  ClonedSample->SetSignal(fSignal->Clone());
+  ClonedSample->SetBackground(fBackground->Clone());
+
   //generate toy samples
   for(int itoy = 0; itoy < NTOYS; itoy++){
     std::cout << "toy sample " << itoy << std::endl;
-    fToySamples.push_back(fSignalPlusBackground->Clone());
+    fToySamples.push_back(ClonedSample);
     //generate seed values for fitting
-    fToySamples[itoy]->GetSignal()->SetCFitParametersWithVariations(fSignal,r,0.1);
-    fToySamples[itoy]->GetBackground()->SetCFitParametersWithVariations(fBackground,r,0.1);
+    fToySamples[itoy]->GetSignal()->SetCFitParametersWithVariations(fSignal,r,0.01,
+								    apply_all_var,
+								    apply_only_s_lw_var,apply_only_mpv_var,apply_only_s_gw_var,
+								    apply_only_shift_var,apply_only_norm_var);
+    fToySamples[itoy]->GetBackground()->SetCFitParametersWithVariations(fBackground,r,0.01,
+									apply_all_var,
+									apply_only_b_lw_var,apply_only_mpv_var,apply_only_b_gw_var,
+									apply_only_shift_var,apply_only_norm_var);
     //fit
     fToySamples[itoy]->CoherentFit();
     //store results
     for(int ibin = 0; ibin < 5900; ibin++)
       h_toy_dEdx_RR->Fill(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1),
 			  fToySamples[itoy]->GetSignal()->GetCmpvFit()->Eval(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1)));
+    
+    /*for(int ihist = 0; ihist < fToySamples[itoy]->GetHistVector().size(); ihist++){
+      fToySamples[itoy]->GetHistVector()[ihist]->Draw("histo");
+      fToySamples[itoy]->GetCFitVector()[ihist]->Draw("same");
+      gPad->Update();gSystem->Sleep(10000);
+      }*/
   }
-
+  
   TFile* rfile = new TFile("selfsyst.root","NEW");
   h_toy_dEdx_RR->Write();
   rfile->Close();

@@ -44,7 +44,14 @@ public:
   void GenerateFakeBackground(const double RMIN, const double RMAX, const double STEP,
 			      const double Chi2Cut, const double shift_mean, const double shift_sigma);
 
-  void ComputeSelfSystematicError();
+  void ComputeSelfSystematicError(const bool apply_all_var = true,
+				  const bool apply_only_s_lw_var  = false, 
+				  const bool apply_only_mpv_var   = false, 
+				  const bool apply_only_s_gw_var  = false,
+				  const bool apply_only_b_lw_var  = false, 
+				  const bool apply_only_b_gw_var  = false,
+				  const bool apply_only_shift_var = false,
+				  const bool apply_only_norm_var  = false);
   
   void PropagateSystematicErrors(bool apply_toy_weights = true, bool apply_toy_variations = true);
   void GenerateToySamples(bool apply_toy_weights = true, bool apply_toy_variations = true);

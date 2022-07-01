@@ -47,7 +47,13 @@ public:
   void NormalizeHistograms();
   void NormalizeHistograms(std::vector<double> Integral);
   void SetCFitParameters(const CoherentSample* sample);
-  void SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma);
+  void SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma,
+				       const bool apply_all_var = true,
+				       const bool apply_only_lw_var = false, 
+				       const bool apply_only_mpv_var = false, 
+				       const bool apply_only_gw_var = false,
+				       const bool apply_only_shift_var = false,
+				       const bool apply_only_norm_var = false);
   
   void SequentialCoherentFit();
   void IncoherentFit();
