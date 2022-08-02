@@ -60,8 +60,25 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill
     
     double mean = h_dummy->GetMean();
     double rms  = h_dummy->GetRMS();
-    double new_bin_min = std::max(bin_min,floor(10*(mean - 1.5*rms))/10);
-    double new_bin_max = std::min(ceil(10*(mean + 1.5*rms))/10,20.);
+    //double new_bin_min = std::max(bin_min,floor(10*(mean - 1.5*rms))/10);
+    //double new_bin_max = std::min(ceil(10*(mean + 1.5*rms))/10,20.);
+    double new_bin_min = 0;
+    for(int ibin = 1; ibin < h_dummy->GetNbinsX()-1; ibin++){
+      if(h_dummy->GetBinContent(ibin+1)>2 && h_dummy->GetBinContent(ibin+2)>2){
+	new_bin_min = h_dummy->GetBinLowEdge(ibin);
+	break;
+      }
+    }
+    new_bin_min = std::max(bin_min,new_bin_min);
+
+    double new_bin_max = 0;
+    for(int ibin = h_dummy->GetMaximumBin(); ibin < h_dummy->GetNbinsX()-1; ibin++){
+      if(h_dummy->GetBinContent(ibin+1)<2 && h_dummy->GetBinContent(ibin+2)<2){
+	new_bin_max = h_dummy->GetBinLowEdge(ibin);
+	break;
+      }
+    }
+    new_bin_max = std::min(new_bin_max,bin_max);
     
     TH1F* h = CreateHistogram(new_bin_min,new_bin_max,bin_width);
     for(int i = 0; i < (int)dEdx.size(); i++)h->Fill(dEdx[i]);
@@ -78,9 +95,6 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill
   }
   else{
     //fill histogram
-    double rr_0 = (RMIN+RMAX)/2;
-    double rr_r = (RMAX-RMIN)/2;
-    
     TH1F* h_dummy = GetHistogramFromResRangeSliceFromFlatTree(t,RMIN,RMAX,bin_min,bin_max,bin_width); 
 
     //rebin
@@ -157,9 +171,6 @@ TH1F* CoherentFitUtils::GetSignalHistogramFromResRangeSlice(TTree* t, AnaSpillB*
   }
   else{
     //fill histogram
-    double rr_0 = (RMIN+RMAX)/2;
-    double rr_r = (RMAX-RMIN)/2;
-    
     TH1F* h = GetHistogramFromResRangeSliceFromFlatTree(t,
 							RMIN,RMAX,
 							ha->GetXaxis()->GetXmin(), ha->GetXaxis()->GetXmax(), ha->GetXaxis()->GetBinWidth(0),
@@ -227,9 +238,6 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
   }
   else{
     //fill histogram
-    double rr_0 = (RMIN+RMAX)/2;
-    double rr_r = (RMAX-RMIN)/2;
-    
     TH1F* h = GetHistogramFromResRangeSliceFromFlatTree(t,
 							RMIN,RMAX,
 							ha->GetXaxis()->GetXmin(), ha->GetXaxis()->GetXmax(), ha->GetXaxis()->GetBinWidth(0),
@@ -359,6 +367,53 @@ TH1F* CoherentFitUtils::GetToyHistogramFromResRangeSlice(TTree* t,
 						   bin_min,bin_max,bin_width,
 						   "",
 						   apply_toy_weights,apply_toy_variations,itoy);
+}
+
+//********************************************
+TH1F* CoherentFitUtils::ChangeHistogramToVariableBinning(TH1F* h_original, const double I, const int min){
+//********************************************
+
+  if(!h_original){
+    std::cout << "invalid pointer to histogram" << std::endl;
+    std::exit(1);
+  }
+
+  if(min <= 1){
+    std::cout << "minimum value per bin should be larger than one" << std::endl;
+    std::exit(1);
+  }
+
+  int counts = 0;
+  std::vector<double> edges, contents;
+  edges.clear(); contents.clear();
+  edges.push_back(h_original->GetBinLowEdge(1));
+  for(int ibin = 0; ibin < h_original->GetNbinsX(); ibin++){
+    counts += h_original->GetBinContent(ibin+1)*I;
+    if(counts>=min){
+      edges.push_back(h_original->GetBinLowEdge(ibin+1)+h_original->GetBinWidth(ibin+1));
+      contents.push_back(counts);
+      counts = 0;
+    }
+  }
+  if(counts != 0){
+    edges.pop_back();
+    edges.push_back(h_original->GetBinLowEdge(h_original->GetNbinsX()+1)+h_original->GetBinWidth(h_original->GetNbinsX()+1));
+    contents.back() += counts;
+  }
+
+  TH1F* h_new = new TH1F(h_original->GetName(), h_original->GetTitle(), edges.size()-1, &edges[0]);
+  //for(int ibin = 0; ibin < h_original->GetNbinsX(); ibin++)
+  //  h_new->Fill(h_original->GetBinCenter(ibin+1),h_original->GetBinContent(ibin+1));
+  for(int ibin = 0; ibin < (int)contents.size(); ibin++){
+    h_new->SetBinContent(ibin+1,contents[ibin]/I);
+    h_new->SetBinError(ibin+1,sqrt(contents[ibin])/I);
+  }
+
+  //h_original->Draw();gPad->Update();gPad->WaitPrimitive();
+  h_new->Draw("e");gPad->Update();gPad->WaitPrimitive();
+  
+  delete h_original;
+  return h_new;
 }
 
 //********************************************
@@ -540,7 +595,7 @@ void CoherentFitUtils::GetABCDRParametrization(double &A, double &B, double &C, 
   std::vector<double> x, x_error, y, y_error;
   SeparatePair(X,x,x_error);
   SeparatePair(Y,y,y_error);
-  DeleteOutliers(x,x_error,y,y_error);
+  //DeleteOutliers(x,x_error,y,y_error);
 
   int n = std::min((int)x.size(),(int)y.size());
   TGraphErrors* tg = new TGraphErrors(n,&x[0],&y[0],&x_error[0],&y_error[0]);
@@ -549,7 +604,7 @@ void CoherentFitUtils::GetABCDRParametrization(double &A, double &B, double &C, 
   TF1* f = new TF1("f","[A]*pow(x+[R],[B])*(log(x)+[C])+[D]",3,60);
   f->SetParameters(-0.294,-0.597,-56.1,1.07,1.86);
   if(draw_plot)tg->Draw("ap");
-  tg->Fit("f","Q");
+  tg->Fit("f");//,"Q");
 
   A = f->GetParameter("A");
   B = f->GetParameter("B");
@@ -568,7 +623,12 @@ double CoherentFitUtils::ComputeLikelihood(TH1F* h, TF1* f, double integral){
   
   for(int i = 0; i < h->GetNbinsX(); i++){
     double hvalue = h->GetBinContent(i+1);
-    double fvalue = f->Eval(h->GetBinCenter(i+1));
+    double fvalue;
+    //if(isnan(f->GetParameter(0)) || isnan(f->GetParameter(1)) || isnan(f->GetParameter(2)) || isnan(f->GetParameter(3)))
+      fvalue = f->Eval(h->GetBinCenter(i+1));
+      //else
+      //fvalue = f->Integral(h->GetBinLowEdge(i+1),h->GetBinLowEdge(i+1)+h->GetBinWidth(i+1))/h->GetBinWidth(i+1);
+    //std::cout << fvalue*integral << std::endl;
     Likelihood = Likelihood + log(ROOT::Math::poisson_pdf(hvalue*integral,fvalue*integral));
   }
 
@@ -657,10 +717,8 @@ Double_t CoherentFitUtils::ABCDRParametrization(Double_t *x, Double_t *par){
 Double_t CoherentFitUtils::ABCDRDerivativeA(Double_t *x, Double_t *par){
 //********************************************
 
-  Double_t A = par[0];
   Double_t B = par[1];
   Double_t C = par[2];
-  Double_t D = par[3];
   Double_t R = par[4];
   Double_t S = par[5];
 
@@ -676,7 +734,6 @@ Double_t CoherentFitUtils::ABCDRDerivativeB(Double_t *x, Double_t *par){
   Double_t A = par[0];
   Double_t B = par[1];
   Double_t C = par[2];
-  Double_t D = par[3];
   Double_t R = par[4];
   Double_t S = par[5];
 
@@ -691,8 +748,6 @@ Double_t CoherentFitUtils::ABCDRDerivativeC(Double_t *x, Double_t *par){
 
   Double_t A = par[0];
   Double_t B = par[1];
-  Double_t C = par[2];
-  Double_t D = par[3];
   Double_t R = par[4];
   Double_t S = par[5];
 
@@ -705,15 +760,6 @@ Double_t CoherentFitUtils::ABCDRDerivativeC(Double_t *x, Double_t *par){
 Double_t CoherentFitUtils::ABCDRDerivativeD(Double_t *x, Double_t *par){
 //********************************************
 
-  Double_t A = par[0];
-  Double_t B = par[1];
-  Double_t C = par[2];
-  Double_t D = par[3];
-  Double_t R = par[4];
-  Double_t S = par[5];
-
-  Double_t xx = x[0]+S;
-  
   return 1.;
 }
 
@@ -724,7 +770,6 @@ Double_t CoherentFitUtils::ABCDRDerivativeR(Double_t *x, Double_t *par){
   Double_t A = par[0];
   Double_t B = par[1];
   Double_t C = par[2];
-  Double_t D = par[3];
   Double_t R = par[4];
   Double_t S = par[5];
 
@@ -754,11 +799,9 @@ void CoherentFitUtils::DeleteOutliers(std::vector<double> &x, std::vector<double
 
   int i = 1;
   int n = std::min((int)x.size(),(int)y.size());
-  std::cout << n << std::endl;
   while(i < n-1){
     double tc1 = abs((y[i]-y[i-1])/(x[i]-x[i-1]));
     double tc2 = abs((y[i]-y[i+1])/(x[i]-x[i+1]));
-    std::cout << i << " " << tc1 << " " << tc2 << std::endl;
     if(tc2>100*tc1){
       x.erase(x.begin()+i+1);
       x_error.erase(x_error.begin()+i+1);

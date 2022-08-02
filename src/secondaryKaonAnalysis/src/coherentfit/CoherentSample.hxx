@@ -46,6 +46,7 @@ public:
   void ComputeIntegral();
   void NormalizeHistograms();
   void NormalizeHistograms(std::vector<double> Integral);
+  void ChangeHistogramsToVariableBinning(const int min = 3);
   void SetCFitParameters(const CoherentSample* sample);
   void SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma,
 				       const bool apply_all_var = true,
@@ -61,14 +62,17 @@ public:
   void CoherentFit();
 
   void CoherentFitSignal();
-  void CoherentFitSignalAlpha();
-  void CoherentFitBackgroundAllFree();
-  void CoherentFitSignalPlusBackgroundAllFree();
-  void CoherentFitBackgroundShift();
-  void CoherentFitSignalPlusBackgroundShift();
-  void CoherentFitBackground3Par();
+  void CoherentFitSignalCheb();
+  //void CoherentFitSignalAlpha();
+  //void CoherentFitBackgroundAllFree();
+  //void CoherentFitSignalPlusBackgroundAllFree();
+  //void CoherentFitBackgroundShift();
+  //void CoherentFitSignalPlusBackgroundShift();
+  //void CoherentFitBackground3Par();
   void CoherentFitBackgroundQuadraticWidths();
   void CoherentFitSignalPlusBackgroundQuadraticWidths();
+  void CoherentFitBackgroundCheb();
+  void CoherentFitSignalPlusBackgroundCheb();
   
   void StoreCoherentFits();
 
@@ -76,14 +80,17 @@ public:
   void ReadFromRootFile(const std::string& filename);
   
   static void fcnSignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalAlpha(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackgroundShift(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundShift(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackground3Par(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  //static void fcnSignalAlpha(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  //static void fcnBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  //static void fcnSignalPlusBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  //static void fcnBackgroundShift(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  //static void fcnSignalPlusBackgroundShift(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  //static void fcnBackground3Par(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnBackgroundQuadraticWidths(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundQuadraticWidths(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalPlusBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   
   CoherentSample* GetSignal() const {return fSignal;}
   void SetSignal(CoherentSample* Signal){fSignal = Signal;}
@@ -187,8 +194,8 @@ public:
   std::pair<double,double> GetCgwQa() const {return fCgwQa;}
   void SetCgwQa(std::pair<double,double> p){fCgwQa = p;} 
   
-  std::vector<std::pair<double,double>> GetCnorm() const {return fCnorm;}
-  void SetCnorm(std::vector<std::pair<double,double>> v){fCnorm = v;}
+  std::pair<double,double> GetCnorm() const {return fCnorm;}
+  void SetCnorm(std::pair<double,double> p){fCnorm = p;}
 
   void SetHistogramMarker(int n){for(int i = 0; i < (int)fh.size(); i++)fh[i]->SetMarkerStyle(n);}
   void SetHistogramColor(int n){for(int i = 0; i < (int)fh.size(); i++){fh[i]->SetMarkerColor(n);fh[i]->SetLineColor(n);}}
@@ -258,7 +265,7 @@ private:
   std::pair<double,double> fClwQa;
   std::pair<double,double> fCgwQa;
 
-  std::vector<std::pair<double,double>> fCnorm;
+  std::pair<double,double> fCnorm;
 };
 
 #endif
