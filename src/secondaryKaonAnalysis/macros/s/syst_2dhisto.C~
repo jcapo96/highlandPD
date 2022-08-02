@@ -1,0 +1,47 @@
+void syst_2dhisto(){
+
+  gStyle->SetOptFit();
+  
+  TFile* file = TFile::Open("./selfsyst_b_gwB.root");
+
+  TH2F* h = (TH2F*)file->Get("h_toy_dEdx_RR");
+  TH1D* d = new TH1D("d","d",2000,0,20);
+
+  std::vector<double> mean;  mean.clear();
+  std::vector<double> sigma; sigma.clear();
+  std::vector<double> rel;   rel.clear();
+  std::vector<double> RR;    RR.clear();
+  
+  for(int i = 0; i < h->GetNbinsX()-1; i++){
+    h->ProjectionY("d",i,i+1);
+    //d->Rebin(2);
+    d->Draw();
+    //d->Fit("gaus","Q");
+    //gPad->Update();gPad->WaitPrimitive();
+    //mean.push_back(static_cast<TF1*>(d->GetListOfFunctions()->FindObject("gaus"))->GetParameter(1));
+    //sigma.push_back(static_cast<TF1*>(d->GetListOfFunctions()->FindObject("gaus"))->GetParameter(2));
+    mean.push_back(d->GetMean());
+    sigma.push_back(d->GetRMS());
+    rel.push_back(sigma.back()/mean.back()*100);
+    RR.push_back(h->GetXaxis()->GetBinCenter(i));
+    d->Reset();
+    //std::cout << i << " " << mean.back() << " " << sigma.back() << " " << rel.back() << std::endl;
+  }
+
+  TGraph* tg = new TGraph(RR.size(),&RR[0],&mean[0]);
+  tg->GetXaxis()->SetTitle("Residual Range [cm]");
+  tg->GetYaxis()->SetTitle("dEdx [MeV/cm]");
+  tg->SetLineColor(2);
+  tg->Draw("ac");
+  
+  TGraphErrors* tge = new TGraphErrors(RR.size(),&RR[0],&mean[0],0,&sigma[0]);
+  tge->SetFillColorAlpha(kRed,0.8);
+  tge->Draw("samee4");
+
+  TGraph* tgr = new TGraph(RR.size(),&RR[0],&rel[0]);
+  tgr->GetXaxis()->SetTitle("Residual Range [cm]");
+  tgr->GetYaxis()->SetTitle("Relative error [%]");
+  tgr->SetLineColor(2);
+  tgr->SetLineWidth(3);
+  tgr->Draw("ac");
+}
