@@ -1,7 +1,7 @@
 --- SCE parameters --------
  < pdUtils.SCE.EnableSimSpatialSCE = 1   >
- < pdUtils.SCE.EnableSimEfieldSCE  = 1   >	
- < pdUtils.SCE.EnableCalSpatialSCE = 1   >	
+ < pdUtils.SCE.EnableSimEfieldSCE  = 0   >	
+ < pdUtils.SCE.EnableCalSpatialSCE = 0   >	
  < pdUtils.SCE.EnableCalEfieldSCE  = 1   >
  < pdUtils.SCE.Efield              = 500 >
 

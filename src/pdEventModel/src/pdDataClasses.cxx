@@ -29,7 +29,10 @@ AnaHitPD::AnaHitPD(){
   Integral      = kFloatUnassigned;     
   PeakTime      = kFloatUnassigned;     
   PeakAmplitude = kFloatUnassigned;
-  Position       = TVector3(0,0,0);
+  Position      = TVector3(0,0,0);
+  PositionNoSCE = TVector3(0,0,0);
+  TPCid         = kIntUnassigned;
+  PlaneID       = kIntUnassigned;
   Channel       = kIntUnassigned;
   View          = kIntUnassigned; 
 
@@ -69,6 +72,9 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   PeakTime      = hit.PeakTime;     
   PeakAmplitude = hit.PeakAmplitude;
   Position      = hit.Position;
+  PositionNoSCE = hit.PositionNoSCE;
+  TPCid         = hit.TPCid;
+  PlaneID       = hit.PlaneID;
   Channel       = hit.Channel;
   View          = hit.View;
   Signal        = hit.Signal;

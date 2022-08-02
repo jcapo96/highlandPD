@@ -48,6 +48,9 @@ public:
   Float_t PeakTime;
   Float_t PeakAmplitude;
   TVector3 Position;
+  TVector3 PositionNoSCE;
+  int TPCid;
+  int PlaneID;
 
   UInt_t StartTick;
   UInt_t EndTick;

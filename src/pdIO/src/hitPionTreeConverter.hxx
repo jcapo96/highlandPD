@@ -22,7 +22,7 @@
 //#include "GeometryManager.hxx"
 
 #include "pdDataClasses.hxx"
-#include "pdSpaceCharge.hxx"
+#include "SpaceCharge.hxx"
 
 using namespace std;
 
@@ -103,7 +103,7 @@ protected:
  protected:
 
   //for sce corrections
-  pdspacecharge::pdSpaceCharge* sce = new pdspacecharge::pdSpaceCharge();
+  //pdspacecharge::pdSpaceCharge* sce = new pdspacecharge::pdSpaceCharge();
 
   // TChains   
   TChain *eventsTree;

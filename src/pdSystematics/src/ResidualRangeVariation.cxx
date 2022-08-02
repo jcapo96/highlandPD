@@ -21,6 +21,7 @@ void ResidualRangeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   for(Int_t itrk = 0; itrk < box->nRelevantRecObjects; itrk++){
 
     AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[itrk]);
+    if(part->Hits[2].empty())continue;
 
     // The un-corrected particle
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
@@ -44,7 +45,7 @@ void ResidualRangeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     //std::cout << "variation " << toy.GetToyVariations(_index)->Variations[itrk] << std::endl;
 
     //reescale the variation to go from -max_var/2 to max_var/2
-    double var = toy.GetToyVariations(_index)->Variations[itrk] * max_var - max_var/2;
+    double var = toy.GetToyVariations(_index)->Variations[itrk] * max_var - std::min(max_var/2,(double)original->Hits[2][0].ResidualRange);
     //std::cout << "reescaled variation " << var std::endl;
 
     // vary the residual range for each hit

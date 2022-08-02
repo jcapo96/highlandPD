@@ -3,7 +3,7 @@
 
 #include "CorrectionBase.hxx"
 #include "BaseDataClasses.hxx"
-#include "pdSpaceCharge.hxx"
+#include "SpaceCharge.hxx"
 
 /// This class defines a correction that affects each hit of a reconstructed track
 
@@ -20,7 +20,8 @@ public:
   
 protected:
 
-  pdspacecharge::pdSpaceCharge sce;
+  //this probably needs a reimplementation, it cannot be initialized here. Possibly this should be a singleton.
+  SpaceCharge* sce;
   
 };
 
