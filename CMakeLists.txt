@@ -31,7 +31,7 @@ message("CVMFS found: ${COMPILETF}")
 # ----- Set cmake options ------------------------------
 #-------------------------------------------------------
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17 -DCOMPILETF=${COMPILETF}")
@@ -53,7 +53,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 # Look for the required libraries
 
 #------ ROOT -------------------
-find_package(ROOT REQUIRED COMPONENTS Geom EG)
+find_package(ROOT REQUIRED COMPONENTS Geom EG Minuit)
 #find_package(ROOT REQUIRED COMPONENTS Geom EG TMVA)
 include(${ROOT_USE_FILE})
 
@@ -67,8 +67,6 @@ find_package(HIGHLAND REQUIRED)
 message("HighLAND_USE_FILE:            ${HIGHLAND_USE_FILE}")
 message("HighLAND include directories: ${HIGHLAND_INCLUDE_DIRS}")
 message("HighLAND libraries:           ${HIGHLAND_LIBRARIES}")
-include_directories(${HIGHLAND_INCLUDE_DIRS})
-link_directories(${HIGHLAND_LIBRARY_DIR})
 
 #------ TENSORFLOW------------------
 find_package(TENSORFLOW REQUIRED)
@@ -93,7 +91,7 @@ message("EIGEN libraries:           ${EIGEN_LIBRARIES}")
 #-------------------------------------------------------
 
 file(GLOB highlandPD_inc ${CMAKE_SOURCE_DIR}/src/*/src
-                         ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit
+	  		 ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit
 #                         ${LARSOFTREADER_DIR} ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}
                          ${CMAKE_BINARY_DIR}/dict)
 
@@ -105,7 +103,7 @@ message("Include directories: ${INCLUDE_DIRECTORIES}")
 #-------------------------------------------------------
 
 file(GLOB dict_src ${CMAKE_SOURCE_DIR}/src/*/src/*_LinkDef.h
-                   ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/*_LinkDef.h)
+	  	   ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/*_LinkDef.h)
 
 foreach(file0 ${dict_src})
   string(FIND ${file0} "/"          pos_ini REVERSE)
@@ -113,23 +111,23 @@ foreach(file0 ${dict_src})
   string(REPLACE "${dir}/"     "" file2 ${file0})
   string(REPLACE _LinkDef.h    "" file3 ${file2})  
 
-#  root_generate_dictionary(dict/${file3}_Dict NODEPHEADERS ${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
-  root_generate_dictionary(dict/${file3}_Dict ${dir}/${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
+#  root_generate_dictionary(${file3}_Dict NODEPHEADERS ${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
+  root_generate_dictionary(${file3}_Dict ${dir}/${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
 
-  list(APPEND dict_list ${dir}/${file3}.cxx dict/${file3}_Dict.cxx)
-  list(APPEND dict_src  ${CMAKE_BINARY_DIR}/dict/${file3}_Dict.cxx)
+  list(APPEND dict_list ${dir}/${file3}.cxx ${file3}_Dict.cxx)
+  list(APPEND dict_src  ${CMAKE_BINARY_DIR}/${file3}_Dict.cxx)
 
   INSTALL(FILES "${CMAKE_BINARY_DIR}/lib${file3}_rdict.pcm" DESTINATION ${CMAKE_SOURCE_DIR}/lib)
   INSTALL(FILES "${CMAKE_BINARY_DIR}/lib${file3}.rootmap"   DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 endforeach(file0)
 
-#  root_generate_dictionary(dict/LArSoftReaderProjectDict
+#  root_generate_dictionary(LArSoftReaderProjectDict
 ##                           NODEPHEADERS LArSoftReaderProjectHeaders.h
 #                           ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectHeaders.h
 #                           LINKDEF ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderLinkDef.h
 #                           MODULE LArSoftReader
 #                           DEPENDENCIES ${ROOT_LIBRARIES})
-#  list(APPEND dict_list ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx dict/LArSoftReaderProjectDict.cxx)
+#  list(APPEND dict_list ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx LArSoftReaderProjectDict.cxx)
 #  INSTALL(FILES "${CMAKE_BINARY_DIR}/libLArSoftReader_rdict.pcm" DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 #  INSTALL(FILES "${CMAKE_BINARY_DIR}/libLArSoftReader.rootmap"   DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 
@@ -139,17 +137,13 @@ endforeach(file0)
 #-------------------------------------------------------
 
 file(GLOB highlandPD_src  ${CMAKE_SOURCE_DIR}/src/*/src/*.cxx
-                          ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/*.cxx)
+	  		  ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/*.cxx)
 #                          ${LARSOFTREADER_DIR}/LArSoft*.cxx
 #                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
 
-add_library(highlandPD SHARED ${dict_src} ${highlandPD_src} )
+add_library(highlandPD SHARED ${dict_src} ${highlandPD_src} ) 
 target_include_directories(highlandPD PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc} ${TENSORFLOW_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
 
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-  message(STATUS "dir='${dir}'")
-endforeach()
 
 target_link_libraries(highlandPD ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES})
 INSTALL(TARGETS highlandPD DESTINATION ${CMAKE_SOURCE_DIR}/lib)
@@ -161,7 +155,7 @@ set(HIGHLAND_PD_LIBRARIES "-L${CMAKE_BINARY_DIR} -lhighlandPD")
 #-------------------------------------------------------
 
 file(GLOB highlandPD_inc2 ${CMAKE_SOURCE_DIR}/src/*/src/*.hxx
-                          ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/*.hxx)
+	  		  ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/*.hxx)
 #                          ${LARSOFTREADER_DIR}/*.hxx
 #                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/*.h)
 
@@ -199,6 +193,16 @@ add_executable(secondaryKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/a
 target_include_directories(secondaryKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(secondaryKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS secondaryKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+add_executable(CreateMiniTreeCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeCandidates.cxx)
+target_include_directories(CreateMiniTreeCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMiniTreeCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMiniTreeCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+add_executable(CreateMiniTreeEventCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeEventCandidates.cxx)
+target_include_directories(CreateMiniTreeEventCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMiniTreeEventCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMiniTreeEventCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CreateMiniTreeKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeKaon.cxx)
 target_include_directories(CreateMiniTreeKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
@@ -255,9 +259,12 @@ add_dependencies(CreateMiniTreePD.exe      proton.exe)
 add_dependencies(proton.exe                pion.exe)
 add_dependencies(pion.exe                  pdExampleAnalysis.exe)
 add_dependencies(pdExampleAnalysis.exe     secondaryKaon.exe)
-add_dependencies(secondaryKaon.exe         CreateMiniTreeKaon.exe)
+add_dependencies(secondaryKaon.exe         CreateMiniTreeCandidates.exe)
+add_dependencies(CreateMiniTreeCandidates.exe    CreateMiniTreeEventCandidates.exe)
+add_dependencies(CreateMiniTreeEventCandidates.exe    CreateMiniTreeKaon.exe)
 add_dependencies(CreateMiniTreeKaon.exe    CoherentFit.exe)
 add_dependencies(CoherentFit.exe           highlandPD)
+#add_dependencies(CreateMiniTreeKaon.exe    highlandPD)
 add_dependencies(highlandPD                ch_rootmap)
 add_dependencies(ch_rootmap                highlandPD_dicts)
 add_dependencies(highlandPD_dicts          include)
