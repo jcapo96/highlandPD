@@ -43,6 +43,8 @@ namespace CoherentFitUtils{
 					 const bool apply_toy_weights = false, const bool apply_toy_variations = false,
 					 const int itoy = -1);
 
+  TH1F* ChangeHistogramToVariableBinning(TH1F* h_original, const double I, const int min);
+
   Double_t GetFunctionNormalizationInsideHistogramBoundaries(const TH1F* h, const TF1* f);
   
   TF1* GausnFit(TH1F* h, bool use_poisson = true);
