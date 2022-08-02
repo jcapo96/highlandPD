@@ -311,11 +311,11 @@ void CoherentFit::ComputeSelfSystematicError(const bool apply_all_var,
     std::cout << "toy sample " << itoy << std::endl;
     fToySamples.push_back(ClonedSample);
     //generate seed values for fitting
-    fToySamples[itoy]->GetSignal()->SetCFitParametersWithVariations(fSignal,r,0.01,
+    fToySamples[itoy]->GetSignal()->SetCFitParametersWithVariations(fSignal,r,0.05,
 								    apply_all_var,
 								    apply_only_s_lw_var,apply_only_mpv_var,apply_only_s_gw_var,
 								    apply_only_shift_var,apply_only_norm_var);
-    fToySamples[itoy]->GetBackground()->SetCFitParametersWithVariations(fBackground,r,0.01,
+    fToySamples[itoy]->GetBackground()->SetCFitParametersWithVariations(fBackground,r,0.05,
 									apply_all_var,
 									apply_only_b_lw_var,apply_only_mpv_var,apply_only_b_gw_var,
 									apply_only_shift_var,apply_only_norm_var);
@@ -333,7 +333,7 @@ void CoherentFit::ComputeSelfSystematicError(const bool apply_all_var,
       }*/
   }
   
-  TFile* rfile = new TFile("selfsyst.root","NEW");
+  TFile* rfile = new TFile("selfsyst_norm.root","NEW");
   h_toy_dEdx_RR->Write();
   rfile->Close();
 }

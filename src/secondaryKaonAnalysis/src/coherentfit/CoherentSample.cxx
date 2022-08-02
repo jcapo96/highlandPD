@@ -460,28 +460,28 @@ void CoherentSample::SetCFitParametersWithVariations(const CoherentSample* sampl
   
   //apply desired variations
   if(apply_all_var || apply_only_lw_var){
-    this->fClwA.first     = r->Gaus(sample->GetClwA().first,sample->GetClwA().first*sigma);
+    //this->fClwA.first     = r->Gaus(sample->GetClwA().first,sample->GetClwA().first*sigma);
     this->fClwB.first     = r->Gaus(sample->GetClwB().first,sample->GetClwB().first*sigma);
-    this->fClwC.first     = r->Gaus(sample->GetClwC().first,sample->GetClwC().first*sigma);
+    //this->fClwC.first     = r->Gaus(sample->GetClwC().first,sample->GetClwC().first*sigma);
   }
   if(apply_all_var || apply_only_mpv_var){
-    this->fCmpvA.first    = r->Gaus(sample->GetCmpvA().first,sample->GetCmpvA().first*sigma);
+    //this->fCmpvA.first    = r->Gaus(sample->GetCmpvA().first,sample->GetCmpvA().first*sigma);
     //this->fCmpvB.first    = r->Gaus(sample->GetCmpvB().first,sample->GetCmpvB().first*sigma);
     //this->fCmpvC.first    = r->Gaus(sample->GetCmpvC().first,sample->GetCmpvC().first*sigma);
     //this->fCmpvD.first    = r->Gaus(sample->GetCmpvD().first,sample->GetCmpvD().first*sigma);
-    //this->fCmpvR.first    = r->Gaus(sample->GetCmpvR().first,sample->GetCmpvR().first*sigma);
+    this->fCmpvR.first    = r->Gaus(sample->GetCmpvR().first,sample->GetCmpvR().first*sigma);
   }
   if(apply_all_var || apply_only_gw_var){
-    this->fCgwA.first     = r->Gaus(sample->GetCgwA().first,sample->GetCgwA().first*sigma);
+    //this->fCgwA.first     = r->Gaus(sample->GetCgwA().first,sample->GetCgwA().first*sigma);
     this->fCgwB.first     = r->Gaus(sample->GetCgwB().first,sample->GetCgwB().first*sigma);
-    this->fCgwC.first     = r->Gaus(sample->GetCgwC().first,sample->GetCgwC().first*sigma);
+    //this->fCgwC.first     = r->Gaus(sample->GetCgwC().first,sample->GetCgwC().first*sigma);
   }
   if(apply_all_var || apply_only_shift_var)
     this->fCshift.first   = r->Gaus(sample->GetCshift().first,sample->GetCshift().first*sigma);
   if(apply_all_var || apply_only_norm_var)
     this->fCnorm[0].first = r->Gaus(sample->GetCnorm()[0].first,sample->GetCnorm()[0].first*sigma);
 
-  std::cout << this->fClwA.first << " " << this->fCmpvA.first << std::endl;
+  std::cout << "MIGUEEEEE " << this->fCnorm[0].first << std::endl;
 }
   
 //********************************************************************
