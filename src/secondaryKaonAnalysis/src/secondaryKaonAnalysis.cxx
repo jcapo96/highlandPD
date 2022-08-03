@@ -17,6 +17,8 @@
 #include "ResidualRangeVariation.hxx"
 #include "BeamPartIdEffWeight.hxx"
 
+#include "HitPositionSCECorrection.hxx"
+
 //********************************************************************
 secondaryKaonAnalysis::secondaryKaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
@@ -78,6 +80,7 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
+  //corr().AddCorrection("SCE",new HitPositionSCECorrection());
 }
 
 //********************************************************************

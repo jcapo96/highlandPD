@@ -205,28 +205,17 @@ void Calorimetry::CalibrateHit(AnaHitPD &hit) const {
   //initialize dEdx value to dQdx value
   hit.dQdx = hit.dQdx_NoSCE;
 
-  std::cout << "0 " << hit.dQdx << std::endl;
-
-  //normalization correction
+    //normalization correction
   //ApplyNormCorrection(hit);
-
-  std::cout << "1 " << hit.dQdx << std::endl;
 
   //X correction
   ApplyXCorrection(hit);
 
-  std::cout << "2 " << hit.dQdx << std::endl;
-  
   //YZ correction
   ApplyYZCorrection(hit);
 
-  std::cout << "3 " << hit.dQdx << std::endl;
-
   //recombination
-  ApplyRecombination(hit);
-
-  std::cout << "4 " << hit.dQdx << std::endl;
-  
+  ApplyRecombination(hit);  
 }
 
 //********************************************************************
@@ -287,7 +276,8 @@ void Calorimetry::ApplyRecombination(AnaHitPD &hit) const {
   //E field SCE
   SpaceCharge* sce = new SpaceCharge();
   sce->Initialize();
-  TVector3 offset = sce->GetCalEfieldOffsets(hit.Position,hit.TPCid);
+  //the -1 is added ad hoc. I don't know the reason but there is a -1 difference wrt the larsoft calculation
+  TVector3 offset = -1*(sce->GetCalEfieldOffsets(hit.Position,hit.TPCid)); 
   Efield = sqrt(pow(Efield*(1+offset.X()),2) + pow(Efield*offset.Y(),2) + pow(Efield*offset.Z(),2));
 
   //calculate recombination factors
