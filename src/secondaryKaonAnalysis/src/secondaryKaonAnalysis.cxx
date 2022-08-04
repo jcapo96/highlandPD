@@ -13,7 +13,7 @@
 #include "HighlandMiniTreeConverter.hxx"
 #include "PDSPAnalyzerTreeConverter.hxx"
 
-#include "dEdxKaonVariation.hxx"
+#include "dQdxXCalVariation.hxx"
 #include "ResidualRangeVariation.hxx"
 #include "BeamPartIdEffWeight.hxx"
 
@@ -90,8 +90,8 @@ void secondaryKaonAnalysis::DefineSystematics(){
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
-  evar().AddEventVariation(0,"residual range variation",                new ResidualRangeVariation());
-  eweight().AddEventWeight(0,"beam particle identification efficiency", new BeamPartIdEffWeight());
+  evar().AddEventVariation(0,"dQdx X calibration variation",                new dQdxXCalVariation());
+  //eweight().AddEventWeight(0,"beam particle identification efficiency", new BeamPartIdEffWeight());
 }
 
 //********************************************************************
