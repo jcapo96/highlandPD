@@ -172,23 +172,6 @@ endforeach(file0)
 #target_link_libraries(CreateMiniTree ${ROOT_LIBRARIES} "-L${CMAKE_BINARY_DIR} -lhighlandPD")
 #INSTALL(TARGETS CreateMiniTree DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
-
-add_executable(cosmicsMiniTree.exe ${CMAKE_SOURCE_DIR}/src/pdControlSamples/app/RunCreateMiniTreeCosmics.cxx)
-target_include_directories(cosmicsMiniTree.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(cosmicsMiniTree.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS cosmicsMiniTree.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-
-
-add_executable(cosmics.exe ${CMAKE_SOURCE_DIR}/src/pdControlSamples/app/RunCosmicsAnalysis.cxx)
-target_include_directories(cosmics.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(cosmics.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS cosmics.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-
-add_executable(pion.exe ${CMAKE_SOURCE_DIR}/src/pionAnalysis/app/RunPionAnalysis.cxx)
-target_include_directories(pion.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(pion.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS pion.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-
 add_executable(secondaryKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunSecondaryKaonAnalysis.cxx)
 target_include_directories(secondaryKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(secondaryKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
@@ -219,16 +202,6 @@ target_include_directories(CreateMiniTreePD.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS}
 target_link_libraries(CreateMiniTreePD.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS CreateMiniTreePD.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
-add_executable(proton.exe ${CMAKE_SOURCE_DIR}/src/stoppingProtonAnalysis/app/RunStoppingProtonAnalysis.cxx)
-target_include_directories(proton.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(proton.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS proton.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-
-add_executable(dedx.exe ${CMAKE_SOURCE_DIR}/src/pdStudies/app/RundEdxStudies.cxx)
-target_include_directories(dedx.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(dedx.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS dedx.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-
 add_executable(pdExampleAnalysis.exe ${CMAKE_SOURCE_DIR}/src/pdExampleAnalysis/app/RunpdExampleAnalysis.cxx)
 target_include_directories(pdExampleAnalysis.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(pdExampleAnalysis.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
@@ -252,19 +225,13 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
-add_dependencies(cosmicsMiniTree.exe       cosmics.exe )
-add_dependencies(cosmics.exe               dedx.exe )
-add_dependencies(dedx.exe                  CreateMiniTreePD.exe )
-add_dependencies(CreateMiniTreePD.exe      proton.exe)
-add_dependencies(proton.exe                pion.exe)
-add_dependencies(pion.exe                  pdExampleAnalysis.exe)
+add_dependencies(CreateMiniTreePD.exe      pdExampleAnalysis.exe)
 add_dependencies(pdExampleAnalysis.exe     secondaryKaon.exe)
 add_dependencies(secondaryKaon.exe         CreateMiniTreeCandidates.exe)
 add_dependencies(CreateMiniTreeCandidates.exe    CreateMiniTreeEventCandidates.exe)
 add_dependencies(CreateMiniTreeEventCandidates.exe    CreateMiniTreeKaon.exe)
 add_dependencies(CreateMiniTreeKaon.exe    CoherentFit.exe)
 add_dependencies(CoherentFit.exe           highlandPD)
-#add_dependencies(CreateMiniTreeKaon.exe    highlandPD)
 add_dependencies(highlandPD                ch_rootmap)
 add_dependencies(ch_rootmap                highlandPD_dicts)
 add_dependencies(highlandPD_dicts          include)
