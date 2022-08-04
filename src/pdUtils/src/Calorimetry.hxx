@@ -10,6 +10,7 @@
 #include "TVector3.h"
 
 #include "pdDataClasses.hxx"
+#include "SpaceCharge.hxx"
 
 
 class Calorimetry{
@@ -20,30 +21,41 @@ public:
 
   void Initialize();
 
-  void CalibrateHit(AnaHitPD &hit) const; //think about naming
+  void CalibratedQdx(AnaHitPD &hit) const; //think about naming
+
+  void ApplyNormalization(AnaHitPD &hit) const;
+  void ApplyXCalibration(AnaHitPD &hit) const;
+  void ApplyYZCalibration(AnaHitPD &hit) const;
+  void ApplyRecombination(AnaHitPD &hit) const;
+  void ApplyRecombination(AnaParticlePD* part) const;
     
+  double GetNormalization(AnaHitPD &hit) const;
+  double GetXCalibration(AnaHitPD &hit) const;
+  double GetYZCalibration(AnaHitPD &hit) const;
+
+  void SetModBoxA(double ModBoxA){_ModBoxA = ModBoxA;}
+  void SetModBoxB(double ModBoxB){_ModBoxB = ModBoxB;}
+  void ResetModBoxParameters();
+
 protected:
   
   void CreateNormHistogram();
-  void CreateXcorrHistogram();
-  void CreateYZcorrHistogram();
-
-  void ApplyNormCorrection(AnaHitPD &hit) const;
-  void ApplyXCorrection(AnaHitPD &hit) const;
-  void ApplyYZCorrection(AnaHitPD &hit) const;
-  void ApplyRecombination(AnaHitPD &hit) const;
+  void CreateXCalHistogram();
+  void CreateYZCalHistogram();
 
   double GetElectronsFromADCArea(double dQdx, int PlaneID) const {return dQdx/_CalAreaConstants[PlaneID];}
 
   TH1F* _h_norm;
-  TH1F* _h_Xcorr[3];
-  TH2F* _h_YZcorr[3][2];
+  TH1F* _h_XCal[3];
+  TH2F* _h_YZCal[3][2];
 
   double _Efield;
   double _ModBoxA;
   double _ModBoxB;
   
   double _CalAreaConstants[3];
+
+  SpaceCharge* _sce;
 
 };
   

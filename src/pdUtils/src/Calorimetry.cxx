@@ -2,20 +2,21 @@
 
 #include "Calorimetry.hxx"
 #include "Parameters.hxx"
-#include "SpaceCharge.hxx"
 
 //********************************************************************
 Calorimetry::Calorimetry(){
 //********************************************************************
 
   _h_norm = NULL;
-  for(int i = 0; i < 3; i++)_h_Xcorr[i] = NULL;
-  for(int i = 0; i < 3; i++)for(int j = 0; j < 2; j++)_h_YZcorr[i][j] = NULL;
+  for(int i = 0; i < 3; i++)_h_XCal[i] = NULL;
+  for(int i = 0; i < 3; i++)for(int j = 0; j < 2; j++)_h_YZCal[i][j] = NULL;
   
   _Efield  = -999.;
   _ModBoxA = -999.;
   _ModBoxB = -999.;
   for(int i = 0; i < 3; i++)_CalAreaConstants[i] = -999.;
+
+  _sce = NULL;
 }
 
 //********************************************************************
@@ -23,9 +24,10 @@ Calorimetry::~Calorimetry(){
 //********************************************************************
 
   delete _h_norm;
-  for(int i = 0; i < 3; i++)delete _h_Xcorr[i];
-  for(int i = 0; i < 3; i++)for(int j = 0; j < 2; j++)delete _h_YZcorr[i][j];
+  for(int i = 0; i < 3; i++)delete _h_XCal[i];
+  for(int i = 0; i < 3; i++)for(int j = 0; j < 2; j++)delete _h_YZCal[i][j];
 
+  delete _sce;
 }
 
 //********************************************************************
@@ -34,8 +36,8 @@ void Calorimetry::Initialize(){
 
   //read data files and create correction histograms
   CreateNormHistogram();
-  CreateXcorrHistogram();
-  CreateYZcorrHistogram();
+  CreateXCalHistogram();
+  CreateYZCalHistogram();
 
   _Efield  = 0.4867; //probably all these values should be added in the parameters file
   _ModBoxA = 0.930;
@@ -45,6 +47,16 @@ void Calorimetry::Initialize(){
   _CalAreaConstants[1] = 1.04e-3;
   _CalAreaConstants[2] = 1.0156e-3;
 
+  _sce = new SpaceCharge();
+  _sce->Initialize();
+}
+
+//********************************************************************
+void Calorimetry::ResetModBoxParameters(){
+//********************************************************************
+
+  _ModBoxA = 0.930; //should be done by reading parameters file
+  _ModBoxB = 0.212; 
 }
 
 //********************************************************************
@@ -78,10 +90,10 @@ void Calorimetry::CreateNormHistogram(){
 }
 
 //********************************************************************
-void Calorimetry::CreateXcorrHistogram(){
+void Calorimetry::CreateXCalHistogram(){
 //********************************************************************
 
-  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dEdx_Xcorr.txt";
+  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dEdx_XCal.txt";
   FILE* tf = fopen(filename.c_str(), "r");
   
   //check it exits
@@ -119,22 +131,22 @@ void Calorimetry::CreateXcorrHistogram(){
   for(int iplane = 0; iplane < 3; iplane++){
     std::stringstream ssi;
     ssi << iplane;
-    _h_Xcorr[iplane] = new TH1F(("hXcorr_plane"+ssi.str()+"").c_str(),
-				("hXcorr_plane"+ssi.str()+"").c_str(),
+    _h_XCal[iplane] = new TH1F(("hXCal_plane"+ssi.str()+"").c_str(),
+				("hXCal_plane"+ssi.str()+"").c_str(),
 				nbins,xmin-width/2,xmax+width/2);
     for(int ibin = 0; ibin < (int)x_vector[iplane].size(); ibin++){
-      _h_Xcorr[iplane]->SetBinContent(ibin+1,corr_vector[iplane][ibin]);
-      _h_Xcorr[iplane]->SetBinError(ibin+1,error_vector[iplane][ibin]);
+      _h_XCal[iplane]->SetBinContent(ibin+1,corr_vector[iplane][ibin]);
+      _h_XCal[iplane]->SetBinError(ibin+1,error_vector[iplane][ibin]);
     }
   }    
   fclose(tf);
 }
 
 //********************************************************************
-void Calorimetry::CreateYZcorrHistogram(){
+void Calorimetry::CreateYZCalHistogram(){
 //********************************************************************
 
-  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dEdx_YZcorr.txt";
+  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dEdx_YZCal.txt";
   FILE* tf = fopen(filename.c_str(), "r");
   
   //check it exits
@@ -173,8 +185,8 @@ void Calorimetry::CreateYZcorrHistogram(){
       std::stringstream ssi, ssj;
       ssi << i;
       ssj << j;
-      _h_YZcorr[i][j] = new TH2F(("hYZcorr_plane"+ssi.str()+"_side"+ssj.str()+"").c_str(),
-				 ("hYZcorr_plane"+ssi.str()+"_side"+ssj.str()+"").c_str(),
+      _h_YZCal[i][j] = new TH2F(("hYZCal_plane"+ssi.str()+"_side"+ssj.str()+"").c_str(),
+				 ("hYZCal_plane"+ssi.str()+"_side"+ssj.str()+"").c_str(),
 				 nbinsz, zmin-zwidth/2, zmax+zwidth/2,
 				 nbinsy, ymin-ywidth/2, ymax+ywidth/2);
     }
@@ -186,14 +198,14 @@ void Calorimetry::CreateYZcorrHistogram(){
   while(fscanf(tf, "%lf,%lf,%lf,%lf,%lf,%lf", &channel, &dummy, &corr, &error, &y, &z) == 6){
     plane = channel/10000000;
     side = (channel - plane*10000000)/1000000;
-    _h_YZcorr[plane][side]->Fill(z,y,corr);
+    _h_YZCal[plane][side]->Fill(z,y,corr);
   }
   fclose(tf);    
 }
 
 
 //********************************************************************
-void Calorimetry::CalibrateHit(AnaHitPD &hit) const {
+void Calorimetry::CalibratedQdx(AnaHitPD &hit) const {
 //********************************************************************
   
   //check plane ID
@@ -202,24 +214,21 @@ void Calorimetry::CalibrateHit(AnaHitPD &hit) const {
     return;
   }
 
-  //initialize dEdx value to dQdx value
+  //initialize dQdx value to dQdx non corrrected value value
   hit.dQdx = hit.dQdx_NoSCE;
 
-    //normalization correction
-  //ApplyNormCorrection(hit);
+  //normalization correction
+  //ApplyNormalization(hit);
 
   //X correction
-  ApplyXCorrection(hit);
+  ApplyXCalibration(hit);
 
   //YZ correction
-  ApplyYZCorrection(hit);
-
-  //recombination
-  ApplyRecombination(hit);  
+  ApplyYZCalibration(hit);
 }
 
 //********************************************************************
-void Calorimetry::ApplyNormCorrection(AnaHitPD &hit) const {
+void Calorimetry::ApplyNormalization(AnaHitPD &hit) const {
 //********************************************************************
 
   if(!_h_norm){
@@ -228,31 +237,30 @@ void Calorimetry::ApplyNormCorrection(AnaHitPD &hit) const {
   }
 
   hit.dQdx *= _h_norm->GetBinContent(hit.PlaneID); 
-
 }
 
 //********************************************************************
-void Calorimetry::ApplyXCorrection(AnaHitPD &hit) const {
+void Calorimetry::ApplyXCalibration(AnaHitPD &hit) const {
 //********************************************************************
 
   for(int i = 0; i < 3; i++){
-    if(!_h_Xcorr[i]){
+    if(!_h_XCal[i]){
       std::cout << "X correction histogram does not exist, you should call Initialize method!" << std::endl;
       return;
     } 
   }
 
-  int bin = _h_Xcorr[hit.PlaneID]->FindBin(hit.Position.X());
-  hit.dQdx *= _h_Xcorr[hit.PlaneID]->GetBinContent(bin);
+  int bin = _h_XCal[hit.PlaneID]->FindBin(hit.Position.X());
+  hit.dQdx *= _h_XCal[hit.PlaneID]->GetBinContent(bin);
 }
 
 //********************************************************************
-void Calorimetry::ApplyYZCorrection(AnaHitPD &hit) const {
+void Calorimetry::ApplyYZCalibration(AnaHitPD &hit) const {
 //********************************************************************
 
   for(int i = 0; i < 3; i++){
     for(int j = 0; j < 2; j++){
-      if(!_h_YZcorr[i][j]){
+      if(!_h_YZCal[i][j]){
 	std::cout << "X correction histogram does not exist, you should call Initialize method!" << std::endl;
 	return;
       } 
@@ -260,8 +268,8 @@ void Calorimetry::ApplyYZCorrection(AnaHitPD &hit) const {
   }
   
   int side = (int)(hit.Position.X() > 0); 
-  int bin  = _h_YZcorr[hit.PlaneID][side]->FindBin(hit.Position.Z(),hit.Position.Y());
-  hit.dQdx *= _h_YZcorr[hit.PlaneID][side]->GetBinContent(bin);
+  int bin  = _h_YZCal[hit.PlaneID][side]->FindBin(hit.Position.Z(),hit.Position.Y());
+  hit.dQdx *= _h_YZCal[hit.PlaneID][side]->GetBinContent(bin);
 }
 
 //********************************************************************
@@ -273,15 +281,68 @@ void Calorimetry::ApplyRecombination(AnaHitPD &hit) const {
   double Wion = 1000./4.237e7;                                   //Wion in MeV/e
   double Efield = _Efield;                                       //kV/cm
 
-  //E field SCE
-  SpaceCharge* sce = new SpaceCharge();
-  sce->Initialize();
   //the -1 is added ad hoc. I don't know the reason but there is a -1 difference wrt the larsoft calculation
-  TVector3 offset = -1*(sce->GetCalEfieldOffsets(hit.Position,hit.TPCid)); 
+  TVector3 offset = -1*(_sce->GetCalEfieldOffsets(hit.Position,hit.TPCid)); 
   Efield = sqrt(pow(Efield*(1+offset.X()),2) + pow(Efield*offset.Y(),2) + pow(Efield*offset.Z(),2));
 
   //calculate recombination factors
   double Beta = _ModBoxB / (rho * Efield);
   double Alpha = _ModBoxA;
   hit.dEdx = (exp(Beta * Wion * dQdx_e) - Alpha) / Beta;
+}
+
+//********************************************************************
+void Calorimetry::ApplyRecombination(AnaParticlePD* part) const {
+//********************************************************************
+  
+  if(part->Hits[2].empty())return;
+  
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++)
+    ApplyRecombination(part->Hits[2][ihit]);
+
+}
+
+//********************************************************************
+double Calorimetry::GetNormalization(AnaHitPD &hit) const {
+//********************************************************************
+
+  if(!_h_norm){
+    std::cout << "normalization histogram does not exist, you should call Initialize method!" << std::endl;
+    return 0.;
+  }
+
+  return _h_norm->GetBinContent(hit.PlaneID); 
+}
+
+//********************************************************************
+double Calorimetry::GetXCalibration(AnaHitPD &hit) const {
+//********************************************************************
+
+  for(int i = 0; i < 3; i++){
+    if(!_h_XCal[i]){
+      std::cout << "X correction histogram does not exist, you should call Initialize method!" << std::endl;
+      return 0.;
+    } 
+  }
+
+  int bin = _h_XCal[hit.PlaneID]->FindBin(hit.Position.X());
+  return _h_XCal[hit.PlaneID]->GetBinContent(bin);
+}
+
+//********************************************************************
+double Calorimetry::GetYZCalibration(AnaHitPD &hit) const {
+//********************************************************************
+
+  for(int i = 0; i < 3; i++){
+    for(int j = 0; j < 2; j++){
+      if(!_h_YZCal[i][j]){
+	std::cout << "X correction histogram does not exist, you should call Initialize method!" << std::endl;
+	return 0.;
+      } 
+    }
+  }
+  
+  int side = (int)(hit.Position.X() > 0); 
+  int bin  = _h_YZCal[hit.PlaneID][side]->FindBin(hit.Position.Z(),hit.Position.Y());
+  return _h_YZCal[hit.PlaneID][side]->GetBinContent(bin);
 }
