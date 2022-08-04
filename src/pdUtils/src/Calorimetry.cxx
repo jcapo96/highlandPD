@@ -63,7 +63,7 @@ void Calorimetry::ResetModBoxParameters(){
 void Calorimetry::CreateNormHistogram(){
 //********************************************************************
 
-  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dEdx_norm.txt";
+  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dQdx_norm.txt";
   FILE* tf = fopen(filename.c_str(), "r");
   
   //check it exits
@@ -93,7 +93,7 @@ void Calorimetry::CreateNormHistogram(){
 void Calorimetry::CreateXCalHistogram(){
 //********************************************************************
 
-  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dEdx_XCal.txt";
+  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dQdx_XCal.txt";
   FILE* tf = fopen(filename.c_str(), "r");
   
   //check it exits
@@ -146,7 +146,7 @@ void Calorimetry::CreateXCalHistogram(){
 void Calorimetry::CreateYZCalHistogram(){
 //********************************************************************
 
-  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dEdx_YZCal.txt";
+  std::string filename = std::string(getenv("PDUTILSROOT"))+"/data/mc_prod4_dQdx_YZCal.txt";
   FILE* tf = fopen(filename.c_str(), "r");
   
   //check it exits
