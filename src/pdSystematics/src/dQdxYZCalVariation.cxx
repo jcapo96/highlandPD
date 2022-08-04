@@ -21,6 +21,10 @@ void dQdxYZCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
 
+  //Get the systematic source values
+  Float_t width;
+  GetSigmaValueForBin(0, width); //only 1 bin 
+
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
 
@@ -30,11 +34,6 @@ void dQdxYZCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     // The un-varied particle
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
     if(!original)continue;
-
-    //Get the systematic source values
-    Float_t width;
-    GetSigmaValueForBin(0, width); //only 1 bin 
-    std::cout << "BIN " << width << std::endl;
 
     //loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
