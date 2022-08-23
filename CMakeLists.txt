@@ -229,7 +229,6 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
-add_dependencies(pion.exe                  pdExampleAnalysis.exe)
 add_dependencies(pdExampleAnalysis.exe     secondaryKaon.exe)
 add_dependencies(secondaryKaon.exe         CreateMiniTreeCandidates.exe)
 add_dependencies(CreateMiniTreeCandidates.exe    CreateMiniTreeEventCandidates.exe)
