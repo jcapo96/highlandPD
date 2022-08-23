@@ -53,7 +53,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 # Look for the required libraries
 
 #------ ROOT -------------------
-find_package(ROOT REQUIRED COMPONENTS Geom EG)
+find_package(ROOT REQUIRED COMPONENTS Geom EG Minuit)
 #find_package(ROOT REQUIRED COMPONENTS Geom EG TMVA)
 include(${ROOT_USE_FILE})
 
