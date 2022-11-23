@@ -37,12 +37,10 @@ void dQdxNormVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
     //loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
-      part->Hits[2][ihit].PlaneID = 2; //not filled in the event model, fill it by hand for the moment
-      //here it is assumed calibrated dQdx is contained in the event model
       //get the correction
       double Norm = 1; //MC does not have normalization correction
       //undo the correction and apply the varied correction
-      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (Norm + width*toy.GetToyVariations(_index)->Variations[0]) / Norm;
+      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (Norm*(1 + width*toy.GetToyVariations(_index)->Variations[0])) / Norm;
       //recompute dEdx
       _cal->ApplyRecombination(part->Hits[2][ihit]);
     }

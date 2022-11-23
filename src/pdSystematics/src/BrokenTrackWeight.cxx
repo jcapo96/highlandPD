@@ -2,7 +2,7 @@
 #include "pdAnalysisUtils.hxx"
 #include <cassert>
 #include "EventBoxPD.hxx"
-#include "ToyBoxPD.hxx"
+#include "ToyBoxKaon.hxx"
 #include "SystematicUtils.hxx"
 
 //********************************************************************
@@ -24,34 +24,22 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
   BinnedParamsParams params;
   int index;
 
-  // Casts the toyBox
-  const ToyBoxPD& box = *static_cast<const ToyBoxPD*>(&boxB);   
+  // Casts the toyBox. The systematic box is not needed
+  const ToyBoxKaon& box = *static_cast<const ToyBoxKaon*>(&boxB);   
     
   // Get the SystBox for this event, and the appropriate selection and branch
-  SystBoxB* SystBox = GetSystBox(event,box.SelectionEnabledIndex,boxB.SuccessfulBranch);
+  SystBoxB* SystBox = GetSystBox(event,box.SelectionEnabledIndex,boxB.SuccessfulBranch); // not really needed
    
-  // Loop over all relevant objects
-  for (Int_t irec=0;irec< SystBox->nRelevantRecObjects; irec++){      
+  //get bestcandidate
+  AnaParticlePD* part = box.Candidates[box.BestCandidateIndex];
+  //AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+  //if(!truePart)return eventWeight;
 
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(SystBox->RelevantRecObjects[irec]);            
-    if (!part) continue;
-
-    // use the candidate only for the moment
-    if (part!=box.MainTrack) continue;
-
-    // Get the systematic source parameters for this track (depend on theta_y)
-    if(!GetBinValues(part->DirectionEnd[1], params, index))	return eventWeight;
-    
-    // retrieve the end position in Z
-    Float_t endpos_z = part->PositionEnd[2];
-
-    // Broken track found
-    bool found = (endpos_z < 234);
-
-    // compute the weight
-    eventWeight *= systUtils::ComputeEffLikeWeight(found, toy, GetIndex(), index, params);
+  //is it in the broken bin?
+  if(abs(part->PositionStart[2]-230)<10){
+    eventWeight = 0.6;
   }
-
+  else eventWeight = 1.027;
   return eventWeight;
 }
 
@@ -59,64 +47,6 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
 bool BrokenTrackWeight::IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& recObj) const{
 //********************************************************************
 
-  (void)event;
-  
-  const AnaParticleB& part = *static_cast<const AnaParticleB*>(&recObj);
-
-  // retrieve the end position in Z
-  Float_t endpos_z = part.PositionEnd[2];
-
-  // consider only tracks with end z > 222
-  if (endpos_z < 222) return false;
-      
+  (void)event;      
   return true;
-}
-
-
-/*
-
-  
-  (void)event;
-
-  // Initialy the weight is 1
-  Weight_h eventWeight = 1;
-
-  // Gets the selected track from the box
-  const ToyBoxPD& box = *static_cast<const ToyBoxPD*>(&boxB);   
-  if (!box.MainTrack) return eventWeight;
-  
-  // retrieve the end position in Z
-  Float_t endpos_z = box.MainTrack->PositionEnd[2];
-
-  // nothing to do for tracks in first APA upstream of the conflictive region
-  if (endpos_z < 222) return eventWeight;
-
-  // fraction of tracks above 222 which end in the 222-234 region
-  Float_t broken_prob_data;
-  Float_t broken_prob_mc;   
-  Float_t c_error;
-  Int_t weight_index, weight_index_dummy;
-
-  // Get the systematics parameters 
-  if (!GetBinValues(0, broken_prob_data,  c_error,  weight_index))        return eventWeight;
-  if (!GetBinValues(1, broken_prob_mc,    c_error,  weight_index_dummy))  return eventWeight;
-  
-  // nominal data/mc ratio
-  Float_t c0 = broken_prob_data/broken_prob_mc; 
-
-  // varied data/mc ratio
-  Float_t c  = c0 + c_error*toy.GetToyVariations(_index)->Variations[weight_index];
-
-  // compute the weight
-  if (endpos_z < 234){     
-    eventWeight.Systematic = c;
-    eventWeight.Correction = c0;
-  }
-  else{
-    eventWeight.Systematic = (1 - c *broken_prob_data)/(1 - broken_prob_mc);
-    eventWeight.Correction = (1 - c0*broken_prob_data)/(1 - broken_prob_mc);
-  }
-
-  return eventWeight;
-}
-*/  
+}  

@@ -83,6 +83,7 @@ TTree* CoherentFit::GetTreeFromRootFile(){
   }
 
   t = (TTree*)fFile->Get("all_syst");
+  //t = (TTree*)fFile->Get("dQdx_YZcal");
   if(t){
     fIsMiniTree = false;
     fIsSystTree = true;
@@ -367,8 +368,8 @@ void CoherentFit::GenerateToySamples(const bool apply_toy_weights, const bool ap
       else    fToySamples[j]->GetHistVector()[i]->Draw("histosame");
     }
     gPad->BuildLegend();
-    gPad->Update();gPad->WaitPrimitive();
-  }*/
+    gPad->Update();gSystem->Sleep(20000);//gPad->WaitPrimitive();
+    }*/
 }
 
 //********************************************************************
@@ -492,7 +493,7 @@ void CoherentFit::FitToySamples(){
     gPad->Update();gPad->WaitPrimitive();
   }*/
   
-  TFile* rfile = new TFile("syst_histos.root","NEW");
+  TFile* rfile = new TFile("syst_histos_Recombination.root","NEW");
   h_toy_A->Write();
   h_toy_B->Write();
   h_toy_C->Write();

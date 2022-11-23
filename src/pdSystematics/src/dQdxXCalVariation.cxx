@@ -24,8 +24,7 @@ void dQdxXCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   //Get the systematic source values
   Float_t width;
   GetSigmaValueForBin(0, width); //only 1 bin 
-  //NOT SURE ABOUT THIS; HOW ARE VARIATIONS COMPUTED? NEED INFO, ANSELMO PLEASE HELP
-
+  
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
 
@@ -38,16 +37,12 @@ void dQdxXCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
     //loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
-      part->Hits[2][ihit].PlaneID = 2; //not filled in the event model, fill it by hand for the moment
-      //here it is assumed calibrated dQdx is contained in the event model
-      //get the Calection
+      //get the calibration
       double XCal = _cal->GetXCalibration(part->Hits[2][ihit]);
-      //undo the Calection and apply the varied Calection
-      //std::cout << "DQDX RATIO " << (XCal + width*toy.GetToyVariations(_index)->Variations[0]) / XCal << std::endl;
-      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (XCal + width*toy.GetToyVariations(_index)->Variations[0]) / XCal;
+      //undo the calibration and apply the varied Calection
+      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (XCal*(1 + width*toy.GetToyVariations(_index)->Variations[0])) / XCal;
       //recompute dEdx
       _cal->ApplyRecombination(part->Hits[2][ihit]);
-      //std::cout << "DEDX RATIO " << part->Hits[2][ihit].dEdx / original->Hits[2][ihit].dEdx << std::endl;
     }
     
     //recompute derived quantities

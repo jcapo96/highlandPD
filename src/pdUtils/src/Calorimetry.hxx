@@ -33,6 +33,8 @@ public:
   double GetXCalibration(AnaHitPD &hit) const;
   double GetYZCalibration(AnaHitPD &hit) const;
 
+  double GetModBoxA(){return _ModBoxA;}
+  double GetModBoxB(){return _ModBoxB;}
   void SetModBoxA(double ModBoxA){_ModBoxA = ModBoxA;}
   void SetModBoxB(double ModBoxB){_ModBoxB = ModBoxB;}
   void ResetModBoxParameters();

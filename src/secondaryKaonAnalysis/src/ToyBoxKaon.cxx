@@ -6,6 +6,8 @@ ToyBoxKaon::ToyBoxKaon():ToyBoxPD(){
 //******************************************************************** 
   
   Candidates.clear();
+  BestCandidateIndex = -1;
+  MaxAccumLevel = -1;
 } 
 
 //********************************************************************
@@ -31,5 +33,17 @@ void ToyBoxKaon::ResetBase(){
 
   ToyBoxPD::ResetBase();
   Candidates.clear();
+  BestCandidateIndex = -1;
+  MaxAccumLevel = -1;
   SoftReset();  // just reset internal stuff
-}  
+}
+
+//********************************************************************
+void ToyBoxKaon::UpdateBestCandidateIndex(const int AccumLevel, const int Index){
+//******************************************************************** 
+  
+  if(AccumLevel>MaxAccumLevel){
+    BestCandidateIndex =  Index;
+    MaxAccumLevel = AccumLevel;
+  }
+}

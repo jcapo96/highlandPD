@@ -1,5 +1,5 @@
 --- Cut levels --------
- < secondaryKaonAnalysis.MinAccumLevelToSave = 9 >   // minimum accum level to save the event
+ < secondaryKaonAnalysis.MinAccumLevelToSave = 8 >   // minimum accum level to save the event
 
 --- Selection -------------
  < secondaryKaonAnalysis.XSSelection               = 0 >
@@ -98,7 +98,7 @@ Use a different random generator for each systematic
 
 Create configurations with a single systematic ( a configuration for each systematic selected above)
 
- < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 0 >
+ < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 1 >
  < baseAnalysis.Configurations.EnableSingleWeightSystConfigurations    = 0 >
 
 Enable/disable the configuration with all systematics (or the ones selected above)

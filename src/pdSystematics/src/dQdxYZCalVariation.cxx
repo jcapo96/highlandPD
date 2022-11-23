@@ -11,6 +11,7 @@ dQdxYZCalVariation::dQdxYZCalVariation():EventVariationBase(),BinnedParams(std::
   // Initialize Calorimetry object
   _cal = new Calorimetry();
   _cal->Initialize();
+ 
 }
 
 //********************************************************************
@@ -21,7 +22,7 @@ void dQdxYZCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
 
-  //Get the systematic source values
+   //Get the systematic source values
   Float_t width;
   GetSigmaValueForBin(0, width); //only 1 bin 
 
@@ -37,16 +38,12 @@ void dQdxYZCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
     //loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
-      part->Hits[2][ihit].PlaneID = 2; //not filled in the event model, fill it by hand for the moment
-      //here it is assumed calibrated dQdx is contained in the event model
-      //get the correction
+      //get the calibration
       double YZCal = _cal->GetYZCalibration(part->Hits[2][ihit]);
       //undo the correction and apply the varied correction
-      //std::cout << "DQDYZ RATIO " << (YZCal + width*toy.GetToyVariations(_index)->Variations[0]) / YZCal << std::endl;
-      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (YZCal + width*toy.GetToyVariations(_index)->Variations[0]) / YZCal;
+      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (YZCal*(1 + width*toy.GetToyVariations(_index)->Variations[0])) / YZCal;
       //recompute dEdx
       _cal->ApplyRecombination(part->Hits[2][ihit]);
-      //std::cout << "DEDYZ RATIO " << part->Hits[2][ihit].dEdx / original->Hits[2][ihit].dEdx << std::endl;
     }
     
     //recompute derived quantities
