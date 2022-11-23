@@ -16,11 +16,15 @@ public :
 
   /// Reset this base class
   virtual void ResetBase();
+
+  void UpdateBestCandidateIndex(const int AccumLevel, const int Index);
   
 public:
 
   /// Vector of candidates
   std::vector<AnaParticlePD*> Candidates;
+  int BestCandidateIndex;
+  int MaxAccumLevel; //not the real accum level, just a counter
 };
 
 #endif
