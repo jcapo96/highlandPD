@@ -32,8 +32,8 @@ void RecombinationVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   if(!_BP_A->GetBinValues(0.5, A_mean,  A_var,  A_index))return;
   if(!_BP_B->GetBinValues(0.5, B_mean,  B_var,  B_index))return;
 
-  Float_t ModBoxA = A_mean +  A_var*toy.GetToyVariations(_index)->Variations[A_index];
-  Float_t ModBoxB = B_mean +  B_var*toy.GetToyVariations(_index)->Variations[B_index+_BP_A->GetNBins()]; 
+  Float_t ModBoxA = _cal->GetModBoxA()*(A_mean +  A_var*toy.GetToyVariations(_index)->Variations[A_index]);
+  Float_t ModBoxB = _cal->GetModBoxB()*(B_mean +  B_var*toy.GetToyVariations(_index)->Variations[B_index+_BP_A->GetNBins()]); 
 
   //modify alpha and beta values on calorimetry class
   _cal->SetModBoxA(ModBoxA);
@@ -86,6 +86,8 @@ bool RecombinationVariation::UndoSystematic(AnaEventC& event){
     part->Chi2Muon   = original->Chi2Muon;
   }
   
+  _cal->ResetModBoxParameters(); //double check
+
   // Don't reset the spill to corrected
   return false;
 }
