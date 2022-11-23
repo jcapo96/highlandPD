@@ -31,7 +31,7 @@ message("CVMFS found: ${COMPILETF}")
 # ----- Set cmake options ------------------------------
 #-------------------------------------------------------
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "-g -pipe -Wall -ansi -Wnon-virtual-dtor -fpic -Woverloaded-virtual -std=c++17 -DCOMPILETF=${COMPILETF}")
@@ -181,30 +181,30 @@ target_include_directories(secondaryKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${
 target_link_libraries(secondaryKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS secondaryKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
-add_executable(CreateMiniTreeCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeCandidates.cxx)
-target_include_directories(CreateMiniTreeCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreeCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS CreateMiniTreeCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+add_executable(CreateMiniTreeKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeKaon.cxx)
+target_include_directories(CreateMiniTreeKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMiniTreeKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMiniTreeKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CreateMiniTreeEventCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeEventCandidates.cxx)
 target_include_directories(CreateMiniTreeEventCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(CreateMiniTreeEventCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS CreateMiniTreeEventCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
-add_executable(CreateMiniTreeKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeKaon.cxx)
-target_include_directories(CreateMiniTreeKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreeKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS CreateMiniTreeKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+#add_executable(CreateMiniTreePD.exe ${CMAKE_SOURCE_DIR}/src/pdIO/app/RunCreateMiniTreePD.cxx)
+#target_include_directories(CreateMiniTreePD.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+#target_link_libraries(CreateMiniTreePD.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+#INSTALL(TARGETS CreateMiniTreePD.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+add_executable(CreateMiniTreeCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeCandidates.cxx)
+target_include_directories(CreateMiniTreeCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMiniTreeCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMiniTreeCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CoherentFit.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/RunCoherentFit.cxx)
 target_include_directories(CoherentFit.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(CoherentFit.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS CoherentFit.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-
-add_executable(CreateMiniTreePD.exe ${CMAKE_SOURCE_DIR}/src/pdIO/app/RunCreateMiniTreePD.cxx)
-target_include_directories(CreateMiniTreePD.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreePD.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS CreateMiniTreePD.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(pdExampleAnalysis.exe ${CMAKE_SOURCE_DIR}/src/pdExampleAnalysis/app/RunpdExampleAnalysis.cxx)
 target_include_directories(pdExampleAnalysis.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
@@ -229,15 +229,15 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
-add_dependencies(pdExampleAnalysis.exe     secondaryKaon.exe)
-add_dependencies(secondaryKaon.exe         CreateMiniTreeCandidates.exe)
-add_dependencies(CreateMiniTreeCandidates.exe    CreateMiniTreeEventCandidates.exe)
-add_dependencies(CreateMiniTreeEventCandidates.exe    CreateMiniTreeKaon.exe)
-add_dependencies(CreateMiniTreeKaon.exe    CoherentFit.exe)
-add_dependencies(CoherentFit.exe           highlandPD)
-add_dependencies(highlandPD                ch_rootmap)
-add_dependencies(ch_rootmap                highlandPD_dicts)
-add_dependencies(highlandPD_dicts          include)
+add_dependencies(pdExampleAnalysis.exe             CoherentFit.exe)
+add_dependencies(CoherentFit.exe                   CreateMiniTreeCandidates.exe)
+add_dependencies(CreateMiniTreeCandidates.exe      CreateMiniTreeEventCandidates.exe)
+add_dependencies(CreateMiniTreeEventCandidates.exe CreateMiniTreeKaon.exe)
+add_dependencies(CreateMiniTreeKaon.exe            secondaryKaon.exe)
+add_dependencies(secondaryKaon.exe                 highlandPD)
+add_dependencies(highlandPD                        ch_rootmap)
+add_dependencies(ch_rootmap                        highlandPD_dicts)
+add_dependencies(highlandPD_dicts                  include)
 
 #-------------------------------------------------------
 #------- other -----------------------------------------
