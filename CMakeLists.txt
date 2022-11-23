@@ -53,6 +53,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 # Look for the required libraries
 
 #------ ROOT -------------------
+# Add Minuit for CoherentFit Algorithm
 find_package(ROOT REQUIRED COMPONENTS Geom EG Minuit)
 #find_package(ROOT REQUIRED COMPONENTS Geom EG TMVA)
 include(${ROOT_USE_FILE})
@@ -111,9 +112,11 @@ foreach(file0 ${dict_src})
   string(REPLACE "${dir}/"     "" file2 ${file0})
   string(REPLACE _LinkDef.h    "" file3 ${file2})  
 
+# remove dict/ from name, new CMake version does not like '/' in names. To be solved.
 #  root_generate_dictionary(${file3}_Dict NODEPHEADERS ${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
   root_generate_dictionary(${file3}_Dict ${dir}/${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
 
+# remove dict/ from name, new CMake version does not like '/' in names. To be solved.
   list(APPEND dict_list ${dir}/${file3}.cxx ${file3}_Dict.cxx)
   list(APPEND dict_src  ${CMAKE_BINARY_DIR}/${file3}_Dict.cxx)
 
@@ -177,30 +180,30 @@ target_include_directories(secondaryKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${
 target_link_libraries(secondaryKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS secondaryKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
-add_executable(CreateMiniTreeCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeCandidates.cxx)
-target_include_directories(CreateMiniTreeCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreeCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS CreateMiniTreeCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+add_executable(CreateMiniTreeKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeKaon.cxx)
+target_include_directories(CreateMiniTreeKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMiniTreeKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMiniTreeKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CreateMiniTreeEventCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeEventCandidates.cxx)
 target_include_directories(CreateMiniTreeEventCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(CreateMiniTreeEventCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS CreateMiniTreeEventCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
-add_executable(CreateMiniTreeKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeKaon.cxx)
-target_include_directories(CreateMiniTreeKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreeKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS CreateMiniTreeKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+add_executable(CreateMiniTreeCandidates.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeCandidates.cxx)
+target_include_directories(CreateMiniTreeCandidates.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMiniTreeCandidates.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMiniTreeCandidates.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+#add_executable(CreateMiniTreePD.exe ${CMAKE_SOURCE_DIR}/src/pdIO/app/RunCreateMiniTreePD.cxx)
+#target_include_directories(CreateMiniTreePD.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+#target_link_libraries(CreateMiniTreePD.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+#INSTALL(TARGETS CreateMiniTreePD.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(CoherentFit.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/RunCoherentFit.cxx)
 target_include_directories(CoherentFit.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(CoherentFit.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS CoherentFit.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-
-add_executable(CreateMiniTreePD.exe ${CMAKE_SOURCE_DIR}/src/pdIO/app/RunCreateMiniTreePD.cxx)
-target_include_directories(CreateMiniTreePD.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
-target_link_libraries(CreateMiniTreePD.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
-INSTALL(TARGETS CreateMiniTreePD.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(pdExampleAnalysis.exe ${CMAKE_SOURCE_DIR}/src/pdExampleAnalysis/app/RunpdExampleAnalysis.cxx)
 target_include_directories(pdExampleAnalysis.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
@@ -225,16 +228,17 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
-add_dependencies(CreateMiniTreePD.exe      pdExampleAnalysis.exe)
-add_dependencies(pdExampleAnalysis.exe     secondaryKaon.exe)
-add_dependencies(secondaryKaon.exe         CreateMiniTreeCandidates.exe)
-add_dependencies(CreateMiniTreeCandidates.exe    CreateMiniTreeEventCandidates.exe)
-add_dependencies(CreateMiniTreeEventCandidates.exe    CreateMiniTreeKaon.exe)
-add_dependencies(CreateMiniTreeKaon.exe    CoherentFit.exe)
-add_dependencies(CoherentFit.exe           highlandPD)
-add_dependencies(highlandPD                ch_rootmap)
-add_dependencies(ch_rootmap                highlandPD_dicts)
-add_dependencies(highlandPD_dicts          include)
+
+add_dependencies(pdExampleAnalysis.exe             CoherentFit.exe)
+add_dependencies(CoherentFit.exe                   CreateMiniTreeCandidates.exe)
+add_dependencies(CreateMiniTreeCandidates.exe      CreateMiniTreeEventCandidates.exe)
+add_dependencies(CreateMiniTreeEventCandidates.exe CreateMiniTreeKaon.exe)
+add_dependencies(CreateMiniTreeKaon.exe            secondaryKaon.exe)
+add_dependencies(secondaryKaon.exe                 highlandPD)
+add_dependencies(highlandPD                        ch_rootmap)
+add_dependencies(ch_rootmap                        highlandPD_dicts)
+add_dependencies(highlandPD_dicts                  include)
+
 
 #-------------------------------------------------------
 #------- other -----------------------------------------
