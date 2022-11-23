@@ -38,6 +38,8 @@ AnaHitPD::AnaHitPD(){
 
   StartTick     = (UInt_t)kIntUnassigned;
   EndTick       = (UInt_t)kIntUnassigned; 
+
+  Pitch = kFloatUnassigned;
   
   dQdx_NoSCE = kFloatUnassigned;
   dEdx_NoSCE = kFloatUnassigned;
@@ -85,6 +87,8 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   StartTick     = hit.StartTick;
   EndTick       = hit.EndTick  ; 
   
+  Pitch = hit.Pitch;
+
   dQdx_NoSCE = hit.dQdx_NoSCE;
   dEdx_NoSCE = hit.dEdx_NoSCE;
   ResidualRange_NoSCE = hit.ResidualRange_NoSCE;

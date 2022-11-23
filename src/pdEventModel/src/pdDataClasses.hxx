@@ -66,6 +66,8 @@ public:
 
   //------------------------------------------------------------
 
+  Float_t Pitch;
+
   /// Calorimetric information
   /// No SCE correction
   Float_t dQdx_NoSCE;
