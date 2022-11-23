@@ -55,3 +55,5 @@
 - Standarize whateverCodePD and pdWatheverCode
 
 - Think about the beam quality cuts (DeltaX, deltaY, deltaZ, cosTheta). It depents on each beam energy, run, etc. It is complicated to have a common cut for all analysis.
+
+- Cmake17 does not like names with '/'. All dictionaries appear on  build folder now instead of build/dict. To be solved
