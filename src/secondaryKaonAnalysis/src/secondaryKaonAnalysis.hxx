@@ -78,23 +78,16 @@ public:
 
   enum enumConf_secondaryKaonAnalysis{
     detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
-    dedx_syst,
-    Lifetime_syst,
-    dQdxCalib_syst,
-    Recombination_syst,
-    dEdxCalib_syst,
-    TrackEff_syst,
+    dQdx_Xcal,
+    dQdx_YZcal,
+    Recombination,
     enumConfLast_secondaryKaonAnalysis
   };
 
   enum enumSyst_secondaryKaonAnalysis{
-    kLength=0,
-    kLifetime,
-    kdQdxCalib,
+    kdQdx_Xcal=0,
+    kdQdx_YZcal,
     kRecombination,
-    kdEdxCalib,
-    kBeam,
-    kTrackEff,
     enumSystLast_secondaryKaonAnalysis
   };
   
@@ -102,6 +95,7 @@ public:
 
     //true kaon candidates info
     bestcandidate_hit_resrange_toy = kaonTree::enumKaonMicroTreesLast+1,
+    bestcandidate_hit_dedx_toy
   };
   
 };

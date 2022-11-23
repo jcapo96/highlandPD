@@ -14,8 +14,12 @@
 #include "PDSPAnalyzerTreeConverter.hxx"
 
 #include "dQdxXCalVariation.hxx"
+#include "dQdxYZCalVariation.hxx"
+#include "dQdxNormVariation.hxx"
+#include "RecombinationVariation.hxx"
 #include "ResidualRangeVariation.hxx"
 #include "BeamPartIdEffWeight.hxx"
+#include "BrokenTrackWeight.hxx"
 
 #include "HitPositionSCECorrection.hxx"
 
@@ -90,8 +94,12 @@ void secondaryKaonAnalysis::DefineSystematics(){
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
-  evar().AddEventVariation(0,"dQdx X calibration variation",                new dQdxXCalVariation());
+  evar().AddEventVariation(kdQdx_Xcal,"dQdx X calibration variation",                new dQdxXCalVariation());
+  evar().AddEventVariation(kdQdx_YZcal,"dQdx YZ calibration variation",                new dQdxYZCalVariation());
+  evar().AddEventVariation(kRecombination,"Recombination variation",                new RecombinationVariation());
+  //evar().AddEventVariation(0,"dQdx normalization variation",                new dQdxNormVariation());
   //eweight().AddEventWeight(0,"beam particle identification efficiency", new BeamPartIdEffWeight());
+  //eweight().AddEventWeight(0,"Broken track weight", new BrokenTrackWeight());
 }
 
 //********************************************************************
@@ -103,9 +111,17 @@ void secondaryKaonAnalysis::DefineConfigurations(){
 
   // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
   if(_enableAllSystConfig){
-    if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnableResidualRangeVar"))conf().EnableEventVariation(0,all_syst);
-    if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnableBeamPartIdEff"))conf().EnableEventWeight(0,all_syst);
+    //conf().EnableEventVariation(kdQdx_Xcal,all_syst);
+    //conf().EnableEventVariation(kdQdx_YZcal,all_syst);
+    conf().EnableEventVariation(kRecombination,all_syst);
+    //if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnableBeamPartIdEff"))conf().EnableEventWeight(0,all_syst);
   }
+  /*if(_enableSingleVariationSystConf){
+    AddConfiguration(conf(), dQdx_Xcal, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));  
+    conf().EnableEventVariation(kdQdx_Xcal,dQdx_Xcal);
+    AddConfiguration(conf(), dQdx_YZcal, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));  
+    conf().EnableEventVariation(kdQdx_YZcal,dQdx_YZcal);
+    }*/
 }
 
 //********************************************************************
@@ -135,7 +151,8 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
   
   // -------- Add toy variables ---------------------------------
-  AddToyVarVF(output(), bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", 100);
+  //AddToyVarVF(output(), bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", 100);
+  AddToyVarVF(output(), bestcandidate_hit_dedx_toy, "bestcandidate hit dEdx", 100);
 }
 
 //********************************************************************
@@ -225,7 +242,8 @@ void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
     return;
   
   for(int ihit = 0; ihit < 100; ihit++){
-    output().FillToyVectorVar(bestcandidate_hit_resrange_toy,best->Hits[2][ihit].ResidualRange,ihit);
+    //output().FillToyVectorVar(bestcandidate_hit_resrange_toy,best->Hits[2][ihit].ResidualRange,ihit);
+    output().FillToyVectorVar(bestcandidate_hit_dedx_toy,best->Hits[2][ihit].dEdx,ihit);
   }
 }
 
