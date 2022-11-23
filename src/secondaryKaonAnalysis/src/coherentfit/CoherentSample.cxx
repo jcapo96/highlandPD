@@ -344,40 +344,53 @@ void CoherentSample::StoreCoherentFits(){
 
   if(fType != SampleTypeEnum::kSignalPlusBackground){
 
-    CoherentSample* satb = NULL;
-    if(fType == SampleTypeEnum::kTrueBackground)satb = GetTrueSignal();
-    if(fType == SampleTypeEnum::kBackground)    satb = GetSignal();
-    
-    //fClwFit = new TF1("lw_par" ,CoherentFitUtils::QuadraticABCParametrization,0,60,6);
-    //fClwFit->SetParameters(satb->GetClwA().first,satb->GetClwB().first,satb->GetClwC().first, fClwA.first, fClwB.first, fClwC.first);
-    
-    //fCmpvFit = new TF1("mpv_par",CoherentFitUtils::ABCDRParametrization,0,60,6);
-    //fCmpvFit->SetParameters(fCmpvA.first,fCmpvB.first,fCmpvC.first,fCmpvD.first,fCmpvR.first,fCshift.first);
-    
-    //fCgwFit = new TF1("gw_par" ,CoherentFitUtils::QuadraticABCParametrization,0,60,6);
-    //fCgwFit->SetParameters(satb->GetCgwA().first,satb->GetCgwB().first,satb->GetCgwC().first, fCgwA.first, fCgwB.first, fCgwC.first);
-
     if(fType == SampleTypeEnum::kSignal || fType == SampleTypeEnum::kTrueSignal){
-      fClwFit = new TF1("lw_par","ROOT::Math::Chebyshev2((x-1)/(x+1),[0],[1],[2])",0,30);
-      fClwFit->SetParameters(fClwA.first,fClwB.first,fClwC.first);
-      fCmpvFit = new TF1("mpv_par","ROOT::Math::Chebyshev4((x-1)/(x+1),[0],[1],[2],[3],[4])",0,30);
-      fCmpvFit->SetParameters(fCmpvA.first,fCmpvB.first,fCmpvC.first,fCmpvD.first,fCmpvR.first);
-      fCgwFit = new TF1("gw_par","ROOT::Math::Chebyshev2((x-1)/(x+1),[0],[1],[2])",0,30);
-      fCgwFit->SetParameters(fCgwA.first,fCgwB.first,fCgwC.first);
+      fClwFit = new TF1("lw_par" ,CoherentFitUtils::QuadraticABCParametrization,0,60,6);
+      fClwFit->SetParameters(fClwA.first, fClwB.first, fClwC.first,0,0,0);
+      
+      fCmpvFit = new TF1("mpv_par",CoherentFitUtils::ABCDRParametrization,0,60,6);
+      fCmpvFit->SetParameters(fCmpvA.first,fCmpvB.first,fCmpvC.first,fCmpvD.first,fCmpvR.first,0);
+      
+      fCgwFit = new TF1("gw_par" ,CoherentFitUtils::QuadraticABCParametrization,0,60,6);
+      fCgwFit->SetParameters(fCgwA.first, fCgwB.first, fCgwC.first, 0,0,0);
     }
-    else if(fType == SampleTypeEnum::kBackground || fType == SampleTypeEnum::kTrueBackground){
-      fClwFit = new TF1("lw_par","ROOT::Math::Chebyshev2((x+[3]-1)/(x+[3]+1),[0],[1],[2])",0,30);
-      fClwFit->SetParameters(satb->GetClwA().first,satb->GetClwB().first,satb->GetClwC().first,fClwA.first);
-      //fClwFit->SetParameters(satb->GetClwA().first,satb->GetClwB().first,satb->GetClwC().first,-fCshift.first);
-      fCmpvFit = new TF1("mpv_par","ROOT::Math::Chebyshev4((x+[5]-1)/(x+[5]+1),[0],[1],[2],[3],[4])",0,30);
-      fCmpvFit->SetParameters(satb->GetCmpvA().first,satb->GetCmpvB().first,satb->GetCmpvC().first,satb->GetCmpvD().first,satb->GetCmpvR().first,fCshift.first);
-      fCgwFit = new TF1("gw_par","ROOT::Math::Chebyshev2((x+[3]-1)/(x+[3]+1),[0],[1],[2])",0,30);
-      fCgwFit->SetParameters(satb->GetCgwA().first,satb->GetCgwB().first,satb->GetCgwC().first,fClwA.first);
-      //fCgwFit->SetParameters(satb->GetCgwA().first,satb->GetCgwB().first,satb->GetCgwC().first,-fCshift.first);
-      //fCgwFit->SetParameters(fCgwA.first,fCgwB.first,fCgwC.first,0);
 
-      std::cout << "MIGUE " << fClwA.first << " " << fCshift.first << std::endl;
+    else{
+      CoherentSample* satb = NULL;
+      if(fType == SampleTypeEnum::kTrueBackground)satb = GetTrueSignal();
+      if(fType == SampleTypeEnum::kBackground)    satb = GetSignal();
+      
+      fClwFit = new TF1("lw_par" ,CoherentFitUtils::QuadraticABCParametrization,0,60,6);
+      fClwFit->SetParameters(satb->GetClwA().first,satb->GetClwB().first,satb->GetClwC().first, fClwA.first, fClwB.first, fClwC.first);
+      
+      fCmpvFit = new TF1("mpv_par",CoherentFitUtils::ABCDRParametrization,0,60,6);
+      fCmpvFit->SetParameters(fCmpvA.first,fCmpvB.first,fCmpvC.first,fCmpvD.first,fCmpvR.first,fCshift.first);
+      
+      fCgwFit = new TF1("gw_par" ,CoherentFitUtils::QuadraticABCParametrization,0,60,6);
+      fCgwFit->SetParameters(satb->GetCgwA().first,satb->GetCgwB().first,satb->GetCgwC().first, fCgwA.first, fCgwB.first, fCgwC.first);
     }
+
+    // if(fType == SampleTypeEnum::kSignal || fType == SampleTypeEnum::kTrueSignal){
+    //   fClwFit = new TF1("lw_par","ROOT::Math::Chebyshev2((x-1)/(x+1),[0],[1],[2])",0,30);
+    //   fClwFit->SetParameters(fClwA.first,fClwB.first,fClwC.first);
+    //   fCmpvFit = new TF1("mpv_par","ROOT::Math::Chebyshev4((x-1)/(x+1),[0],[1],[2],[3],[4])",0,30);
+    //   fCmpvFit->SetParameters(fCmpvA.first,fCmpvB.first,fCmpvC.first,fCmpvD.first,fCmpvR.first);
+    //   fCgwFit = new TF1("gw_par","ROOT::Math::Chebyshev2((x-1)/(x+1),[0],[1],[2])",0,30);
+    //   fCgwFit->SetParameters(fCgwA.first,fCgwB.first,fCgwC.first);
+    // }
+    // else if(fType == SampleTypeEnum::kBackground || fType == SampleTypeEnum::kTrueBackground){
+    //   fClwFit = new TF1("lw_par","ROOT::Math::Chebyshev2((x+[3]-1)/(x+[3]+1),[0],[1],[2])",0,30);
+    //   fClwFit->SetParameters(satb->GetClwA().first,satb->GetClwB().first,satb->GetClwC().first,fClwA.first);
+    //   //fClwFit->SetParameters(satb->GetClwA().first,satb->GetClwB().first,satb->GetClwC().first,-fCshift.first);
+    //   fCmpvFit = new TF1("mpv_par","ROOT::Math::Chebyshev4((x+[5]-1)/(x+[5]+1),[0],[1],[2],[3],[4])",0,30);
+    //   fCmpvFit->SetParameters(satb->GetCmpvA().first,satb->GetCmpvB().first,satb->GetCmpvC().first,satb->GetCmpvD().first,satb->GetCmpvR().first,fCshift.first);
+    //   fCgwFit = new TF1("gw_par","ROOT::Math::Chebyshev2((x+[3]-1)/(x+[3]+1),[0],[1],[2])",0,30);
+    //   fCgwFit->SetParameters(satb->GetCgwA().first,satb->GetCgwB().first,satb->GetCgwC().first,fClwA.first);
+    //   //fCgwFit->SetParameters(satb->GetCgwA().first,satb->GetCgwB().first,satb->GetCgwC().first,-fCshift.first);
+    //   //fCgwFit->SetParameters(fCgwA.first,fCgwB.first,fCgwC.first,0);
+
+    //   std::cout << "MIGUE " << fClwA.first << " " << fCshift.first << std::endl;
+    // }
     
     //store invidual histogram fits
     for(int i = 0; i < (int)fRR.size(); i++){
@@ -579,16 +592,16 @@ void CoherentSample::CoherentFit(){
   std::cout << "coherent fit" << std::endl;
   
   if(fType == SampleTypeEnum::kTrueSignal){
-    //CoherentFitSignal();
-    CoherentFitSignalCheb();
+    CoherentFitSignal();
+    //CoherentFitSignalCheb();
   }
   else if(fType == SampleTypeEnum::kTrueBackground){
-    //CoherentFitBackgroundQuadraticWidths();
-    CoherentFitBackgroundCheb();
+    CoherentFitBackgroundQuadraticWidths();
+    //CoherentFitBackgroundCheb();
   }
   else if(fType == SampleTypeEnum::kSignalPlusBackground){
-    //CoherentFitSignalPlusBackgroundQuadraticWidths();
-    CoherentFitSignalPlusBackgroundCheb();
+    CoherentFitSignalPlusBackgroundQuadraticWidths();
+    //CoherentFitSignalPlusBackgroundCheb();
   }
 }
 

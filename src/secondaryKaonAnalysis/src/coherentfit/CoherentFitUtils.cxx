@@ -334,8 +334,9 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSliceFromFlatTree(TTree* t,
     }
     else if(!apply_toy_weights && apply_toy_variations){
       t->Project("h_dummy",
-		 ("bestcandidate_hit_dedx["+ssi.str()+"]").c_str(),
-		 ("accum_level["+ssitoy.str()+"][0]>8 && abs(bestcandidate_hit_resrange_toy["+ssitoy.str()+"]["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+"").c_str(),"");
+		 ("bestcandidate_hit_dedx_toy["+ssitoy.str()+"]["+ssi.str()+"]").c_str(),
+		 //("accum_level["+ssitoy.str()+"][0]>8 && abs(bestcandidate_hit_resrange_toy["+ssitoy.str()+"]["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+"").c_str(),"");
+		 ("accum_level["+ssitoy.str()+"][0]>8 && abs(bestcandidate_hit_resrange["+ssi.str()+"]-"+ssr0.str()+")<"+ssrr.str()+" "+cut+"").c_str(),"");
     } 
     else if(apply_toy_weights && !apply_toy_variations){
       t->Project("h_dummy",
