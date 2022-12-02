@@ -25,6 +25,7 @@ public:
   AnaHitPD();
   virtual ~AnaHitPD(){}
 
+  //Anselmo stuff for CNN calculation, not really used, to be removed at some point
   AnaHitPD(Int_t wire, Float_t integ, Float_t peakT, Float_t peakAmp, TVector3 pos){
     WireID.Plane =wire;
     Integral = integ;
@@ -41,14 +42,12 @@ public:
   
 public:
 
-  // ---- Most of this information is needed to recompute the CNN. This is work in progress 
+  // ---- Most of this information is needed to recompute the CNN. This is work in progress (is ABANDONED work)
   AnaWireID WireID;    
 
   Float_t Integral;
   Float_t PeakTime;
   Float_t PeakAmplitude;
-  TVector3 Position;
-  TVector3 PositionNoSCE;
   int TPCid;
   int PlaneID;
 
@@ -66,13 +65,15 @@ public:
 
   //------------------------------------------------------------
 
-  Float_t Pitch;
-
   /// Calorimetric information
   /// No SCE correction
   Float_t dQdx_NoSCE;
   Float_t dEdx_NoSCE;
   Float_t ResidualRange_NoSCE;
+  Float_t Pitch_NoSCE;
+  TVector3 Position_NoSCE;
+  TVector3 Direction_NoSCE;
+
 
   /// SCE correction
   Float_t dQdx_SCE;
@@ -88,6 +89,9 @@ public:
   Float_t dQdx;
   Float_t dEdx;
   Float_t ResidualRange;
+  Float_t Pitch;
+  TVector3 Position;
+  TVector3 Direction;
 
   /// deprecated but keep it for the moment to avoid errors
   Float_t dEdx_calib;

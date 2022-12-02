@@ -29,8 +29,6 @@ AnaHitPD::AnaHitPD(){
   Integral      = kFloatUnassigned;     
   PeakTime      = kFloatUnassigned;     
   PeakAmplitude = kFloatUnassigned;
-  Position      = TVector3(0,0,0);
-  PositionNoSCE = TVector3(0,0,0);
   TPCid         = kIntUnassigned;
   PlaneID       = kIntUnassigned;
   Channel       = kIntUnassigned;
@@ -39,11 +37,12 @@ AnaHitPD::AnaHitPD(){
   StartTick     = (UInt_t)kIntUnassigned;
   EndTick       = (UInt_t)kIntUnassigned; 
 
-  Pitch = kFloatUnassigned;
-  
-  dQdx_NoSCE = kFloatUnassigned;
-  dEdx_NoSCE = kFloatUnassigned;
+  dQdx_NoSCE          = kFloatUnassigned;
+  dEdx_NoSCE          = kFloatUnassigned;
   ResidualRange_NoSCE = kFloatUnassigned;
+  Pitch_NoSCE         = kFloatUnassigned;
+  Position_NoSCE      = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Direction_NoSCE     = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
 
   dQdx_SCE = kFloatUnassigned;
   dEdx_SCE = kFloatUnassigned;
@@ -53,9 +52,12 @@ AnaHitPD::AnaHitPD(){
   dEdx_elife = kFloatUnassigned;
   ResidualRange_elife = kFloatUnassigned;
 
-  dQdx = kFloatUnassigned;
-  dEdx = kFloatUnassigned;
+  dQdx          = kFloatUnassigned;
+  dEdx          = kFloatUnassigned;
   ResidualRange = kFloatUnassigned;
+  Pitch         = kFloatUnassigned;
+  Position      = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Direction     = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
 
   dEdx_calib    = kFloatUnassigned;
   
@@ -73,8 +75,6 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   Integral      = hit.Integral;     
   PeakTime      = hit.PeakTime;     
   PeakAmplitude = hit.PeakAmplitude;
-  Position      = hit.Position;
-  PositionNoSCE = hit.PositionNoSCE;
   TPCid         = hit.TPCid;
   PlaneID       = hit.PlaneID;
   Channel       = hit.Channel;
@@ -87,11 +87,12 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   StartTick     = hit.StartTick;
   EndTick       = hit.EndTick  ; 
   
-  Pitch = hit.Pitch;
-
-  dQdx_NoSCE = hit.dQdx_NoSCE;
-  dEdx_NoSCE = hit.dEdx_NoSCE;
+  dQdx_NoSCE          = hit.dQdx_NoSCE;
+  dEdx_NoSCE          = hit.dEdx_NoSCE;
   ResidualRange_NoSCE = hit.ResidualRange_NoSCE;
+  Pitch_NoSCE         = hit.Pitch_NoSCE;
+  Position_NoSCE      = hit.Position_NoSCE;
+  Direction_NoSCE     = hit.Direction_NoSCE;
 
   dQdx_SCE = hit.dQdx_SCE;
   dEdx_SCE = hit.dEdx_SCE;
@@ -101,9 +102,12 @@ AnaHitPD::AnaHitPD(const AnaHitPD& hit){
   dEdx_elife = hit.dEdx_elife;
   ResidualRange_elife = hit.ResidualRange_elife;
 
-  dQdx = hit.dQdx;
-  dEdx = hit.dEdx;
+  dQdx          = hit.dQdx;
+  dEdx          = hit.dEdx;
   ResidualRange = hit.ResidualRange;
+  Pitch         = hit.Pitch;
+  Position      = hit.Position;
+  Direction     = hit.Direction;
 
   dEdx_calib     = hit.dEdx_calib;
 }

@@ -21,6 +21,7 @@
 #include "BeamPartIdEffWeight.hxx"
 #include "BrokenTrackWeight.hxx"
 
+#include "HitPitchSCECorrection.hxx"
 #include "HitPositionSCECorrection.hxx"
 
 //********************************************************************
@@ -84,6 +85,7 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
+  //corr().AddCorrection("SCE",new HitPitchSCECorrection());
   //corr().AddCorrection("SCE",new HitPositionSCECorrection());
 }
 
