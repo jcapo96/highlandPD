@@ -20,7 +20,7 @@
   * Move Candidates from ToyBoxPD to ToyBoxKaon => moved
   * ToyBoxPD has a method called Reset that does exactly the same as the ToyBoxB class. I have copied equally to ToyBoxPD. Is it needed?
 
-- Review EventBoxPD
+- Review EventBoxPD. Having more than one interesting group gives problem. Not easy to understand. So far it has been more comfortable for me to create a new toybox for each new analysis/study developed rather than using an existing interesting group of EventBoxPD.
 
 - Review cut indices in the header file of the selections. They are not currently used
 
