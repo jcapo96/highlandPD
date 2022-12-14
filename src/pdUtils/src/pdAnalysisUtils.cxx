@@ -1255,3 +1255,62 @@ void pdAnaUtils::DumpCNNTimes(){
     _cnn->_tutils->dumpTimes();
 
 }
+
+//***************************************************************
+bool pdAnaUtils::IsStoppingInFV(AnaParticlePD *part){
+//***************************************************************
+
+  bool ItIs = true;
+  
+  if((TMath::Abs(part->PositionStart[0])>350 || 
+      part->PositionStart[1]<50 || part->PositionStart[1]>550 || 
+      part->PositionStart[2]<50 || part->PositionStart[2]>645)
+      &&
+      (TMath::Abs(part->PositionEnd[0])>350 || 
+       part->PositionEnd[1]<50 || part->PositionEnd[1]>550 || 
+       part->PositionEnd[2]<50 || part->PositionEnd[2]>645))
+    ItIs = false;
+
+  return ItIs;
+}
+
+//***************************************************************
+int pdAnaUtils::GetHitTPCid(AnaHitPD& hit){
+//***************************************************************
+
+  int TPCid = -1;
+  
+  if(hit.Position.X() < 0){
+    if(hit.Position.Z() > 0 && hit.Position.Z() < 230)       TPCid = 1;
+    else if(hit.Position.Z() > 230 && hit.Position.Z() < 460)TPCid = 5;
+    else if(hit.Position.Z() > 460 && hit.Position.Z() < 690)TPCid = 9;
+  }
+  else{
+    if(hit.Position.Z() > 0 && hit.Position.Z() < 230)       TPCid = 2;
+    else if(hit.Position.Z() > 230 && hit.Position.Z() < 460)TPCid = 6;
+    else if(hit.Position.Z() > 460 && hit.Position.Z() < 690)TPCid = 10;
+  }
+  
+  return TPCid;
+}
+
+//***************************************************************
+void pdAnaUtils::EstimateHitsDirection(AnaParticlePD* part){
+//***************************************************************
+  
+  if(!part)return;
+  
+  //loop over hits
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
+    if(ihit < (int)part->Hits[2].size()-1){
+      TVector3 dir = part->Hits[2][ihit+1].Position-part->Hits[2][ihit].Position;
+      dir.SetMag(1);
+      part->Hits[2][ihit].Direction.SetXYZ(dir.X(),dir.Y(),dir.Z());
+      part->Hits[2][ihit].Direction_NoSCE.SetXYZ(dir.X(),dir.Y(),dir.Z());
+    }
+    else{
+      part->Hits[2][ihit].Direction.SetXYZ(part->Hits[2][ihit-1].Direction.X(),part->Hits[2][ihit-1].Direction.Y(),part->Hits[2][ihit-1].Direction.Z());
+      part->Hits[2][ihit].Direction_NoSCE.SetXYZ(part->Hits[2][ihit-1].Direction.X(),part->Hits[2][ihit-1].Direction.Y(),part->Hits[2][ihit-1].Direction.Z());
+    }
+  } 
+}

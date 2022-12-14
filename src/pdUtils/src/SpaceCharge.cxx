@@ -33,6 +33,20 @@ SpaceCharge::SpaceCharge(){
   hEy_cal_neg = NULL;
   hEz_cal_neg = NULL;
 
+  nominal_hDx_cal_pos = NULL;
+  nominal_hDy_cal_pos = NULL;
+  nominal_hDz_cal_pos = NULL;
+  nominal_hEx_cal_pos = NULL;
+  nominal_hEy_cal_pos = NULL;
+  nominal_hEz_cal_pos = NULL;
+
+  nominal_hDx_cal_neg = NULL;
+  nominal_hDy_cal_neg = NULL;
+  nominal_hDz_cal_neg = NULL;
+  nominal_hEx_cal_neg = NULL;
+  nominal_hEy_cal_neg = NULL;
+  nominal_hEz_cal_neg = NULL;
+
   spline_dx_fwd_neg.clear();
   spline_dy_fwd_neg.clear();
   spline_dz_fwd_neg.clear();
@@ -78,30 +92,24 @@ SpaceCharge::~SpaceCharge(){
   delete hEy_cal_neg;
   delete hEz_cal_neg;
 
-  spline_dx_fwd_neg.clear();
-  spline_dy_fwd_neg.clear();
-  spline_dz_fwd_neg.clear();
-  
-  spline_dx_bkwd_neg.clear();
-  spline_dy_bkwd_neg.clear();
-  spline_dz_bkwd_neg.clear();
-  
-  spline_dEx_neg.clear();
-  spline_dEy_neg.clear();
-  spline_dEz_neg.clear();
-  
-  spline_dx_fwd_pos.clear();
-  spline_dy_fwd_pos.clear();
-  spline_dz_fwd_pos.clear();
-  
-  spline_dx_bkwd_pos.clear();
-  spline_dy_bkwd_pos.clear();
-  spline_dz_bkwd_pos.clear();
-  
-  spline_dEx_pos.clear();
-  spline_dEy_pos.clear();
-  spline_dEz_pos.clear();
+  delete nominal_hDx_cal_pos;
+  delete nominal_hDy_cal_pos;
+  delete nominal_hDz_cal_pos;
+  delete nominal_hEx_cal_pos;
+  delete nominal_hEy_cal_pos;
+  delete nominal_hEz_cal_pos;
 
+  delete nominal_hDx_cal_neg;
+  delete nominal_hDy_cal_neg;
+  delete nominal_hDz_cal_neg;
+  delete nominal_hEx_cal_neg;
+  delete nominal_hEy_cal_neg;
+  delete nominal_hEz_cal_neg;
+
+  ClearSplines();
+
+  for(int i = 0; i < (int)SCEhistograms.size(); i++)
+    delete SCEhistograms[i];
   SCEhistograms.clear();
 }
 
@@ -129,196 +137,10 @@ void SpaceCharge::Initialize(){
     std::cout << "Can't open file " << fInputFilename << std::endl;
     exit(1);
   }
-  
-  /*//Load in files
-  TH3F* hDx_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Pos");
-  TH3F* hDy_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Pos");
-  TH3F* hDz_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Pos");
-  TH3F* hEx_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_X_Pos");
-  TH3F* hEy_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Pos");
-  TH3F* hEz_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Pos");
-    
-  TH3F* hDx_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Neg");
-  TH3F* hDy_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Neg");
-  TH3F* hDz_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Neg");
-  TH3F* hEx_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_X_Neg");
-  TH3F* hEy_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Neg");
-  TH3F* hEz_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Neg");
-  
-  TH3F* hDx_sim_pos = (TH3F*)hDx_sim_pos_orig->Clone("hDx_pos");
-  TH3F* hDy_sim_pos = (TH3F*)hDy_sim_pos_orig->Clone("hDy_pos");
-  TH3F* hDz_sim_pos = (TH3F*)hDz_sim_pos_orig->Clone("hDz_pos");
-  TH3F* hEx_sim_pos = (TH3F*)hEx_sim_pos_orig->Clone("hEx_pos");
-  TH3F* hEy_sim_pos = (TH3F*)hEy_sim_pos_orig->Clone("hEy_pos");
-  TH3F* hEz_sim_pos = (TH3F*)hEz_sim_pos_orig->Clone("hEz_pos");
-  
-  TH3F* hDx_sim_neg = (TH3F*)hDx_sim_neg_orig->Clone("hDx_neg");
-  TH3F* hDy_sim_neg = (TH3F*)hDy_sim_neg_orig->Clone("hDy_neg");
-  TH3F* hDz_sim_neg = (TH3F*)hDz_sim_neg_orig->Clone("hDz_neg");
-  TH3F* hEx_sim_neg = (TH3F*)hEx_sim_neg_orig->Clone("hEx_neg");
-  TH3F* hEy_sim_neg = (TH3F*)hEy_sim_neg_orig->Clone("hEy_neg");
-  TH3F* hEz_sim_neg = (TH3F*)hEz_sim_neg_orig->Clone("hEz_neg");
-  
-  int nBinsX = hDx_sim_pos_orig->GetNbinsX();
-  int nBinsY = hDx_sim_pos_orig->GetNbinsY();
-  int nBinsZ = hDx_sim_pos_orig->GetNbinsZ();
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dx_fwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dx_fwd_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dx_fwd_neg.back().push_back(MakeSpline(hDx_sim_neg,1,y,z,1,1));
-      spline_dx_fwd_pos.back().push_back(MakeSpline(hDx_sim_pos,1,y,z,1,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dy_fwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dy_fwd_pos.push_back(std::vector<TSpline3*>());
-    
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dy_fwd_neg.back().push_back(MakeSpline(hDy_sim_neg,2,x,z,1,1));
-      spline_dy_fwd_pos.back().push_back(MakeSpline(hDy_sim_pos,2,x,z,1,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dz_fwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dz_fwd_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dz_fwd_neg.back().push_back(MakeSpline(hDz_sim_neg,3,x,y,1,1));
-      spline_dz_fwd_pos.back().push_back(MakeSpline(hDz_sim_pos,3,x,y,1,2));
-    }
-  }
-    
-  nBinsX = hEx_sim_pos_orig->GetNbinsX();
-  nBinsY = hEx_sim_pos_orig->GetNbinsY();
-  nBinsZ = hEx_sim_pos_orig->GetNbinsZ();
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dEx_neg.push_back(std::vector<TSpline3*>());
-    spline_dEx_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEx_neg.back().push_back(MakeSpline(hEx_sim_neg,1,y,z,3,1));
-      spline_dEx_pos.back().push_back(MakeSpline(hEx_sim_pos,1,y,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEy_neg.push_back(std::vector<TSpline3*>());
-    spline_dEy_pos.push_back(std::vector<TSpline3*>());
-    
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEy_neg.back().push_back(MakeSpline(hEy_sim_neg,2,x,z,3,1));
-      spline_dEy_pos.back().push_back(MakeSpline(hEy_sim_pos,2,x,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEz_neg.push_back(std::vector<TSpline3*>());
-    spline_dEz_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dEz_neg.back().push_back(MakeSpline(hEz_sim_neg,3,x,y,3,1));
-      spline_dEz_pos.back().push_back(MakeSpline(hEz_sim_pos,3,x,y,3,2));
-    }
-  }
-  
-  SCEhistograms = {hDx_sim_pos, hDy_sim_pos, hDz_sim_pos, hEx_sim_pos, hEy_sim_pos, hEz_sim_pos, hDx_sim_neg, hDy_sim_neg, hDz_sim_neg, hEx_sim_neg, hEy_sim_neg, hEz_sim_neg};
-   
-  infile->Close();  */
 
-  //Load in files
-  TH3F* hDx_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Pos");
-  TH3F* hDy_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Pos");
-  TH3F* hDz_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Pos");
-  TH3F* hEx_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Pos");
-  TH3F* hEy_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Pos");
-  TH3F* hEz_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Pos");
-        
-  TH3F* hDx_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Neg");
-  TH3F* hDy_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Neg");
-  TH3F* hDz_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Neg");
-  TH3F* hEx_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Neg");
-  TH3F* hEy_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Neg");
-  TH3F* hEz_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Neg");
+  InitializeHistograms();
   
-  hDx_cal_pos = (TH3F*)hDx_cal_pos_orig->Clone("hDx_pos");
-  hDy_cal_pos = (TH3F*)hDy_cal_pos_orig->Clone("hDy_pos");
-  hDz_cal_pos = (TH3F*)hDz_cal_pos_orig->Clone("hDz_pos");
-  hEx_cal_pos = (TH3F*)hEx_cal_pos_orig->Clone("hEx_pos");
-  hEy_cal_pos = (TH3F*)hEy_cal_pos_orig->Clone("hEy_pos");
-  hEz_cal_pos = (TH3F*)hEz_cal_pos_orig->Clone("hEz_pos");
-  
-  hDx_cal_neg = (TH3F*)hDx_cal_neg_orig->Clone("hDx_neg");
-  hDy_cal_neg = (TH3F*)hDy_cal_neg_orig->Clone("hDy_neg");
-  hDz_cal_neg = (TH3F*)hDz_cal_neg_orig->Clone("hDz_neg");
-  hEx_cal_neg = (TH3F*)hEx_cal_neg_orig->Clone("hEx_neg");
-  hEy_cal_neg = (TH3F*)hEy_cal_neg_orig->Clone("hEy_neg");
-  hEz_cal_neg = (TH3F*)hEz_cal_neg_orig->Clone("hEz_neg");
-
-  hDx_cal_pos->SetDirectory(0);
-  hDy_cal_pos->SetDirectory(0);
-  hDz_cal_pos->SetDirectory(0);
-  hEx_cal_pos->SetDirectory(0);
-  hEy_cal_pos->SetDirectory(0);
-  hEz_cal_pos->SetDirectory(0);
-  
-  hDx_cal_neg->SetDirectory(0);
-  hDy_cal_neg->SetDirectory(0);
-  hDz_cal_neg->SetDirectory(0);
-  hEx_cal_neg->SetDirectory(0);
-  hEy_cal_neg->SetDirectory(0);
-  hEz_cal_neg->SetDirectory(0);
-  
-  int nBinsX = hDx_cal_pos_orig->GetNbinsX();
-  int nBinsY = hDx_cal_pos_orig->GetNbinsY();
-  int nBinsZ = hDx_cal_pos_orig->GetNbinsZ();
-  
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dx_bkwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dx_bkwd_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dx_bkwd_neg.back().push_back(MakeSpline(hDx_cal_neg,1,y,z,2,1));
-      spline_dx_bkwd_pos.back().push_back(MakeSpline(hDx_cal_pos,1,y,z,2,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dy_bkwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dy_bkwd_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dy_bkwd_neg.back().push_back(MakeSpline(hDy_cal_neg,2,x,z,2,1));
-      spline_dy_bkwd_pos.back().push_back(MakeSpline(hDy_cal_pos,2,x,z,2,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dz_bkwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dz_bkwd_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dz_bkwd_neg.back().push_back(MakeSpline(hDz_cal_neg,3,x,y,2,1));
-      spline_dz_bkwd_pos.back().push_back(MakeSpline(hDz_cal_pos,3,x,y,2,2));
-    }
-  }
-  nBinsX = hEx_cal_neg->GetNbinsX();
-  nBinsY = hEx_cal_neg->GetNbinsY();
-  nBinsZ = hEx_cal_neg->GetNbinsZ();
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dEx_neg.push_back(std::vector<TSpline3*>());
-    spline_dEx_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEx_neg.back().push_back(MakeSpline(hEx_cal_neg,1,y,z,3,1));
-      spline_dEx_pos.back().push_back(MakeSpline(hEx_cal_pos,1,y,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEy_neg.push_back(std::vector<TSpline3*>());
-    spline_dEy_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEy_neg.back().push_back(MakeSpline(hEy_cal_neg,2,x,z,3,1));
-      spline_dEy_pos.back().push_back(MakeSpline(hEy_cal_pos,2,x,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEz_neg.push_back(std::vector<TSpline3*>());
-    spline_dEz_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dEz_neg.back().push_back(MakeSpline(hEz_cal_neg,3,x,y,3,1));
-      spline_dEz_pos.back().push_back(MakeSpline(hEz_cal_pos,3,x,y,3,2));
-    }
-  }
+  InitializeSplines();
     
   CalSCEhistograms = {hDx_cal_pos, hDy_cal_pos, hDz_cal_pos, hEx_cal_pos, hEy_cal_pos, hEz_cal_pos, hDx_cal_neg, hDy_cal_neg, hDz_cal_neg, hEx_cal_neg, hEy_cal_neg, hEz_cal_neg};
 
@@ -859,3 +681,368 @@ TVector3 SpaceCharge::ElectronDiverterPosOffsets(TVector3 const& point) const {
   }
   return Offsets;
 }
+
+//********************************************************************
+void SpaceCharge::ApplyPositionCorrection(AnaParticlePD* part) const {
+//********************************************************************
+
+  if(!part)return;
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++)
+    ApplyPositionCorrection(part->Hits[2][ihit]);
+}
+
+//********************************************************************
+void SpaceCharge::ApplyPositionCorrection(AnaHitPD& hit) const {
+//********************************************************************
+  
+  TVector3 offset = GetCalPosOffsets(hit.Position_NoSCE, hit.TPCid); //*-1 check this
+  hit.Position.SetX(hit.Position_NoSCE.X() - offset.X());
+  hit.Position.SetY(hit.Position_NoSCE.Y() + offset.Y());
+  hit.Position.SetZ(hit.Position_NoSCE.Z() + offset.Z());
+}
+
+//********************************************************************
+void SpaceCharge::ApplyDisplacementVariation(const double var){
+//********************************************************************
+    
+  int nBinsX = hDx_cal_pos->GetNbinsX();
+  int nBinsY = hDx_cal_pos->GetNbinsY();
+  int nBinsZ = hDx_cal_pos->GetNbinsZ();
+  
+  //loop over bins of the histograms
+  for(int x = 1; x <= nBinsX; x++){
+    for(int y = 1; y <= nBinsY; y++){
+      for(int z = 1; z <= nBinsZ; z++){
+	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z)*var);
+	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z)*var);
+	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z)*var);
+
+	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z)*var);
+	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z)*var);
+	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z)*var);
+      }
+    }
+  }
+
+  //prepare new splines
+  ResetSplines();
+}
+
+//********************************************************************
+void SpaceCharge::ResetToNominal(){
+//********************************************************************
+    
+  // delete hDx_cal_pos;
+  // delete hDy_cal_pos;
+  // delete hDz_cal_pos;
+  // delete hEx_cal_pos;
+  // delete hEy_cal_pos;
+  // delete hEz_cal_pos;
+
+  // hDx_cal_pos = (TH3F*)nominal_hDx_cal_pos->Clone(); //cloning the nominal causes crashes, idk why
+  // hDy_cal_pos = (TH3F*)nominal_hDy_cal_pos->Clone();
+  // hDz_cal_pos = (TH3F*)nominal_hDz_cal_pos->Clone();
+  // hEx_cal_pos = (TH3F*)nominal_hEx_cal_pos->Clone();
+  // hEy_cal_pos = (TH3F*)nominal_hEy_cal_pos->Clone();
+  // hEz_cal_pos = (TH3F*)nominal_hEz_cal_pos->Clone();
+
+  int nBinsX = hDx_cal_pos->GetNbinsX();
+  int nBinsY = hDx_cal_pos->GetNbinsY();
+  int nBinsZ = hDx_cal_pos->GetNbinsZ();
+
+  //loop over bins of the histograms //this is not efficient but it does not crash
+  for(int x = 1; x <= nBinsX; x++){
+    for(int y = 1; y <= nBinsY; y++){
+      for(int z = 1; z <= nBinsZ; z++){
+  	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z));
+  	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z));
+  	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z));
+
+  	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z));
+  	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z));
+  	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z));
+      }
+    }
+  }
+
+  //prepare new splines
+  ResetSplines();
+}
+
+//********************************************************************
+void SpaceCharge::ResetSplines(){
+//********************************************************************
+    
+  ClearSplines();
+  InitializeSplines();
+}
+
+//********************************************************************
+void SpaceCharge::ClearSplines(){
+//********************************************************************
+
+  ClearVectorOfSplines(spline_dx_fwd_neg);
+  ClearVectorOfSplines(spline_dy_fwd_neg);
+  ClearVectorOfSplines(spline_dz_fwd_neg);
+
+  ClearVectorOfSplines(spline_dx_bkwd_neg);
+  ClearVectorOfSplines(spline_dy_bkwd_neg);
+  ClearVectorOfSplines(spline_dz_bkwd_neg);
+
+  ClearVectorOfSplines(spline_dEx_neg);
+  ClearVectorOfSplines(spline_dEy_neg);
+  ClearVectorOfSplines(spline_dEz_neg);
+
+  ClearVectorOfSplines(spline_dx_fwd_pos);
+  ClearVectorOfSplines(spline_dy_fwd_pos);
+  ClearVectorOfSplines(spline_dz_fwd_pos);
+
+  ClearVectorOfSplines(spline_dx_bkwd_pos);
+  ClearVectorOfSplines(spline_dy_bkwd_pos);
+  ClearVectorOfSplines(spline_dz_bkwd_pos);
+
+  ClearVectorOfSplines(spline_dEx_pos);
+  ClearVectorOfSplines(spline_dEy_pos);
+  ClearVectorOfSplines(spline_dEz_pos);
+}
+
+//********************************************************************
+void SpaceCharge::ClearVectorOfSplines(std::vector<std::vector<TSpline3*>> &spline){
+//********************************************************************
+  
+  for(int i = 0; i < (int)spline.size(); i++){
+    for(int j = 0; j < (int)spline[i].size(); j++)
+      delete spline[i][j];
+    spline[i].clear();
+  }
+  spline.clear();
+}
+
+//********************************************************************
+void SpaceCharge::InitializeHistograms(){
+//********************************************************************
+  
+  //Load in files
+  TH3F* hDx_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Pos");
+  TH3F* hDy_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Pos");
+  TH3F* hDz_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Pos");
+  TH3F* hEx_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Pos");
+  TH3F* hEy_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Pos");
+  TH3F* hEz_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Pos");
+        
+  TH3F* hDx_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Neg");
+  TH3F* hDy_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Neg");
+  TH3F* hDz_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Neg");
+  TH3F* hEx_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Neg");
+  TH3F* hEy_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Neg");
+  TH3F* hEz_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Neg");
+  
+  hDx_cal_pos = (TH3F*)hDx_cal_pos_orig->Clone("hDx_pos");
+  hDy_cal_pos = (TH3F*)hDy_cal_pos_orig->Clone("hDy_pos");
+  hDz_cal_pos = (TH3F*)hDz_cal_pos_orig->Clone("hDz_pos");
+  hEx_cal_pos = (TH3F*)hEx_cal_pos_orig->Clone("hEx_pos");
+  hEy_cal_pos = (TH3F*)hEy_cal_pos_orig->Clone("hEy_pos");
+  hEz_cal_pos = (TH3F*)hEz_cal_pos_orig->Clone("hEz_pos");
+  
+  hDx_cal_neg = (TH3F*)hDx_cal_neg_orig->Clone("hDx_neg");
+  hDy_cal_neg = (TH3F*)hDy_cal_neg_orig->Clone("hDy_neg");
+  hDz_cal_neg = (TH3F*)hDz_cal_neg_orig->Clone("hDz_neg");
+  hEx_cal_neg = (TH3F*)hEx_cal_neg_orig->Clone("hEx_neg");
+  hEy_cal_neg = (TH3F*)hEy_cal_neg_orig->Clone("hEy_neg");
+  hEz_cal_neg = (TH3F*)hEz_cal_neg_orig->Clone("hEz_neg");
+
+  nominal_hDx_cal_pos = (TH3F*)hDx_cal_pos_orig->Clone("hDx_pos");
+  nominal_hDy_cal_pos = (TH3F*)hDy_cal_pos_orig->Clone("hDy_pos");
+  nominal_hDz_cal_pos = (TH3F*)hDz_cal_pos_orig->Clone("hDz_pos");
+  nominal_hEx_cal_pos = (TH3F*)hEx_cal_pos_orig->Clone("hEx_pos");
+  nominal_hEy_cal_pos = (TH3F*)hEy_cal_pos_orig->Clone("hEy_pos");
+  nominal_hEz_cal_pos = (TH3F*)hEz_cal_pos_orig->Clone("hEz_pos");
+
+  nominal_hDx_cal_neg = (TH3F*)hDx_cal_neg_orig->Clone("hDx_neg");
+  nominal_hDy_cal_neg = (TH3F*)hDy_cal_neg_orig->Clone("hDy_neg");
+  nominal_hDz_cal_neg = (TH3F*)hDz_cal_neg_orig->Clone("hDz_neg");
+  nominal_hEx_cal_neg = (TH3F*)hEx_cal_neg_orig->Clone("hEx_neg");
+  nominal_hEy_cal_neg = (TH3F*)hEy_cal_neg_orig->Clone("hEy_neg");
+  nominal_hEz_cal_neg = (TH3F*)hEz_cal_neg_orig->Clone("hEz_neg");
+
+  hDx_cal_pos->SetDirectory(0);
+  hDy_cal_pos->SetDirectory(0);
+  hDz_cal_pos->SetDirectory(0);
+  hEx_cal_pos->SetDirectory(0);
+  hEy_cal_pos->SetDirectory(0);
+  hEz_cal_pos->SetDirectory(0);
+  
+  hDx_cal_neg->SetDirectory(0);
+  hDy_cal_neg->SetDirectory(0);
+  hDz_cal_neg->SetDirectory(0);
+  hEx_cal_neg->SetDirectory(0);
+  hEy_cal_neg->SetDirectory(0);
+  hEz_cal_neg->SetDirectory(0);
+  
+  nominal_hDx_cal_pos->SetDirectory(0);
+  nominal_hDy_cal_pos->SetDirectory(0);
+  nominal_hDz_cal_pos->SetDirectory(0);
+  nominal_hEx_cal_pos->SetDirectory(0);
+  nominal_hEy_cal_pos->SetDirectory(0);
+  nominal_hEz_cal_pos->SetDirectory(0);
+
+  nominal_hDx_cal_neg->SetDirectory(0);
+  nominal_hDy_cal_neg->SetDirectory(0);
+  nominal_hDz_cal_neg->SetDirectory(0);
+  nominal_hEx_cal_neg->SetDirectory(0);
+  nominal_hEy_cal_neg->SetDirectory(0);
+  nominal_hEz_cal_neg->SetDirectory(0);
+}
+
+//********************************************************************
+void SpaceCharge::InitializeSplines(){
+//********************************************************************
+
+  int nBinsX = hDx_cal_pos->GetNbinsX();
+  int nBinsY = hDx_cal_pos->GetNbinsY();
+  int nBinsZ = hDx_cal_pos->GetNbinsZ();
+  
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dx_bkwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dx_bkwd_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dx_bkwd_neg.back().push_back(MakeSpline(hDx_cal_neg,1,y,z,2,1));
+      spline_dx_bkwd_pos.back().push_back(MakeSpline(hDx_cal_pos,1,y,z,2,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dy_bkwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dy_bkwd_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dy_bkwd_neg.back().push_back(MakeSpline(hDy_cal_neg,2,x,z,2,1));
+      spline_dy_bkwd_pos.back().push_back(MakeSpline(hDy_cal_pos,2,x,z,2,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dz_bkwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dz_bkwd_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dz_bkwd_neg.back().push_back(MakeSpline(hDz_cal_neg,3,x,y,2,1));
+      spline_dz_bkwd_pos.back().push_back(MakeSpline(hDz_cal_pos,3,x,y,2,2));
+    }
+  }
+  nBinsX = hEx_cal_neg->GetNbinsX();
+  nBinsY = hEx_cal_neg->GetNbinsY();
+  nBinsZ = hEx_cal_neg->GetNbinsZ();
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dEx_neg.push_back(std::vector<TSpline3*>());
+    spline_dEx_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEx_neg.back().push_back(MakeSpline(hEx_cal_neg,1,y,z,3,1));
+      spline_dEx_pos.back().push_back(MakeSpline(hEx_cal_pos,1,y,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEy_neg.push_back(std::vector<TSpline3*>());
+    spline_dEy_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEy_neg.back().push_back(MakeSpline(hEy_cal_neg,2,x,z,3,1));
+      spline_dEy_pos.back().push_back(MakeSpline(hEy_cal_pos,2,x,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEz_neg.push_back(std::vector<TSpline3*>());
+    spline_dEz_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dEz_neg.back().push_back(MakeSpline(hEz_cal_neg,3,x,y,3,1));
+      spline_dEz_pos.back().push_back(MakeSpline(hEz_cal_pos,3,x,y,3,2));
+    }
+  }
+
+  /*//Load in files
+  TH3F* hDx_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Pos");
+  TH3F* hDy_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Pos");
+  TH3F* hDz_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Pos");
+  TH3F* hEx_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_X_Pos");
+  TH3F* hEy_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Pos");
+  TH3F* hEz_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Pos");
+    
+  TH3F* hDx_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Neg");
+  TH3F* hDy_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Neg");
+  TH3F* hDz_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Neg");
+  TH3F* hEx_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_X_Neg");
+  TH3F* hEy_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Neg");
+  TH3F* hEz_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Neg");
+  
+  TH3F* hDx_sim_pos = (TH3F*)hDx_sim_pos_orig->Clone("hDx_pos");
+  TH3F* hDy_sim_pos = (TH3F*)hDy_sim_pos_orig->Clone("hDy_pos");
+  TH3F* hDz_sim_pos = (TH3F*)hDz_sim_pos_orig->Clone("hDz_pos");
+  TH3F* hEx_sim_pos = (TH3F*)hEx_sim_pos_orig->Clone("hEx_pos");
+  TH3F* hEy_sim_pos = (TH3F*)hEy_sim_pos_orig->Clone("hEy_pos");
+  TH3F* hEz_sim_pos = (TH3F*)hEz_sim_pos_orig->Clone("hEz_pos");
+  
+  TH3F* hDx_sim_neg = (TH3F*)hDx_sim_neg_orig->Clone("hDx_neg");
+  TH3F* hDy_sim_neg = (TH3F*)hDy_sim_neg_orig->Clone("hDy_neg");
+  TH3F* hDz_sim_neg = (TH3F*)hDz_sim_neg_orig->Clone("hDz_neg");
+  TH3F* hEx_sim_neg = (TH3F*)hEx_sim_neg_orig->Clone("hEx_neg");
+  TH3F* hEy_sim_neg = (TH3F*)hEy_sim_neg_orig->Clone("hEy_neg");
+  TH3F* hEz_sim_neg = (TH3F*)hEz_sim_neg_orig->Clone("hEz_neg");
+  
+  int nBinsX = hDx_sim_pos_orig->GetNbinsX();
+  int nBinsY = hDx_sim_pos_orig->GetNbinsY();
+  int nBinsZ = hDx_sim_pos_orig->GetNbinsZ();
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dx_fwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dx_fwd_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dx_fwd_neg.back().push_back(MakeSpline(hDx_sim_neg,1,y,z,1,1));
+      spline_dx_fwd_pos.back().push_back(MakeSpline(hDx_sim_pos,1,y,z,1,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dy_fwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dy_fwd_pos.push_back(std::vector<TSpline3*>());
+    
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dy_fwd_neg.back().push_back(MakeSpline(hDy_sim_neg,2,x,z,1,1));
+      spline_dy_fwd_pos.back().push_back(MakeSpline(hDy_sim_pos,2,x,z,1,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dz_fwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dz_fwd_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dz_fwd_neg.back().push_back(MakeSpline(hDz_sim_neg,3,x,y,1,1));
+      spline_dz_fwd_pos.back().push_back(MakeSpline(hDz_sim_pos,3,x,y,1,2));
+    }
+  }
+    
+  nBinsX = hEx_sim_pos_orig->GetNbinsX();
+  nBinsY = hEx_sim_pos_orig->GetNbinsY();
+  nBinsZ = hEx_sim_pos_orig->GetNbinsZ();
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dEx_neg.push_back(std::vector<TSpline3*>());
+    spline_dEx_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEx_neg.back().push_back(MakeSpline(hEx_sim_neg,1,y,z,3,1));
+      spline_dEx_pos.back().push_back(MakeSpline(hEx_sim_pos,1,y,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEy_neg.push_back(std::vector<TSpline3*>());
+    spline_dEy_pos.push_back(std::vector<TSpline3*>());
+    
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEy_neg.back().push_back(MakeSpline(hEy_sim_neg,2,x,z,3,1));
+      spline_dEy_pos.back().push_back(MakeSpline(hEy_sim_pos,2,x,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEz_neg.push_back(std::vector<TSpline3*>());
+    spline_dEz_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dEz_neg.back().push_back(MakeSpline(hEz_sim_neg,3,x,y,3,1));
+      spline_dEz_pos.back().push_back(MakeSpline(hEz_sim_pos,3,x,y,3,2));
+    }
+  }
+  
+  SCEhistograms = {hDx_sim_pos, hDy_sim_pos, hDz_sim_pos, hEx_sim_pos, hEy_sim_pos, hEz_sim_pos, hDx_sim_neg, hDy_sim_neg, hDz_sim_neg, hEx_sim_neg, hEy_sim_neg, hEz_sim_neg};
+   
+  infile->Close();  */
+}
+

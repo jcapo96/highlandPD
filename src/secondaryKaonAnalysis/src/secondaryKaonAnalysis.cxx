@@ -20,6 +20,7 @@
 #include "ResidualRangeVariation.hxx"
 #include "BeamPartIdEffWeight.hxx"
 #include "BrokenTrackWeight.hxx"
+#include "SCEVariation.hxx"
 
 #include "HitPitchSCECorrection.hxx"
 #include "HitPositionSCECorrection.hxx"
@@ -85,8 +86,8 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
-  //corr().AddCorrection("SCE",new HitPitchSCECorrection());
-  //corr().AddCorrection("SCE",new HitPositionSCECorrection());
+  //corr().AddCorrection("SCEpos",new HitPositionSCECorrection());
+  //corr().AddCorrection("SCEpitch",new HitPitchSCECorrection());
 }
 
 //********************************************************************
@@ -96,12 +97,13 @@ void secondaryKaonAnalysis::DefineSystematics(){
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
-  evar().AddEventVariation(kdQdx_Xcal,"dQdx X calibration variation",                new dQdxXCalVariation());
-  evar().AddEventVariation(kdQdx_YZcal,"dQdx YZ calibration variation",                new dQdxYZCalVariation());
-  evar().AddEventVariation(kRecombination,"Recombination variation",                new RecombinationVariation());
+  //evar().AddEventVariation(kdQdx_Xcal,"dQdx X calibration variation",                new dQdxXCalVariation());
+  //evar().AddEventVariation(kdQdx_YZcal,"dQdx YZ calibration variation",                new dQdxYZCalVariation());
+  //evar().AddEventVariation(kRecombination,"Recombination variation",                new RecombinationVariation());
   //evar().AddEventVariation(0,"dQdx normalization variation",                new dQdxNormVariation());
   //eweight().AddEventWeight(0,"beam particle identification efficiency", new BeamPartIdEffWeight());
   //eweight().AddEventWeight(0,"Broken track weight", new BrokenTrackWeight());
+  evar().AddEventVariation(0,"SCE variation",                new SCEVariation());
 }
 
 //********************************************************************

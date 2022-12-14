@@ -33,9 +33,11 @@ void HitPositionSCECorrection::Apply(AnaSpillC& spillC){
 
     for (UInt_t j = 0; j < part->Hits[2].size(); j++){
       TVector3 offset = sce->GetCalPosOffsets(part->Hits[2][j].Position_NoSCE, part->Hits[2][j].TPCid);
-      part->Hits[2][j].Position_NoSCE.SetX(part->Hits[2][j].Position_NoSCE.X() - offset.X());
-      part->Hits[2][j].Position_NoSCE.SetY(part->Hits[2][j].Position_NoSCE.Y() + offset.Y());
-      part->Hits[2][j].Position_NoSCE.SetZ(part->Hits[2][j].Position_NoSCE.Z() + offset.Z());
+      //std::cout << "pre " << part->Hits[2][j].Position.X() << " " << part->Hits[2][j].Position.Y() << " " << part->Hits[2][j].Position.Z() << std::endl;
+      part->Hits[2][j].Position.SetX(part->Hits[2][j].Position_NoSCE.X() - offset.X());
+      part->Hits[2][j].Position.SetY(part->Hits[2][j].Position_NoSCE.Y() + offset.Y());
+      part->Hits[2][j].Position.SetZ(part->Hits[2][j].Position_NoSCE.Z() + offset.Z());
+      //std::cout << "after " << part->Hits[2][j].Position.X() << " " << part->Hits[2][j].Position.Y() << " " << part->Hits[2][j].Position.Z() << std::endl;
     }
   }
 }

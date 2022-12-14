@@ -155,6 +155,9 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
     DirectionEndSCE[i]=kFloatUnassigned;
   }
 
+  ThetaXZ = kFloatUnassigned;
+  ThetaYZ = kFloatUnassigned;
+
   for (Int_t i=0;i<3;i++){
     NHitsPerPlane[i] = kIntUnassigned;
     truncLibo_dEdx=kFloatUnassigned;
@@ -210,6 +213,9 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
   for(int i = 0; i < 4; i++)PositionStartSCE[i]=part.PositionStart[i];
   for(int i = 0; i < 3; i++)DirectionStartSCE[i]=part.DirectionStart[i];
+
+  ThetaXZ = part.ThetaXZ;
+  ThetaYZ = part.ThetaYZ;
 
   FitPDG         = part.FitPDG;
 

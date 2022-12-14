@@ -11,7 +11,6 @@ HitPitchSCECorrection::HitPitchSCECorrection(){
   //initialize space charge effect 
   _sce = new SpaceCharge();
   _sce->Initialize();
-  
 }
 
 //********************************************************************
@@ -40,8 +39,7 @@ void HitPitchSCECorrection::Apply(AnaSpillC& spillC){
       //compute projection of YZ plane to wire width (Z direction for collection)
       double AngleToVert = 0; //only for collection plane, which is vertical. 
       double cosgamma = abs(sin(AngleToVert)*hitdir.Y() + cos(AngleToVert)*hitdir.Z());
-      double pitch = 0.479 / cosgamma; //same values as larsoft with exception of numerical precission
-      //std::cout << pitch << " " << part->Hits[2][j].Pitch_NoSCE << std::endl;
+      double pitch = 0.4792 / cosgamma; 
 
       //correct pitch by SCE effect
       TVector3 dirProjection(hitpos.X()+pitch*hitdir.X(),hitpos.Y()+pitch*hitdir.Y(),hitpos.Z()+pitch*hitdir.Z());
@@ -52,7 +50,8 @@ void HitPitchSCECorrection::Apply(AnaSpillC& spillC){
 			     pitch*hitdir.Z() + dirOffset.Z() - posOffset.Z());
       pitch = dirCorrection.Mag();
       //std::cout << pitch << " " << part->Hits[2][j].Pitch << std::endl;
-      std::cout << charge / pitch << " " << part->Hits[2][j].dQdx << std::endl;
+      //std::cout << charge / pitch << " " << part->Hits[2][j].dQdx << std::endl;
+      part->Hits[2][j].dQdx_SCE = charge / pitch;
     }
   }
 }

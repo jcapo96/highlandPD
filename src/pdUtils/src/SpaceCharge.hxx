@@ -12,6 +12,7 @@
 #include "TSpline.h"
 #include "TVector3.h"
 
+#include "pdDataClasses.hxx"
 
 class SpaceCharge{
 public:
@@ -25,10 +26,23 @@ public:
   TVector3 GetEfieldOffsets(TVector3 const& point) const;
   TVector3 GetCalPosOffsets(TVector3 const& point, int const& TPCid) const;
   TVector3 GetCalEfieldOffsets(TVector3 const& point, int const& TPCid) const;
+
+  void ApplyPositionCorrection(AnaParticlePD* part) const;
+  void ApplyPositionCorrection(AnaHitPD& hit) const;
+
+  void ApplyDisplacementVariation(const double var);
+  void ResetToNominal();
   
 protected:
   
   TVector3 GetOffsets(TVector3 const& point, TH3F* hX, TH3F* hY, TH3F* hZ, int maptype, int driftvol) const;
+
+  void InitializeHistograms();
+  void InitializeSplines();
+
+  void ResetSplines();
+  void ClearSplines();
+  void ClearVectorOfSplines(std::vector<std::vector<TSpline3*>> &splines);
 
   std::vector<TH3F*> SCEhistograms = std::vector<TH3F*>(12); //Histograms are Dx, Dy, Dz, dEx/E0, dEy/E0, dEz/E0 (positive; repeat for negative)
   std::vector<TH3F*> CalSCEhistograms = std::vector<TH3F*>(12); 
@@ -93,6 +107,21 @@ protected:
   std::vector<std::vector<TSpline3*>> spline_dEx_pos;
   std::vector<std::vector<TSpline3*>> spline_dEy_pos;
   std::vector<std::vector<TSpline3*>> spline_dEz_pos;
+
+  //for systematic propagation: save a copy of the nominal histograms to easily reset SCE
+  TH3F* nominal_hDx_cal_pos;
+  TH3F* nominal_hDy_cal_pos;
+  TH3F* nominal_hDz_cal_pos;
+  TH3F* nominal_hEx_cal_pos;
+  TH3F* nominal_hEy_cal_pos;
+  TH3F* nominal_hEz_cal_pos;
+
+  TH3F* nominal_hDx_cal_neg;
+  TH3F* nominal_hDy_cal_neg;
+  TH3F* nominal_hDz_cal_neg;
+  TH3F* nominal_hEx_cal_neg;
+  TH3F* nominal_hEy_cal_neg;
+  TH3F* nominal_hEz_cal_neg;
 };
   
 #endif

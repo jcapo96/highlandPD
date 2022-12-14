@@ -153,6 +153,12 @@ namespace pdAnaUtils{
   void ComputeParticleCNN(std::vector<AnaWireCNN>& wires, AnaParticlePD& part);
   
   void DumpCNNTimes();
+
+  bool IsStoppingInFV(AnaParticlePD *part);
+
+  int GetHitTPCid(AnaHitPD& hit);
+
+  void EstimateHitsDirection(AnaParticlePD* part);
 }
 
 #endif

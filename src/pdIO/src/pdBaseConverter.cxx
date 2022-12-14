@@ -60,17 +60,17 @@ bool pdBaseConverter::AddFileToTChain(const std::string& inputString){
   FillEventInfo(evtInfo);
 
   
-  // Make sure the current file has not the same run and subrun number as the previous
-  if (_previousRunID==evtInfo->Run &&  _previousSubrunID==evtInfo->SubRun && _previousRefEventID>= evtInfo->Event){
-    std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "pdBaseConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
-    std::cout << "                                           and no higher event number !!!" << std::endl;
-    std::cout << "   - this file:     " << inputString << std::endl;
-    std::cout << "   - previous file: " << _previousFile << std::endl;
-    std::cout << "Please verify the input file list !!!" << std::endl;
-    std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
-    exit(1);
-  }
+  // // Make sure the current file has not the same run and subrun number as the previous
+  // if (_previousRunID==evtInfo->Run &&  _previousSubrunID==evtInfo->SubRun && _previousRefEventID>= evtInfo->Event){
+  //   std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
+  //   std::cout << "pdBaseConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
+  //   std::cout << "                                           and no higher event number !!!" << std::endl;
+  //   std::cout << "   - this file:     " << inputString << std::endl;
+  //   std::cout << "   - previous file: " << _previousFile << std::endl;
+  //   std::cout << "Please verify the input file list !!!" << std::endl;
+  //   std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
+  //   exit(1);
+  // }
   
   // The previous attributes
   _previousFile         = inputString;

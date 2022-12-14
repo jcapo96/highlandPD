@@ -156,6 +156,9 @@ public:
   double DirectionStartSCE[3];
   double DirectionEndSCE[3];
 
+  double ThetaXZ;
+  double ThetaYZ;
+
   /// Vector of hits for each plane
   std::vector<AnaHitPD> Hits[3];
 

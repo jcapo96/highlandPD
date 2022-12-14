@@ -26,7 +26,6 @@ protected:
   //to have an instance for each place in which it has to be used, or a single instance for all of them? Second
   //option would be better if there are effects across the usages. To be studied.
   SpaceCharge* _sce;
-  
 };
 
 #endif

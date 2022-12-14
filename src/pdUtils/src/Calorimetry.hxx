@@ -20,15 +20,24 @@ public:
   virtual ~Calorimetry();
 
   void Initialize();
+  void SetSCE(SpaceCharge* sce);
 
-  void CalibratedQdx(AnaHitPD &hit) const; //think about naming
+  void ApplySCECorrection(AnaParticlePD* part) const;
+  void ApplySCECorrection(AnaHitPD& hit) const;
+  
+  void ApplyLifetimeCorrection(AnaParticlePD* part) const;
+  void ApplyLifetimeCorrection(AnaHitPD& hit) const;
 
   void ApplyNormalization(AnaHitPD &hit) const;
   void ApplyXCalibration(AnaHitPD &hit) const;
   void ApplyYZCalibration(AnaHitPD &hit) const;
-  void ApplyRecombination(AnaHitPD &hit) const;
+  
   void ApplyRecombination(AnaParticlePD* part) const;
+  void ApplyRecombination(AnaHitPD &hit) const;
     
+  void CalibratedQdx(AnaParticlePD* part) const; //think about naming
+  void CalibratedQdx(AnaHitPD &hit) const; //think about naming
+
   double GetNormalization(AnaHitPD &hit) const;
   double GetXCalibration(AnaHitPD &hit) const;
   double GetYZCalibration(AnaHitPD &hit) const;
@@ -54,7 +63,11 @@ protected:
   double _Efield;
   double _ModBoxA;
   double _ModBoxB;
-  
+
+  double _Lifetime;
+  double _Vdrift;
+  double _APAx;
+
   double _CalAreaConstants[3];
 
   SpaceCharge* _sce;
