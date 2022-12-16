@@ -16,11 +16,11 @@ class EventBoxdEdx:public EventBoxB{
  public :
 
   enum RecObjectGroupEnum{
-    kAllTracks = 0,
+    kAllTracksdEdx = 0,
   };
   
   enum TrueObjectGroupEnum{
-    kAllTrueTracks = 0,
+    kAllTrueTracksdEdx = 0,
   };
 
   EventBoxdEdx();
@@ -30,7 +30,7 @@ class EventBoxdEdx:public EventBoxB{
 
 namespace boxUtils{
 
-  void FillAllTracks(AnaEventB& event);
+  void FillAllTracksdEdx(AnaEventB& event);
 }
 
 #endif

@@ -219,6 +219,11 @@ target_include_directories(dEdxCalibration.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} 
 target_link_libraries(dEdxCalibration.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS dEdxCalibration.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(CreateMichelRemovingMiniTree.exe ${CMAKE_SOURCE_DIR}/src/dEdxCalibration/app/RunCreateMichelRemovingMiniTree.cxx)
+target_include_directories(CreateMichelRemovingMiniTree.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(CreateMichelRemovingMiniTree.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS CreateMichelRemovingMiniTree.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 
 #-------------------------------------------------------
 #------- custom targets --------------------------------
@@ -237,6 +242,7 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
+add_dependencies(CreateMichelRemovingMiniTree.exe  dEdxCalibration.exe)
 add_dependencies(dEdxCalibration.exe               pdExampleAnalysis.exe)
 add_dependencies(pdExampleAnalysis.exe             CoherentFit.exe)
 add_dependencies(CoherentFit.exe                   CreateMiniTreeCandidates.exe)

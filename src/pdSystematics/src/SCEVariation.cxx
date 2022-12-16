@@ -35,8 +35,8 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[ipart]);
-
+     AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[ipart]);
+  
     // The un-varied particle
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
     if(!original)continue;
@@ -59,16 +59,20 @@ bool SCEVariation::UndoSystematic(AnaEventC& event){
 
   _sce->ResetToNominal();
   
-  for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[ipart]);
-    const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
-    if(!original)continue;
+  // for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
+  //   AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[ipart]);
+  //   const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
+  //   if(!original)continue;
 
-    //loop over hits
-    for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
-      part->Hits[2][ihit].dQdx = original->Hits[2][ihit].dQdx;
-    }
-  }
+  //   //loop over hits
+  //   for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
+  //     part->Hits[2][ihit].dQdx = original->Hits[2][ihit].dQdx;
+  //     part->Hits[2][ihit].dQdx_elife = original->Hits[2][ihit].dQdx_elife;
+  //     part->Hits[2][ihit].Position.SetX(original->Hits[2][ihit].Position.X());
+  //     part->Hits[2][ihit].Position.SetY(original->Hits[2][ihit].Position.Y());
+  //     part->Hits[2][ihit].Position.SetZ(original->Hits[2][ihit].Position.Z());
+  //   }
+  // }
   
   // Don't reset the spill to corrected
   return false;

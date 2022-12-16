@@ -15,6 +15,7 @@ void dEdxTrackSelection::DefineSteps(){
   AddStep(StepBase::kAction, "get vector of stopping tracks", new GetNonStoppingTracksAction(), true);
   AddStep(StepBase::kAction, "angle track selection"        , new TracksAngleAction()         , true);
   AddStep(StepBase::kCut   , "check vector is not empty"    , new EventHasTracksCut()         , true);
+  AddStep(StepBase::kCut   , "check hits is volume"         , new TracksInDefinedVolumeCut()  , true);
 
   SetBranchAlias(0,"trunk");
 }
@@ -80,6 +81,33 @@ bool EventHasTracksCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 }
 
 //**************************************************
+bool TracksInDefinedVolumeCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+  
+  (void)event;
+
+  bool result = false;
+
+  //cast the box
+  ToyBoxdEdx& box = *static_cast<ToyBoxdEdx*>(&boxB);   
+
+  for(int itrk = 0; itrk < (int)box.Tracks.size(); itrk++){
+    AnaParticlePD* part = box.Tracks[itrk];
+    for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
+      if(part->Hits[2][ihit].Position.X() > -360 && part->Hits[2][ihit].Position.X() < 0 &&
+	 abs(part->Hits[2][ihit].Position.Y()-300) < 20 &&
+	 abs(part->Hits[2][ihit].Position.Z()-345) < 20){
+	result = true;
+	break;
+      }
+    }
+    if(result)break;
+  }
+  
+  return result;
+}
+
+//**************************************************
 void dEdxTrackSelection::InitializeEvent(AnaEventC& eventC){
 //**************************************************
 
@@ -89,6 +117,6 @@ void dEdxTrackSelection::InitializeEvent(AnaEventC& eventC){
   if (!event.EventBoxes[EventBoxId::kEventBoxdEdx])
     event.EventBoxes[EventBoxId::kEventBoxdEdx] = new EventBoxdEdx();
 
-  boxUtils::FillAllTracks(event);
+  boxUtils::FillAllTracksdEdx(event);
 }
 

@@ -58,6 +58,8 @@ class dEdxCalibration: public baseAnalysis {
   
 private:
 
+  bool IsInterestingHit(AnaHitPD& hit);
+
 public:
 
   enum enumStandardMicroTrees_dEdxCalibration{
@@ -66,10 +68,10 @@ public:
     track_hit_y,
     track_hit_z,
     track_hit_dqdx,
-    // toy_track_hit_x,
-    // toy_track_hit_y,
-    // toy_track_hit_z,
-    // toy_track_hit_dqdx,
+    toy_track_hit_x,
+    toy_track_hit_y,
+    toy_track_hit_z,
+    toy_track_hit_dqdx,
     enumStandardMicroTreesLast_dEdxCalibration
   };
 

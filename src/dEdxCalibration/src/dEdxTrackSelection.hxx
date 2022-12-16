@@ -24,8 +24,8 @@ class dEdxTrackSelection: public SelectionBase{
   // These ones are also mandatory, although only used in some cases. A dummy implementation is enough if many cases  
   bool FillEventSummary(AnaEventC&, Int_t*){return false;}
   SampleId_h GetSampleId(){return UNASSIGNEDID;}
-  Int_t GetRelevantRecObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{ IDs[0] = EventBoxdEdx::kAllTracks;return 1;}
-  Int_t GetRelevantTrueObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{IDs[0] = EventBoxdEdx::kAllTracks;return 1;}
+  Int_t GetRelevantRecObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{ IDs[0] = EventBoxdEdx::kAllTracksdEdx;return 1;}
+  Int_t GetRelevantTrueObjectGroupsForSystematic(SystId_h, Int_t* IDs, Int_t) const{IDs[0] = EventBoxdEdx::kAllTracksdEdx;return 1;}
 
   //------------------
   
@@ -52,6 +52,13 @@ public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new EventHasTracksCut();}
+};
+
+class TracksInDefinedVolumeCut: public StepBase{
+public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new TracksInDefinedVolumeCut();}
 };
 
 #endif

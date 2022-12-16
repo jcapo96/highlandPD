@@ -1260,6 +1260,8 @@ void pdAnaUtils::DumpCNNTimes(){
 bool pdAnaUtils::IsStoppingInFV(AnaParticlePD *part){
 //***************************************************************
 
+  if(!part)return false;
+
   bool ItIs = true;
   
   if((TMath::Abs(part->PositionStart[0])>350 || 
@@ -1304,7 +1306,7 @@ void pdAnaUtils::EstimateHitsDirection(AnaParticlePD* part){
   for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
     if(ihit < (int)part->Hits[2].size()-1){
       TVector3 dir = part->Hits[2][ihit+1].Position-part->Hits[2][ihit].Position;
-      dir.SetMag(1);
+      if(dir.Mag()!=0)dir.SetMag(1);
       part->Hits[2][ihit].Direction.SetXYZ(dir.X(),dir.Y(),dir.Z());
       part->Hits[2][ihit].Direction_NoSCE.SetXYZ(dir.X(),dir.Y(),dir.Z());
     }

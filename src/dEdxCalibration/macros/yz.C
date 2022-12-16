@@ -45,6 +45,10 @@ void yz(){
   //get number of entries
   int nentries = tree->GetEntries();
 
+  TH1F* hh = new TH1F("hh","hh",9,1,10);
+  int hitcounter = 0;
+  int trackcounter = 0;
+
   //loop over entries
   for(int ientry = 0; ientry < nentries; ientry++){
     tree->GetEntry(ientry);
@@ -57,18 +61,22 @@ void yz(){
   	if(IsXContained(track_hit_x[itrk][ihit]) && 
   	   IsYContained(track_hit_y[itrk][ihit]) && 
   	   IsZContained(track_hit_z[itrk][ihit])){
-	  //std::cout << "the hit (" << track_hit_x[itrk][ihit] << "," << track_hit_y[itrk][ihit] << "," << track_hit_z[itrk][ihit] << ") is in the volume" << std::endl;
   	  //get y z bins
   	  int z = int(track_hit_z[itrk][ihit])/ZBIN; 
   	  int y = int(track_hit_y[itrk][ihit])/YBIN;
-  	  //std::cout << "binning (" << z << "," << y << ")" << std::endl;
   	  //fill vector of values
-  	  //std::cout << "dqdx " << track_hit_dqdx[itrk][ihit] << std::endl;
   	  dqdx_values[z][y].push_back(track_hit_dqdx[itrk][ihit]);
-  	}
+	  if(abs(track_hit_y[itrk][ihit]-300)<20 && abs(track_hit_z[itrk][ihit]-345)<20)
+	    hitcounter++;
+	}
       }
+      if(hitcounter!=0)trackcounter++;
+      hitcounter=0;
     }
+    hh->Fill(trackcounter);
+    trackcounter=0;
   }
+  hh->Draw();gPad->SetLogy();gPad->Update();gPad->WaitPrimitive();std::exit(1);
 
   //histogram with results
   TH2F* dqdx_hist = new TH2F("dqdx_hist","dqdx_hist",NBINSZ,0,ZMAX,NBINSY,0,YMAX);
@@ -112,24 +120,29 @@ void yz(){
   //check some bins
   TH1F* h = new TH1F("h","h",100,0,100);
   TF1* f;
-  for(int iz = 0; iz < NBINSZ; iz++){
-    for(int iy = 0; iy < NBINSY; iy++){
-      h->Reset();
-      //loop over values per cell
-      if(dqdx_values[iz][iy].size()>5){
-	for(int i = 0; i < dqdx_values[iz][iy].size(); i++)
-	  h->Fill(dqdx_values[iz][iy][i]);
-      }
-      h->Fit("landau","Q");//Draw();gPad->Update();
-      f = (TF1*)h->GetFunction("landau");
-      rms_hist->SetBinContent(iz,iy,f->GetParameter(2)/f->GetParameter(1)*100);
-    }
-  }
+  // for(int iz = 0; iz < NBINSZ; iz++){
+  //   for(int iy = 0; iy < NBINSY; iy++){
+  //     h->Reset();
+  //     //loop over values per cell
+  //     if(dqdx_values[iz][iy].size()>5){
+  // 	for(int i = 0; i < dqdx_values[iz][iy].size(); i++)
+  // 	  h->Fill(dqdx_values[iz][iy][i]);
+  //     }
+  //     h->Fit("landau","Q");//Draw();gPad->Update();
+  //     f = (TF1*)h->GetFunction("landau");
+  //     rms_hist->SetBinContent(iz,iy,f->GetParameter(2)/f->GetParameter(1)*100);
+  //   }
+  // }
 
   // std::cout << TMath::Median(dqdx_values[50][50].size(),&dqdx_values[50][50][0]) << std::endl;
-  // h->Draw();
-  // h->Fit("landau");
-
-  rms_hist->GetZaxis()->SetRangeUser(0,100);
-  rms_hist->Draw("colz");
+  //loop over values per cell
+  if(dqdx_values[50][50].size()>5){
+    for(int i = 0; i < dqdx_values[50][50].size(); i++)
+      h->Fill(dqdx_values[50][50][i]);
+  }
+  h->Draw();
+  h->Fit("landau");
+  
+  //rms_hist->GetZaxis()->SetRangeUser(0,100);
+  //rms_hist->Draw("colz");
 }

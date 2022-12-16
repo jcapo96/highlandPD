@@ -77,8 +77,7 @@ void secondaryKaonAnalysis::DefineSelections(){
 //********************************************************************
 
   if(_xs_selection)sel().AddSelection(_selection_name.c_str(), "kaon XS selection", new secondaryKaonXSSelection(false));
-  else             sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelection(false));
-  
+  else             sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelection(false));  
 }
 
 //********************************************************************
@@ -103,7 +102,7 @@ void secondaryKaonAnalysis::DefineSystematics(){
   //evar().AddEventVariation(0,"dQdx normalization variation",                new dQdxNormVariation());
   //eweight().AddEventWeight(0,"beam particle identification efficiency", new BeamPartIdEffWeight());
   //eweight().AddEventWeight(0,"Broken track weight", new BrokenTrackWeight());
-  evar().AddEventVariation(0,"SCE variation",                new SCEVariation());
+  //evar().AddEventVariation(0,"SCE variation",                new SCEVariation());
 }
 
 //********************************************************************
@@ -117,8 +116,9 @@ void secondaryKaonAnalysis::DefineConfigurations(){
   if(_enableAllSystConfig){
     //conf().EnableEventVariation(kdQdx_Xcal,all_syst);
     //conf().EnableEventVariation(kdQdx_YZcal,all_syst);
-    conf().EnableEventVariation(kRecombination,all_syst);
+    //conf().EnableEventVariation(kRecombination,all_syst);
     //if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnableBeamPartIdEff"))conf().EnableEventWeight(0,all_syst);
+    //conf().EnableEventVariation(0,all_syst);
   }
   /*if(_enableSingleVariationSystConf){
     AddConfiguration(conf(), dQdx_Xcal, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));  

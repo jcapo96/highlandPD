@@ -39,7 +39,7 @@ void dEdxCalibration::DefineInputConverters(){
   // add a single converter (a copy of the one in highland/baseAnalysis)
   input().AddConverter("minitree",           new HighlandMiniTreeConverter("highlandana/MiniTree"));
   input().AddConverter("minitreefiltered",   new HighlandMiniTreeConverter("MiniTree"));
-  input().AddConverter("MichelRemovingTree", new MichelRemovingTreeConverter("michelremoving2/Event"));
+  input().AddConverter("MichelRemovingTree", new MichelRemovingTreeConverter("michelremoving/Event"));
 }
 
 //********************************************************************
@@ -63,7 +63,7 @@ void dEdxCalibration::DefineSystematics(){
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
 
-  //evar().AddEventVariation(0, "SCE variation", new SCEVariation());
+  evar().AddEventVariation(0, "SCE variation", new SCEVariation());
 }
 
 //********************************************************************
@@ -73,10 +73,10 @@ void dEdxCalibration::DefineConfigurations(){
   // Some configurations are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineConfigurations();
 
-  // // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
-  // if(_enableAllSystConfig){
-  //   conf().EnableEventVariation(0,all_syst);
-  // }
+  //Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
+  if(_enableAllSystConfig){
+    conf().EnableEventVariation(0,all_syst);
+  }
 }
 
 //********************************************************************
@@ -88,16 +88,16 @@ void dEdxCalibration::DefineMicroTrees(bool addBase){
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
     
-  AddVarMF(output(), track_hit_x   , "trk hit x"   , ntracks, -30, 3000);
-  AddVarMF(output(), track_hit_y   , "trk hit y"   , ntracks, -30, 3000);
-  AddVarMF(output(), track_hit_z   , "trk hit z"   , ntracks, -30, 3000);
-  AddVarMF(output(), track_hit_dqdx, "trk hit dqdx", ntracks, -30, 3000);
+  // AddVarMF(output(), track_hit_x   , "trk hit x"   , ntracks, -30, 3000);
+  // AddVarMF(output(), track_hit_y   , "trk hit y"   , ntracks, -30, 3000);
+  // AddVarMF(output(), track_hit_z   , "trk hit z"   , ntracks, -30, 3000);
+  // AddVarMF(output(), track_hit_dqdx, "trk hit dqdx", ntracks, -30, 3000);
 
   // -------- Add toy variables ---------------------------------
-  // AddToyVarMF(output(), toy_track_hit_x   , "trk hit x"   , 5, 1000);
-  // AddToyVarMF(output(), toy_track_hit_y   , "trk hit y"   , 5, 1000);
-  // AddToyVarMF(output(), toy_track_hit_z   , "trk hit z"   , 5, 1000);
-  // AddToyVarMF(output(), toy_track_hit_dqdx, "trk hit dqdx", 5, 1000);
+  AddToyVarMF(output(), toy_track_hit_x   , "trk hit x"   , 5, 100);
+  AddToyVarMF(output(), toy_track_hit_y   , "trk hit y"   , 5, 100);
+  AddToyVarMF(output(), toy_track_hit_z   , "trk hit z"   , 5, 100);
+  AddToyVarMF(output(), toy_track_hit_dqdx, "trk hit dqdx", 5, 100);
 }
 
 //********************************************************************
@@ -114,20 +114,20 @@ void dEdxCalibration::FillMicroTrees(bool addBase){
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
-  
-  // fill trk info
-  if(box().Tracks.size()>0){
-    for(int i = 0; i < std::min((int)box().Tracks.size(),30); i++){
-      AnaParticlePD* part = box().Tracks[i];
-      for(int j = 0; j < (int)std::min((int)part->Hits[2].size(),3000); j++){
-  	output().FillMatrixVar(track_hit_x,         (Float_t)part->Hits[2][j].Position.X(),   -1, j);
-  	output().FillMatrixVar(track_hit_y,         (Float_t)part->Hits[2][j].Position.Y(),   -1, j);
-  	output().FillMatrixVar(track_hit_z,         (Float_t)part->Hits[2][j].Position.Z(),   -1, j);
-  	output().FillMatrixVar(track_hit_dqdx,      (Float_t)part->Hits[2][j].dQdx,           -1, j);
-      }
-      output().IncrementCounter(ntracks);
-    } 
-  }
+
+  // // fill trk info
+  // if(box().Tracks.size()>0){
+  //   for(int i = 0; i < std::min((int)box().Tracks.size(),30); i++){
+  //     AnaParticlePD* part = box().Tracks[i];
+  //     for(int j = 0; j < (int)std::min((int)part->Hits[2].size(),3000); j++){
+  // 	output().FillMatrixVar(track_hit_x,         (Float_t)part->Hits[2][j].Position.X(),   -1, j);
+  // 	output().FillMatrixVar(track_hit_y,         (Float_t)part->Hits[2][j].Position.Y(),   -1, j);
+  // 	output().FillMatrixVar(track_hit_z,         (Float_t)part->Hits[2][j].Position.Z(),   -1, j);
+  // 	output().FillMatrixVar(track_hit_dqdx,      (Float_t)part->Hits[2][j].dQdx,           -1, j);
+  //     }
+  //     output().IncrementCounter(ntracks);
+  //   } 
+  // }
 }
 
 //********************************************************************
@@ -137,19 +137,24 @@ void dEdxCalibration::FillToyVarsInMicroTrees(bool addBase){
   // Fill the common variables  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
 
-  // int ntracks = box().Tracks.size();
-  // if(ntracks > 0){
-  //   for(int itrk = 0; itrk < std::min(ntracks,5); itrk++){
-  //     AnaParticlePD* part = box().Tracks[itrk];
-  //     int nhits = part->Hits[2].size();
-  //     for(int ihit = 0; ihit < std::min(nhits,1000); ihit++){
-  // 	output().FillToyMatrixVar(toy_track_hit_x   ,(Float_t) part->Hits[2][ihit].Position.X(),itrk,ihit);
-  // 	output().FillToyMatrixVar(toy_track_hit_y   ,(Float_t) part->Hits[2][ihit].Position.Y(),itrk,ihit);
-  // 	output().FillToyMatrixVar(toy_track_hit_z   ,(Float_t) part->Hits[2][ihit].Position.Z(),itrk,ihit);
-  // 	output().FillToyMatrixVar(toy_track_hit_dqdx,(Float_t) part->Hits[2][ihit].dQdx_elife,itrk,ihit);
-  //     }
-  //   }
-  // }
+  int ntracks = box().Tracks.size();
+  if(ntracks > 0){
+    for(int itrk = 0; itrk < std::min(ntracks,5); itrk++){
+      AnaParticlePD* part = box().Tracks[itrk];
+      int hitcounter = 0;
+      int nhits = part->Hits[2].size();
+      for(int ihit = 0; ihit < nhits; ihit++){
+	if(hitcounter>=100)break;
+	if(IsInterestingHit(part->Hits[2][ihit])){
+	  output().FillToyMatrixVar(toy_track_hit_x   ,(Float_t)part->Hits[2][ihit].Position.X(),itrk,hitcounter);
+	  output().FillToyMatrixVar(toy_track_hit_y   ,(Float_t)part->Hits[2][ihit].Position.Y(),itrk,hitcounter);
+	  output().FillToyMatrixVar(toy_track_hit_z   ,(Float_t)part->Hits[2][ihit].Position.Z(),itrk,hitcounter);
+	  output().FillToyMatrixVar(toy_track_hit_dqdx,(Float_t)part->Hits[2][ihit].dQdx_elife,itrk,hitcounter);
+	  hitcounter++;
+	}
+      }
+    }
+  }
 }
 
 //********************************************************************
@@ -163,5 +168,20 @@ void dEdxCalibration::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 void dEdxCalibration::FillCategories(){
 //********************************************************************
+
+}
+
+//********************************************************************
+bool dEdxCalibration::IsInterestingHit(AnaHitPD& hit){
+//********************************************************************
+
+  bool ItIs = false;
+
+  if(hit.Position.X() > -360 && hit.Position.X() < 0 &&
+     abs(hit.Position.Y()-300) < 20 &&
+     abs(hit.Position.Z()-345) < 20)
+    ItIs = true;
+
+  return ItIs;
 
 }
