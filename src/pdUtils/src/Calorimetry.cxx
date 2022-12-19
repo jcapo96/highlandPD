@@ -36,15 +36,18 @@ Calorimetry::~Calorimetry(){
 }
 
 //********************************************************************
-void Calorimetry::SetSCE(SpaceCharge* sce){
+void Calorimetry::SetSCE(SpaceCharge* sce, bool remove){
 //********************************************************************
 
-  if(!_sce)
-    _sce = sce;
-  else{
+  if(remove)
     delete _sce;
-    _sce = sce;
-  }
+  _sce = sce;
+  // if(!_sce)
+  //   _sce = sce;
+  // else{
+  //   delete _sce;
+  //   _sce = sce;
+  // }
 }
 
 //********************************************************************
@@ -72,6 +75,30 @@ void Calorimetry::Initialize(){
     _sce = new SpaceCharge();
     _sce->Initialize();
   }
+}
+
+//********************************************************************
+void Calorimetry::Initialize(SpaceCharge* sce){
+//********************************************************************
+
+  //read data files and create correction histograms
+  CreateNormHistogram();
+  CreateXCalHistogram();
+  CreateYZCalHistogram();
+
+  _Efield  = 0.4867; //probably all these values should be added in the parameters file
+  _ModBoxA = 0.930;
+  _ModBoxB = 0.212; 
+
+  _Lifetime = 35000;
+  _Vdrift   = 0.156461;
+  _APAx     = 368.351;
+
+  _CalAreaConstants[0] = 1.04e-3;
+  _CalAreaConstants[1] = 1.04e-3;
+  _CalAreaConstants[2] = 1.0156e-3;
+
+  _sce = sce;
 }
 
 //********************************************************************

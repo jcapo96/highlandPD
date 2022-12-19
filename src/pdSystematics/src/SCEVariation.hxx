@@ -9,7 +9,7 @@ class SCEVariation: public EventVariationBase, public BinnedParams{
 public:
 
   SCEVariation();
-  virtual ~SCEVariation(){} 
+  virtual ~SCEVariation(); 
   
   /// Apply the systematic
   virtual void Apply(const ToyExperiment& toy, AnaEventC& event);
@@ -23,7 +23,7 @@ protected:
   bool IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& part) const;
   
   Calorimetry* _cal;
-  SpaceCharge* _sce;
+  SpaceCharge* _sce[100];
 };
 
 #endif
