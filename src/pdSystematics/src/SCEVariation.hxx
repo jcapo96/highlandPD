@@ -9,7 +9,7 @@ class SCEVariation: public EventVariationBase, public BinnedParams{
 public:
 
   SCEVariation();
-  virtual ~SCEVariation(){} 
+  virtual ~SCEVariation(); 
   
   /// Apply the systematic
   virtual void Apply(const ToyExperiment& toy, AnaEventC& event);

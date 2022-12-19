@@ -20,6 +20,14 @@ SCEVariation::SCEVariation():EventVariationBase(),BinnedParams(std::string(geten
 }
 
 //********************************************************************
+SCEVariation::~SCEVariation(){
+//********************************************************************
+
+  for(int i = 0; i < 100; i++)delete _sce[i];
+  delete _cal;
+}
+
+//********************************************************************
 void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 //********************************************************************
 
