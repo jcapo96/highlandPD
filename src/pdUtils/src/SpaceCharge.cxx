@@ -130,6 +130,7 @@ void SpaceCharge::Initialize(){
   fEDChargeLossZHighMax               = 465.;//ND::params().GetParameterF("EDChargeLossZHighMax");
   
   fInputFilename = std::string(getenv("PDUTILSROOT"))+"/data/SCE_DataDriven_180kV_v4.root";
+  //fInputFilename = std::string(getenv("PDUTILSROOT"))+"/data/SCE_Alternate_v4_EField.root";
   fInputFile = new TFile(fInputFilename.c_str(), "OPEN");
   
   //check it exits
