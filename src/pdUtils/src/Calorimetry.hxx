@@ -20,8 +20,9 @@ public:
   virtual ~Calorimetry();
 
   void Initialize();
-  void SetSCE(SpaceCharge* sce);
-
+  void Initialize(SpaceCharge* sce);
+  void SetSCE(SpaceCharge* sce, bool remove = true);
+  
   void ApplySCECorrection(AnaParticlePD* part) const;
   void ApplySCECorrection(AnaHitPD& hit) const;
   

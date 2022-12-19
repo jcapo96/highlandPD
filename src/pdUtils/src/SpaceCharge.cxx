@@ -72,6 +72,8 @@ SpaceCharge::SpaceCharge(){
   spline_dEz_pos.clear();
   
   SCEhistograms.clear();
+
+  _IsVaried = false;
 }
 
 //********************************************************************
@@ -694,7 +696,7 @@ void SpaceCharge::ApplyPositionCorrection(AnaParticlePD* part) const {
 //********************************************************************
 void SpaceCharge::ApplyPositionCorrection(AnaHitPD& hit) const {
 //********************************************************************
-  
+
   TVector3 offset = GetCalPosOffsets(hit.Position_NoSCE, hit.TPCid); //*-1 check this
   hit.Position.SetX(hit.Position_NoSCE.X() - offset.X());
   hit.Position.SetY(hit.Position_NoSCE.Y() + offset.Y());
@@ -713,59 +715,70 @@ void SpaceCharge::ApplyDisplacementVariation(const double var){
   for(int x = 1; x <= nBinsX; x++){
     for(int y = 1; y <= nBinsY; y++){
       for(int z = 1; z <= nBinsZ; z++){
-	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z)*var);
-	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z)*var);
-	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z)*var);
+  	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z)*var);
+  	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z)*var);
+  	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z)*var);
 
-	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z)*var);
-	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z)*var);
-	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z)*var);
+  	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z)*var);
+  	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z)*var);
+  	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z)*var);
       }
     }
   }
 
+  // hDx_cal_pos->Scale(var);
+  // hDy_cal_pos->Scale(var);
+  // hDz_cal_pos->Scale(var);
+
+  // hDx_cal_neg->Scale(var);
+  // hDy_cal_neg->Scale(var);
+  // hDz_cal_neg->Scale(var);
+    
   //prepare new splines
   ResetSplines();
+
+  //set true
+  _IsVaried = true;
 }
 
 //********************************************************************
 void SpaceCharge::ResetToNominal(){
 //********************************************************************
     
-  // delete hDx_cal_pos;
-  // delete hDy_cal_pos;
-  // delete hDz_cal_pos;
-  // delete hEx_cal_pos;
-  // delete hEy_cal_pos;
-  // delete hEz_cal_pos;
+  delete hDx_cal_pos;
+  delete hDy_cal_pos;
+  delete hDz_cal_pos;
+  delete hEx_cal_pos;
+  delete hEy_cal_pos;
+  delete hEz_cal_pos;
 
-  // hDx_cal_pos = (TH3F*)nominal_hDx_cal_pos->Clone(); //cloning the nominal causes crashes, idk why
-  // hDy_cal_pos = (TH3F*)nominal_hDy_cal_pos->Clone();
-  // hDz_cal_pos = (TH3F*)nominal_hDz_cal_pos->Clone();
-  // hEx_cal_pos = (TH3F*)nominal_hEx_cal_pos->Clone();
-  // hEy_cal_pos = (TH3F*)nominal_hEy_cal_pos->Clone();
-  // hEz_cal_pos = (TH3F*)nominal_hEz_cal_pos->Clone();
+  hDx_cal_pos = (TH3F*)nominal_hDx_cal_pos->Clone();
+  hDy_cal_pos = (TH3F*)nominal_hDy_cal_pos->Clone();
+  hDz_cal_pos = (TH3F*)nominal_hDz_cal_pos->Clone();
+  hEx_cal_pos = (TH3F*)nominal_hEx_cal_pos->Clone();
+  hEy_cal_pos = (TH3F*)nominal_hEy_cal_pos->Clone();
+  hEz_cal_pos = (TH3F*)nominal_hEz_cal_pos->Clone();
 
-  int nBinsX = hDx_cal_pos->GetNbinsX();
-  int nBinsY = hDx_cal_pos->GetNbinsY();
-  int nBinsZ = hDx_cal_pos->GetNbinsZ();
+  // int nBinsX = hDx_cal_pos->GetNbinsX();
+  // int nBinsY = hDx_cal_pos->GetNbinsY();
+  // int nBinsZ = hDx_cal_pos->GetNbinsZ();
 
-  //loop over bins of the histograms //this is not efficient but it does not crash
-  for(int x = 1; x <= nBinsX; x++){
-    for(int y = 1; y <= nBinsY; y++){
-      for(int z = 1; z <= nBinsZ; z++){
-  	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z));
-  	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z));
-  	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z));
+  // //loop over bins of the histograms //this is not efficient but it does not crash
+  // for(int x = 1; x <= nBinsX; x++){
+  //   for(int y = 1; y <= nBinsY; y++){
+  //     for(int z = 1; z <= nBinsZ; z++){
+  // 	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z));
+  // 	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z));
+  // 	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z));
 
-  	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z));
-  	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z));
-  	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z));
-      }
-    }
-  }
+  // 	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z));
+  // 	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z));
+  // 	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z));
+  //     }
+  //   }
+  // }
 
-  //prepare new splines
+  //reset splines
   ResetSplines();
 }
 

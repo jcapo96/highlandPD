@@ -32,6 +32,8 @@ public:
 
   void ApplyDisplacementVariation(const double var);
   void ResetToNominal();
+
+  bool IsVaried() const {return _IsVaried;}
   
 protected:
   
@@ -122,6 +124,8 @@ protected:
   TH3F* nominal_hEx_cal_neg;
   TH3F* nominal_hEy_cal_neg;
   TH3F* nominal_hEz_cal_neg;
+
+  bool _IsVaried;
 };
   
 #endif
