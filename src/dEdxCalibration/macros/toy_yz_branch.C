@@ -1,7 +1,7 @@
-const int ZMAX = 365;
-const int ZMIN = 325;
-const int YMAX = 320;
-const int YMIN = 280;
+const int ZMAX = 250;
+const int ZMIN = 0;
+const int YMAX = 600;
+const int YMIN = 0;
 const int STEP = 5;
 const int NTOYS   = 100;
 const int NHITS   = 1000;
@@ -75,7 +75,7 @@ void toy_yz_branch(){
 //********************************************
   
   //file name
-  std::string filename = "../../../../files/toy_vector.root";
+  std::string filename = "/dune/data/users/miagarc/toy_lifetime.root";
   //open root file
   TFile* rfile = TFile::Open(filename.c_str());
   TTree* tree  = (TTree*)rfile->Get("all_syst");
@@ -108,6 +108,7 @@ void toy_yz_branch(){
   //loop over entries
   for(int ientry = 0; ientry < nentries; ientry++){
     tree->GetEntry(ientry);
+    if(ientry%20000==0)std::cout << ientry << "/" << nentries << std::endl;
     //loop over toys
     for(int itoy = 0; itoy < NTOYS; itoy++){
       //loop over hits
@@ -126,7 +127,8 @@ void toy_yz_branch(){
   f->SetParLimits(3,1,5);
   for(int itoy = 0; itoy < NTOYS; itoy++){
     //hdummy[itoy]->Draw();
-    hdummy[itoy]->Fit("f","QNOL");
+    //gPad->Update();
+    hdummy[itoy]->Fit("f","QNOLR");
     hsyst->Fill(f->GetParameter(1));
     hdummy[itoy]->Reset();
   }
@@ -137,24 +139,28 @@ void toy_yz_branch(){
   std::cout << "Global MPV = " << global_mpv << " +/- " << global_syst_error << std::endl; 
   
   //get local mean and errors
-  const int nbinsz = (ZMAX-ZMIN)/STEP;
-  const int nbinsy = (YMAX-YMIN)/STEP;
+  const int nbinsz = 5;//(ZMAX-ZMIN)/STEP;
+  const int nbinsy = 7;//(YMAX-YMIN)/STEP;
   double local_mpv[nbinsz][nbinsy]        = {0};
   double local_syst_error[nbinsz][nbinsy] = {0};
+  double zmin_vector[nbinsz] = {0,55,110,165,220};
+  double ymin_vector[nbinsy] = {0,95,195,295,395,495,595};
   std::cout << "local mean calculation" << std::endl;
   TH2F* h2 = new TH2F("h2","h2",nbinsz,ZMIN,ZMAX,nbinsy,YMIN,YMAX);
   
   //loop over voxels
   for(int iz = 0; iz < nbinsz; iz++){
-    double zmin = ZMIN + iz*STEP;
-    double zmax = ZMIN + (iz+1)*STEP;
+    double zmin = zmin_vector[iz];//ZMIN + iz*STEP;
+    double zmax = zmin_vector[iz]+STEP;//ZMIN + (iz+1)*STEP;
     for(int iy = 0; iy < nbinsy; iy++){
-      double ymin = YMIN + iy*STEP;
-      double ymax = YMIN + (iy+1)*STEP;
+      double ymin = ymin_vector[iy];//YMIN + iy*STEP;
+      double ymax = ymin_vector[iy]+STEP;//YMIN + (iy+1)*STEP;
       std::cout << "bin " << iz << "/" << nbinsz << " " << iy << "/" << nbinsy << std::endl;
+      std::cout << zmin << "< Z <" << zmax << " && " << ymin << " < Y <" << ymax << std::endl;
       //loop over entries
       for(int ientry = 0; ientry < nentries; ientry++){
 	tree->GetEntry(ientry);
+	if(ientry%20000==0)std::cout << ientry << "/" << nentries << std::endl;
 	//loop over toys
 	for(int itoy = 0; itoy < NTOYS; itoy++){
 	  //loop over hits
@@ -168,7 +174,7 @@ void toy_yz_branch(){
       for(int itoy = 0; itoy < NTOYS; itoy++){
 	//hdummy[itoy]->Draw();
 	f->SetParameters(1,60,5000,5);
-	hdummy[itoy]->Fit("f","QNOL");
+	hdummy[itoy]->Fit("f","QNOLR");
 	//gPad->Update();
 	hsyst->Fill(f->GetParameter(1));
 	hdummy[itoy]->Reset();
@@ -178,11 +184,11 @@ void toy_yz_branch(){
       local_syst_error[iz][iy] = hsyst->GetRMS();
       hsyst->Reset();
       std::cout << "Local MPV = " << local_mpv[iz][iy] << " +/- " << local_syst_error[iz][iy] << std::endl;
-      h2->SetBinContent(iz+1,iy+1,sqrt(pow(global_syst_error/global_mpv,2)+pow(local_syst_error[iz][iy]/local_mpv[iz][iy],2)));
+      h2->SetBinContent(iz+1,iy+1,sqrt(pow(global_syst_error/global_mpv,2)+pow(local_syst_error[iz][iy]/local_mpv[iz][iy],2))*100);
     }
   }//loop over voxels
   h2->Draw("colz");
-  TFile* wfile = TFile::Open("yz_errormap.root","NEW");
+  TFile* wfile = TFile::Open("yz_errormap_lifetime.root","NEW");
   h2->Write();
   wfile->Close();
 }
