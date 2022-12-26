@@ -91,8 +91,8 @@ bool CreateMichelRemovingMiniTree::IsInterestingHit(AnaHitPD& hit){
   bool ItIs = false;
 
   if(hit.Position.X() > -360 && hit.Position.X() < 0 &&
-     abs(hit.Position.Y()-300) < 20 &&
-     abs(hit.Position.Z()-345) < 20)
+     abs(hit.Position.Y()-300) < 300 &&
+     abs(hit.Position.Z()-350) < 350)
     ItIs = true;
 
   return ItIs;

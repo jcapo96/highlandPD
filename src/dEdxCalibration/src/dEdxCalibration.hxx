@@ -60,7 +60,33 @@ private:
 
   bool IsInterestingHit(AnaHitPD& hit);
 
+  bool _SaveAna;
+  bool _SaveToy;
+
+  bool _ApplySCEPositionCorrection;
+  bool _ApplySCEPitchCorrection;
+  bool _ApplyLifetimeCorrection;
+
+  bool _ApplySCESystematic;
+  bool _ApplyLifetimeSystematic;
+
+  int _MichelRemovingTree;
+  
 public:
+
+  enum enumSyst_dEdxCalibration{
+    kSCE_syst=0,
+    kLifetime_syst,
+    enumSystLast_dEdxCalibration
+  };
+
+  enum enumCorr_dEdxCalibration{
+    kSCE_corr=0,
+    kSCEPosition_corr,
+    kSCEPitch_corr,
+    kLifetime_corr,
+    enumCorrLast_dEdxCalibration
+  };
 
   enum enumStandardMicroTrees_dEdxCalibration{
     ntracks = baseAnalysis::enumStandardMicroTreesLast_baseAnalysis+1,
@@ -72,8 +98,18 @@ public:
     toy_track_hit_y,
     toy_track_hit_z,
     toy_track_hit_dqdx,
+    hit_x,
+    hit_y,
+    hit_z,
+    hit_dqdx,
+    toy_hit_x,
+    toy_hit_y,
+    toy_hit_z,
+    toy_hit_dqdx,
     enumStandardMicroTreesLast_dEdxCalibration
   };
+
+  
 
   
 };

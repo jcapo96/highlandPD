@@ -1,5 +1,5 @@
-#ifndef HitPitchSCECorrection_h
-#define HitPitchSCECorrection_h
+#ifndef LifetimeCorrection_h
+#define LifetimeCorrection_h
 
 #include "CorrectionBase.hxx"
 #include "BaseDataClasses.hxx"
@@ -7,20 +7,22 @@
 
 /// This class defines a correction that affects each hit of a reconstructed track
 
-class HitPitchSCECorrection: public CorrectionBase {
+class LifetimeCorrection: public CorrectionBase {
 
 public:
   
-  HitPitchSCECorrection();
+  LifetimeCorrection();
 
-  virtual ~HitPitchSCECorrection() {}
+  virtual ~LifetimeCorrection() {}
 
   /// Apply the sce correction
   void Apply(AnaSpillC& spill);
   
 protected:
 
+  //this probably needs a reimplementation, it cannot be initialized here. Possibly this should be a singleton.
   Calorimetry* _cal;
+  
 };
 
 #endif

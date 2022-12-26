@@ -15,7 +15,7 @@ void dEdxTrackSelection::DefineSteps(){
   AddStep(StepBase::kAction, "get vector of stopping tracks", new GetNonStoppingTracksAction(), true);
   AddStep(StepBase::kAction, "angle track selection"        , new TracksAngleAction()         , true);
   AddStep(StepBase::kCut   , "check vector is not empty"    , new EventHasTracksCut()         , true);
-  AddStep(StepBase::kCut   , "check hits is volume"         , new TracksInDefinedVolumeCut()  , true);
+  //AddStep(StepBase::kCut   , "check hits is volume"         , new TracksInDefinedVolumeCut()  , true);
 
   SetBranchAlias(0,"trunk");
 }

@@ -1316,3 +1316,27 @@ void pdAnaUtils::EstimateHitsDirection(AnaParticlePD* part){
     }
   } 
 }
+
+//***************************************************************
+void pdAnaUtils::ComputeResidualRange(AnaParticlePD* part){
+//***************************************************************
+  
+  if(!part)return;
+
+  std::vector<double> delta; delta.clear();
+  //loop over hits
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
+    TVector3 diff = part->Hits[2][ihit+1].Position-part->Hits[2][ihit].Position;
+    delta.push_back(diff.Mag());
+  }
+
+  //compute residual range
+  std::vector<double> new_rr; new_rr.clear();
+  new_rr.push_back(delta[0]/2);
+  for(int i = 1; i < (int)delta.size(); i++)
+    new_rr.push_back(new_rr[i-1]+delta[i-1]);
+
+  //associate new rr to each hit
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++)
+    part->Hits[2][ihit].ResidualRange = new_rr[ihit];
+}

@@ -28,6 +28,8 @@ public:
   
   void ApplyLifetimeCorrection(AnaParticlePD* part) const;
   void ApplyLifetimeCorrection(AnaHitPD& hit) const;
+  void UndoLifetimeCorrection(AnaParticlePD* part) const;
+  void UndoLifetimeCorrection(AnaHitPD& hit) const;
 
   void ApplyNormalization(AnaHitPD &hit) const;
   void ApplyXCalibration(AnaHitPD &hit) const;
@@ -43,8 +45,11 @@ public:
   double GetXCalibration(AnaHitPD &hit) const;
   double GetYZCalibration(AnaHitPD &hit) const;
 
-  double GetModBoxA(){return _ModBoxA;}
-  double GetModBoxB(){return _ModBoxB;}
+  double GetLifetime() const {return _Lifetime;}
+  void SetLifetime(double Lifetime){_Lifetime = Lifetime;}
+  
+  double GetModBoxA() const {return _ModBoxA;}
+  double GetModBoxB() const {return _ModBoxB;}
   void SetModBoxA(double ModBoxA){_ModBoxA = ModBoxA;}
   void SetModBoxB(double ModBoxB){_ModBoxB = ModBoxB;}
   void ResetModBoxParameters();

@@ -1,20 +1,20 @@
-#include "HitPitchSCECorrection.hxx"
+#include "LifetimeCorrection.hxx"
 #include "pdDataClasses.hxx"
 #include "pdAnalysisUtils.hxx"
 #include <cassert>
 
 
 //********************************************************************
-HitPitchSCECorrection::HitPitchSCECorrection(){
+LifetimeCorrection::LifetimeCorrection(){
 //********************************************************************
 
-  //initialize space charge effect 
   _cal = new Calorimetry();
   _cal->Initialize();
+  
 }
 
 //********************************************************************
-void HitPitchSCECorrection::Apply(AnaSpillC& spillC){
+void LifetimeCorrection::Apply(AnaSpillC& spillC){
 //********************************************************************
 
   //cast bunch
@@ -31,7 +31,7 @@ void HitPitchSCECorrection::Apply(AnaSpillC& spillC){
     
     if (!original) continue; //?
 
-    _cal->ApplySCECorrection(part);
+    _cal->ApplyLifetimeCorrection(part);
   }
 }
 

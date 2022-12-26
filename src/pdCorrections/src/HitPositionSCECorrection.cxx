@@ -8,8 +8,8 @@
 HitPositionSCECorrection::HitPositionSCECorrection(){
 //********************************************************************
 
-  sce = new SpaceCharge();
-  sce->Initialize();
+  _sce = new SpaceCharge();
+  _sce->Initialize();
   
 }
 
@@ -31,14 +31,7 @@ void HitPositionSCECorrection::Apply(AnaSpillC& spillC){
     
     if (!original) continue; //?
 
-    for (UInt_t j = 0; j < part->Hits[2].size(); j++){
-      TVector3 offset = sce->GetCalPosOffsets(part->Hits[2][j].Position_NoSCE, part->Hits[2][j].TPCid);
-      //std::cout << "pre " << part->Hits[2][j].Position.X() << " " << part->Hits[2][j].Position.Y() << " " << part->Hits[2][j].Position.Z() << std::endl;
-      part->Hits[2][j].Position.SetX(part->Hits[2][j].Position_NoSCE.X() - offset.X());
-      part->Hits[2][j].Position.SetY(part->Hits[2][j].Position_NoSCE.Y() + offset.Y());
-      part->Hits[2][j].Position.SetZ(part->Hits[2][j].Position_NoSCE.Z() + offset.Z());
-      //std::cout << "after " << part->Hits[2][j].Position.X() << " " << part->Hits[2][j].Position.Y() << " " << part->Hits[2][j].Position.Z() << std::endl;
-    }
+    _sce->ApplyPositionCorrection(part);
   }
 }
 

@@ -31,9 +31,19 @@ public:
   void ApplyPositionCorrection(AnaHitPD& hit) const;
 
   void ApplyDisplacementVariation(const double var);
+  void ApplyVoxelVariation(UInt_t xbin, UInt_t ybin, UInt_t zbin, double var, bool reset_splines = true);
   void ResetToNominal();
+  void ResetSplines();
 
   bool IsVaried() const {return _IsVaried;}
+
+  UInt_t GetNbinsX() const;
+  UInt_t GetNbinsY() const;
+  UInt_t GetNbinsZ() const;
+
+  double GetBinCenterX(UInt_t bin) const;
+  double GetBinCenterY(UInt_t bin) const;
+  double GetBinCenterZ(UInt_t bin) const;
   
 protected:
   
@@ -42,7 +52,6 @@ protected:
   void InitializeHistograms();
   void InitializeSplines();
 
-  void ResetSplines();
   void ClearSplines();
   void ClearVectorOfSplines(std::vector<std::vector<TSpline3*>> &splines);
 

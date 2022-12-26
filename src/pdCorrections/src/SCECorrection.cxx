@@ -1,20 +1,22 @@
-#include "HitPitchSCECorrection.hxx"
+#include "SCECorrection.hxx"
 #include "pdDataClasses.hxx"
 #include "pdAnalysisUtils.hxx"
 #include <cassert>
 
 
 //********************************************************************
-HitPitchSCECorrection::HitPitchSCECorrection(){
+SCECorrection::SCECorrection(){
 //********************************************************************
 
-  //initialize space charge effect 
+  _sce = new SpaceCharge();
+  _sce->Initialize();
   _cal = new Calorimetry();
-  _cal->Initialize();
+  _cal->Initialize(_sce);
+  
 }
 
 //********************************************************************
-void HitPitchSCECorrection::Apply(AnaSpillC& spillC){
+void SCECorrection::Apply(AnaSpillC& spillC){
 //********************************************************************
 
   //cast bunch
@@ -31,7 +33,12 @@ void HitPitchSCECorrection::Apply(AnaSpillC& spillC){
     
     if (!original) continue; //?
 
-    _cal->ApplySCECorrection(part);
+    //here position start and end should be modified but tpcid is missing. It could just be estimated. Im lazy right now to do it.
+
+    for(int ihit = 0; ihit < part->Hits[2].size(); ihit++){
+      _sce->ApplyPositionCorrection(part->Hits[2][ihit]);
+      _cal->ApplySCECorrection(part->Hits[2][ihit]);
+    }
   }
 }
 

@@ -81,24 +81,8 @@ void Calorimetry::Initialize(){
 void Calorimetry::Initialize(SpaceCharge* sce){
 //********************************************************************
 
-  //read data files and create correction histograms
-  CreateNormHistogram();
-  CreateXCalHistogram();
-  CreateYZCalHistogram();
-
-  _Efield  = 0.4867; //probably all these values should be added in the parameters file
-  _ModBoxA = 0.930;
-  _ModBoxB = 0.212; 
-
-  _Lifetime = 35000;
-  _Vdrift   = 0.156461;
-  _APAx     = 368.351;
-
-  _CalAreaConstants[0] = 1.04e-3;
-  _CalAreaConstants[1] = 1.04e-3;
-  _CalAreaConstants[2] = 1.0156e-3;
-
   _sce = sce;
+  Initialize();
 }
 
 //********************************************************************
@@ -457,4 +441,22 @@ void Calorimetry::ApplyLifetimeCorrection(AnaHitPD &hit) const {
   
   double xcorr = exp((_APAx-abs(hit.Position.X()))/(_Lifetime*_Vdrift));
   hit.dQdx_elife = hit.dQdx_SCE*xcorr;
+}
+
+//********************************************************************
+void Calorimetry::UndoLifetimeCorrection(AnaParticlePD* part) const {
+//********************************************************************
+
+  if(!part)return;
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++)
+    UndoLifetimeCorrection(part->Hits[2][ihit]);
+}
+
+
+//********************************************************************
+void Calorimetry::UndoLifetimeCorrection(AnaHitPD &hit) const {
+//********************************************************************
+  
+  double xcorr = exp((_APAx-abs(hit.Position.X()))/(_Lifetime*_Vdrift));
+  hit.dQdx_SCE = hit.dQdx_elife/xcorr;
 }

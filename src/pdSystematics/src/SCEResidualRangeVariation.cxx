@@ -1,8 +1,8 @@
-#include "SCEVariation.hxx"
+#include "SCEResidualRangeVariation.hxx"
 #include "pdAnalysisUtils.hxx"
 
 //********************************************************************
-SCEVariation::SCEVariation():EventVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","SCE2", BinnedParams::k3D_SYMMETRIC_NOMEAN){
+SCEResidualRangeVariation::SCEResidualRangeVariation():EventVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","SCE2", BinnedParams::k3D_SYMMETRIC_NOMEAN){
 //********************************************************************
 
   // Read the systematic source parameters from the data files
@@ -10,25 +10,17 @@ SCEVariation::SCEVariation():EventVariationBase(),BinnedParams(std::string(geten
 
   //Initialize SCE object to apply variations
   for(int i = 0; i < 100; i++)_sce[i] = NULL;
-  // _sce = new SpaceCharge();
-  // _sce->Initialize();
-
-  // Initialize Calorimetry object using the SCE just created
-  _cal = new Calorimetry();
-  //_cal->SetSCE(_sce);
-  _cal->Initialize(NULL);
 }
 
 //********************************************************************
-SCEVariation::~SCEVariation(){
+SCEResidualRangeVariation::~SCEResidualRangeVariation(){
 //********************************************************************
-
+  
   for(int i = 0; i < 100; i++)delete _sce[i];
-  delete _cal;
 }
 
 //********************************************************************
-void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
+void SCEResidualRangeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 //********************************************************************
 
   // Get the SystBox for this event. The SystBox contains vector of objects that are relevant for this systematic.
@@ -40,19 +32,11 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   if(!_sce[toy_index]){
     _sce[toy_index] = new SpaceCharge();
     _sce[toy_index]->Initialize();
-    _cal->SetSCE(_sce[toy_index],false);
   }
-  else
-    _cal->SetSCE(_sce[toy_index],false);
-
-  //Get the systematic source values
-  //Float_t width;
-  //GetSigmaValueForBin(0, width); //only 1 bin for the moment
-
+  
   //Vary SCE map
   if(!_sce[toy_index]->IsVaried())
     VarySCEMap(toy);
-    //_sce[toy_index]->ApplyDisplacementVariation(1 + width*toy.GetToyVariations(_index)->Variations[0]);
 
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
@@ -64,18 +48,14 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
     if(part->Hits[2].empty())continue;
     
-    //important, two things are varied: XYZ position of the hit and pitch
-    //loop here to avoid looping more than once
-    for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
-      _sce[toy_index]->ApplyPositionCorrection(part->Hits[2][ihit]);
-      _cal->ApplySCECorrection(part->Hits[2][ihit]);
-      _cal->ApplyLifetimeCorrection(part->Hits[2][ihit]);
-    }
+    _sce[toy_index]->ApplyPositionCorrection(part);
+
+    pdAnaUtils::ComputeResidualRange(part);
   }
 }
 
 //********************************************************************
-bool SCEVariation::UndoSystematic(AnaEventC& event){
+bool SCEResidualRangeVariation::UndoSystematic(AnaEventC& event){
 //********************************************************************
 
   // Get the SystBox for this event
@@ -103,7 +83,7 @@ bool SCEVariation::UndoSystematic(AnaEventC& event){
 }
 
 //********************************************************************
-void SCEVariation::VarySCEMap(const ToyExperiment& toy){
+void SCEResidualRangeVariation::VarySCEMap(const ToyExperiment& toy){
 //********************************************************************
   
   int toy_index = toy.GetToyIndex();
@@ -138,7 +118,7 @@ void SCEVariation::VarySCEMap(const ToyExperiment& toy){
 }
 
 //**************************************************
-bool SCEVariation::IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& part) const{
+bool SCEResidualRangeVariation::IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& part) const{
 //**************************************************
 
   (void)event;

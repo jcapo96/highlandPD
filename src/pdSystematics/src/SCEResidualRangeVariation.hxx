@@ -1,15 +1,15 @@
-#ifndef SCEVariation_h
-#define SCEVariation_h
+#ifndef SCEResidualRangeVariation_h
+#define SCEResidualRangeVariation_h
 
 #include "EventVariationBase.hxx"
 #include "BinnedParams.hxx"
 #include "Calorimetry.hxx"
 
-class SCEVariation: public EventVariationBase, public BinnedParams{
+class SCEResidualRangeVariation: public EventVariationBase, public BinnedParams{
 public:
 
-  SCEVariation();
-  virtual ~SCEVariation(); 
+  SCEResidualRangeVariation();
+  virtual ~SCEResidualRangeVariation(); 
   
   /// Apply the systematic
   virtual void Apply(const ToyExperiment& toy, AnaEventC& event);
@@ -24,7 +24,6 @@ protected:
   /// Is this particle relevant for this systematic ?
   bool IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& part) const;
   
-  Calorimetry* _cal;
   SpaceCharge* _sce[100];
 };
 

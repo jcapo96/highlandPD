@@ -705,6 +705,54 @@ void SpaceCharge::ApplyPositionCorrection(AnaHitPD& hit) const {
 }
 
 //********************************************************************
+UInt_t SpaceCharge::GetNbinsX() const {
+//********************************************************************
+    
+  if(!hDx_cal_neg)return -1;
+  else return hDx_cal_neg->GetNbinsX();
+}
+
+//********************************************************************
+UInt_t SpaceCharge::GetNbinsY() const {
+//********************************************************************
+    
+  if(!hDx_cal_neg)return -1;
+  else return hDx_cal_neg->GetNbinsY();
+}
+
+//********************************************************************
+UInt_t SpaceCharge::GetNbinsZ() const {
+//********************************************************************
+    
+  if(!hDx_cal_neg)return -1;
+  else return hDx_cal_neg->GetNbinsZ();
+}
+
+//********************************************************************
+double SpaceCharge::GetBinCenterX(UInt_t bin) const {
+//********************************************************************
+    
+  if(!hDx_cal_neg)return -1;
+  else return hDx_cal_neg->GetXaxis()->GetBinCenter(bin);
+}
+
+//********************************************************************
+double SpaceCharge::GetBinCenterY(UInt_t bin) const {
+//********************************************************************
+    
+  if(!hDx_cal_neg)return -1;
+  else return hDx_cal_neg->GetYaxis()->GetBinCenter(bin);
+}
+
+//********************************************************************
+double SpaceCharge::GetBinCenterZ(UInt_t bin) const {
+//********************************************************************
+    
+  if(!hDx_cal_neg)return -1;
+  else return hDx_cal_neg->GetZaxis()->GetBinCenter(bin);
+}
+
+//********************************************************************
 void SpaceCharge::ApplyDisplacementVariation(const double var){
 //********************************************************************
     
@@ -737,6 +785,25 @@ void SpaceCharge::ApplyDisplacementVariation(const double var){
     
   //prepare new splines
   ResetSplines();
+
+  //set true
+  _IsVaried = true;
+}
+
+//********************************************************************
+void SpaceCharge::ApplyVoxelVariation(UInt_t xbin, UInt_t ybin, UInt_t zbin, double var, bool reset_splines){
+//********************************************************************
+    
+  hDx_cal_pos->SetBinContent(xbin,ybin,zbin,nominal_hDx_cal_pos->GetBinContent(xbin,ybin,zbin)*var);
+  hDy_cal_pos->SetBinContent(xbin,ybin,zbin,nominal_hDy_cal_pos->GetBinContent(xbin,ybin,zbin)*var);
+  hDz_cal_pos->SetBinContent(xbin,ybin,zbin,nominal_hDz_cal_pos->GetBinContent(xbin,ybin,zbin)*var);
+
+  hDx_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hDx_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
+  hDy_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hDy_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
+  hDz_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hDz_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
+      
+  //prepare new splines
+  if(reset_splines)ResetSplines();
 
   //set true
   _IsVaried = true;

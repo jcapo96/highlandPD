@@ -1,5 +1,21 @@
 --- Cut levels --------
- < dEdxCalibration.MinAccumLevelToSave = 2 >   // minimum accum level to save the event
+ < dEdxCalibration.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+
+ < dEdxCalibration.MichelRemovingTree = 0 >   
+
+--- Output Tree --------
+ < dEdxCalibration.SaveAna = 0 >   // Save standard analysis tree
+ < dEdxCalibration.SaveToy = 1 >   // Save toy variables
+
+--- Corrections --------
+ < dEdxCalibration.ApplySCEPositionCorrection = 1 >
+ < dEdxCalibration.ApplySCEPitchCorrection = 1 >
+ < dEdxCalibration.ApplyLifetimeCorrection = 1 >
+
+--- Systematics --------
+ < dEdxCalibration.ApplySCESystematic = 0 >
+ < dEdxCalibration.ApplyLifetimeSystematic = 1 >
+
 
 ###############################################################################
   baseAnalysis parameters
@@ -35,7 +51,7 @@ No weights yet !!!
 --- Systematics ------------
 
 Number of toy experiments
- < baseAnalysis.Systematics.NumberOfToys = 2 >
+ < baseAnalysis.Systematics.NumberOfToys = 100 >
 
 The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
 

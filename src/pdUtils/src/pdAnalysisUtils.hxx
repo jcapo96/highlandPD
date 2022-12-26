@@ -159,6 +159,8 @@ namespace pdAnaUtils{
   int GetHitTPCid(AnaHitPD& hit);
 
   void EstimateHitsDirection(AnaParticlePD* part);
+
+  void ComputeResidualRange(AnaParticlePD* part);
 }
 
 #endif
