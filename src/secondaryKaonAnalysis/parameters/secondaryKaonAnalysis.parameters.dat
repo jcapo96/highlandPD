@@ -7,43 +7,6 @@
 
 --- Systematics ------------
 
-The single systematics configuration (when EnableSingle...SystConfigurations = 1)
-or the all systematics configuration (when EnableAllSystematics = 1)
-need to be enabled in baseAnalysis parameter file
-
- < secondaryKaonAnalysis.Systematics.EnabledEdxKaon          = 0 >
-
- < secondaryKaonAnalysis.Systematics.EnableLength            = 0 >
-
- < secondaryKaonAnalysis.Systematics.EnableLifetime          = 0 >
- < secondaryKaonAnalysis.Systematics.EnabledQdxCalib         = 0 >
- < secondaryKaonAnalysis.Systematics.EnableRecombination     = 0 >
-
-This is the parent systematic of the three above
- < secondaryKaonAnalysis.Systematics.EnabledEdxCalib         = 0 >  
-
- < secondaryKaonAnalysis.Systematics.EnableBeamComposition   = 0 >
- < secondaryKaonAnalysis.Systematics.EnableTrackEff          = 0 >
- < secondaryKaonAnalysis.Systematics.EnableBeamPartIdEff     = 1 >
-
-< secondaryKaonAnalysis.Systematics.EnableResidualRangeVar   = 1 >	
-
---- Corrections -----------
-
- < secondaryKaonAnalysis.Corrections.EnabledEdx             = 0 >
- < secondaryKaonAnalysis.Corrections.EnabledEdxData         = 0 >
- < secondaryKaonAnalysis.Corrections.EnabledBrokenTrackData = 0 >  
- < secondaryKaonAnalysis.Corrections.EnabledBeamMom         = 0 >   
- < secondaryKaonAnalysis.Corrections.EnabledBeamMomSmearing = 0 >    
- < secondaryKaonAnalysis.Corrections.EnabledCryoWallBeamMom = 0 >   
-
---- Other Parameters -----------
-
-Use SCE correction for dEdx of beam particle daughters
- < secondaryKaonAnalysis.TreeConverter.UseSCE               = 1 >
-
-Recompute based on distance whether this is the beam particle or not
- < pdBaseAnalysis.UseIsBeamLike                    = 1 >
 
 
 ###############################################################################

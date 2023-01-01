@@ -60,8 +60,8 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
   AddVarMaxSizeVF (output, candidates_chi2_kaon,    "candidates chi2 kaon",         ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_chi2_muon,    "candidates chi2 proton",       ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_chi2_ndf,     "candidates chi2 ndf",          ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_kaon_PID,     "candidates kaon chi2",         ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_kaon_PID_ndf, "candidates kaon ndf",          ncandidates, nmax);
+  // AddVarMaxSizeVF (output, candidates_kaon_PID,     "candidates kaon chi2",         ncandidates, nmax);
+  // AddVarMaxSizeVI (output, candidates_kaon_PID_ndf, "candidates kaon ndf",          ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_distance_mother, "candidates-mother distance",   ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_distance_dau,    "candidates-daughter distance", ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_cos_dau,         "candidates-daughter cos",      ncandidates, nmax);
@@ -84,8 +84,8 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
   AddVarMaxSizeVF (output, candidates_dau_chi2_prot,  "candidates daughter chi2 proton",       ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_dau_chi2_muon,  "candidates daughter chi2 proton",       ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_dau_chi2_ndf,   "candidates daughter chi2 ndf",          ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_kaon_PID,   "candidates daughter chi2 ndf",          ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_dau_kaon_PID_ndf, "candidates daughter chi2 ndf",          ncandidates, nmax);
+  // AddVarMaxSizeVF (output, candidates_dau_kaon_PID,   "candidates daughter chi2 ndf",          ncandidates, nmax);
+  // AddVarMaxSizeVI (output, candidates_dau_kaon_PID_ndf, "candidates daughter chi2 ndf",          ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_dau_nhits,      "candidates daughter #hits",             ncandidates, nmax);
 
   AddVarMaxSizeVF (output, candidates_dau_averagedEdx,     "candidates dau average dEdx",                  ncandidates, nmax);
@@ -319,9 +319,9 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*part,321).first);
   output.FillVectorVar         (candidates_chi2_muon,        part->Chi2Muon         );
   output.FillVectorVar         (candidates_chi2_ndf,         part->Chi2ndf          );
-  std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
-  output.FillVectorVar         (candidates_kaon_PID,         (Float_t)kaon_PID.first);
-  output.FillVectorVar         (candidates_kaon_PID_ndf,     kaon_PID.second        );
+  // std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
+  // output.FillVectorVar         (candidates_kaon_PID,         (Float_t)kaon_PID.first);
+  // output.FillVectorVar         (candidates_kaon_PID_ndf,     kaon_PID.second        );
   output.FillVectorVar         (candidates_nhits,            part->NHits            );
 
   output.FillVectorVar         (candidates_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
@@ -348,9 +348,9 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_dau_chi2_prot,        dau->Chi2Proton       );
   output.FillVectorVar         (candidates_dau_chi2_muon,        dau->Chi2Muon         );
   output.FillVectorVar         (candidates_dau_chi2_ndf,         dau->Chi2ndf          );
-  std::pair<double,int>kaon_PID_dau = pdAnaUtils::kaonPID(*dau);
-  output.FillVectorVar         (candidates_dau_kaon_PID,         (Float_t)kaon_PID_dau.first);
-  output.FillVectorVar         (candidates_dau_kaon_PID_ndf,     kaon_PID_dau.second        );
+  // std::pair<double,int>kaon_PID_dau = pdAnaUtils::kaonPID(*dau);
+  // output.FillVectorVar         (candidates_dau_kaon_PID,         (Float_t)kaon_PID_dau.first);
+  // output.FillVectorVar         (candidates_dau_kaon_PID_ndf,     kaon_PID_dau.second        );
   output.FillVectorVar         (candidates_dau_nhits,            dau->NHits            );
 
   output.FillVectorVar         (candidates_dau_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(dau,5));

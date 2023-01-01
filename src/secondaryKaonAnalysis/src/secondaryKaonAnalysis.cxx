@@ -85,8 +85,6 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
-  //corr().AddCorrection("SCEpos",new HitPositionSCECorrection());
-  //corr().AddCorrection("SCEpitch",new HitPitchSCECorrection());
 }
 
 //********************************************************************
@@ -156,7 +154,7 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   
   // -------- Add toy variables ---------------------------------
   //AddToyVarVF(output(), bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", 100);
-  AddToyVarVF(output(), bestcandidate_hit_dedx_toy, "bestcandidate hit dEdx", 100);
+  //AddToyVarVF(output(), bestcandidate_hit_dedx_toy, "bestcandidate hit dEdx", 100);
 }
 
 //********************************************************************
@@ -245,10 +243,10 @@ void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
   if(best->Hits[2].empty())
     return;
   
-  for(int ihit = 0; ihit < 100; ihit++){
-    //output().FillToyVectorVar(bestcandidate_hit_resrange_toy,best->Hits[2][ihit].ResidualRange,ihit);
-    output().FillToyVectorVar(bestcandidate_hit_dedx_toy,best->Hits[2][ihit].dEdx,ihit);
-  }
+  // for(int ihit = 0; ihit < 100; ihit++){
+  //   //output().FillToyVectorVar(bestcandidate_hit_resrange_toy,best->Hits[2][ihit].ResidualRange,ihit);
+  //   output().FillToyVectorVar(bestcandidate_hit_dedx_toy,best->Hits[2][ihit].dEdx,ihit);
+  // }
 }
 
 //********************************************************************

@@ -153,9 +153,11 @@ void CoherentSample::WriteToRootFile(const std::string& filename){
   rfile->WriteObject(&fIFit,"IFit_vector");
   rfile->WriteObject(&fCFit,"CFit_vector");
 
-  if(fClwFit)fClwFit->Write();
-  if(fCmpvFit)fCmpvFit->Write();
-  if(fCgwFit)fCgwFit->Write();
+  if(fType != SampleTypeEnum::kSignalPlusBackground){
+    if(fClwFit)fClwFit->Write();
+    if(fCmpvFit)fCmpvFit->Write();
+    if(fCgwFit)fCgwFit->Write();
+  }
   
   rfile->WriteObject(&fRR,"RR_vector");
 
