@@ -1,7 +1,7 @@
-const double ZMAX = 340;
-const double ZMIN = 335;
-const double YMAX = 295;
-const double YMIN = 290;
+const double ZMAX = 240;
+const double ZMIN = 0;
+const double YMAX = 600;
+const double YMIN = 0;
 const double STEP = 5;
 
 //********************************************
@@ -64,7 +64,7 @@ void toy_yz(){
 //********************************************
   
   //file name
-  std::string filename = "../../../../files/toy_vector.root";
+  std::string filename = "/dune/data/users/miagarc/toy.root";
   //open root file
   TFile* rfile = TFile::Open(filename.c_str());
   TTree* tree  = (TTree*)rfile->Get("all_syst");

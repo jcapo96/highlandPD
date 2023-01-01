@@ -97,11 +97,11 @@ bool IsValidHit(const double x, const double y, const double z,
 }
 
 //********************************************
-void toy_x_branch(){
+void toy_x_branch_histos(){
 //********************************************
   
   //file name
-  std::string filename = "/dune/data/users/miagarc/toy_lifetime.root";
+  std::string filename = "/dune/data/users/miagarc/toy_sce_lifetime.root";
   //open root file
   TFile* rfile = TFile::Open(filename.c_str());
   TTree* tree  = (TTree*)rfile->Get("all_syst");
@@ -124,16 +124,8 @@ void toy_x_branch(){
   TH2F* yzhisto = (TH2F*)yzfile->Get("corr_hist");
 
   //histograms and functions for calculations
-  TH1F* hdummy[NTOYS];
+  TH2F* hdummy = new TH2F("dummy","dummy",NTOYS,0,NTOYS,100,0,100);
   TH1F* hsyst = new TH1F("hsyst","hsyst",1000,0,100);
-  //initialize histograms
-  for(int itoy = 0; itoy < NTOYS; itoy++){
-    std::stringstream stoy;
-    stoy << itoy;
-    hdummy[itoy] = new TH1F(("h"+stoy.str()+"").c_str(),
-			   ("h"+stoy.str()+"").c_str(),
-			   100,0,100);
-  }
 
   //get global mean and errors
   double global_mpv, global_stat_error, global_syst_error;
@@ -153,7 +145,7 @@ void toy_x_branch(){
 	  double refact = Recombination(ElectricField(hit_x[itoy][ihit],
 						      hit_y[itoy][ihit],
 						      hit_z[itoy][ihit]));
-	  hdummy[itoy]->Fill(hit_dqdx[itoy][ihit]*yzcorr*refact);
+	  hdummy->Fill(itoy+1,hit_dqdx[itoy][ihit]*yzcorr*refact);
 	}
       }
     }
@@ -165,70 +157,87 @@ void toy_x_branch(){
   f->SetParLimits(0,1,5);
   f->SetParLimits(1,50,70);
   f->SetParLimits(3,1,5);
+  TH1D* hproj = new TH1D("hproj","hproj",100,0,100);
   for(int itoy = 0; itoy < NTOYS; itoy++){
-    std::cout << "toy ploy " << itoy << std::endl;
-    //hdummy[itoy]->Draw();
-    hdummy[itoy]->Fit("f","QNOLR");
+    hproj=hdummy->ProjectionY("hproj",itoy+1,itoy+2);
+    double hmax = hproj->GetBinCenter(hproj->GetMaximumBin());
+    f->SetParameter(1,hmax);
+    f->SetParLimits(1,hmax-5,hmax+10);
+    f->SetRange(hmax-7.5,hmax+10);
+    hproj->Fit("f","QNOLR");
     hsyst->Fill(f->GetParameter(1));
-    hdummy[itoy]->Reset();
+    hproj->Reset();
   }
   global_mpv = hsyst->GetMean();
   global_syst_error = hsyst->GetRMS();
   hsyst->Reset();
+  delete hdummy;
 
   std::cout << "Global MPV = " << global_mpv << " +/- " << global_syst_error << std::endl; 
   
   //get local mean and errors
-  const int nbinsx = 11;//(XMAX-XMIN)/STEP;
+  const int nbinsx = (XMAX-XMIN)/STEP;
   double local_mpv[nbinsx] = {0};
   double local_syst_error[nbinsx] = {0};
-  double xmin_vector[nbinsx] = {-360,-320,-280,-240,-200,-160,-120,-80,-40,-20,-5};
   std::cout << "local mean calculation" << std::endl;
-  TH1F* h1f = new TH1F("h1f","h1f",nbinsx,XMIN,XMAX);
+  TH2F* hdummyv[nbinsx];
+  for(int ix = 0; ix < nbinsx; ix++){
+    std::stringstream ssx;
+    ssx << ix;
+    hdummyv[ix] = new TH2F(("dummy_"+ssx.str()+"").c_str(),
+			   ("dummy_"+ssx.str()+"").c_str(),
+			   NTOYS,0,NTOYS,100,0,100);
+  }
   
+  //loop over entries
+  int x;
+  for(int ientry = 0; ientry < nentries; ientry++){
+    tree->GetEntry(ientry);
+    if(ientry%20000==0)std::cout << ientry << "/" << nentries << std::endl;
+    //loop over toys
+    for(int itoy = 0; itoy < NTOYS; itoy++){
+      //loop over hits
+      for(int ihit = 0; ihit < NHITS; ihit++){
+	if(IsValidHit(hit_x[itoy][ihit],hit_y[itoy][ihit],hit_z[itoy][ihit],XMIN,XMAX)){
+	  //apply corrections
+	  double yzcorr = yzhisto->GetBinContent(yzhisto->GetXaxis()->FindBin(hit_z[itoy][ihit]),
+						 yzhisto->GetYaxis()->FindBin(hit_y[itoy][ihit]));
+	  double refact = Recombination(ElectricField(hit_x[itoy][ihit],
+						      hit_y[itoy][ihit],
+						      hit_z[itoy][ihit]));
+	  x = abs(hit_x[itoy][ihit]/STEP);
+	  hdummyv[x]->Fill(itoy+1,hit_dqdx[itoy][ihit]*yzcorr*refact);
+	}
+      }//loop over hits
+    }//loop over toys
+  }//loop over entries
+   
+  //fit toy histograms and get mean value
+  TH1F* hf = new TH1F("hf","hf",nbinsx,XMIN,XMAX);
   //loop over voxels
   for(int ix = 0; ix < nbinsx; ix++){
-    double xmin = xmin_vector[ix];//XMIN + ix*STEP;
-    double xmax = xmin_vector[ix]+STEP;//XMIN + (ix+1)*STEP;
-    std::cout << "bin " << ix << "/" << nbinsx << std::endl;
-    //loop over entries
-    for(int ientry = 0; ientry < nentries; ientry++){
-      tree->GetEntry(ientry);
-      if(ientry%20000==0)std::cout << ientry << "/" << nentries << std::endl;
-      //loop over toys
-      for(int itoy = 0; itoy < NTOYS; itoy++){
-	//loop over hits
-	for(int ihit = 0; ihit < NHITS; ihit++){
-	  if(IsValidHit(hit_x[itoy][ihit],hit_y[itoy][ihit],hit_z[itoy][ihit],xmin,xmax)){
-	    //apply corrections
-	    double yzcorr = yzhisto->GetBinContent(yzhisto->GetXaxis()->FindBin(hit_z[itoy][ihit]),
-						   yzhisto->GetYaxis()->FindBin(hit_y[itoy][ihit]));
-	    double refact = Recombination(ElectricField(hit_x[itoy][ihit],
-							hit_y[itoy][ihit],
-							hit_z[itoy][ihit]));
-	    hdummy[itoy]->Fill(hit_dqdx[itoy][ihit]*yzcorr*refact);
-	  }
-	}//loop over hits
-      }//loop over toys
-    }//loop over entries
-    //fit toy histograms and get mean value
+    //loop over toys
     for(int itoy = 0; itoy < NTOYS; itoy++){
-      //hdummy[itoy]->Draw();
+      hproj=hdummyv[ix]->ProjectionY("hproj",itoy+1,itoy+2);
       f->SetParameters(1,60,5000,5);
-      hdummy[itoy]->Fit("f","QNOLR");
-      //gPad->Update();
+      double hmax = hproj->GetBinCenter(hproj->GetMaximumBin());
+      f->SetParameter(1,hmax);
+      f->SetParLimits(1,hmax-5,hmax+10);
+      f->SetRange(hmax-7.5,hmax+10);
+      hproj->Fit("f","QNOLR");
       hsyst->Fill(f->GetParameter(1));
-      hdummy[itoy]->Reset();
+      hproj->Reset();
     }
-    //hsyst->Draw();gPad->Update();
     local_mpv[ix] = hsyst->GetMean();
     local_syst_error[ix] = hsyst->GetRMS();
     hsyst->Reset();
-    std::cout << "Local MPV = " << local_mpv[ix] << " +/- " << local_syst_error[ix] << std::endl;
-    h1f->SetBinContent(ix+1,sqrt(pow(global_syst_error/global_mpv,2)+pow(local_syst_error[ix]/local_mpv[ix],2))*100);
-  }//loop over voxels
-  h1f->Draw();
-  TFile* wfile = TFile::Open("x_errormap_lifetime.root","NEW");
-  h1f->Write();
+    delete hdummyv[ix];
+    std::cout << ix << " Local MPV = " << local_mpv[ix] << " +/- " << local_syst_error[ix] << std::endl;
+    hf->SetBinContent(ix+1,sqrt(pow(global_syst_error/global_mpv,2)+pow(local_syst_error[ix]/local_mpv[ix],2))*100);
+  }
+  
+  hf->Draw();
+  TFile* wfile = TFile::Open("x_errormap_complete.root","NEW");
+  hf->Write();
   wfile->Close();
 }
