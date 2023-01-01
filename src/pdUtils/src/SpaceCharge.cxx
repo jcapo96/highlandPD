@@ -111,7 +111,7 @@ SpaceCharge::~SpaceCharge(){
   ClearSplines();
 
   for(int i = 0; i < (int)SCEhistograms.size(); i++)
-    delete SCEhistograms[i];
+    delete SCEhistograms[i]; //redundant, they have been deleted above, but just in case
   SCEhistograms.clear();
 }
 
@@ -140,9 +140,9 @@ void SpaceCharge::Initialize(){
     std::cout << "Can't open file " << fInputFilename << std::endl;
     exit(1);
   }
-
-  InitializeHistograms();
   
+  InitializeHistograms();
+
   InitializeSplines();
     
   CalSCEhistograms = {hDx_cal_pos, hDy_cal_pos, hDz_cal_pos, hEx_cal_pos, hEy_cal_pos, hEz_cal_pos, hDx_cal_neg, hDy_cal_neg, hDz_cal_neg, hEx_cal_neg, hEy_cal_neg, hEz_cal_neg};
@@ -150,156 +150,301 @@ void SpaceCharge::Initialize(){
   fInputFile->Close();
 }
 
-
 //********************************************************************
-TVector3 SpaceCharge::GetPosOffsets(TVector3 const& point) const {
+void SpaceCharge::InitializeHistograms(){
 //********************************************************************
   
-  TVector3 Offsets(0,0,0);
-  TVector3 p = point;
- 
-  if(IsTooFarFromBoundaries(p))return Offsets;
+  // InitializeHistogram(&hDx_cal_pos, "RecoBkwd_Displacement_X_Pos", "hDx_pos");
+  // InitializeHistogram(&hDy_cal_pos, "RecoBkwd_Displacement_Y_Pos", "hDy_pos");
+  // InitializeHistogram(&hDz_cal_pos, "RecoBkwd_Displacement_Z_Pos", "hDz_pos");
+  // InitializeHistogram(&hEx_cal_pos, "Reco_ElecField_X_Pos"       , "hEx_pos");
+  // InitializeHistogram(&hEy_cal_pos, "Reco_ElecField_Y_Pos"       , "hEy_pos");
+  // InitializeHistogram(&hEz_cal_pos, "Reco_ElecField_Z_Pos"       , "hEz_pos");
+								           
+  // InitializeHistogram(&hDx_cal_neg, "RecoBkwd_Displacement_X_Neg", "hDx_neg");
+  // InitializeHistogram(&hDy_cal_neg, "RecoBkwd_Displacement_Y_Neg", "hDy_neg");
+  // InitializeHistogram(&hDz_cal_neg, "RecoBkwd_Displacement_Z_Neg", "hDz_neg");
+  // InitializeHistogram(&hEx_cal_neg, "Reco_ElecField_X_Neg"       , "hEx_neg");
+  // InitializeHistogram(&hEy_cal_neg, "Reco_ElecField_Y_Neg"       , "hEy_neg");
+  // InitializeHistogram(&hEz_cal_neg, "Reco_ElecField_Z_Neg"       , "hEz_neg");
 
-  if(!IsInsideBoundaries(p)&&!IsTooFarFromBoundaries(p)) p = PretendAtBoundary(p);
+  // nominal_hDx_cal_pos = (TH3F*)hDx_cal_pos->Clone("nom_hDx_pos");
+  // nominal_hDy_cal_pos = (TH3F*)hDy_cal_pos->Clone("nom_hDy_pos");
+  // nominal_hDz_cal_pos = (TH3F*)hDz_cal_pos->Clone("nom_hDz_pos");
+  // nominal_hEx_cal_pos = (TH3F*)hEx_cal_pos->Clone("nom_hEx_pos");
+  // nominal_hEy_cal_pos = (TH3F*)hEy_cal_pos->Clone("nom_hEy_pos");
+  // nominal_hEz_cal_pos = (TH3F*)hEz_cal_pos->Clone("nom_hEz_pos");
+
+  // nominal_hDx_cal_neg = (TH3F*)hDx_cal_neg->Clone("nom_hDx_neg");
+  // nominal_hDy_cal_neg = (TH3F*)hDy_cal_neg->Clone("nom_hDy_neg");
+  // nominal_hDz_cal_neg = (TH3F*)hDz_cal_neg->Clone("nom_hDz_neg");
+  // nominal_hEx_cal_neg = (TH3F*)hEx_cal_neg->Clone("nom_hEx_neg");
+  // nominal_hEy_cal_neg = (TH3F*)hEy_cal_neg->Clone("nom_hEy_neg");
+  // nominal_hEz_cal_neg = (TH3F*)hEz_cal_neg->Clone("nom_hEz_neg");
+
+  //Load in files
+  TH3F* hDx_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Pos");
+  TH3F* hDy_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Pos");
+  TH3F* hDz_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Pos");
+  TH3F* hEx_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Pos");
+  TH3F* hEy_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Pos");
+  TH3F* hEz_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Pos");
   
-  if(p.X() > 0.){
-    Offsets = GetOffsets(p, SCEhistograms.at(0), SCEhistograms.at(1), SCEhistograms.at(2), 1, 2);
-    Offsets.SetX(-1.0*Offsets.X());
-  } 
-  else{
-    Offsets = GetOffsets(p, SCEhistograms.at(6), SCEhistograms.at(7), SCEhistograms.at(8), 1, 1);
-    Offsets.SetX(-1.0*Offsets.X());
+  TH3F* hDx_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Neg");
+  TH3F* hDy_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Neg");
+  TH3F* hDz_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Neg");
+  TH3F* hEx_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Neg");
+  TH3F* hEy_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Neg");
+  TH3F* hEz_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Neg");
+  
+  hDx_cal_pos = (TH3F*)hDx_cal_pos_orig->Clone("hDx_pos");
+  hDy_cal_pos = (TH3F*)hDy_cal_pos_orig->Clone("hDy_pos");
+  hDz_cal_pos = (TH3F*)hDz_cal_pos_orig->Clone("hDz_pos");
+  hEx_cal_pos = (TH3F*)hEx_cal_pos_orig->Clone("hEx_pos");
+  hEy_cal_pos = (TH3F*)hEy_cal_pos_orig->Clone("hEy_pos");
+  hEz_cal_pos = (TH3F*)hEz_cal_pos_orig->Clone("hEz_pos");
+
+  hDx_cal_neg = (TH3F*)hDx_cal_neg_orig->Clone("hDx_neg");
+  hDy_cal_neg = (TH3F*)hDy_cal_neg_orig->Clone("hDy_neg");
+  hDz_cal_neg = (TH3F*)hDz_cal_neg_orig->Clone("hDz_neg");
+  hEx_cal_neg = (TH3F*)hEx_cal_neg_orig->Clone("hEx_neg");
+  hEy_cal_neg = (TH3F*)hEy_cal_neg_orig->Clone("hEy_neg");
+  hEz_cal_neg = (TH3F*)hEz_cal_neg_orig->Clone("hEz_neg");
+
+  nominal_hDx_cal_pos = (TH3F*)hDx_cal_pos_orig->Clone("nom_hDx_pos");
+  nominal_hDy_cal_pos = (TH3F*)hDy_cal_pos_orig->Clone("nom_hDy_pos");
+  nominal_hDz_cal_pos = (TH3F*)hDz_cal_pos_orig->Clone("nom_hDz_pos");
+  nominal_hEx_cal_pos = (TH3F*)hEx_cal_pos_orig->Clone("nom_hEx_pos");
+  nominal_hEy_cal_pos = (TH3F*)hEy_cal_pos_orig->Clone("nom_hEy_pos");
+  nominal_hEz_cal_pos = (TH3F*)hEz_cal_pos_orig->Clone("nom_hEz_pos");
+
+  nominal_hDx_cal_neg = (TH3F*)hDx_cal_neg_orig->Clone("nom_hDx_neg");
+  nominal_hDy_cal_neg = (TH3F*)hDy_cal_neg_orig->Clone("nom_hDy_neg");
+  nominal_hDz_cal_neg = (TH3F*)hDz_cal_neg_orig->Clone("nom_hDz_neg");
+  nominal_hEx_cal_neg = (TH3F*)hEx_cal_neg_orig->Clone("nom_hEx_neg");
+  nominal_hEy_cal_neg = (TH3F*)hEy_cal_neg_orig->Clone("nom_hEy_neg");
+  nominal_hEz_cal_neg = (TH3F*)hEz_cal_neg_orig->Clone("nom_hEz_neg");
+
+  hDx_cal_pos->SetDirectory(0);
+  hDy_cal_pos->SetDirectory(0);
+  hDz_cal_pos->SetDirectory(0);
+  hEx_cal_pos->SetDirectory(0);
+  hEy_cal_pos->SetDirectory(0);
+  hEz_cal_pos->SetDirectory(0);
+  
+  hDx_cal_neg->SetDirectory(0);
+  hDy_cal_neg->SetDirectory(0);
+  hDz_cal_neg->SetDirectory(0);
+  hEx_cal_neg->SetDirectory(0);
+  hEy_cal_neg->SetDirectory(0);
+  hEz_cal_neg->SetDirectory(0);
+  
+  nominal_hDx_cal_pos->SetDirectory(0);
+  nominal_hDy_cal_pos->SetDirectory(0);
+  nominal_hDz_cal_pos->SetDirectory(0);
+  nominal_hEx_cal_pos->SetDirectory(0);
+  nominal_hEy_cal_pos->SetDirectory(0);
+  nominal_hEz_cal_pos->SetDirectory(0);
+
+  nominal_hDx_cal_neg->SetDirectory(0);
+  nominal_hDy_cal_neg->SetDirectory(0);
+  nominal_hDz_cal_neg->SetDirectory(0);
+  nominal_hEx_cal_neg->SetDirectory(0);
+  nominal_hEy_cal_neg->SetDirectory(0);
+  nominal_hEz_cal_neg->SetDirectory(0);  
+}
+
+//********************************************************************
+void SpaceCharge::InitializeHistogram(TH3F** h, const char* histo, const char* newname){
+//********************************************************************
+  
+  std::string histoname(histo);
+  std::string filename = fInputFilename.substr(0,fInputFilename.find(".root"))+"_"+histoname+".dat";
+
+  FILE* pFile = fopen(filename.c_str(),"r");
+  if(!pFile){
+    std::cout << "cannot open file " << filename << std::endl;
+    std::exit(1);
   }
-       
-  TVector3 pafteroffset(p.X()+Offsets.X(), p.Y()+Offsets.Y(), p.Z()+Offsets.Z());
-  TVector3 edoffset = ElectronDiverterPosOffsets(pafteroffset);
-  Offsets.SetX(Offsets.X()+edoffset.X());
-  Offsets.SetY(Offsets.Y()+edoffset.Y());
-  Offsets.SetZ(Offsets.Z()+edoffset.Z());
 
-  return Offsets;
+  int nbinsx, nbinsy, nbinsz;
+  double xmin, xmax, ymin, ymax, zmin, zmax;
+
+  if(fscanf(pFile,"%d %lf %lf",&nbinsx,&xmin,&xmax)!=3)
+    std::cout << "Can't read X binnng " << std::endl;
+
+  if(fscanf(pFile,"%d %lf %lf",&nbinsy,&ymin,&ymax)!=3)
+    std::cout << "Can't read Y binnng " << std::endl;
+
+  if(fscanf(pFile,"%d %lf %lf",&nbinsz,&zmin,&zmax)!=3)
+    std::cout << "Can't read Z binnng " << std::endl;
+
+  //create and fill 3d histogram
+  *h = new TH3F(newname, "",
+	       nbinsx , xmin, xmax,
+	       nbinsy , ymin, ymax,
+	       nbinsz , zmin, zmax);
+
+  int x,y,z;
+  double val;
+  
+  while(fscanf(pFile, "%d %d %d %lf", &x, &y, &z, &val) == 4)
+    (*h)->SetBinContent(x,y,z,val);
+
+  fclose(pFile);
 }
 
 //********************************************************************
-TVector3 SpaceCharge::GetCalPosOffsets(TVector3 const& point, int const& TPCid) const {
+void SpaceCharge::InitializeSplines(){
 //********************************************************************
 
-  TVector3 Offsets(0,0,0);
-  TVector3 p = point;
-
-  if(IsTooFarFromBoundaries(p)) return Offsets;
-
-  if(!IsInsideBoundaries(p) && !IsTooFarFromBoundaries(p))
-  	p = PretendAtBoundary(p); 
+  int nBinsX = hDx_cal_pos->GetNbinsX();
+  int nBinsY = hDx_cal_pos->GetNbinsY();
+  int nBinsZ = hDx_cal_pos->GetNbinsZ();
   
-  if((TPCid == 2 || TPCid == 6 || TPCid == 10) && p.X()>-20.){
-    if(p.X()<0.) p = {0.00001, p.Y(), p.Z()};
-    Offsets = GetOffsets(p, CalSCEhistograms.at(0), CalSCEhistograms.at(1), CalSCEhistograms.at(2), 2, 2);
-    Offsets[0] = -1.0*Offsets[0];
-  } 
-  else if((TPCid == 1 || TPCid == 5 || TPCid == 9) && p.X()<20.) {
-    if(p.X()>0.) p= {-0.00001, p.Y(), p.Z()};
-    Offsets = GetOffsets(p, CalSCEhistograms.at(6), CalSCEhistograms.at(7), CalSCEhistograms.at(8), 2, 1);
-    Offsets[0] = -1.0*Offsets[0];
-  } 
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dx_bkwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dx_bkwd_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dx_bkwd_neg.back().push_back(MakeSpline(hDx_cal_neg,1,y,z,2,1));
+      spline_dx_bkwd_pos.back().push_back(MakeSpline(hDx_cal_pos,1,y,z,2,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dy_bkwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dy_bkwd_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dy_bkwd_neg.back().push_back(MakeSpline(hDy_cal_neg,2,x,z,2,1));
+      spline_dy_bkwd_pos.back().push_back(MakeSpline(hDy_cal_pos,2,x,z,2,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dz_bkwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dz_bkwd_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dz_bkwd_neg.back().push_back(MakeSpline(hDz_cal_neg,3,x,y,2,1));
+      spline_dz_bkwd_pos.back().push_back(MakeSpline(hDz_cal_pos,3,x,y,2,2));
+    }
+  }
+  nBinsX = hEx_cal_neg->GetNbinsX();
+  nBinsY = hEx_cal_neg->GetNbinsY();
+  nBinsZ = hEx_cal_neg->GetNbinsZ();
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dEx_neg.push_back(std::vector<TSpline3*>());
+    spline_dEx_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEx_neg.back().push_back(MakeSpline(hEx_cal_neg,1,y,z,3,1));
+      spline_dEx_pos.back().push_back(MakeSpline(hEx_cal_pos,1,y,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEy_neg.push_back(std::vector<TSpline3*>());
+    spline_dEy_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEy_neg.back().push_back(MakeSpline(hEy_cal_neg,2,x,z,3,1));
+      spline_dEy_pos.back().push_back(MakeSpline(hEy_cal_pos,2,x,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEz_neg.push_back(std::vector<TSpline3*>());
+    spline_dEz_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dEz_neg.back().push_back(MakeSpline(hEz_cal_neg,3,x,y,3,1));
+      spline_dEz_pos.back().push_back(MakeSpline(hEz_cal_pos,3,x,y,3,2));
+    }
+  }
 
-  return Offsets;
-}
-
-//********************************************************************
-TVector3 SpaceCharge::GetOffsets(TVector3 const& point, TH3F* hX, TH3F* hY, TH3F* hZ, int maptype, int driftvol) const {
-//********************************************************************
-
-  return {InterpolateSplines(hX,point.X(),point.Y(),point.Z(),1,maptype,driftvol),
-          InterpolateSplines(hY,point.X(),point.Y(),point.Z(),2,maptype,driftvol),
-          InterpolateSplines(hZ,point.X(),point.Y(),point.Z(),3,maptype,driftvol)};
-}
-
-//********************************************************************
-TVector3 SpaceCharge::GetEfieldOffsets(TVector3 const& point) const {
-//********************************************************************
-  
-  TVector3 Offsets(0,0,0);
-  TVector3 p = point;
-
-  if(IsTooFarFromBoundaries(p))return Offsets;
-
-  if(!IsInsideBoundaries(p) && !IsTooFarFromBoundaries(p)) p = PretendAtBoundary(p);
-  
-  if(p.X() > 0.)Offsets = GetOffsets(p, SCEhistograms.at(3), SCEhistograms.at(4), SCEhistograms.at(5), 3, 2);
-  else          Offsets = GetOffsets(p, SCEhistograms.at(9), SCEhistograms.at(10),SCEhistograms.at(11),3, 1);
-  Offsets.SetX(-1.0*Offsets.X());
-  Offsets.SetY(-1.0*Offsets.Y());
-  Offsets.SetZ(-1.0*Offsets.Z());
+  /*//Load in files
+    // THIS IS FOR FORWARD IMPLEMENTATION, NOT DONE SO FAR AND NOT NEEDED
+  TH3F* hDx_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Pos");
+  TH3F* hDy_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Pos");
+  TH3F* hDz_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Pos");
+  TH3F* hEx_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_X_Pos");
+  TH3F* hEy_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Pos");
+  TH3F* hEz_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Pos");
     
-  return Offsets;
-}
-
-//********************************************************************
-TVector3 SpaceCharge::GetCalEfieldOffsets(TVector3 const& point, int const& TPCid) const { 
-//********************************************************************
- 
- TVector3 Offsets(0,0,0);
- TVector3 p = point;
-
- if(IsTooFarFromBoundaries(p))return Offsets;
- 
- if(!IsInsideBoundaries(p) && !IsTooFarFromBoundaries(p)) p = PretendAtBoundary(p);
+  TH3F* hDx_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Neg");
+  TH3F* hDy_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Neg");
+  TH3F* hDz_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Neg");
+  TH3F* hEx_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_X_Neg");
+  TH3F* hEy_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Neg");
+  TH3F* hEz_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Neg");
   
- if((TPCid == 2 || TPCid == 6 || TPCid == 10) && p.X()>-20.){
-   if(p.X()<0.) p = {0.00001, p.Y(), p.Z()};
-   Offsets= GetOffsets(p, CalSCEhistograms.at(3), CalSCEhistograms.at(4), CalSCEhistograms.at(5), 3, 2);
- }
- else if((TPCid == 1 || TPCid == 5 || TPCid == 9) && p.X()<20.){
-   if(p.X()>0.) p = {-0.00001, p.Y(), p.Z()};
-   Offsets = GetOffsets(p, CalSCEhistograms.at(9), CalSCEhistograms.at(10), CalSCEhistograms.at(11), 3, 1);
- } 
- Offsets.SetX(-1.0*Offsets.X());
- Offsets.SetY(-1.0*Offsets.Y());
- Offsets.SetZ(-1.0*Offsets.Z());
- 
- return Offsets;
-}
-
-
-//********************************************************************
-bool SpaceCharge::IsInsideBoundaries(TVector3 const& point) const {
-//********************************************************************
-  return !(
-	   (TMath::Abs(point.X()) <= 0.0) || (TMath::Abs(point.X()) >= 360.0)
-	   || (point.Y()             <= 5.2) || (point.Y()             >= 604.0)
-	   || (point.Z()             <= -0.5) || (point.Z()             >= 695.3)
-	   );
-} 
+  TH3F* hDx_sim_pos = (TH3F*)hDx_sim_pos_orig->Clone("hDx_pos");
+  TH3F* hDy_sim_pos = (TH3F*)hDy_sim_pos_orig->Clone("hDy_pos");
+  TH3F* hDz_sim_pos = (TH3F*)hDz_sim_pos_orig->Clone("hDz_pos");
+  TH3F* hEx_sim_pos = (TH3F*)hEx_sim_pos_orig->Clone("hEx_pos");
+  TH3F* hEy_sim_pos = (TH3F*)hEy_sim_pos_orig->Clone("hEy_pos");
+  TH3F* hEz_sim_pos = (TH3F*)hEz_sim_pos_orig->Clone("hEz_pos");
   
-//********************************************************************
-bool SpaceCharge::IsTooFarFromBoundaries(TVector3 const& point) const {
-//********************************************************************
+  TH3F* hDx_sim_neg = (TH3F*)hDx_sim_neg_orig->Clone("hDx_neg");
+  TH3F* hDy_sim_neg = (TH3F*)hDy_sim_neg_orig->Clone("hDy_neg");
+  TH3F* hDz_sim_neg = (TH3F*)hDz_sim_neg_orig->Clone("hDz_neg");
+  TH3F* hEx_sim_neg = (TH3F*)hEx_sim_neg_orig->Clone("hEx_neg");
+  TH3F* hEy_sim_neg = (TH3F*)hEy_sim_neg_orig->Clone("hEy_neg");
+  TH3F* hEz_sim_neg = (TH3F*)hEz_sim_neg_orig->Clone("hEz_neg");
   
-  return (
-	  (TMath::Abs(point.X()) < -20.0) || (TMath::Abs(point.X())  >= 360.0)
-	  || (point.Y()             < -14.8) || (point.Y()              >  624.0)
-	  || (point.Z()             < -20.5) || (point.Z()              >  715.3)
-	  );
-}
-
-//********************************************************************
-TVector3 SpaceCharge::PretendAtBoundary(TVector3 const& point) const {
-//********************************************************************
+  int nBinsX = hDx_sim_pos_orig->GetNbinsX();
+  int nBinsY = hDx_sim_pos_orig->GetNbinsY();
+  int nBinsZ = hDx_sim_pos_orig->GetNbinsZ();
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dx_fwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dx_fwd_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dx_fwd_neg.back().push_back(MakeSpline(hDx_sim_neg,1,y,z,1,1));
+      spline_dx_fwd_pos.back().push_back(MakeSpline(hDx_sim_pos,1,y,z,1,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dy_fwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dy_fwd_pos.push_back(std::vector<TSpline3*>());
+    
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dy_fwd_neg.back().push_back(MakeSpline(hDy_sim_neg,2,x,z,1,1));
+      spline_dy_fwd_pos.back().push_back(MakeSpline(hDy_sim_pos,2,x,z,1,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dz_fwd_neg.push_back(std::vector<TSpline3*>());
+    spline_dz_fwd_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dz_fwd_neg.back().push_back(MakeSpline(hDz_sim_neg,3,x,y,1,1));
+      spline_dz_fwd_pos.back().push_back(MakeSpline(hDz_sim_pos,3,x,y,1,2));
+    }
+  }
+    
+  nBinsX = hEx_sim_pos_orig->GetNbinsX();
+  nBinsY = hEx_sim_pos_orig->GetNbinsY();
+  nBinsZ = hEx_sim_pos_orig->GetNbinsZ();
+  for(int y = 1; y <= nBinsY; y++){
+    spline_dEx_neg.push_back(std::vector<TSpline3*>());
+    spline_dEx_pos.push_back(std::vector<TSpline3*>());
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEx_neg.back().push_back(MakeSpline(hEx_sim_neg,1,y,z,3,1));
+      spline_dEx_pos.back().push_back(MakeSpline(hEx_sim_pos,1,y,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEy_neg.push_back(std::vector<TSpline3*>());
+    spline_dEy_pos.push_back(std::vector<TSpline3*>());
+    
+    for(int z = 1; z <= nBinsZ; z++){
+      spline_dEy_neg.back().push_back(MakeSpline(hEy_sim_neg,2,x,z,3,1));
+      spline_dEy_pos.back().push_back(MakeSpline(hEy_sim_pos,2,x,z,3,2));
+    }
+  }
+  for(int x = 1; x <= nBinsX; x++){
+    spline_dEz_neg.push_back(std::vector<TSpline3*>());
+    spline_dEz_pos.push_back(std::vector<TSpline3*>());
+    for(int y = 1; y <= nBinsY; y++){
+      spline_dEz_neg.back().push_back(MakeSpline(hEz_sim_neg,3,x,y,3,1));
+      spline_dEz_pos.back().push_back(MakeSpline(hEz_sim_pos,3,x,y,3,2));
+    }
+  }
   
-  double x = point.X(), y = point.Y(), z = point.Z();
-  
-  if      (TMath::Abs(point.X()) ==    0.0    )   x = -0.00001;
-  else if (TMath::Abs(point.X()) <	 0.00001) x = TMath::Sign(point.X(),1)*0.00001; 
-  else if (TMath::Abs(point.X()) >=    360.0  )   x = TMath::Sign(point.X(),1)*359.99999;
-  
-  if      (point.Y() <=   5.2) y = 5.20001;
-  else if (point.Y() >= 604.0) y = 603.99999;
-  
-  if      (point.Z() <=   -0.5) z = -0.49999;
-  else if (point.Z() >= 695.3)  z = 695.29999;
+  SCEhistograms = {hDx_sim_pos, hDy_sim_pos, hDz_sim_pos, hEx_sim_pos, hEy_sim_pos, hEz_sim_pos, hDx_sim_neg, hDy_sim_neg, hDz_sim_neg, hEx_sim_neg, hEy_sim_neg, hEz_sim_neg};
    
-  return {x, y, z};
+  infile->Close();  */
 }
 
 //********************************************************************
@@ -642,48 +787,7 @@ double SpaceCharge::InterpolateSplines(TH3F* interp_hist, double xVal, double yV
   return interp_val;
 }
 
-//********************************************************************
-TVector3 SpaceCharge::ElectronDiverterPosOffsets(TVector3 const& point) const {
-//********************************************************************
 
-  double z = point.Z();
-  TVector3 Offsets(0,0,0);
-
-  if (!fEnableElectronDiverterDistortions1){
-    if(point.X()<0){
-      if(z > fEDChargeLossZLowMin && z < fEDChargeLossZHighMin)
-	Offsets.SetXYZ(2E9,2E9,2E9);
-      else{
-	double zdiff = z - fEDZCenterMin;
-	double zexp = TMath::Exp( -TMath::Sq(zdiff/fEDs) );
-	Offsets.SetZ(Offsets.Z() + fEDBZPosOffs * zdiff * zexp);
-	
-	// the timing offsets need to be computed after the z shift
-	double zdiffc = zdiff + Offsets.Z();
-	double zexpc = TMath::Exp( -TMath::Sq(zdiffc/fEDs) );
-	Offsets.SetX(Offsets.X() + fEDAXPosOffs * zexpc);
-      }
-    }
-  }
-
-  if (!fEnableElectronDiverterDistortions2){
-    if(point.X()<0){
-      if(z > fEDChargeLossZLowMax && z < fEDChargeLossZHighMax)
-	Offsets.SetXYZ(2E9,2E9,2E9);
-      else{
-	double zdiff = z - fEDZCenterMax;
-	double zexp = TMath::Exp( -TMath::Sq(zdiff/fEDs) );
-	Offsets.SetZ(Offsets.Z() + fEDBZPosOffs * zdiff * zexp);
-	
-	// the timing offsets need to be computed after the z shift
-	double zdiffc = zdiff + Offsets.Z();
-	double zexpc = TMath::Exp( -TMath::Sq(zdiffc/fEDs) );
-	Offsets.SetX(Offsets.X() + fEDAXPosOffs * zexpc);
-      }
-    }
-  }
-  return Offsets;
-}
 
 //********************************************************************
 void SpaceCharge::ApplyPositionCorrection(AnaParticlePD* part) const {
@@ -820,34 +924,32 @@ void SpaceCharge::ResetToNominal(){
   delete hEy_cal_pos;
   delete hEz_cal_pos;
 
-  hDx_cal_pos = (TH3F*)nominal_hDx_cal_pos->Clone();
-  hDy_cal_pos = (TH3F*)nominal_hDy_cal_pos->Clone();
-  hDz_cal_pos = (TH3F*)nominal_hDz_cal_pos->Clone();
-  hEx_cal_pos = (TH3F*)nominal_hEx_cal_pos->Clone();
-  hEy_cal_pos = (TH3F*)nominal_hEy_cal_pos->Clone();
-  hEz_cal_pos = (TH3F*)nominal_hEz_cal_pos->Clone();
+  delete hDx_cal_neg;
+  delete hDy_cal_neg;
+  delete hDz_cal_neg;
+  delete hEx_cal_neg;
+  delete hEy_cal_neg;
+  delete hEz_cal_neg;
 
-  // int nBinsX = hDx_cal_pos->GetNbinsX();
-  // int nBinsY = hDx_cal_pos->GetNbinsY();
-  // int nBinsZ = hDx_cal_pos->GetNbinsZ();
+  hDx_cal_pos = (TH3F*)nominal_hDx_cal_pos->Clone("hDx_pos");
+  hDy_cal_pos = (TH3F*)nominal_hDy_cal_pos->Clone("hDy_pos");
+  hDz_cal_pos = (TH3F*)nominal_hDz_cal_pos->Clone("hDz_pos");
+  hEx_cal_pos = (TH3F*)nominal_hEx_cal_pos->Clone("hEx_pos");
+  hEy_cal_pos = (TH3F*)nominal_hEy_cal_pos->Clone("hEy_pos");
+  hEz_cal_pos = (TH3F*)nominal_hEz_cal_pos->Clone("hEz_pos");
 
-  // //loop over bins of the histograms //this is not efficient but it does not crash
-  // for(int x = 1; x <= nBinsX; x++){
-  //   for(int y = 1; y <= nBinsY; y++){
-  //     for(int z = 1; z <= nBinsZ; z++){
-  // 	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z));
-  // 	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z));
-  // 	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z));
-
-  // 	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z));
-  // 	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z));
-  // 	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z));
-  //     }
-  //   }
-  // }
+  hDx_cal_neg = (TH3F*)nominal_hDx_cal_neg->Clone("hDx_neg");
+  hDy_cal_neg = (TH3F*)nominal_hDy_cal_neg->Clone("hDy_neg");
+  hDz_cal_neg = (TH3F*)nominal_hDz_cal_neg->Clone("hDz_neg");
+  hEx_cal_neg = (TH3F*)nominal_hEx_cal_neg->Clone("hEx_neg");
+  hEy_cal_neg = (TH3F*)nominal_hEy_cal_neg->Clone("hEy_neg");
+  hEz_cal_neg = (TH3F*)nominal_hEz_cal_neg->Clone("hEz_neg");
 
   //reset splines
   ResetSplines();
+
+  //set varied to false since it is nominal once again
+  _IsVaried = false;
 }
 
 //********************************************************************
@@ -900,230 +1002,195 @@ void SpaceCharge::ClearVectorOfSplines(std::vector<std::vector<TSpline3*>> &spli
 }
 
 //********************************************************************
-void SpaceCharge::InitializeHistograms(){
+TVector3 SpaceCharge::GetPosOffsets(TVector3 const& point) const {
 //********************************************************************
   
-  //Load in files
-  TH3F* hDx_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Pos");
-  TH3F* hDy_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Pos");
-  TH3F* hDz_cal_pos_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Pos");
-  TH3F* hEx_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Pos");
-  TH3F* hEy_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Pos");
-  TH3F* hEz_cal_pos_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Pos");
-        
-  TH3F* hDx_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_X_Neg");
-  TH3F* hDy_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Y_Neg");
-  TH3F* hDz_cal_neg_orig = (TH3F*)fInputFile->Get("RecoBkwd_Displacement_Z_Neg");
-  TH3F* hEx_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_X_Neg");
-  TH3F* hEy_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Y_Neg");
-  TH3F* hEz_cal_neg_orig = (TH3F*)fInputFile->Get("Reco_ElecField_Z_Neg");
-  
-  hDx_cal_pos = (TH3F*)hDx_cal_pos_orig->Clone("hDx_pos");
-  hDy_cal_pos = (TH3F*)hDy_cal_pos_orig->Clone("hDy_pos");
-  hDz_cal_pos = (TH3F*)hDz_cal_pos_orig->Clone("hDz_pos");
-  hEx_cal_pos = (TH3F*)hEx_cal_pos_orig->Clone("hEx_pos");
-  hEy_cal_pos = (TH3F*)hEy_cal_pos_orig->Clone("hEy_pos");
-  hEz_cal_pos = (TH3F*)hEz_cal_pos_orig->Clone("hEz_pos");
-  
-  hDx_cal_neg = (TH3F*)hDx_cal_neg_orig->Clone("hDx_neg");
-  hDy_cal_neg = (TH3F*)hDy_cal_neg_orig->Clone("hDy_neg");
-  hDz_cal_neg = (TH3F*)hDz_cal_neg_orig->Clone("hDz_neg");
-  hEx_cal_neg = (TH3F*)hEx_cal_neg_orig->Clone("hEx_neg");
-  hEy_cal_neg = (TH3F*)hEy_cal_neg_orig->Clone("hEy_neg");
-  hEz_cal_neg = (TH3F*)hEz_cal_neg_orig->Clone("hEz_neg");
+  TVector3 Offsets(0,0,0);
+  TVector3 p = point;
+ 
+  if(IsTooFarFromBoundaries(p))return Offsets;
 
-  nominal_hDx_cal_pos = (TH3F*)hDx_cal_pos_orig->Clone("hDx_pos");
-  nominal_hDy_cal_pos = (TH3F*)hDy_cal_pos_orig->Clone("hDy_pos");
-  nominal_hDz_cal_pos = (TH3F*)hDz_cal_pos_orig->Clone("hDz_pos");
-  nominal_hEx_cal_pos = (TH3F*)hEx_cal_pos_orig->Clone("hEx_pos");
-  nominal_hEy_cal_pos = (TH3F*)hEy_cal_pos_orig->Clone("hEy_pos");
-  nominal_hEz_cal_pos = (TH3F*)hEz_cal_pos_orig->Clone("hEz_pos");
-
-  nominal_hDx_cal_neg = (TH3F*)hDx_cal_neg_orig->Clone("hDx_neg");
-  nominal_hDy_cal_neg = (TH3F*)hDy_cal_neg_orig->Clone("hDy_neg");
-  nominal_hDz_cal_neg = (TH3F*)hDz_cal_neg_orig->Clone("hDz_neg");
-  nominal_hEx_cal_neg = (TH3F*)hEx_cal_neg_orig->Clone("hEx_neg");
-  nominal_hEy_cal_neg = (TH3F*)hEy_cal_neg_orig->Clone("hEy_neg");
-  nominal_hEz_cal_neg = (TH3F*)hEz_cal_neg_orig->Clone("hEz_neg");
-
-  hDx_cal_pos->SetDirectory(0);
-  hDy_cal_pos->SetDirectory(0);
-  hDz_cal_pos->SetDirectory(0);
-  hEx_cal_pos->SetDirectory(0);
-  hEy_cal_pos->SetDirectory(0);
-  hEz_cal_pos->SetDirectory(0);
+  if(!IsInsideBoundaries(p)&&!IsTooFarFromBoundaries(p)) p = PretendAtBoundary(p);
   
-  hDx_cal_neg->SetDirectory(0);
-  hDy_cal_neg->SetDirectory(0);
-  hDz_cal_neg->SetDirectory(0);
-  hEx_cal_neg->SetDirectory(0);
-  hEy_cal_neg->SetDirectory(0);
-  hEz_cal_neg->SetDirectory(0);
-  
-  nominal_hDx_cal_pos->SetDirectory(0);
-  nominal_hDy_cal_pos->SetDirectory(0);
-  nominal_hDz_cal_pos->SetDirectory(0);
-  nominal_hEx_cal_pos->SetDirectory(0);
-  nominal_hEy_cal_pos->SetDirectory(0);
-  nominal_hEz_cal_pos->SetDirectory(0);
+  if(p.X() > 0.){
+    Offsets = GetOffsets(p, SCEhistograms.at(0), SCEhistograms.at(1), SCEhistograms.at(2), 1, 2);
+    Offsets.SetX(-1.0*Offsets.X());
+  } 
+  else{
+    Offsets = GetOffsets(p, SCEhistograms.at(6), SCEhistograms.at(7), SCEhistograms.at(8), 1, 1);
+    Offsets.SetX(-1.0*Offsets.X());
+  }
+       
+  TVector3 pafteroffset(p.X()+Offsets.X(), p.Y()+Offsets.Y(), p.Z()+Offsets.Z());
+  TVector3 edoffset = ElectronDiverterPosOffsets(pafteroffset);
+  Offsets.SetX(Offsets.X()+edoffset.X());
+  Offsets.SetY(Offsets.Y()+edoffset.Y());
+  Offsets.SetZ(Offsets.Z()+edoffset.Z());
 
-  nominal_hDx_cal_neg->SetDirectory(0);
-  nominal_hDy_cal_neg->SetDirectory(0);
-  nominal_hDz_cal_neg->SetDirectory(0);
-  nominal_hEx_cal_neg->SetDirectory(0);
-  nominal_hEy_cal_neg->SetDirectory(0);
-  nominal_hEz_cal_neg->SetDirectory(0);
+  return Offsets;
 }
 
 //********************************************************************
-void SpaceCharge::InitializeSplines(){
+TVector3 SpaceCharge::GetCalPosOffsets(TVector3 const& point, int const& TPCid) const {
 //********************************************************************
 
-  int nBinsX = hDx_cal_pos->GetNbinsX();
-  int nBinsY = hDx_cal_pos->GetNbinsY();
-  int nBinsZ = hDx_cal_pos->GetNbinsZ();
-  
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dx_bkwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dx_bkwd_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dx_bkwd_neg.back().push_back(MakeSpline(hDx_cal_neg,1,y,z,2,1));
-      spline_dx_bkwd_pos.back().push_back(MakeSpline(hDx_cal_pos,1,y,z,2,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dy_bkwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dy_bkwd_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dy_bkwd_neg.back().push_back(MakeSpline(hDy_cal_neg,2,x,z,2,1));
-      spline_dy_bkwd_pos.back().push_back(MakeSpline(hDy_cal_pos,2,x,z,2,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dz_bkwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dz_bkwd_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dz_bkwd_neg.back().push_back(MakeSpline(hDz_cal_neg,3,x,y,2,1));
-      spline_dz_bkwd_pos.back().push_back(MakeSpline(hDz_cal_pos,3,x,y,2,2));
-    }
-  }
-  nBinsX = hEx_cal_neg->GetNbinsX();
-  nBinsY = hEx_cal_neg->GetNbinsY();
-  nBinsZ = hEx_cal_neg->GetNbinsZ();
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dEx_neg.push_back(std::vector<TSpline3*>());
-    spline_dEx_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEx_neg.back().push_back(MakeSpline(hEx_cal_neg,1,y,z,3,1));
-      spline_dEx_pos.back().push_back(MakeSpline(hEx_cal_pos,1,y,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEy_neg.push_back(std::vector<TSpline3*>());
-    spline_dEy_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEy_neg.back().push_back(MakeSpline(hEy_cal_neg,2,x,z,3,1));
-      spline_dEy_pos.back().push_back(MakeSpline(hEy_cal_pos,2,x,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEz_neg.push_back(std::vector<TSpline3*>());
-    spline_dEz_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dEz_neg.back().push_back(MakeSpline(hEz_cal_neg,3,x,y,3,1));
-      spline_dEz_pos.back().push_back(MakeSpline(hEz_cal_pos,3,x,y,3,2));
-    }
-  }
+  TVector3 Offsets(0,0,0);
+  TVector3 p = point;
 
-  /*//Load in files
-  TH3F* hDx_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Pos");
-  TH3F* hDy_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Pos");
-  TH3F* hDz_sim_pos_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Pos");
-  TH3F* hEx_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_X_Pos");
-  TH3F* hEy_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Pos");
-  TH3F* hEz_sim_pos_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Pos");
-    
-  TH3F* hDx_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_X_Neg");
-  TH3F* hDy_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Y_Neg");
-  TH3F* hDz_sim_neg_orig = (TH3F*)infile->Get("RecoFwd_Displacement_Z_Neg");
-  TH3F* hEx_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_X_Neg");
-  TH3F* hEy_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Y_Neg");
-  TH3F* hEz_sim_neg_orig = (TH3F*)infile->Get("Reco_ElecField_Z_Neg");
+  if(IsTooFarFromBoundaries(p)) return Offsets;
+
+  if(!IsInsideBoundaries(p) && !IsTooFarFromBoundaries(p))
+  	p = PretendAtBoundary(p); 
   
-  TH3F* hDx_sim_pos = (TH3F*)hDx_sim_pos_orig->Clone("hDx_pos");
-  TH3F* hDy_sim_pos = (TH3F*)hDy_sim_pos_orig->Clone("hDy_pos");
-  TH3F* hDz_sim_pos = (TH3F*)hDz_sim_pos_orig->Clone("hDz_pos");
-  TH3F* hEx_sim_pos = (TH3F*)hEx_sim_pos_orig->Clone("hEx_pos");
-  TH3F* hEy_sim_pos = (TH3F*)hEy_sim_pos_orig->Clone("hEy_pos");
-  TH3F* hEz_sim_pos = (TH3F*)hEz_sim_pos_orig->Clone("hEz_pos");
+  if((TPCid == 2 || TPCid == 6 || TPCid == 10) && p.X()>-20.){
+    if(p.X()<0.) p = {0.00001, p.Y(), p.Z()};
+    Offsets = GetOffsets(p, CalSCEhistograms.at(0), CalSCEhistograms.at(1), CalSCEhistograms.at(2), 2, 2);
+    Offsets[0] = -1.0*Offsets[0];
+  } 
+  else if((TPCid == 1 || TPCid == 5 || TPCid == 9) && p.X()<20.) {
+    if(p.X()>0.) p= {-0.00001, p.Y(), p.Z()};
+    Offsets = GetOffsets(p, CalSCEhistograms.at(6), CalSCEhistograms.at(7), CalSCEhistograms.at(8), 2, 1);
+    Offsets[0] = -1.0*Offsets[0];
+  } 
+
+  return Offsets;
+}
+
+//********************************************************************
+TVector3 SpaceCharge::GetOffsets(TVector3 const& point, TH3F* hX, TH3F* hY, TH3F* hZ, int maptype, int driftvol) const {
+//********************************************************************
+
+  return {InterpolateSplines(hX,point.X(),point.Y(),point.Z(),1,maptype,driftvol),
+          InterpolateSplines(hY,point.X(),point.Y(),point.Z(),2,maptype,driftvol),
+          InterpolateSplines(hZ,point.X(),point.Y(),point.Z(),3,maptype,driftvol)};
+}
+
+//********************************************************************
+TVector3 SpaceCharge::GetEfieldOffsets(TVector3 const& point) const {
+//********************************************************************
   
-  TH3F* hDx_sim_neg = (TH3F*)hDx_sim_neg_orig->Clone("hDx_neg");
-  TH3F* hDy_sim_neg = (TH3F*)hDy_sim_neg_orig->Clone("hDy_neg");
-  TH3F* hDz_sim_neg = (TH3F*)hDz_sim_neg_orig->Clone("hDz_neg");
-  TH3F* hEx_sim_neg = (TH3F*)hEx_sim_neg_orig->Clone("hEx_neg");
-  TH3F* hEy_sim_neg = (TH3F*)hEy_sim_neg_orig->Clone("hEy_neg");
-  TH3F* hEz_sim_neg = (TH3F*)hEz_sim_neg_orig->Clone("hEz_neg");
+  TVector3 Offsets(0,0,0);
+  TVector3 p = point;
+
+  if(IsTooFarFromBoundaries(p))return Offsets;
+
+  if(!IsInsideBoundaries(p) && !IsTooFarFromBoundaries(p)) p = PretendAtBoundary(p);
   
-  int nBinsX = hDx_sim_pos_orig->GetNbinsX();
-  int nBinsY = hDx_sim_pos_orig->GetNbinsY();
-  int nBinsZ = hDx_sim_pos_orig->GetNbinsZ();
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dx_fwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dx_fwd_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dx_fwd_neg.back().push_back(MakeSpline(hDx_sim_neg,1,y,z,1,1));
-      spline_dx_fwd_pos.back().push_back(MakeSpline(hDx_sim_pos,1,y,z,1,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dy_fwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dy_fwd_pos.push_back(std::vector<TSpline3*>());
+  if(p.X() > 0.)Offsets = GetOffsets(p, SCEhistograms.at(3), SCEhistograms.at(4), SCEhistograms.at(5), 3, 2);
+  else          Offsets = GetOffsets(p, SCEhistograms.at(9), SCEhistograms.at(10),SCEhistograms.at(11),3, 1);
+  Offsets.SetX(-1.0*Offsets.X());
+  Offsets.SetY(-1.0*Offsets.Y());
+  Offsets.SetZ(-1.0*Offsets.Z());
     
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dy_fwd_neg.back().push_back(MakeSpline(hDy_sim_neg,2,x,z,1,1));
-      spline_dy_fwd_pos.back().push_back(MakeSpline(hDy_sim_pos,2,x,z,1,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dz_fwd_neg.push_back(std::vector<TSpline3*>());
-    spline_dz_fwd_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dz_fwd_neg.back().push_back(MakeSpline(hDz_sim_neg,3,x,y,1,1));
-      spline_dz_fwd_pos.back().push_back(MakeSpline(hDz_sim_pos,3,x,y,1,2));
-    }
-  }
-    
-  nBinsX = hEx_sim_pos_orig->GetNbinsX();
-  nBinsY = hEx_sim_pos_orig->GetNbinsY();
-  nBinsZ = hEx_sim_pos_orig->GetNbinsZ();
-  for(int y = 1; y <= nBinsY; y++){
-    spline_dEx_neg.push_back(std::vector<TSpline3*>());
-    spline_dEx_pos.push_back(std::vector<TSpline3*>());
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEx_neg.back().push_back(MakeSpline(hEx_sim_neg,1,y,z,3,1));
-      spline_dEx_pos.back().push_back(MakeSpline(hEx_sim_pos,1,y,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEy_neg.push_back(std::vector<TSpline3*>());
-    spline_dEy_pos.push_back(std::vector<TSpline3*>());
-    
-    for(int z = 1; z <= nBinsZ; z++){
-      spline_dEy_neg.back().push_back(MakeSpline(hEy_sim_neg,2,x,z,3,1));
-      spline_dEy_pos.back().push_back(MakeSpline(hEy_sim_pos,2,x,z,3,2));
-    }
-  }
-  for(int x = 1; x <= nBinsX; x++){
-    spline_dEz_neg.push_back(std::vector<TSpline3*>());
-    spline_dEz_pos.push_back(std::vector<TSpline3*>());
-    for(int y = 1; y <= nBinsY; y++){
-      spline_dEz_neg.back().push_back(MakeSpline(hEz_sim_neg,3,x,y,3,1));
-      spline_dEz_pos.back().push_back(MakeSpline(hEz_sim_pos,3,x,y,3,2));
-    }
-  }
+  return Offsets;
+}
+
+//********************************************************************
+TVector3 SpaceCharge::GetCalEfieldOffsets(TVector3 const& point, int const& TPCid) const { 
+//********************************************************************
+ 
+ TVector3 Offsets(0,0,0);
+ TVector3 p = point;
+
+ if(IsTooFarFromBoundaries(p))return Offsets;
+ 
+ if(!IsInsideBoundaries(p) && !IsTooFarFromBoundaries(p)) p = PretendAtBoundary(p);
   
-  SCEhistograms = {hDx_sim_pos, hDy_sim_pos, hDz_sim_pos, hEx_sim_pos, hEy_sim_pos, hEz_sim_pos, hDx_sim_neg, hDy_sim_neg, hDz_sim_neg, hEx_sim_neg, hEy_sim_neg, hEz_sim_neg};
+ if((TPCid == 2 || TPCid == 6 || TPCid == 10) && p.X()>-20.){
+   if(p.X()<0.) p = {0.00001, p.Y(), p.Z()};
+   Offsets= GetOffsets(p, CalSCEhistograms.at(3), CalSCEhistograms.at(4), CalSCEhistograms.at(5), 3, 2);
+ }
+ else if((TPCid == 1 || TPCid == 5 || TPCid == 9) && p.X()<20.){
+   if(p.X()>0.) p = {-0.00001, p.Y(), p.Z()};
+   Offsets = GetOffsets(p, CalSCEhistograms.at(9), CalSCEhistograms.at(10), CalSCEhistograms.at(11), 3, 1);
+ } 
+ Offsets.SetX(-1.0*Offsets.X());
+ Offsets.SetY(-1.0*Offsets.Y());
+ Offsets.SetZ(-1.0*Offsets.Z());
+ 
+ return Offsets;
+}
+
+
+//********************************************************************
+bool SpaceCharge::IsInsideBoundaries(TVector3 const& point) const {
+//********************************************************************
+  return !(
+	   (TMath::Abs(point.X()) <= 0.0) || (TMath::Abs(point.X()) >= 360.0)
+	   || (point.Y()             <= 5.2) || (point.Y()             >= 604.0)
+	   || (point.Z()             <= -0.5) || (point.Z()             >= 695.3)
+	   );
+} 
+  
+//********************************************************************
+bool SpaceCharge::IsTooFarFromBoundaries(TVector3 const& point) const {
+//********************************************************************
+  
+  return (
+	  (TMath::Abs(point.X()) < -20.0) || (TMath::Abs(point.X())  >= 360.0)
+	  || (point.Y()             < -14.8) || (point.Y()              >  624.0)
+	  || (point.Z()             < -20.5) || (point.Z()              >  715.3)
+	  );
+}
+
+//********************************************************************
+TVector3 SpaceCharge::PretendAtBoundary(TVector3 const& point) const {
+//********************************************************************
+  
+  double x = point.X(), y = point.Y(), z = point.Z();
+  
+  if      (TMath::Abs(point.X()) ==    0.0    )   x = -0.00001;
+  else if (TMath::Abs(point.X()) <	 0.00001) x = TMath::Sign(point.X(),1)*0.00001; 
+  else if (TMath::Abs(point.X()) >=    360.0  )   x = TMath::Sign(point.X(),1)*359.99999;
+  
+  if      (point.Y() <=   5.2) y = 5.20001;
+  else if (point.Y() >= 604.0) y = 603.99999;
+  
+  if      (point.Z() <=   -0.5) z = -0.49999;
+  else if (point.Z() >= 695.3)  z = 695.29999;
    
-  infile->Close();  */
+  return {x, y, z};
 }
 
+//********************************************************************
+TVector3 SpaceCharge::ElectronDiverterPosOffsets(TVector3 const& point) const {
+//********************************************************************
+
+  double z = point.Z();
+  TVector3 Offsets(0,0,0);
+
+  if (!fEnableElectronDiverterDistortions1){
+    if(point.X()<0){
+      if(z > fEDChargeLossZLowMin && z < fEDChargeLossZHighMin)
+	Offsets.SetXYZ(2E9,2E9,2E9);
+      else{
+	double zdiff = z - fEDZCenterMin;
+	double zexp = TMath::Exp( -TMath::Sq(zdiff/fEDs) );
+	Offsets.SetZ(Offsets.Z() + fEDBZPosOffs * zdiff * zexp);
+	
+	// the timing offsets need to be computed after the z shift
+	double zdiffc = zdiff + Offsets.Z();
+	double zexpc = TMath::Exp( -TMath::Sq(zdiffc/fEDs) );
+	Offsets.SetX(Offsets.X() + fEDAXPosOffs * zexpc);
+      }
+    }
+  }
+
+  if (!fEnableElectronDiverterDistortions2){
+    if(point.X()<0){
+      if(z > fEDChargeLossZLowMax && z < fEDChargeLossZHighMax)
+	Offsets.SetXYZ(2E9,2E9,2E9);
+      else{
+	double zdiff = z - fEDZCenterMax;
+	double zexp = TMath::Exp( -TMath::Sq(zdiff/fEDs) );
+	Offsets.SetZ(Offsets.Z() + fEDBZPosOffs * zdiff * zexp);
+	
+	// the timing offsets need to be computed after the z shift
+	double zdiffc = zdiff + Offsets.Z();
+	double zexpc = TMath::Exp( -TMath::Sq(zdiffc/fEDs) );
+	Offsets.SetX(Offsets.X() + fEDAXPosOffs * zexpc);
+      }
+    }
+  }
+  return Offsets;
+}

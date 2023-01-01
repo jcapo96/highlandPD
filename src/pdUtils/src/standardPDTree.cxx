@@ -78,8 +78,8 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
   AddVarF(    output, seltrk_chi2_prot,      "candidate chi2 prot");
   AddVarF(    output, seltrk_chi2_muon,      "candidate chi2 muon");
   AddVarF(    output, seltrk_chi2_ndf,       "candidate chi2 ndf");
-  AddVarF(    output, seltrk_kaon_PID,       "candidate chi2 ndf");
-  AddVarI(    output, seltrk_kaon_PID_ndf,       "candidate chi2 ndf");
+  // AddVarF(    output, seltrk_kaon_PID,       "candidate chi2 ndf");
+  // AddVarI(    output, seltrk_kaon_PID_ndf,       "candidate chi2 ndf");
   //AddVarFixMF(output, seltrk_pid,            "candidate PID variables", 3,8);
   //AddVarFixMF(output, seltrk_calo,           "candidate CALO variables",3,5); 
 }
@@ -479,9 +479,9 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
   output.FillVar(seltrk_chi2_prot,               part->Chi2Proton);
   output.FillVar(seltrk_chi2_muon,               part->Chi2Muon);
   output.FillVar(seltrk_chi2_ndf,                part->Chi2ndf);
-  std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
-  output.FillVar(seltrk_kaon_PID,                (float)kaon_PID.first);
-  output.FillVar(seltrk_kaon_PID_ndf,            (int)kaon_PID.second);
+  // std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
+  // output.FillVar(seltrk_kaon_PID,                (float)kaon_PID.first);
+  // output.FillVar(seltrk_kaon_PID_ndf,            (int)kaon_PID.second);
 
   //for (int i=0;i<3;i++){
   //  output.FillMatrixVarFromArray(seltrk_pid,    part->PID[i],  i, 8);

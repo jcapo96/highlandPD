@@ -1,7 +1,12 @@
-//minimal implementetation of the space charge effects in protodune
-//only considering spline_th3 methods, the one used right now in PD
-//Get_Offsets give the effect forward of the SCE effect, 
-//GetCaL_Offsets give the effect backward 
+//*********************************************************************
+//minimal implementetation of the space charge effects in ProtoDUNE-SP
+//only considering spline_th3 methods 
+//and backwards (correction) implementation
+//Get_Offsets give the effect forward of the SCE effect (it does not work) 
+//GetCaL_Offsets give the effect backward (it works)
+//
+//M. García, migarpez@ific.uv.es
+//*********************************************************************
 
 #ifndef SpaceCharge_h
 #define SpaceCharge_h
@@ -50,6 +55,7 @@ protected:
   TVector3 GetOffsets(TVector3 const& point, TH3F* hX, TH3F* hY, TH3F* hZ, int maptype, int driftvol) const;
 
   void InitializeHistograms();
+  void InitializeHistogram(TH3F** h, const char* histo, const char* newname);
   void InitializeSplines();
 
   void ClearSplines();
