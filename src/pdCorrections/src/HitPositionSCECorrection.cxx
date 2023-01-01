@@ -10,7 +10,6 @@ HitPositionSCECorrection::HitPositionSCECorrection(){
 
   _sce = new SpaceCharge();
   _sce->Initialize();
-  
 }
 
 //********************************************************************
