@@ -30,7 +30,7 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // Float_t data_lt = -2.3/log(data_rQ)*1000; //nominal value used for correction
   // Float_t fake_lt = -2.3/log(data_rQ*(1+sigma*toy.GetToyVariations(_index)->Variations[0]))*1000; //varied value
 
-  Float_t data_lt = 20*1000;//-2.3/log(data_rQ)*1000; //nominal value used for correction
+  Float_t data_lt = 16.54*1000;//-2.3/log(data_rQ)*1000; //nominal value used for correction
   Float_t fake_lt = data_lt*(1+sigma*toy.GetToyVariations(_index)->Variations[0])*1000; //varied value
 
   // Loop over all relevant tracks for this variation
