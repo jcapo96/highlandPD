@@ -100,7 +100,7 @@ void CreateMiniTreeKaon::DeleteUninterestingTrueParticles(){
   std::set<AnaTrueParticleB*> goodTrueParticles;
   std::vector<AnaTrueParticleB*> badTrueParticles;
 
-  AnaTrueParticle* beampart = pdAnaUtils::FindBeamTrueParticle(*_spill);
+  AnaTrueParticle* beampart = pdAnaUtils::GetBeamTrueParticle(*_spill);
   if(beampart)goodTrueParticles.insert(beampart);
   
   // Loop over all reconstructed particles in the spill      
