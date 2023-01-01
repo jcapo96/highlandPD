@@ -8,12 +8,12 @@
  < dEdxCalibration.SaveToy = 1 >   // Save toy variables
 
 --- Corrections --------
- < dEdxCalibration.ApplySCEPositionCorrection = 1 >
- < dEdxCalibration.ApplySCEPitchCorrection = 1 >
- < dEdxCalibration.ApplyLifetimeCorrection = 1 >
+ < dEdxCalibration.ApplySCEPositionCorrection = 0 >
+ < dEdxCalibration.ApplySCEPitchCorrection = 0 >
+ < dEdxCalibration.ApplyLifetimeCorrection = 0 >
 
 --- Systematics --------
- < dEdxCalibration.ApplySCESystematic = 0 >
+ < dEdxCalibration.ApplySCESystematic = 1 >
  < dEdxCalibration.ApplyLifetimeSystematic = 1 >
 
 

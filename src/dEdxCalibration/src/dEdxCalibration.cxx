@@ -45,6 +45,8 @@ bool dEdxCalibration::Initialize(){
   _ApplySCESystematic = ND::params().GetParameterI("dEdxCalibration.ApplySCESystematic");
   _ApplyLifetimeSystematic = ND::params().GetParameterI("dEdxCalibration.ApplyLifetimeSystematic");
 
+  TTree::SetMaxTreeSize(200000000000);
+
   return true;
 }
 
@@ -241,7 +243,7 @@ bool dEdxCalibration::IsInterestingHit(AnaHitPD& hit){
 
   if(hit.Position.X() > -360 && hit.Position.X() < 0 &&
      abs(hit.Position.Y()-300) < 300 &&
-     abs(hit.Position.Z()-125) < 125)
+     abs(hit.Position.Z()-347.5) < 347.5)
     ItIs = true;
 
   return ItIs;
