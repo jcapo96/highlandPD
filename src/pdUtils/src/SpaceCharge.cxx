@@ -857,6 +857,48 @@ double SpaceCharge::GetBinCenterZ(UInt_t bin) const {
 }
 
 //********************************************************************
+double SpaceCharge::GetEFieldXAtPoint(double x, double y, double z) const {
+//********************************************************************
+    
+  if(x < 0){
+    if(!hEx_cal_neg)return -1;
+    else return hEx_cal_neg->GetBinContent(hEx_cal_neg->FindBin(x,y,z));
+  }
+  else{
+    if(!hEx_cal_pos)return -1;
+    else return hEx_cal_pos->GetBinContent(hEx_cal_pos->FindBin(x,y,z));
+  }
+}
+
+//********************************************************************
+double SpaceCharge::GetEFieldYAtPoint(double x, double y, double z) const {
+//********************************************************************
+    
+  if(x < 0){
+    if(!hEy_cal_neg)return -1;
+    else return hEy_cal_neg->GetBinContent(hEy_cal_neg->FindBin(x,y,z));
+  }
+  else{
+    if(!hEy_cal_pos)return -1;
+    else return hEy_cal_pos->GetBinContent(hEy_cal_pos->FindBin(x,y,z));
+  }
+}
+
+//********************************************************************
+double SpaceCharge::GetEFieldZAtPoint(double x, double y, double z) const {
+//********************************************************************
+    
+  if(x < 0){
+    if(!hEz_cal_neg)return -1;
+    else return hEz_cal_neg->GetBinContent(hEz_cal_neg->FindBin(x,y,z));
+  }
+  else{
+    if(!hEz_cal_pos)return -1;
+    else return hEz_cal_pos->GetBinContent(hEz_cal_pos->FindBin(x,y,z));
+  }
+}
+
+//********************************************************************
 void SpaceCharge::ApplyDisplacementVariation(const double var){
 //********************************************************************
     
@@ -875,6 +917,14 @@ void SpaceCharge::ApplyDisplacementVariation(const double var){
   	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z)*var);
   	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z)*var);
   	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z)*var);
+
+	hEx_cal_pos->SetBinContent(x,y,z,nominal_hEx_cal_pos->GetBinContent(x,y,z)*var);
+  	hEy_cal_pos->SetBinContent(x,y,z,nominal_hEy_cal_pos->GetBinContent(x,y,z)*var);
+  	hEz_cal_pos->SetBinContent(x,y,z,nominal_hEz_cal_pos->GetBinContent(x,y,z)*var);
+
+  	hEx_cal_neg->SetBinContent(x,y,z,nominal_hEx_cal_neg->GetBinContent(x,y,z)*var);
+  	hEy_cal_neg->SetBinContent(x,y,z,nominal_hEy_cal_neg->GetBinContent(x,y,z)*var);
+  	hEz_cal_neg->SetBinContent(x,y,z,nominal_hEz_cal_neg->GetBinContent(x,y,z)*var);
       }
     }
   }
@@ -905,6 +955,14 @@ void SpaceCharge::ApplyVoxelVariation(UInt_t xbin, UInt_t ybin, UInt_t zbin, dou
   hDx_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hDx_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
   hDy_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hDy_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
   hDz_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hDz_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
+
+  hEx_cal_pos->SetBinContent(xbin,ybin,zbin,nominal_hEx_cal_pos->GetBinContent(xbin,ybin,zbin)*var);
+  hEy_cal_pos->SetBinContent(xbin,ybin,zbin,nominal_hEy_cal_pos->GetBinContent(xbin,ybin,zbin)*var);
+  hEz_cal_pos->SetBinContent(xbin,ybin,zbin,nominal_hEz_cal_pos->GetBinContent(xbin,ybin,zbin)*var);
+
+  hEx_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hEx_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
+  hEy_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hEy_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
+  hEz_cal_neg->SetBinContent(xbin,ybin,zbin,nominal_hEz_cal_neg->GetBinContent(xbin,ybin,zbin)*var);
       
   //prepare new splines
   if(reset_splines)ResetSplines();

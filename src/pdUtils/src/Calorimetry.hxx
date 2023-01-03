@@ -47,6 +47,7 @@ public:
 
   double GetLifetime() const {return _Lifetime;}
   void SetLifetime(double Lifetime){_Lifetime = Lifetime;}
+  void ResetLifetime(){_Lifetime = 35000;}
   
   double GetModBoxA() const {return _ModBoxA;}
   double GetModBoxB() const {return _ModBoxB;}

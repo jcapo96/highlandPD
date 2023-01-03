@@ -8,6 +8,16 @@ SCEVariation::SCEVariation():EventVariationBase(),BinnedParams(std::string(geten
   // Read the systematic source parameters from the data files
   SetNParameters(GetNBins());
 
+  //check we have enough bins to run this systematic, otherwise exit
+  if(GetNBins() > (int)NMAXSYSTSOURCEBINS){
+    std::cout << "SCEVariation::SCEVariation()." << std::endl;
+    std::cout << "the source files has more bins than allowed for the systematic propagation!" << std::endl;
+    std::cout << "N MAX BINS allowed " << NMAXSYSTSOURCEBINS << std::endl;
+    std::cout << "N BINS on source   " << GetNBins() << std::endl;
+    std::cout << "if you need more bins, look at psyckeUtils/src/BinnedParams.hxx" << std::endl;
+    std::exit(1);
+  }
+  
   //Initialize SCE object to apply variations
   for(int i = 0; i < 100; i++)_sce[i] = NULL;
   // _sce = new SpaceCharge();
@@ -45,14 +55,9 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   else
     _cal->SetSCE(_sce[toy_index],false);
 
-  //Get the systematic source values
-  //Float_t width;
-  //GetSigmaValueForBin(0, width); //only 1 bin for the moment
-
   //Vary SCE map
   if(!_sce[toy_index]->IsVaried())
     VarySCEMap(toy);
-    //_sce[toy_index]->ApplyDisplacementVariation(1 + width*toy.GetToyVariations(_index)->Variations[0]);
 
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
@@ -108,7 +113,8 @@ void SCEVariation::VarySCEMap(const ToyExperiment& toy){
   
   int toy_index = toy.GetToyIndex();
 
-  std::cout << "varying toy map " << toy_index << std::endl;
+  if(toy_index==0)std::cout << "SCEVariation::VarySCEMap(). Generating toy maps" << std::endl;
+  if(toy_index==99)std::cout << "SCEVariation::VarySCEMap(). Toy maps generated" << std::endl;
 
   //get map binning
   int nbinsx = _sce[toy_index]->GetNbinsX();

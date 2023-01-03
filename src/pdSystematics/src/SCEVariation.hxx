@@ -18,6 +18,8 @@ public:
   bool UndoSystematic(AnaEventC& event);
 
   void VarySCEMap(const ToyExperiment& toy);
+
+  SpaceCharge* GetToySCE(int itoy) const {return _sce[itoy];}
   
 protected:
   

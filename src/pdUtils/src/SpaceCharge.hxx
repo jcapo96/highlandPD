@@ -49,6 +49,10 @@ public:
   double GetBinCenterX(UInt_t bin) const;
   double GetBinCenterY(UInt_t bin) const;
   double GetBinCenterZ(UInt_t bin) const;
+
+  double GetEFieldXAtPoint(double x, double y, double z) const;
+  double GetEFieldYAtPoint(double x, double y, double z) const;
+  double GetEFieldZAtPoint(double x, double y, double z) const;
   
 protected:
   

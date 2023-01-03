@@ -2,7 +2,7 @@
 #include "pdAnalysisUtils.hxx"
 
 //********************************************************************
-LifetimeVariation::LifetimeVariation():EventVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","dQdxNorm", BinnedParams::k1D_SYMMETRIC_NOMEAN){
+LifetimeVariation::LifetimeVariation():EventVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","Lifetime", BinnedParams::k1D_SYMMETRIC){
 //********************************************************************
 
   // Read the systematic source parameters from the data files
@@ -22,16 +22,15 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   SystBoxB* box = GetSystBox(event);
 
   //Get the systematic source values
-  Float_t sigma;
+  Float_t mean,sigma;
+  GetMeanValueForBin(0, mean); //only 1 bin
   GetSigmaValueForBin(0, sigma); //only 1 bin 
  
-  //Float_t mc_lt   = _cal->GetLifetime();
-  // Float_t data_rQ = 0.89;
-  // Float_t data_lt = -2.3/log(data_rQ)*1000; //nominal value used for correction
-  // Float_t fake_lt = -2.3/log(data_rQ*(1+sigma*toy.GetToyVariations(_index)->Variations[0]))*1000; //varied value
-
-  Float_t data_lt = 16.54*1000;//-2.3/log(data_rQ)*1000; //nominal value used for correction
-  Float_t fake_lt = data_lt*(1+sigma*toy.GetToyVariations(_index)->Variations[0])*1000; //varied value
+  Float_t mc_lt = _cal->GetLifetime()/1000; //us to ms
+  //Float_t mc_rQ = exp(-2.3/mc_lt); not used so far
+  Float_t data_lt = mean;
+  Float_t data_rQ = exp(-2.3/data_lt);
+  Float_t var_lt = -2.3/log(data_rQ*(1+sigma*toy.GetToyVariations(_index)->Variations[0])); //varied value
 
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
@@ -45,17 +44,16 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     if(part->Hits[2].empty())continue;
 
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
-      _cal->SetLifetime(fake_lt);
+      //input is not lifetime corrected. We have first to correct by nominal value
+      _cal->SetLifetime(mc_lt*1000); //ms to us
+      _cal->ApplyLifetimeCorrection(part->Hits[2][ihit]);
+      //now we fake the new e- lifetime effect
+      _cal->SetLifetime(data_lt*1000); //ms to us
       _cal->UndoLifetimeCorrection(part->Hits[2][ihit]);
-      _cal->SetLifetime(data_lt);
+      //now we correct again with uncertainty
+      _cal->SetLifetime(var_lt*1000); //ms to us
       _cal->ApplyLifetimeCorrection(part->Hits[2][ihit]);
     }
-    // //recompute derived quantities
-    // std::pair<double, int> chi2pidprot = pdAnaUtils::Chi2PID(*part, 2212);
-    // part->Chi2Proton  = chi2pidprot.first;
-    // part->Chi2ndf     = chi2pidprot.second;
-    // std::pair<double, int> chi2pidmuon = pdAnaUtils::Chi2PID(*part, 13);
-    // part->Chi2Muon    = chi2pidmuon.first;
   }
 }
 
@@ -77,12 +75,10 @@ bool LifetimeVariation::UndoSystematic(AnaEventC& event){
       part->Hits[2][ihit].dQdx_elife = original->Hits[2][ihit].dQdx_elife;
       //part->Hits[2][ihit].dEdx = original->Hits[2][ihit].dEdx;
     }
-
-    // reset the top level quantities
-    // part->Chi2Proton = original->Chi2Proton;
-    // part->Chi2ndf    = original->Chi2ndf;
-    // part->Chi2Muon   = original->Chi2Muon;
   }
+
+  //reset calorimetry object
+  _cal->ResetLifetime();
   
   // Don't reset the spill to corrected
   return false;
