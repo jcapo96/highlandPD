@@ -1,20 +1,46 @@
---- Cut levels --------
- < dEdxCalibration.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+-----------------------
+--- YZ calibration ----
+-----------------------
 
- < dEdxCalibration.MichelRemovingTree = 0 >   
+--- Cut levels --------
+ < dEdxCalibration.YZ.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+
+ < dEdxCalibration.YZ.MichelRemovingTree = 0 >   
 
 --- Output Tree --------
- < dEdxCalibration.SaveAna = 0 >   // Save standard analysis tree
- < dEdxCalibration.SaveToy = 1 >   // Save toy variables
+ < dEdxCalibration.YZ.SaveAna = 0 >   // Save standard analysis tree
+ < dEdxCalibration.YZ.SaveToy = 0 >   // Save toy variables
 
 --- Corrections --------
- < dEdxCalibration.ApplySCEPositionCorrection = 0 >
- < dEdxCalibration.ApplySCEPitchCorrection = 0 >
- < dEdxCalibration.ApplyLifetimeCorrection = 0 >
+ < dEdxCalibration.YZ.ApplySCEPositionCorrection = 1 >
+ < dEdxCalibration.YZ.ApplySCEPitchCorrection = 1 >
+ < dEdxCalibration.YZ.ApplyLifetimeCorrection = 0 >
 
 --- Systematics --------
- < dEdxCalibration.ApplySCESystematic = 1 >
- < dEdxCalibration.ApplyLifetimeSystematic = 1 >
+ < dEdxCalibration.YZ.ApplySCESystematic = 0 >
+ < dEdxCalibration.YZ.ApplyLifetimeSystematic = 1 >
+
+-----------------------
+--- X calibration -----
+-----------------------
+
+--- Cut levels --------
+ < dEdxCalibration.X.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+
+ < dEdxCalibration.X.MichelRemovingTree = 0 >   
+
+--- Output Tree --------
+ < dEdxCalibration.X.SaveAna = 0 >   // Save standard analysis tree
+ < dEdxCalibration.X.SaveToy = 0 >   // Save toy variables
+
+--- Corrections --------
+ < dEdxCalibration.X.ApplySCEPositionCorrection = 1 >
+ < dEdxCalibration.X.ApplySCEPitchCorrection = 1 >
+ < dEdxCalibration.X.ApplyLifetimeCorrection = 0 >
+
+--- Systematics --------
+ < dEdxCalibration.X.ApplySCESystematic = 0 >
+ < dEdxCalibration.X.ApplyLifetimeSystematic = 1 >
 
 
 ###############################################################################
@@ -51,7 +77,7 @@ No weights yet !!!
 --- Systematics ------------
 
 Number of toy experiments
- < baseAnalysis.Systematics.NumberOfToys = 100 >
+ < baseAnalysis.Systematics.NumberOfToys = 2 >
 
 The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
 
