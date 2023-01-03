@@ -551,7 +551,7 @@ void CoherentSample::IncoherentFit(){
   
   if(fType != SampleTypeEnum::kSignalPlusBackground){
     for(int i = 0; i < (int)fh.size(); i++){
-      fIFit.push_back(CoherentFitUtils::LangausFit(fh[i]));
+      fIFit.push_back(CoherentFitUtils::LangausFit(fh[i],GetSampleType()));
       //save parameters and errors
       fIlw.push_back(  std::make_pair(fIFit.back()->GetParameter(0),fIFit.back()->GetParError(0)));
       fImpv.push_back( std::make_pair(fIFit.back()->GetParameter(1),fIFit.back()->GetParError(1)));

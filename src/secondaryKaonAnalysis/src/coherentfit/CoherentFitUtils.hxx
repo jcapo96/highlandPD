@@ -48,7 +48,7 @@ namespace CoherentFitUtils{
   Double_t GetFunctionNormalizationInsideHistogramBoundaries(const TH1F* h, const TF1* f);
   
   TF1* GausnFit(TH1F* h, bool use_poisson = true);
-  TF1* LangausFit(TH1F* h, bool use_poisson = true);
+  TF1* LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample, bool use_poisson = true);
 
  
   Double_t Langaus(Double_t *x, Double_t *par);

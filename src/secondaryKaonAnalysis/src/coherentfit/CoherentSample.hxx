@@ -200,7 +200,8 @@ public:
   void SetHistogramMarker(int n){for(int i = 0; i < (int)fh.size(); i++)fh[i]->SetMarkerStyle(n);}
   void SetHistogramColor(int n){for(int i = 0; i < (int)fh.size(); i++){fh[i]->SetMarkerColor(n);fh[i]->SetLineColor(n);}}
   void SetHistogramLineWidth(int n){for(int i = 0; i < (int)fh.size(); i++){fh[i]->SetLineWidth(n);}}
-
+  void UseCurrentStyle(){for(int i = 0; i < (int)fh.size(); i++){fh[i]->UseCurrentStyle();}}
+  
   void SetIFitStyle(int n){for(int i = 0; i < (int)fIFit.size(); i++)fIFit[i]->SetLineStyle(n);}
   void SetIFitColor(int n){for(int i = 0; i < (int)fIFit.size(); i++)fIFit[i]->SetLineColor(n);}
 

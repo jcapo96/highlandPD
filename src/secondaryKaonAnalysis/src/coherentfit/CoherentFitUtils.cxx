@@ -512,7 +512,7 @@ Double_t CoherentFitUtils::DoubleLangaus(Double_t *x, Double_t *par) {
 }
 
 //********************************************
-TF1* CoherentFitUtils::LangausFit(TH1F* h, bool use_poisson){
+TF1* CoherentFitUtils::LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample, bool use_poisson){
 //********************************************
 
   if(h->GetEntries() == 0){
@@ -525,7 +525,10 @@ TF1* CoherentFitUtils::LangausFit(TH1F* h, bool use_poisson){
 		   h->GetBinCenter(h->GetMaximumBin()),//landau mpv
 		   0.8,                                //normalization
 		   h->GetRMS());                       //gaussian width
-  f->SetParLimits(0,0.03,2);
+  if(sample == CoherentSample::SampleTypeEnum::kTrueSignal || sample == CoherentSample::SampleTypeEnum::kSignal)
+    f->SetParLimits(0,0.03,2);
+  else
+    f->SetParLimits(0,0.1,2);
   f->SetParLimits(1,h->GetBinCenter(1),h->GetBinCenter(h->GetNbinsX()));
   f->SetParLimits(3,0,10);
   if(use_poisson)h->Fit("f","NQWL");
