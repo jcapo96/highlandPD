@@ -1,15 +1,26 @@
-#ifndef dEdxCalibration_h
-#define dEdxCalibration_h
+#ifndef dQdxYZCalibration_h
+#define dQdxYZCalibration_h
+
+#include "TH2F.h"
 
 #include "baseAnalysis.hxx"
 #include "standardPDTree.hxx"
 #include "pdDataClasses.hxx"
 #include "ToyBoxdEdx.hxx"
 
-class dEdxCalibration: public baseAnalysis {
+const int NTOYS = 100;
+const int ZMIN  = 0;
+const int ZMAX  = 695;
+const int YMIN  = 0;
+const int YMAX  = 600;
+const int XMIN  = -360;
+const int XMAX  = 0;
+const int STEP  = 5; 
+
+class dQdxYZCalibration: public baseAnalysis {
  public:
-  dEdxCalibration(AnalysisAlgorithm* ana=NULL);
-  virtual ~dEdxCalibration(){}
+  dQdxYZCalibration(AnalysisAlgorithm* ana=NULL);
+  virtual ~dQdxYZCalibration(){}
 
   //---- These are mandatory functions
   void DefineSelections();
@@ -32,6 +43,7 @@ class dEdxCalibration: public baseAnalysis {
   void FillCategories();
   void DefineInputConverters();
 
+  void Finalize();
 
   /// Get a casted AnaSpillC to AnaSpillPD from the InputManager
   AnaSpillPD& GetSpill(){return *static_cast<AnaSpillPD*>(&input().GetSpill());}
@@ -58,8 +70,6 @@ class dEdxCalibration: public baseAnalysis {
   
 private:
 
-  bool IsInterestingHit(AnaHitPD& hit);
-
   bool _SaveAna;
   bool _SaveToy;
 
@@ -71,24 +81,29 @@ private:
   bool _ApplyLifetimeSystematic;
 
   int _MichelRemovingTree;
+
+  static const int nbinsy = (YMAX-YMIN)/STEP;
+  static const int nbinsz = (ZMAX-ZMIN)/STEP;
+  TH2F* h_global_yz;
+  TH2F* h_local_yz[nbinsz][nbinsy];
   
 public:
 
-  enum enumSyst_dEdxCalibration{
+  enum enumSyst_dQdxYZCalibration{
     kSCE_syst=0,
     kLifetime_syst,
-    enumSystLast_dEdxCalibration
+    enumSystLast_dQdxYZCalibration
   };
 
-  enum enumCorr_dEdxCalibration{
+  enum enumCorr_dQdxYZCalibration{
     kSCE_corr=0,
     kSCEPosition_corr,
     kSCEPitch_corr,
     kLifetime_corr,
-    enumCorrLast_dEdxCalibration
+    enumCorrLast_dQdxYZCalibration
   };
 
-  enum enumStandardMicroTrees_dEdxCalibration{
+  enum enumStandardMicroTrees_dQdxYZCalibration{
     ntracks = baseAnalysis::enumStandardMicroTreesLast_baseAnalysis+1,
     track_hit_x,
     track_hit_y,
@@ -106,7 +121,7 @@ public:
     toy_hit_y,
     toy_hit_z,
     toy_hit_dqdx,
-    enumStandardMicroTreesLast_dEdxCalibration
+    enumStandardMicroTreesLast_dQdxYZCalibration
   };
 
   

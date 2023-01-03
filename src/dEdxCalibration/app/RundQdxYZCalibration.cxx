@@ -1,8 +1,8 @@
-#include "dEdxCalibration.hxx"
+#include "dQdxYZCalibration.hxx"
 #include "AnalysisLoop.hxx"
 
 int main(int argc, char *argv[]){
-  dEdxCalibration* ana = new dEdxCalibration();
+  dQdxYZCalibration* ana = new dQdxYZCalibration();
   AnalysisLoop loop(ana, argc, argv); 
   loop.Execute();
 }
