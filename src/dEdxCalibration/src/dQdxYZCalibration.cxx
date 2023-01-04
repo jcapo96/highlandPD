@@ -209,6 +209,10 @@ void dQdxYZCalibration::FillMicroTrees(bool addBase){
 void dQdxYZCalibration::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
 
+  //skip 'ana' configuration, this is meant to work only with all_syst
+  if(conf().GetCurrentConfigurationIndex() == 0)
+    return;
+  
   // Fill the common variables  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
 
@@ -300,7 +304,7 @@ void dQdxYZCalibration::Finalize(){
   global_mpv_vector.clear();
   
   TF1* f = new TF1("f",dEdxUtils::Langaus,0,100,4);
-  
+
   TH1D* hproj = new TH1D("hproj","hproj",100,0,100);
   for(int itoy = 0; itoy < NTOYS; itoy++){
     hproj=h_global_yz->ProjectionY("hproj",itoy+1,itoy+2);

@@ -74,7 +74,7 @@ bool dQdxXCalibration::Initialize(){
   }
 
   //get yz correction histogram
-  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yztest.root").c_str());
+  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_errormap_mc_lifetime_7ms.root").c_str());
   yz_correction = (TH3F*)yzfile->Get("toy_correction_yz");
   yz_correction->SetDirectory(0);
   yzfile->Close();
@@ -212,6 +212,10 @@ void dQdxXCalibration::FillMicroTrees(bool addBase){
 void dQdxXCalibration::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
 
+  //skip 'ana' configuration, this is meant to work only with all_syst
+  if(conf().GetCurrentConfigurationIndex() == 0)
+    return;
+  
   // Fill the common variables  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
 
