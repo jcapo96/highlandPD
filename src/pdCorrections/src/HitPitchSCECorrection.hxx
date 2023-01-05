@@ -6,6 +6,7 @@
 #include "Calorimetry.hxx"
 
 /// This class defines a correction that affects each hit of a reconstructed track
+/// It modifies the pitch by SCE and recomputes dQdx
 
 class HitPitchSCECorrection: public CorrectionBase {
 

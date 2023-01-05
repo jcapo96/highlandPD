@@ -1,22 +1,20 @@
-#ifndef SCECorrection_h
-#define SCECorrection_h
+#ifndef CalorimetryCalibration_h
+#define CalorimetryCalibration_h
 
 #include "CorrectionBase.hxx"
 #include "BaseDataClasses.hxx"
-#include "SpaceCharge.hxx"
 #include "Calorimetry.hxx"
 
 /// This class defines a correction that affects each hit of a reconstructed track
-/// it modifies pitch and position. It is the same as applying HitPitch and HitPosition
-/// corrections
+/// It modifies the pitch by SCE and recomputes dQdx
 
-class SCECorrection: public CorrectionBase {
+class CalorimetryCalibration: public CorrectionBase {
 
 public:
   
-  SCECorrection();
+  CalorimetryCalibration();
 
-  virtual ~SCECorrection() {}
+  virtual ~CalorimetryCalibration() {}
 
   /// Apply the sce correction
   void Apply(AnaSpillC& spill);
@@ -25,7 +23,6 @@ protected:
 
   SpaceCharge* _sce;
   Calorimetry* _cal;
-  
 };
 
 #endif

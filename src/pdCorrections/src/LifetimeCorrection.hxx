@@ -6,6 +6,7 @@
 #include "Calorimetry.hxx"
 
 /// This class defines a correction that affects each hit of a reconstructed track
+/// it modifies dQdx based on electron lifetime and hit X position
 
 class LifetimeCorrection: public CorrectionBase {
 

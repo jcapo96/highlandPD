@@ -6,6 +6,7 @@
 #include "SpaceCharge.hxx"
 
 /// This class defines a correction that affects each hit of a reconstructed track
+/// it modifies position by SCE
 
 class HitPositionSCECorrection: public CorrectionBase {
 

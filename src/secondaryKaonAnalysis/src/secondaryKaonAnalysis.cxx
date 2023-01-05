@@ -24,6 +24,7 @@
 
 #include "HitPitchSCECorrection.hxx"
 #include "HitPositionSCECorrection.hxx"
+#include "CalorimetryCalibration.hxx"
 
 //********************************************************************
 secondaryKaonAnalysis::secondaryKaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
@@ -85,6 +86,7 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
+  corr().AddCorrection(0, "calorimetry calibration", new CalorimetryCalibration());
 }
 
 //********************************************************************
