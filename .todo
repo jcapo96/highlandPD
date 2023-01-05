@@ -59,3 +59,5 @@
 - Cmake17 does not like names with '/'. All dictionaries appear on  build folder now instead of build/dict. To be solved
 
 - Why pdAnalysisUtils defines its own namespace (pdAnaUtils) instead of extend the AnaUtils namespace from highland? 
+
+- Centralice CalorimetryCalibration
