@@ -72,8 +72,8 @@ bool LifetimeVariation::UndoSystematic(AnaEventC& event){
     //loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
       part->Hits[2][ihit].dQdx_NoSCE = original->Hits[2][ihit].dQdx_NoSCE;
+      part->Hits[2][ihit].dQdx_SCE   = original->Hits[2][ihit].dQdx_SCE;
       part->Hits[2][ihit].dQdx_elife = original->Hits[2][ihit].dQdx_elife;
-      //part->Hits[2][ihit].dEdx = original->Hits[2][ihit].dEdx;
     }
   }
 
