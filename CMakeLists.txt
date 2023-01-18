@@ -54,7 +54,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 #------ ROOT -------------------
 # Add Minuit for CoherentFit Algorithm
-find_package(ROOT REQUIRED COMPONENTS Geom EG Minuit)
+find_package(ROOT REQUIRED COMPONENTS Geom EG Minuit MathMore)
 #find_package(ROOT REQUIRED COMPONENTS Geom EG TMVA)
 include(${ROOT_USE_FILE})
 
