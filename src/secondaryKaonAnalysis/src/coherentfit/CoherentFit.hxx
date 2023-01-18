@@ -26,6 +26,7 @@ public:
   void WriteToRootFile(const std::string& filename);
   
   void CreateCoherentSamples(const Double_t Chi2Cut);
+  void CreateSampleLinks();
   
   void GenerateTrueMCHistograms(const double RMIN, const double RMAX, const double STEP,
 				const double Chi2Cut,
@@ -78,6 +79,12 @@ public:
   CoherentSample* GetTrueSignalSample() const {return fTrueSignal;}
   CoherentSample* GetTrueBackgroundSample() const {return fTrueBackground;}
 
+  CoherentSample* CreateTrueAllKaonsSample(const double RMIN, const double RMAX, const double STEP,
+					   const double Chi2Cut,
+					   const double bin_min = 0, const double bin_max = 50, const double bin_width = 0.1,
+					   const bool normalize = true,
+					   const bool resize = true) const;
+
   void SetSignalPlusBackgroundSample(CoherentSample *s){fSignalPlusBackground = s;}
   void SetSignalSample(CoherentSample *s){fSignal = s;}
   void SetBackgroundSample(CoherentSample *s){fBackground = s;}
@@ -86,7 +93,7 @@ public:
                                                   fSignalPlusBackground->SetTrueBackground(s); fTrueSignal->SetTrueBackground(s);}
 
   void ReplaceTrueSignalSample(CoherentSample *s){delete fTrueSignal; SetTrueSignalSample(s);}
-  void ReplaceTrueBackgroundSample(CoherentSample *s){delete fTrueBackground; SetTrueBackgroundSample(s);}
+  void ReplaceTrueBackgroundSample(CoherentSample *s){delete fTrueBackground; SetTrueBackgroundSample(s); CreateSampleLinks();}
   void ReplaceSignalSample(CoherentSample *s){delete fSignal; SetSignalSample(s);}
   void ReplaceBackgroundSample(CoherentSample *s){delete fBackground; SetBackgroundSample(s);}
 

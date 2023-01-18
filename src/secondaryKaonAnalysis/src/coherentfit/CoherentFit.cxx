@@ -119,6 +119,20 @@ void CoherentFit::CreateCoherentSamples(const Double_t Chi2Cut){
   fTrueSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSignal);
   fTrueBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueBackground);
   
+  CreateSampleLinks();
+  
+  fSignalPlusBackground->SetChi2Cut(Chi2Cut);
+  fSignal->SetChi2Cut(Chi2Cut);
+  fBackground->SetChi2Cut(Chi2Cut);
+  fSignalPlusBackground->SetChi2Cut(Chi2Cut);
+  fTrueSignal->SetChi2Cut(Chi2Cut);
+  fTrueBackground->SetChi2Cut(Chi2Cut);  
+}
+
+//********************************************************************
+void CoherentFit::CreateSampleLinks(){
+//********************************************************************
+  
   fSignalPlusBackground->SetSignal(fSignal);
   fSignalPlusBackground->SetBackground(fBackground);
   fSignal->SetBackground(fBackground);
@@ -127,13 +141,6 @@ void CoherentFit::CreateCoherentSamples(const Double_t Chi2Cut){
   fSignalPlusBackground->SetTrueBackground(fTrueBackground);
   fTrueSignal->SetTrueBackground(fTrueBackground);
   fTrueBackground->SetTrueSignal(fTrueSignal);  
-  
-  fSignalPlusBackground->SetChi2Cut(Chi2Cut);
-  fSignal->SetChi2Cut(Chi2Cut);
-  fBackground->SetChi2Cut(Chi2Cut);
-  fSignalPlusBackground->SetChi2Cut(Chi2Cut);
-  fTrueSignal->SetChi2Cut(Chi2Cut);
-  fTrueBackground->SetChi2Cut(Chi2Cut);  
 }
 
 //********************************************************************
@@ -160,7 +167,7 @@ void CoherentFit::GenerateTrueMCHistograms(const double RMIN, const double RMAX,
   }    
   double rmin = RMIN;
   double rmax = RMIN+STEP;
-  
+
   while(rmax <= RMAX){
     fSignalPlusBackground->AddToRRVector(std::make_pair((rmin+rmax)/2,(rmax-rmin)/2));
     fSignalPlusBackground->AddToHistVector(CoherentFitUtils::GetHistogramFromResRangeSlice(fTree, fSpill, rmin, rmax, Chi2Cut, bin_min, bin_max, bin_width));
@@ -287,6 +294,40 @@ void CoherentFit::GenerateHistograms(const double RMIN, const double RMAX, const
   
   if(normalize)NormalizeHistograms();
   //if(resize)ResizeHistograms();
+}
+
+//********************************************************************
+CoherentSample* CoherentFit::CreateTrueAllKaonsSample(const double RMIN, const double RMAX, const double STEP,
+						      const double Chi2Cut,
+						      const double bin_min, const double bin_max, const double bin_width,
+						      const bool normalize, const bool resize) const {
+//********************************************************************
+
+  if(fIsMiniTree){
+    fTree->GetEntry(0);
+    if(!fSpill->GetIsMC()){
+      std::cout << "this tree is not MC!!! cannot create signal and background histograms" << std::endl;
+      std::exit(1);
+    }
+  }
+
+  CoherentSample* cs = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSignal);
+  
+  double rmin = RMIN;
+  double rmax = RMIN+STEP;
+
+  int irr = 0;
+  while(rmax <= RMAX){
+    cs->AddToRRVector(std::make_pair((rmin+rmax)/2,(rmax-rmin)/2));
+    cs->AddToHistVector(CoherentFitUtils::GetAllKaonsHistogramFromResRangeSlice(fTree, fSpill, fSignalPlusBackground->GetHistVector()[irr], rmin, rmax, Chi2Cut));
+    rmin += STEP;
+    rmax += STEP;
+    irr++;
+  }
+  
+  if(normalize)cs->NormalizeHistograms(fSignalPlusBackground->GetIntegralVector());
+    
+  return cs;
 }
 
 //********************************************************************

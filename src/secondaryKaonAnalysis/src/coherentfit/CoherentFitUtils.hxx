@@ -25,7 +25,11 @@ namespace CoherentFitUtils{
   TH1F* GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
 						const double RMIN, const double RMAX,
 						const double Chi2Cut);
-
+  
+  TH1F* GetAllKaonsHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
+					      const double RMIN, const double RMAX,
+					      const double Chi2Cut);
+  
   TH1F* GenerateBackgroundHistogramFromTrueSignal(TTree* t, AnaSpillB* spill, TH1F* ha,
 						  const double RMIN, const double RMAX,
 						  const double Chi2Cut,
@@ -44,6 +48,8 @@ namespace CoherentFitUtils{
 					 const int itoy = -1);
 
   TH1F* ChangeHistogramToVariableBinning(TH1F* h_original, const double I, const int min);
+
+  void CopyHistogramBinning(TH1F* h_original, TH1F* h_copy);
 
   Double_t GetFunctionNormalizationInsideHistogramBoundaries(const TH1F* h, const TF1* f);
   
@@ -79,6 +85,8 @@ namespace CoherentFitUtils{
   void DeleteOutliers(std::vector<double> &x, std::vector<double> &x_error, std::vector<double> &y, std::vector<double> &y_error);
 
   bool IsTrueSignal(AnaParticlePD* part);
+
+  TGraphErrors* GetGraph(std::vector<std::pair<double,double>> x, std::vector<std::pair<double,double>> y);
 }
 
 #endif
