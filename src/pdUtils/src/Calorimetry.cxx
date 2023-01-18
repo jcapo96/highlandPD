@@ -257,7 +257,7 @@ void Calorimetry::CalibratedQdx(AnaHitPD &hit) const {
   }
 
   //initialize dQdx value to dQdx non corrrected value value
-  hit.dQdx = hit.dQdx_NoSCE;
+  hit.dQdx = hit.dQdx_elife;
 
   //normalization correction
   //ApplyNormalization(hit);
