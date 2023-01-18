@@ -14,6 +14,13 @@ void standardPDTree::AddStandardVariables_CountersTrue(OutputManager& output){
 }
 
 //********************************************************************
+void standardPDTree::AddStandardVariables_EventInfo(OutputManager& output){
+//********************************************************************
+  
+  AddVarF(output, beam_nominal_mom,              "beam nominal momentum");
+}
+
+//********************************************************************
 void standardPDTree::AddStandardVariables_BeamTrue(OutputManager& output){
 //********************************************************************
 
@@ -320,6 +327,14 @@ void standardPDTree::FillStandardVariables_CountersTrue(OutputManager& output, P
   output.FillVar(truebeamdau_nproton,                  counters.ntrue_beamdaughter_proton);
   output.FillVar(truebeamdau_nneutron,                 counters.ntrue_beamdaughter_neutron);
   output.FillVar(truebeamdau_nnucleus,                 counters.ntrue_beamdaughter_nucleus);
+}
+
+//********************************************************************
+void standardPDTree::FillStandardVariables_EventInfo(OutputManager& output, AnaEventInfoPD* info){
+//********************************************************************
+
+  if (!info) return;
+  output.FillVar(beam_nominal_mom, info->NominalBeamMom);   
 }
 
 //********************************************************************
