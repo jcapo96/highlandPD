@@ -14,13 +14,21 @@ class CreateMichelRemovingMiniTree: public CreateMiniTreePD {
 
 protected:
 
+  bool Initialize();
+  
   bool Process();
 
   bool SaveMiniTree();
 
+  bool PartHasGoodAngles(AnaParticlePD* part);
   void ClearUninterestingHits(AnaParticlePD* part);
   void ClearUninterestingTracks();
   bool IsInterestingHit(AnaHitPD& hit);
+
+  double _ThetaXZ_min;
+  double _ThetaXZ_max;
+  double _ThetaYZ_min;
+  double _ThetaYZ_max;
 
 public:
 

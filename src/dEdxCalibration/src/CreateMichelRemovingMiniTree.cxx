@@ -9,6 +9,32 @@
 CreateMichelRemovingMiniTree::CreateMichelRemovingMiniTree(int argc, char *argv[]):CreateMiniTreePD(argc, argv){
 //********************************************************************
 
+  //initialize to default values
+  _ThetaXZ_min = 0;
+  _ThetaXZ_max = 60;
+  _ThetaYZ_min = 0;
+  _ThetaYZ_max = 80;
+}
+
+//********************************************************************
+bool CreateMichelRemovingMiniTree::Initialize(){
+//********************************************************************
+
+  // call the base class
+  CreateMiniTreePD::Initialize();
+  
+  _ThetaXZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min");
+  _ThetaXZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_max");
+  _ThetaYZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min");
+  _ThetaYZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max");
+  
+  std::cout << "ANGLE BINNING" << std::endl;
+  std::cout << _ThetaXZ_min << " < thetaXZ <" << _ThetaXZ_max << std::endl;
+  std::cout << 180-_ThetaXZ_min << " < thetaXZ <" << 180-_ThetaXZ_max << std::endl;
+  std::cout << _ThetaYZ_min << " < thetaYZ <" << _ThetaYZ_max << std::endl;
+  std::cout << 180-_ThetaYZ_min << " < thetaYZ <" << 180-_ThetaYZ_max << std::endl;
+
+  return true;
 }
 
 //********************************************************************
@@ -59,15 +85,40 @@ void CreateMichelRemovingMiniTree::ClearUninterestingTracks(){
 
   for(int itrk = 0; itrk < (int)bunch->Particles.size(); itrk++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[itrk]);
-    ClearUninterestingHits(part);
-    if(part->Hits[2].size()>0)goodParticles.push_back(part);
-    else                      badParticles.push_back(part);
+    if(PartHasGoodAngles(part)){
+      ClearUninterestingHits(part);
+      if(part->Hits[2].size()>0)goodParticles.push_back(part);
+      else                      badParticles.push_back(part);
+    }
+    else badParticles.push_back(part);;
   }
 
   for(int itrk = 0; itrk < (int)badParticles.size(); itrk++)
     delete badParticles[itrk];
 
   bunch->Particles = goodParticles;
+}
+
+//********************************************************************
+bool CreateMichelRemovingMiniTree::PartHasGoodAngles(AnaParticlePD* part){
+//********************************************************************
+  
+  if(((abs(180/TMath::Pi()*part->ThetaXZ) > _ThetaXZ_max && 
+       abs(180/TMath::Pi()*part->ThetaXZ) < 180-_ThetaXZ_max)
+      ||
+      (abs(180/TMath::Pi()*part->ThetaXZ) < _ThetaXZ_min && 
+       abs(180/TMath::Pi()*part->ThetaXZ) > 180-_ThetaXZ_min))
+     
+     ||
+     
+     ((abs(180/TMath::Pi()*part->ThetaYZ) > _ThetaYZ_max && 
+       abs(180/TMath::Pi()*part->ThetaYZ) < 180-_ThetaYZ_max)
+      ||
+      (abs(180/TMath::Pi()*part->ThetaYZ) < _ThetaYZ_min && 
+       abs(180/TMath::Pi()*part->ThetaYZ) > 180-_ThetaYZ_min)))
+    return false;
+  else
+    return true;
 }
 
 //********************************************************************
