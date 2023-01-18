@@ -64,7 +64,7 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill
     //double new_bin_max = std::min(ceil(10*(mean + 1.5*rms))/10,20.);
     double new_bin_min = 0;
     for(int ibin = 1; ibin < h_dummy->GetNbinsX()-1; ibin++){
-      if(h_dummy->GetBinContent(ibin+1)>2 && h_dummy->GetBinContent(ibin+2)>2){
+      if(h_dummy->GetBinContent(ibin+1)>5 && h_dummy->GetBinContent(ibin+2)>5){
 	new_bin_min = h_dummy->GetBinLowEdge(ibin);
 	break;
       }
@@ -73,7 +73,7 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill
 
     double new_bin_max = 0;
     for(int ibin = h_dummy->GetMaximumBin(); ibin < h_dummy->GetNbinsX()-1; ibin++){
-      if(h_dummy->GetBinContent(ibin+1)<2 && h_dummy->GetBinContent(ibin+2)<2){
+      if(h_dummy->GetBinContent(ibin+1)<3 && h_dummy->GetBinContent(ibin+2)<3){
 	new_bin_max = h_dummy->GetBinLowEdge(ibin);
 	break;
       }
@@ -218,6 +218,7 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
 	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
 	  if(!truePart)continue;
 	  if(truePart->PDG==321 && truePart->ProcessEnd == 2)continue;
+	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2){
 	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
 	    if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
 	      h->Fill(part->Hits[2][ihit].dEdx);
@@ -225,7 +226,7 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
 	}
       }
     }
-  
+    
     //set histogram title
     std::stringstream srl, srh;
     srl << RMIN;
@@ -256,6 +257,74 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
 }
 
 //********************************************
+TH1F* CoherentFitUtils::GetAllKaonsHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
+							      const double RMIN, const double RMAX,
+							      const double Chi2Cut){
+//********************************************
+
+  if(spill){
+    if(!spill->GetIsMC()){
+      std::cout << "this MiniTree is not MC, can't get signal histogram!" << std::endl;
+      std::exit(1);
+    }
+    
+    TH1F* h = (TH1F*)ha->Clone();
+    h->Reset();
+    
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    //loop over candidates
+    for(int ientry = 0; ientry < t->GetEntries(); ientry++){
+      t->GetEntry(ientry);
+      AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
+      for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
+	AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
+	if(!part || (int)part->Hits[2].size()<2)continue;
+	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
+	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+	  if(!truePart)continue;
+	  if(truePart->PDG==321){
+	    for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
+	      if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
+		h->Fill(part->Hits[2][ihit].dEdx);
+	    }
+	  }
+	}
+      }
+    }
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hs_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
+  else{
+    //fill histogram
+    TH1F* h = GetHistogramFromResRangeSliceFromFlatTree(t,
+							RMIN,RMAX,
+							ha->GetXaxis()->GetXmin(), ha->GetXaxis()->GetXmax(), ha->GetXaxis()->GetBinWidth(0),
+							"&& (bestcandidate_truepdg==321)"); 
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hs_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
+}
+
+//********************************************
 TH1F* CoherentFitUtils::GenerateBackgroundHistogramFromTrueSignal(TTree* t, AnaSpillB* spill, TH1F* ha,
 								  const double RMIN, const double RMAX,
 								  const double Chi2Cut,
@@ -279,6 +348,7 @@ TH1F* CoherentFitUtils::GenerateBackgroundHistogramFromTrueSignal(TTree* t, AnaS
     t->GetEntry(ientry);
     AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
     for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
+      if(shift[ientry+ipart]<=0)continue;
       AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
       if(!part || (int)part->Hits[2].size()<2)continue;
       if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
@@ -411,10 +481,26 @@ TH1F* CoherentFitUtils::ChangeHistogramToVariableBinning(TH1F* h_original, const
   }
 
   //h_original->Draw();gPad->Update();gPad->WaitPrimitive();
-  h_new->Draw("e");gPad->Update();gPad->WaitPrimitive();
+  //h_new->Draw("e");gPad->Update();gPad->WaitPrimitive();
   
   delete h_original;
   return h_new;
+}
+
+//********************************************
+void CoherentFitUtils::CopyHistogramBinning(TH1F* h_original, TH1F* h_copy){
+//********************************************
+
+  TH1F* h_new = (TH1F*)h_copy->Clone();
+  h_new->Reset();
+
+  for(int in = 0; in < h_new->GetNbinsX(); in++)
+    for(int io = 0; io < h_original->GetNbinsX(); io++)
+      if(h_new->GetBinCenter(in+1) == h_original->GetBinCenter(io+1))
+	h_new->SetBinContent(in+1,h_original->GetBinContent(io+1));
+
+  delete h_original;
+  h_original = h_new;
 }
 
 //********************************************
@@ -586,6 +672,8 @@ void CoherentFitUtils::GetABCParametrization(double &A, double &B, double &C,
   B = f->GetParameter(1);
   C = f->GetParameter(2);
 
+  tg->Draw("ap");
+  gPad->Update();gPad->WaitPrimitive();
   if(draw_plot){gPad->Update();gPad->WaitPrimitive();}
 }
 
@@ -608,7 +696,7 @@ void CoherentFitUtils::GetABCDRParametrization(double &A, double &B, double &C, 
   TF1* f = new TF1("f","[A]*pow(x+[R],[B])*(log(x)+[C])+[D]",3,60);
   f->SetParameters(-0.294,-0.597,-56.1,1.07,1.86);
   if(draw_plot)tg->Draw("ap");
-  tg->Fit("f");//,"Q");
+  tg->Fit("f","Q");
 
   A = f->GetParameter("A");
   B = f->GetParameter("B");
@@ -616,6 +704,8 @@ void CoherentFitUtils::GetABCDRParametrization(double &A, double &B, double &C, 
   D = f->GetParameter("D");
   R = f->GetParameter("R");
 
+  tg->Draw("ap");
+  gPad->Update();gPad->WaitPrimitive();
   if(draw_plot){gPad->Update();gPad->WaitPrimitive();}
 }
 
@@ -624,15 +714,9 @@ double CoherentFitUtils::ComputeLikelihood(TH1F* h, TF1* f, double integral){
 //********************************************
   
   double Likelihood = 0;
-  
   for(int i = 0; i < h->GetNbinsX(); i++){
     double hvalue = h->GetBinContent(i+1);
-    double fvalue;
-    //if(isnan(f->GetParameter(0)) || isnan(f->GetParameter(1)) || isnan(f->GetParameter(2)) || isnan(f->GetParameter(3)))
-      fvalue = f->Eval(h->GetBinCenter(i+1));
-      //else
-      //fvalue = f->Integral(h->GetBinLowEdge(i+1),h->GetBinLowEdge(i+1)+h->GetBinWidth(i+1))/h->GetBinWidth(i+1);
-    //std::cout << fvalue*integral << std::endl;
+    double fvalue = f->Eval(h->GetBinCenter(i+1));
     Likelihood = Likelihood + log(ROOT::Math::poisson_pdf(hvalue*integral,fvalue*integral));
   }
 
@@ -830,4 +914,15 @@ bool CoherentFitUtils::IsTrueSignal(AnaParticlePD* part){
   if(truePart->PDG == 321 && truePart->ProcessEnd == 2)ItIs = true;
 
   return ItIs;
+}
+
+//********************************************
+TGraphErrors* CoherentFitUtils::GetGraph(std::vector<std::pair<double,double>> x, std::vector<std::pair<double,double>> y){
+//********************************************
+
+  std::vector<double> xv, xev, yv, yev;
+  SeparatePair(x,xv,xev);
+  SeparatePair(y,yv,yev);
+
+  return new TGraphErrors(xv.size(),&xv[0],&yv[0],&xev[0],&yev[0]);
 }

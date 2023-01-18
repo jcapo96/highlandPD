@@ -46,6 +46,7 @@ public:
   void ComputeIntegral();
   void NormalizeHistograms();
   void NormalizeHistograms(std::vector<double> Integral);
+  void UndoHistogramsNormalization() {for(int i = 0; i < (int)fh.size(); i++)fh[i]->Scale(fIntegral[i]);}
   void ChangeHistogramsToVariableBinning(const int min = 3);
   void SetCFitParameters(const CoherentSample* sample);
   void SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma,
@@ -63,6 +64,8 @@ public:
 
   void CoherentFitSignal();
   void CoherentFitSignalCheb();
+  void CoherentFitSignalLag();
+  void CoherentFitSignalLagMPV();
   //void CoherentFitSignalAlpha();
   //void CoherentFitBackgroundAllFree();
   //void CoherentFitSignalPlusBackgroundAllFree();
@@ -70,17 +73,24 @@ public:
   //void CoherentFitSignalPlusBackgroundShift();
   //void CoherentFitBackground3Par();
   void CoherentFitBackgroundQuadraticWidths();
-  void CoherentFitSignalPlusBackgroundQuadraticWidths();
   void CoherentFitBackgroundCheb();
+  void CoherentFitBackgroundLag();
+  void CoherentFitBackgroundLagMPV();
+  void CoherentFitSignalPlusBackgroundQuadraticWidths();
   void CoherentFitSignalPlusBackgroundCheb();
+  void CoherentFitSignalPlusBackgroundLag();
+  void CoherentFitSignalPlusBackgroundLagMPV();
   
   void StoreCoherentFits();
 
   void WriteToRootFile(const std::string& filename);
   void ReadFromRootFile(const std::string& filename);
+  void ResetAllButHistograms();
   
   static void fcnSignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   //static void fcnSignalAlpha(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   //static void fcnBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   //static void fcnSignalPlusBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
@@ -90,7 +100,11 @@ public:
   static void fcnBackgroundQuadraticWidths(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundQuadraticWidths(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalPlusBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalPlusBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   
   CoherentSample* GetSignal() const {return fSignal;}
   void SetSignal(CoherentSample* Signal){fSignal = Signal;}
@@ -102,6 +116,7 @@ public:
   void SetTrueBackground(CoherentSample* Background){fTrueBackground = Background;}
 
   SampleTypeEnum GetSampleType() const {return fType;}
+  void SetSampleType(SampleTypeEnum type) {fType = type;}
   BackgroundModelEnum GetBackgroundModel() const {return fBackgroundModel;}
   void SetBackgroundModel(BackgroundModelEnum f) {fBackgroundModel = f;}
 
@@ -130,6 +145,8 @@ public:
   void SetCgwFit(TF1* f){fCgwFit = f;}
   
   std::vector<std::pair<double,double>> GetRRVector() const {return fRR;}
+  std::vector<double> GetRRVectorValue() const;
+  std::vector<double> GetRRVectorError() const;
   void AddToRRVector(std::pair<double,double> p){fRR.push_back(p);}
   void SetRRVector(std::vector<std::pair<double,double>> RR){fRR = RR;}
   void ResetRRVector(){fRR.clear();}
@@ -143,22 +160,40 @@ public:
   std::vector<double> GetCIntegralVector() const {return fCIntegral;}
 
   std::vector<std::pair<double,double>> GetIlwVector() const {return fIlw;}
+  std::vector<double> GetIlwVectorValue() const;
+  std::vector<double> GetIlwVectorError() const;
   void AddToIlwVector(std::pair<double,double> lw){fIlw.push_back(lw);}
   void ResetIlwVector(){fIlw.clear();}
 
   std::vector<std::pair<double,double>> GetImpvVector() const {return fImpv;}
+  std::vector<double> GetImpvVectorValue() const;
+  std::vector<double> GetImpvVectorError() const;
   void AddToImpvVector(std::pair<double,double> mpv){fImpv.push_back(mpv);}
   void ResetImpvVector(){fImpv.clear();}  
 
   std::vector<std::pair<double,double>> GetInormVector() const {return fInorm;}
+  std::vector<double> GetInormVectorValue() const;
+  std::vector<double> GetInormVectorError() const;
   void AddToInormVector(std::pair<double,double> norm){fInorm.push_back(norm);}
   void ResetInormVector(){fInorm.clear();}
 
   std::vector<std::pair<double,double>> GetIgwVector() const {return fIgw;}
+  std::vector<double> GetIgwVectorValue() const;
+  std::vector<double> GetIgwVectorError() const;
   void AddToIgwVector(std::pair<double,double> gw){fIgw.push_back(gw);}
   void ResetIgwVector(){fIgw.clear();}
 
   std::vector<std::pair<double,double>> GetIfwVector() const {return fIfw;}
+  std::vector<double> GetIfwVectorValue() const;
+  std::vector<double> GetIfwVectorError() const;
+
+  std::vector<double> GetIalphaVector() const;
+
+  TGraphErrors* GetImpvGraph() const;
+  TGraphErrors* GetIlwGraph() const;
+  TGraphErrors* GetIgwGraph() const;
+  TGraphErrors* GetInormGraph() const;
+  TGraphErrors* GetIfwGraph() const;
     
   std::pair<double,double> GetClwA() const {return fClwA;}
   void SetClwA(std::pair<double,double> p){fClwA = p;} 
@@ -209,6 +244,8 @@ public:
   void SetCFitColor(int n){for(int i = 0; i < (int)fCFit.size(); i++)fCFit[i]->SetLineColor(n);}
 
   TGraphErrors* GetMPVErrorBand();
+
+  void CopyHistogramsBinning(std::vector<TH1F*> vh);
   
 private:
 
