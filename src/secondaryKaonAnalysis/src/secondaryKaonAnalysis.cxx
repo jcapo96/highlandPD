@@ -86,7 +86,7 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
-  corr().AddCorrection(0, "calorimetry calibration", new CalorimetryCalibration());
+  //corr().AddCorrection(0, "calorimetry calibration", new CalorimetryCalibration());
 }
 
 //********************************************************************
@@ -138,6 +138,7 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
     
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  standardPDTree::AddStandardVariables_EventInfo(output());
   standardPDTree::AddStandardVariables_BeamReco(output());
   standardPDTree::AddStandardVariables_BeamTrue(output());
   standardPDTree::AddStandardVariables_CandidateTrue(output());
@@ -181,6 +182,7 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
   
   // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  standardPDTree::FillStandardVariables_EventInfo(        output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
   standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
@@ -364,7 +366,10 @@ void secondaryKaonAnalysis::FillCategories(){
     for(int i = 0; i < (int)box().Candidates.size(); i++){
       anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]),              "candidate",   1);
       anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]->Daughters[0]),"candidatedau",1);
+      kaonAnaUtils::FillCandidateParticleReducedCategory(box().Candidates[i]);
+      kaonAnaUtils::FillCandidateDaughterParticleReducedCategory(box().Candidates[i]);
       kaonAnaUtils::FillCandidateDaughterMuonCategory(box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]));
+      kaonAnaUtils::FillCandidateDaughterMuonReducedCategory(box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]));
     }
   }
   
@@ -388,7 +393,10 @@ void secondaryKaonAnalysis::FillCategories(){
 
   // For the beam 
   AnaParticleB* beamPart = static_cast<AnaBeam*>(GetSpill().Beam)->BeamParticle;
-  if (beamPart) anaUtils::FillCategories(&GetEvent(), beamPart, "beam"); // method in highland/src/highland2/highlandUtils
+  if (beamPart){
+    anaUtils::FillCategories(&GetEvent(), beamPart, "beam"); // method in highland/src/highland2/highlandUtils
+    kaonAnaUtils::FillBeamParticleReducedCategory(static_cast<AnaParticlePD*>(beamPart));
+  }
 }
 
 //********************************************************************

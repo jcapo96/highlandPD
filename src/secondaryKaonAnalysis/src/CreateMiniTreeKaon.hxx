@@ -17,8 +17,12 @@ protected:
   bool RecoCandidateExists();
   bool TruthCandidateExists();
 
+  void DeleteUninterestingBunches() {return;} //no bunches to delete in protodune
+
   void DeleteUninterestingParticles();
   void DeleteUninterestingTrueParticles();
+
+  void FilterParticleInfo(AnaParticleB& part) {return;} //no info to filter right now
 
 };
 
