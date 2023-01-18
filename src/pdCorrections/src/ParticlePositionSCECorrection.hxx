@@ -1,5 +1,5 @@
-#ifndef ParticlePositionSCE_h
-#define ParticlePositionSCE_h
+#ifndef ParticlePositionSCECorrection_h
+#define ParticlePositionSCECorrection_h
 
 #include "CorrectionBase.hxx"
 #include "BaseDataClasses.hxx"
@@ -8,13 +8,13 @@
 
 /// This class defines a correction that affects end/start position of each track
 
-class ParticlePositionSCE: public CorrectionBase {
+class ParticlePositionSCECorrection: public CorrectionBase {
 
 public:
   
-  ParticlePositionSCE();
+  ParticlePositionSCECorrection();
 
-  virtual ~ParticlePositionSCE() {}
+  virtual ~ParticlePositionSCECorrection() {}
 
   /// Apply the sce correction
   void Apply(AnaSpillC& spill);

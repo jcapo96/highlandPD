@@ -1,11 +1,11 @@
-#include "ParticlePositionSCE.hxx"
+#include "ParticlePositionSCECorrection.hxx"
 #include "pdDataClasses.hxx"
 #include "pdAnalysisUtils.hxx"
 #include <cassert>
 
 
 //********************************************************************
-ParticlePositionSCE::ParticlePositionSCE(){
+ParticlePositionSCECorrection::ParticlePositionSCECorrection(){
 //********************************************************************
 
   _sce = new SpaceCharge();
@@ -13,7 +13,7 @@ ParticlePositionSCE::ParticlePositionSCE(){
 }
 
 //********************************************************************
-void ParticlePositionSCE::Apply(AnaSpillC& spillC){
+void ParticlePositionSCECorrection::Apply(AnaSpillC& spillC){
 //********************************************************************
 
   //cast bunch
@@ -34,19 +34,19 @@ void ParticlePositionSCE::Apply(AnaSpillC& spillC){
     int TPCid = 0;
 
     //position start
-    pos.SetXYX(part->PositionStart[0],part->PositionStart[1],part->PositionStart[2]);
+    pos.SetXYZ(part->PositionStart[0],part->PositionStart[1],part->PositionStart[2]);
     if(pos.X() < 0)TPCid = 1;
     else           TPCid = 2;
-    TVector3 offset = _sce->GetCalPosOffset(pos,TPCid);
+    TVector3 offset = _sce->GetCalPosOffsets(pos,TPCid);
     part->PositionStart[0] = pos.X() - offset.X();
     part->PositionStart[1] = pos.Y() + offset.Y();
     part->PositionStart[2] = pos.Z() + offset.Z();
 
     //position end
-    pos.SetXYX(part->PositionEnd[0],part->PositionEnd[1],part->PositionEnd[2]);
+    pos.SetXYZ(part->PositionEnd[0],part->PositionEnd[1],part->PositionEnd[2]);
     if(pos.X() < 0)TPCid = 1;
     else           TPCid = 2;
-    TVector3 offset = _sce->GetCalPosOffset(pos,TPCid);
+    offset = _sce->GetCalPosOffsets(pos,TPCid);
     part->PositionEnd[0] = pos.X() - offset.X();
     part->PositionEnd[1] = pos.Y() + offset.Y();
     part->PositionEnd[2] = pos.Z() + offset.Z();
