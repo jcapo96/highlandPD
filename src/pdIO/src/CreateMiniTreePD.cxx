@@ -1,15 +1,14 @@
 #include "CreateMiniTreePD.hxx"
-#include "pdMiniTreeConverter.hxx"
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "MichelRemovingTreeConverter.hxx"
+#include "HighlandMiniTreeConverter.hxx"
 #include "Parameters.hxx"
 
 //********************************************************************
 CreateMiniTreePD::CreateMiniTreePD(int argc, char *argv[]):CreateMiniTree(argc, argv){
-  //********************************************************************
+//********************************************************************
 
   input().AddConverter("minitree",         new HighlandMiniTreeConverter("highlandana/MiniTree",true));
-  input().AddConverter("pdminitree",       new pdMiniTreeConverter());
   input().AddConverter("pduneana",         new PDSPAnalyzerTreeConverter());
   input().AddConverter("MichelRemovingTree", new MichelRemovingTreeConverter("michelremoving/Event"));
 }
