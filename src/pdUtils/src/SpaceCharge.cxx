@@ -899,44 +899,25 @@ double SpaceCharge::GetEFieldZAtPoint(double x, double y, double z) const {
 }
 
 //********************************************************************
-void SpaceCharge::ApplyDisplacementVariation(const double var){
+void SpaceCharge::ApplyGlobalVariation(const double var){
 //********************************************************************
     
-  int nBinsX = hDx_cal_pos->GetNbinsX();
-  int nBinsY = hDx_cal_pos->GetNbinsY();
-  int nBinsZ = hDx_cal_pos->GetNbinsZ();
+  hDx_cal_pos->Scale(var);
+  hDy_cal_pos->Scale(var);
+  hDz_cal_pos->Scale(var);
+
+  hDx_cal_neg->Scale(var);
+  hDy_cal_neg->Scale(var);
+  hDz_cal_neg->Scale(var);
+
+  hEx_cal_pos->Scale(var);
+  hEy_cal_pos->Scale(var);
+  hEz_cal_pos->Scale(var);
+                          
+  hEx_cal_neg->Scale(var);
+  hEy_cal_neg->Scale(var);
+  hEz_cal_neg->Scale(var);
   
-  //loop over bins of the histograms
-  for(int x = 1; x <= nBinsX; x++){
-    for(int y = 1; y <= nBinsY; y++){
-      for(int z = 1; z <= nBinsZ; z++){
-  	hDx_cal_pos->SetBinContent(x,y,z,nominal_hDx_cal_pos->GetBinContent(x,y,z)*var);
-  	hDy_cal_pos->SetBinContent(x,y,z,nominal_hDy_cal_pos->GetBinContent(x,y,z)*var);
-  	hDz_cal_pos->SetBinContent(x,y,z,nominal_hDz_cal_pos->GetBinContent(x,y,z)*var);
-
-  	hDx_cal_neg->SetBinContent(x,y,z,nominal_hDx_cal_neg->GetBinContent(x,y,z)*var);
-  	hDy_cal_neg->SetBinContent(x,y,z,nominal_hDy_cal_neg->GetBinContent(x,y,z)*var);
-  	hDz_cal_neg->SetBinContent(x,y,z,nominal_hDz_cal_neg->GetBinContent(x,y,z)*var);
-
-	hEx_cal_pos->SetBinContent(x,y,z,nominal_hEx_cal_pos->GetBinContent(x,y,z)*var);
-  	hEy_cal_pos->SetBinContent(x,y,z,nominal_hEy_cal_pos->GetBinContent(x,y,z)*var);
-  	hEz_cal_pos->SetBinContent(x,y,z,nominal_hEz_cal_pos->GetBinContent(x,y,z)*var);
-
-  	hEx_cal_neg->SetBinContent(x,y,z,nominal_hEx_cal_neg->GetBinContent(x,y,z)*var);
-  	hEy_cal_neg->SetBinContent(x,y,z,nominal_hEy_cal_neg->GetBinContent(x,y,z)*var);
-  	hEz_cal_neg->SetBinContent(x,y,z,nominal_hEz_cal_neg->GetBinContent(x,y,z)*var);
-      }
-    }
-  }
-
-  // hDx_cal_pos->Scale(var);
-  // hDy_cal_pos->Scale(var);
-  // hDz_cal_pos->Scale(var);
-
-  // hDx_cal_neg->Scale(var);
-  // hDy_cal_neg->Scale(var);
-  // hDz_cal_neg->Scale(var);
-    
   //prepare new splines
   ResetSplines();
 

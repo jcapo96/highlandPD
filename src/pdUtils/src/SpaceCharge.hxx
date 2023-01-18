@@ -35,7 +35,7 @@ public:
   void ApplyPositionCorrection(AnaParticlePD* part) const;
   void ApplyPositionCorrection(AnaHitPD& hit) const;
 
-  void ApplyDisplacementVariation(const double var);
+  void ApplyGlobalVariation(const double var);
   void ApplyVoxelVariation(UInt_t xbin, UInt_t ybin, UInt_t zbin, double var, bool reset_splines = true);
   void ResetToNominal();
   void ResetSplines();

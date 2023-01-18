@@ -2,7 +2,7 @@
 #include "pdAnalysisUtils.hxx"
 
 //********************************************************************
-SCEVariation::SCEVariation():EventVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","SCE2", BinnedParams::k3D_SYMMETRIC_NOMEAN){
+SCEVariation::SCEVariation():EventVariationBase(),BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","SCE", BinnedParams::k1D_SYMMETRIC_NOMEAN){
 //********************************************************************
 
   // Read the systematic source parameters from the data files
@@ -20,12 +20,9 @@ SCEVariation::SCEVariation():EventVariationBase(),BinnedParams(std::string(geten
   
   //Initialize SCE object to apply variations
   for(int i = 0; i < 100; i++)_sce[i] = NULL;
-  // _sce = new SpaceCharge();
-  // _sce->Initialize();
 
-  // Initialize Calorimetry object using the SCE just created
+  // Initialize Calorimetry object pointing to null SCE, it will be replaced afterwards
   _cal = new Calorimetry();
-  //_cal->SetSCE(_sce);
   _cal->Initialize(NULL);
 }
 
@@ -55,9 +52,9 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   else
     _cal->SetSCE(_sce[toy_index],false);
 
-  //Vary SCE map
+  //Vary SCE map if it hasn't been varied yet
   if(!_sce[toy_index]->IsVaried())
-    VarySCEMap(toy);
+    VarySCEMapGlobally(toy);
 
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
@@ -108,7 +105,21 @@ bool SCEVariation::UndoSystematic(AnaEventC& event){
 }
 
 //********************************************************************
-void SCEVariation::VarySCEMap(const ToyExperiment& toy){
+void SCEVariation::VarySCEMapGlobally(const ToyExperiment& toy){
+//********************************************************************
+  
+  int toy_index = toy.GetToyIndex();
+
+  if(toy_index==0)std::cout << "SCEVariation::VarySCEMap(). Generating toy maps" << std::endl;
+  if(toy_index==99)std::cout << "SCEVariation::VarySCEMap(). Toy maps generated" << std::endl;
+
+  Float_t sigma;
+  GetSigmaValueForBin(0, sigma); //only 1 bin
+  _sce[toy_index]->ApplyGlobalVariation(1 + sigma*toy.GetToyVariations(_index)->Variations[0]);  
+}
+
+//********************************************************************
+void SCEVariation::VarySCEMapLocally(const ToyExperiment& toy){
 //********************************************************************
   
   int toy_index = toy.GetToyIndex();
