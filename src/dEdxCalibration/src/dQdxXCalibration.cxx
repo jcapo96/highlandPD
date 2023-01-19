@@ -30,12 +30,16 @@
 dQdxXCalibration::dQdxXCalibration(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
-  h_global_x = NULL;
+  h_global_x     = NULL;
+  h_global_x_toy = NULL;
     
-  for(int ix = 0; ix < nbinsx; ix++)
-    h_local_x[ix] = NULL;
-
-  yz_correction = NULL;
+  for(int ix = 0; ix < nbinsx; ix++){
+    h_local_x[ix]     = NULL;
+    h_local_x_toy[ix] = NULL;
+  }
+  
+  yz_correction     = NULL;
+  yz_correction_toy = NULL;
 
   _sce = NULL;
 }
@@ -60,30 +64,33 @@ bool dQdxXCalibration::Initialize(){
   _ApplySCESystematic = ND::params().GetParameterI("dEdxCalibration.X.ApplySCESystematic");
   _ApplyLifetimeSystematic = ND::params().GetParameterI("dEdxCalibration.X.ApplyLifetimeSystematic");
 
-  TTree::SetMaxTreeSize(200000000000);
-
   //initialize histograms
-  h_global_x = new TH2F("x_global","x_global",NTOYS,0,NTOYS,100,0,100);
+  h_global_x     = new TH1F("x_global"    ,"x_global"    ,              100,0,100);
+  h_global_x_toy = new TH2F("x_global_toy","x_global_toy",NTOYS,0,NTOYS,100,0,100);
 
   for(int ix = 0; ix < nbinsx; ix++){
     std::stringstream ssx;
     ssx << ix;
-    h_local_x[ix] = new TH2F(("x_local_"+ssx.str()+"").c_str(),
+    h_local_x[ix] = new TH1F(("x_local_"+ssx.str()+"").c_str(),
 			     ("x_local_"+ssx.str()+"").c_str(),
-			     NTOYS,0,NTOYS,100,0,100);
+			     100,0,100);
+    h_local_x_toy[ix] = new TH2F(("x_local_toy_"+ssx.str()+"").c_str(),
+				 ("x_local_toy_"+ssx.str()+"").c_str(),
+				 NTOYS,0,NTOYS,100,0,100);
   }
-
+  
   //get yz correction histogram
-  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_errormap_mc_lifetime_7ms_5error.root").c_str());
-  yz_correction = (TH3F*)yzfile->Get("toy_correction_yz");
+  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_errormap_mc_sce_global.root").c_str());
+  yz_correction     = (TH2F*)yzfile->Get("correction_yz");
   yz_correction->SetDirectory(0);
+  yz_correction_toy = (TH3F*)yzfile->Get("toy_correction_yz");
+  if(yz_correction_toy)
+    yz_correction_toy->SetDirectory(0);
   yzfile->Close();
 
-  //if sce systematic is applied, variation's sce will be used. If not, initialize one
-  if(!_ApplySCESystematic){
-    _sce = new SpaceCharge();
-    _sce->Initialize();
-  }
+  //always initialize space charge for ana configuration
+  _sce = new SpaceCharge();
+  _sce->Initialize();
   
   return true;
 }
@@ -156,54 +163,44 @@ void dQdxXCalibration::DefineMicroTrees(bool addBase){
 //********************************************************************
 
   // -------- Add variables to the analysis tree ----------------------
-
-  // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
-  if (addBase) baseAnalysis::DefineMicroTrees(addBase);
-  
-  if(_SaveAna){
-    AddVarMF(output(), track_hit_x   , "trk hit x"   , ntracks, -30, 3000);
-    AddVarMF(output(), track_hit_y   , "trk hit y"   , ntracks, -30, 3000);
-    AddVarMF(output(), track_hit_z   , "trk hit z"   , ntracks, -30, 3000);
-    AddVarMF(output(), track_hit_dqdx, "trk hit dqdx", ntracks, -30, 3000);
-  }
-  
-  // -------- Add toy variables ---------------------------------
-  if(_SaveToy){
-    AddToyVarVF(output(), toy_hit_x   , "toy hit x"   , 1000);
-    AddToyVarVF(output(), toy_hit_y   , "toy hit y"   , 1000);
-    AddToyVarVF(output(), toy_hit_z   , "toy hit z"   , 1000);
-    AddToyVarVF(output(), toy_hit_dqdx, "toy hit dqdx", 1000);
-  }
 }
 
 //********************************************************************
 void dQdxXCalibration::DefineTruthTree(){
 //********************************************************************
 
-  // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
-  baseAnalysis::DefineTruthTree();
 }
 
 //********************************************************************
 void dQdxXCalibration::FillMicroTrees(bool addBase){
 //********************************************************************
-  
-  // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
-  if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
 
-  // fill trk info
-  if(_SaveAna){
-    if(box().Tracks.size()>0){
-      for(int i = 0; i < std::min((int)box().Tracks.size(),30); i++){
-	AnaParticlePD* part = box().Tracks[i];
-	for(int j = 0; j < (int)std::min((int)part->Hits[2].size(),3000); j++){
-	  output().FillMatrixVar(track_hit_x,         (Float_t)part->Hits[2][j].Position.X(),   -1, j);
-	  output().FillMatrixVar(track_hit_y,         (Float_t)part->Hits[2][j].Position.Y(),   -1, j);
-	  output().FillMatrixVar(track_hit_z,         (Float_t)part->Hits[2][j].Position.Z(),   -1, j);
-	  output().FillMatrixVar(track_hit_dqdx,      (Float_t)part->Hits[2][j].dQdx_elife,     -1, j);
-	}
-	output().IncrementCounter(ntracks);
-      } 
+  
+  
+  //fill histograms
+  int ntracks = box().Tracks.size();
+  if(!(ntracks > 0))return; 
+  
+  int zbin,ybin,xbin;
+  for(int itrk = 0; itrk < ntracks; itrk++){
+    AnaParticlePD* part = box().Tracks[itrk];
+    int nhits = part->Hits[2].size();
+    for(int ihit = 0; ihit < nhits; ihit++){
+      if(!dEdxUtils::IsInterestingHit(part->Hits[2][ihit]))continue;
+      //get corrections
+      zbin = part->Hits[2][ihit].Position.Z()/STEP;
+      ybin = part->Hits[2][ihit].Position.Y()/STEP;
+      double yzcorr = yz_correction->GetBinContent(zbin+1,ybin+1);
+      double efield = dEdxUtils::ElectricField(GetSCE(),
+					       part->Hits[2][ihit].Position.X(),
+					       part->Hits[2][ihit].Position.Y(),
+					       part->Hits[2][ihit].Position.Z());
+      double recfact = dEdxUtils::Recombination(efield);
+      //fill global histogram
+      h_global_x->Fill(part->Hits[2][ihit].dQdx_elife*yzcorr*recfact);
+      //fill local histogram
+      xbin = part->Hits[2][ihit].Position.X()/STEP+nbinsx;
+      h_local_x[xbin]->Fill(part->Hits[2][ihit].dQdx_elife*yzcorr*recfact);
     }
   }
 }
@@ -215,30 +212,9 @@ void dQdxXCalibration::FillToyVarsInMicroTrees(bool addBase){
   //skip 'ana' configuration, this is meant to work only with all_syst
   if(conf().GetCurrentConfigurationIndex() == 0)
     return;
-  
-  // Fill the common variables  (highland/src/highland2/baseAnalysis)
-  if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
 
-  if(_SaveToy){
-    int ntracks = box().Tracks.size();
-    if(ntracks > 0){
-      int hitcounter = 0;
-      for(int itrk = 0; itrk < ntracks; itrk++){
-	AnaParticlePD* part = box().Tracks[itrk];
-	int nhits = part->Hits[2].size();
-	for(int ihit = 0; ihit < nhits; ihit++){
-	  if(hitcounter>=1000)break;
-	  if(dEdxUtils::IsInterestingHit(part->Hits[2][ihit])){
-	    output().FillToyVectorVar(toy_hit_x   ,(Float_t)part->Hits[2][ihit].Position.X(),hitcounter);
-	    output().FillToyVectorVar(toy_hit_y   ,(Float_t)part->Hits[2][ihit].Position.Y(),hitcounter);
-	    output().FillToyVectorVar(toy_hit_z   ,(Float_t)part->Hits[2][ihit].Position.Z(),hitcounter);
-	    output().FillToyVectorVar(toy_hit_dqdx,(Float_t)part->Hits[2][ihit].dQdx_elife,hitcounter);
-	    hitcounter++;
-	  }
-	  if(hitcounter>=1000)break;}
-      }
-    }
-  }
+  if(!_enableAllSystConfig)
+    return;
   
   //fill histograms
   int ntracks = box().Tracks.size();
@@ -250,22 +226,21 @@ void dQdxXCalibration::FillToyVarsInMicroTrees(bool addBase){
     AnaParticlePD* part = box().Tracks[itrk];
     int nhits = part->Hits[2].size();
     for(int ihit = 0; ihit < nhits; ihit++){
-      if(dEdxUtils::IsInterestingHit(part->Hits[2][ihit])){
-	//get corrections
-	zbin = part->Hits[2][ihit].Position.Z()/STEP;
-  	ybin = part->Hits[2][ihit].Position.Y()/STEP;
-	double yzcorr = yz_correction->GetBinContent(zbin+1,ybin+1,itoy+1);
-	double efield = dEdxUtils::ElectricField(GetSCE(),
-						 part->Hits[2][ihit].Position.X(),
-						 part->Hits[2][ihit].Position.Y(),
-						 part->Hits[2][ihit].Position.Z());
-	double recfact = dEdxUtils::Recombination(efield);
-  	//fill global histogram
-  	h_global_x->Fill(itoy+1,part->Hits[2][ihit].dQdx_elife*yzcorr*recfact);
-  	//fill local histogram
-	xbin = part->Hits[2][ihit].Position.X()/STEP+nbinsx;
-  	h_local_x[xbin]->Fill(itoy+1,part->Hits[2][ihit].dQdx_elife*yzcorr*recfact);
-      }
+      if(!dEdxUtils::IsInterestingHit(part->Hits[2][ihit]))continue;
+      //get corrections
+      zbin = part->Hits[2][ihit].Position.Z()/STEP;
+      ybin = part->Hits[2][ihit].Position.Y()/STEP;
+      double yzcorr = yz_correction->GetBinContent(zbin+1,ybin+1,itoy+1);
+      double efield = dEdxUtils::ElectricField(GetSCE(),
+					       part->Hits[2][ihit].Position.X(),
+					       part->Hits[2][ihit].Position.Y(),
+					       part->Hits[2][ihit].Position.Z());
+      double recfact = dEdxUtils::Recombination(efield);
+      //fill global histogram
+      h_global_x_toy->Fill(itoy+1,part->Hits[2][ihit].dQdx_elife*yzcorr*recfact);
+      //fill local histogram
+      xbin = part->Hits[2][ihit].Position.X()/STEP+nbinsx;
+      h_local_x_toy[xbin]->Fill(itoy+1,part->Hits[2][ihit].dQdx_elife*yzcorr*recfact);
     }
   }
 }
@@ -274,20 +249,20 @@ void dQdxXCalibration::FillToyVarsInMicroTrees(bool addBase){
 SpaceCharge* dQdxXCalibration::GetSCE(){
 //********************************************************************
 
-  if(_ApplySCESystematic){
-    Int_t itoy = conf().GetToyIndex();
-    _sce = static_cast<SCEVariation*>(evar().GetEventVariation("SCE variation"))->GetToySCE(itoy);
+  if(conf().GetCurrentConfigurationIndex() == 0)return _sce;
+  else{
+    if(_ApplySCESystematic){
+      Int_t itoy = conf().GetToyIndex();
+      return static_cast<SCEVariation*>(evar().GetEventVariation("SCE variation"))->GetToySCE(itoy);
+    }
+    else return _sce;
   }
-
-  return _sce;
 }
 
 //********************************************************************
 void dQdxXCalibration::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
-  // Fill the common variables (highland/src/highland2/baseAnalysis)
-  baseAnalysis::FillTruthTreeBase(vtx);
 }
 
 //********************************************************************
@@ -300,22 +275,90 @@ void dQdxXCalibration::FillCategories(){
 void dQdxXCalibration::Finalize(){
 //********************************************************************
   
-  std::cout << "----------------------------------" << std::endl;
-  std::cout << "Computing error histograms and toy corrections" << std::endl;
-  std::cout << "----------------------------------" << std::endl;
-
   //speed up fitting procedure
   ROOT::EnableImplicitMT();
   ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
   ROOT::Math::MinimizerOptions::SetDefaultTolerance(10);
+
+  FillHistograms();
+  if(_enableAllSystConfig)
+    FillToyHistograms();
+}
+
+//********************************************************************
+void dQdxXCalibration::FillHistograms(){
+//********************************************************************
+
+  std::cout << "----------------------------------" << std::endl;
+  std::cout << "Computing corrections             " << std::endl;
+  std::cout << "----------------------------------" << std::endl;
+
+  //compute means and erros, and fill final histograms
+  TH1F* correction = new TH1F("correction_x","correction_x",nbinsx,XMIN,XMAX);
   
+  //global values
+  std::cout << "Fitting global value" << std::endl;
+  
+  //initialize clock
+  timeval tim;
+  gettimeofday(&tim, NULL);
+  double t0=tim.tv_sec+(tim.tv_usec/1000000.0);
+  
+  TF1* f = new TF1("f",dEdxUtils::Langaus,0,100,4);
+  double hmax = h_global_x->GetBinCenter(h_global_x->GetMaximumBin());
+  dEdxUtils::SetFitParameters(f,hmax);
+  h_global_x->Fit("f","QNOR");
+  double global_mpv = f->GetParameter(1);
+  double global_mpv_error = f->GetParError(1);
+  double global_rel_error = global_mpv_error/global_mpv;
+  delete h_global_x;
+
+  gettimeofday(&tim, NULL);
+  double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
+  std::cout << "Global MPV = " << global_mpv << " +/- " << global_mpv_error << std::endl;
+  std::cout << "Fit time = " << t1-t0 << std::endl;
+
+  //local values
+  std::cout << "----------------------------------" << std::endl;
+  std::cout << "Fitting local values" << std::endl;
+  //loop over voxels
+  for(int ix = 0; ix < nbinsx; ix++){
+    double hmax = h_local_x[ix]->GetBinCenter(h_local_x[ix]->GetMaximumBin());
+    dEdxUtils::SetFitParameters(f,hmax);
+    h_local_x[ix]->Fit("f","QNOR");
+    double local_mpv = f->GetParameter(1);
+    double local_mpv_error = f->GetParError(1);
+    double local_rel_error = local_mpv_error/local_mpv;
+    correction->SetBinContent(ix+1,global_mpv/local_mpv);
+    correction->SetBinError(ix+1,global_mpv/local_mpv*sqrt(pow(global_rel_error,2)+pow(local_rel_error,2)));
+    delete h_local_x[ix];
+  }
+  
+  gettimeofday(&tim, NULL);
+  double t2=tim.tv_sec+(tim.tv_usec/1000000.0);
+  std::cout << "Fit time = " << t2-t1 << std::endl;
+  
+  //write histograms and close
+  std::cout << "----------------------------------" << std::endl;
+  std::cout << "Writing correction histogram to root" << std::endl;
+  correction->Write();
+}
+
+//********************************************************************
+void dQdxXCalibration::FillToyHistograms(){
+//********************************************************************
+
+  std::cout << "----------------------------------" << std::endl;
+  std::cout << "Computing toy corrections         " << std::endl;
+  std::cout << "----------------------------------" << std::endl;
+
   //compute means and erros, and fill final histograms
   TH1F* error_map = new TH1F("error_map_x","error_map_x",nbinsx,XMIN,XMAX);
   TH2F* toy_correction = new TH2F("toy_correction_x","toy_correction_x",nbinsx,XMIN,XMAX,NTOYS,0,NTOYS);
   
   //global values
   std::cout << "Fitting global values" << std::endl;
-
+  
   //initialize clock
   timeval tim;
   gettimeofday(&tim, NULL);
@@ -325,14 +368,14 @@ void dQdxXCalibration::Finalize(){
   double global_mpv, global_syst_error;
   std::vector<double> global_mpv_vector;
   global_mpv_vector.clear();
-
+  
   TF1* f = new TF1("f",dEdxUtils::Langaus,0,100,4);
   f->SetParameters(1,60,5000,5);
   f->SetParLimits(0,1,5);
   f->SetParLimits(3,1,5);
   TH1D* hproj = new TH1D("hproj","hproj",100,0,100);
   for(int itoy = 0; itoy < NTOYS; itoy++){
-    hproj=h_global_x->ProjectionY("hproj",itoy+1,itoy+2);
+    hproj=h_global_x_toy->ProjectionY("hproj",itoy+1,itoy+2);
     double hmax = hproj->GetBinCenter(hproj->GetMaximumBin());
     f->SetParameter(1,hmax);
     f->SetParLimits(1,hmax-5,hmax+10);
@@ -345,7 +388,7 @@ void dQdxXCalibration::Finalize(){
   global_mpv = hsyst->GetMean();
   global_syst_error = hsyst->GetRMS();
   hsyst->Reset();
-  delete h_global_x;
+  delete h_global_x_toy;
 
   gettimeofday(&tim, NULL);
   double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
@@ -360,7 +403,7 @@ void dQdxXCalibration::Finalize(){
   for(int ix = 0; ix < nbinsx; ix++){
     //loop over toys
     for(int itoy = 0; itoy < NTOYS; itoy++){
-      hproj=h_local_x[ix]->ProjectionY("hproj",itoy+1,itoy+2);
+      hproj=h_local_x_toy[ix]->ProjectionY("hproj",itoy+1,itoy+2);
       double hmax = hproj->GetBinCenter(hproj->GetMaximumBin());
       f->SetParameter(1,hmax);
       f->SetParLimits(1,hmax-5,hmax+10);
@@ -375,7 +418,7 @@ void dQdxXCalibration::Finalize(){
     hsyst->Reset();
     error_map->SetBinContent(ix+1,sqrt(pow(global_syst_error/global_mpv,2)+pow(local_syst_error/local_mpv,2))*100);
 
-    delete h_local_x[ix];
+    delete h_local_x_toy[ix];
   }
   
   gettimeofday(&tim, NULL);
@@ -387,5 +430,4 @@ void dQdxXCalibration::Finalize(){
   std::cout << "Writing final histograms to root file and finishing" << std::endl;
   error_map->Write();
   toy_correction->Write();
-  
 }

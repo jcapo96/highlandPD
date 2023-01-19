@@ -44,7 +44,9 @@ class dQdxYZCalibration: public baseAnalysis {
   void DefineInputConverters();
 
   void Finalize();
-
+  void FillHistograms();
+  void FillToyHistograms();
+  
   /// Get a casted AnaSpillC to AnaSpillPD from the InputManager
   AnaSpillPD& GetSpill(){return *static_cast<AnaSpillPD*>(&input().GetSpill());}
   
@@ -84,8 +86,11 @@ private:
 
   static const int nbinsy = (YMAX-YMIN)/STEP;
   static const int nbinsz = (ZMAX-ZMIN)/STEP;
-  TH2F* h_global_yz;
-  TH2F* h_local_yz[nbinsz][nbinsy];
+
+  TH1F* h_global_yz;
+  TH1F* h_local_yz[nbinsz][nbinsy];
+  TH2F* h_global_yz_toy;
+  TH2F* h_local_yz_toy[nbinsz][nbinsy];
   
 public:
 

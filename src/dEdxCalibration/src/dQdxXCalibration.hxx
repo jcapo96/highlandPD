@@ -37,6 +37,8 @@ class dQdxXCalibration: public baseAnalysis {
   void DefineInputConverters();
 
   void Finalize();
+  void FillHistograms();
+  void FillToyHistograms();
 
   /// Get a casted AnaSpillC to AnaSpillPD from the InputManager
   AnaSpillPD& GetSpill(){return *static_cast<AnaSpillPD*>(&input().GetSpill());}
@@ -76,10 +78,13 @@ private:
   int _MichelRemovingTree;
 
   static const int nbinsx = (XMAX-XMIN)/STEP;
-  TH2F* h_global_x;
-  TH2F* h_local_x[nbinsx];
+  TH1F* h_global_x;
+  TH1F* h_local_x[nbinsx];
+  TH2F* h_global_x_toy;
+  TH2F* h_local_x_toy[nbinsx];
 
-  TH3F* yz_correction;
+  TH2F* yz_correction;
+  TH3F* yz_correction_toy;
 
   SpaceCharge* _sce;
 
