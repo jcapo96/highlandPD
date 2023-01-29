@@ -2,6 +2,7 @@
 
 #include "SpaceCharge.hxx"
 #include "Parameters.hxx"
+#include "pdAnalysisUtils.hxx"
 
 //********************************************************************
 SpaceCharge::SpaceCharge(){
@@ -806,6 +807,58 @@ void SpaceCharge::ApplyPositionCorrection(AnaHitPD& hit) const {
   hit.Position.SetX(hit.Position_NoSCE.X() - offset.X());
   hit.Position.SetY(hit.Position_NoSCE.Y() + offset.Y());
   hit.Position.SetZ(hit.Position_NoSCE.Z() + offset.Z());
+}
+
+//********************************************************************
+void SpaceCharge::ApplyTrjPointPositionCorrection(AnaParticlePD* part) const {
+//********************************************************************
+
+  if(!part)return;
+  for(int itp = 0; itp < (int)part->TrjPoints.size(); itp++)
+    ApplyTrjPointPositionCorrection(part->TrjPoints[itp]);
+}
+
+//********************************************************************
+void SpaceCharge::ApplyTrjPointPositionCorrection(AnaTrajectoryPointPD& tp) const {
+//********************************************************************
+
+  int TPCid = pdAnaUtils::GetPosTPCid(tp.Position_NoSCE);
+  
+  TVector3 offset = GetCalPosOffsets(tp.Position_NoSCE, TPCid); //*-1 check this
+  tp.Position.SetX(tp.Position_NoSCE.X() - offset.X());
+  tp.Position.SetY(tp.Position_NoSCE.Y() + offset.Y());
+  tp.Position.SetZ(tp.Position_NoSCE.Z() + offset.Z());
+}
+
+//********************************************************************
+void SpaceCharge::ApplyTrjPointDirectionCorrection(AnaParticlePD* part) const {
+//********************************************************************
+
+  if(!part)return;
+  
+  int ntps = part->TrjPoints.size();
+  for(int itp = 0; itp < ntps-1; itp++){
+    if(!part->TrjPoints[itp].IsValid())continue;
+    int nexttp = -1;
+    for(int jtp = itp + 1; jtp < ntps; jtp++){
+      if(part->TrjPoints[jtp].IsValid()){
+	nexttp = jtp;
+	break;
+      }
+    }
+    if(nexttp == -1)break;
+    TVector3 dis = part->TrjPoints[nexttp].Position-part->TrjPoints[itp].Position;
+    dis.SetMag(1);
+    part->TrjPoints[itp].Direction = dis;
+  }
+
+  for(int itp = 1; itp < ntps; itp++){
+    if(part->TrjPoints[ntps-1-itp].IsValid()){
+      part->TrjPoints[ntps-1].Direction = part->TrjPoints[ntps-1-itp].Direction;
+      break;
+    }
+  }
+  
 }
 
 //********************************************************************

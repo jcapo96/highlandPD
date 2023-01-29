@@ -605,17 +605,24 @@ bool pdAnaUtils::IsStoppingInFV(AnaParticlePD *part){
 int pdAnaUtils::GetHitTPCid(AnaHitPD& hit){
 //***************************************************************
 
+  return GetPosTPCid(hit.Position);
+}
+
+//***************************************************************
+int pdAnaUtils::GetPosTPCid(TVector3 pos){
+//***************************************************************
+
   int TPCid = -1;
   
-  if(hit.Position.X() < 0){
-    if(hit.Position.Z() > 0 && hit.Position.Z() < 230)       TPCid = 1;
-    else if(hit.Position.Z() > 230 && hit.Position.Z() < 460)TPCid = 5;
-    else if(hit.Position.Z() > 460 && hit.Position.Z() < 690)TPCid = 9;
+  if(pos.X() < 0){
+    if(pos.Z() > 0 && pos.Z() < 230)       TPCid = 1;
+    else if(pos.Z() > 230 && pos.Z() < 460)TPCid = 5;
+    else if(pos.Z() > 460 && pos.Z() < 690)TPCid = 9;
   }
   else{
-    if(hit.Position.Z() > 0 && hit.Position.Z() < 230)       TPCid = 2;
-    else if(hit.Position.Z() > 230 && hit.Position.Z() < 460)TPCid = 6;
-    else if(hit.Position.Z() > 460 && hit.Position.Z() < 690)TPCid = 10;
+    if(pos.Z() > 0 && pos.Z() < 230)       TPCid = 2;
+    else if(pos.Z() > 230 && pos.Z() < 460)TPCid = 6;
+    else if(pos.Z() > 460 && pos.Z() < 690)TPCid = 10;
   }
   
   return TPCid;

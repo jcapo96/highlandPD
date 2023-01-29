@@ -61,6 +61,7 @@ namespace pdAnaUtils{
   bool IsStoppingInFV(AnaParticlePD *part);
 
   int GetHitTPCid(AnaHitPD& hit);
+  int GetPosTPCid(TVector3 pos);
 
   void EstimateHitsDirection(AnaParticlePD* part);
 

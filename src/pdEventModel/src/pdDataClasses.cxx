@@ -131,6 +131,35 @@ void AnaHitPD::Print() const{
 }
 
 //********************************************************************
+AnaTrajectoryPointPD::AnaTrajectoryPointPD(){
+//********************************************************************
+
+  Position_NoSCE  = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Direction_NoSCE = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Position        = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Direction       = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+}
+
+//********************************************************************
+AnaTrajectoryPointPD::AnaTrajectoryPointPD(const AnaTrajectoryPointPD& trp){
+//********************************************************************
+
+  Position_NoSCE  = trp.Position_NoSCE;
+  Direction_NoSCE = trp.Direction_NoSCE;
+  Position        = trp.Position;
+  Direction       = trp.Direction;
+}
+
+//********************************************************************
+void AnaTrajectoryPointPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaTrajectoryPointPD --------- " << std::endl;
+
+  std::cout << "Position:      " << "( " << Position.X() << ", " << Position.Y() << ", " << Position.Z() << ")" << std::endl;
+}
+
+//********************************************************************
 AnaParticlePD::AnaParticlePD():AnaParticle(){
 //********************************************************************
 
@@ -189,6 +218,8 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   for (int i=0; i<3; i++){
     Hits[i].clear();
   }
+
+  TrjPoints.clear();
 }
 
 //********************************************************************
@@ -254,6 +285,8 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   for (int i=0; i<3; i++){
     Hits[i] = part.Hits[i];
   }
+
+  TrjPoints = part.TrjPoints;
 }
 
 //********************************************************************

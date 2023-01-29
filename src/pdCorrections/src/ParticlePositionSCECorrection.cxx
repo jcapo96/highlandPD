@@ -30,26 +30,43 @@ void ParticlePositionSCECorrection::Apply(AnaSpillC& spillC){
     
     if (!original) continue; //?
 
-    TVector3 pos;
-    int TPCid = 0;
-
-    //position start
-    pos.SetXYZ(part->PositionStart[0],part->PositionStart[1],part->PositionStart[2]);
-    if(pos.X() < 0)TPCid = 1;
-    else           TPCid = 2;
-    TVector3 offset = _sce->GetCalPosOffsets(pos,TPCid);
-    part->PositionStart[0] = pos.X() - offset.X();
-    part->PositionStart[1] = pos.Y() + offset.Y();
-    part->PositionStart[2] = pos.Z() + offset.Z();
-
-    //position end
-    pos.SetXYZ(part->PositionEnd[0],part->PositionEnd[1],part->PositionEnd[2]);
-    if(pos.X() < 0)TPCid = 1;
-    else           TPCid = 2;
-    offset = _sce->GetCalPosOffsets(pos,TPCid);
-    part->PositionEnd[0] = pos.X() - offset.X();
-    part->PositionEnd[1] = pos.Y() + offset.Y();
-    part->PositionEnd[2] = pos.Z() + offset.Z();
+    //correct trajectory points
+    _sce->ApplyTrjPointPositionCorrection(part);
+    _sce->ApplyTrjPointDirectionCorrection(part);
+    
+    //correct end and start position/direction
+    int ntps = part->TrjPoints.size();
+    int ifirst = -1;
+    for(int itp = 0; itp < ntps; itp++){
+      if(part->TrjPoints[itp].IsValid()){
+	ifirst = itp;
+	break;
+      }
+    }
+    if(ifirst != -1){
+      part->PositionStart[0] = part->TrjPoints[ifirst].Position.X();
+      part->PositionStart[1] = part->TrjPoints[ifirst].Position.X();
+      part->PositionStart[2] = part->TrjPoints[ifirst].Position.X();
+      part->DirectionStart[0] = part->TrjPoints[ifirst].Direction.X();
+      part->DirectionStart[1] = part->TrjPoints[ifirst].Direction.X();
+      part->DirectionStart[2] = part->TrjPoints[ifirst].Direction.X();
+    }
+    
+    int ilast  = -1;
+    for(int itp = 1; itp < ntps; itp++){
+      if(part->TrjPoints[ntps-itp].IsValid()){
+	ilast = itp;
+	break;
+      }
+    }
+    if(ilast != -1){
+      part->PositionEnd[0] = part->TrjPoints[ilast].Position.X();
+      part->PositionEnd[1] = part->TrjPoints[ilast].Position.X();
+      part->PositionEnd[2] = part->TrjPoints[ilast].Position.X();
+      part->DirectionEnd[0] = part->TrjPoints[ilast].Direction.X();
+      part->DirectionEnd[1] = part->TrjPoints[ilast].Direction.X();
+      part->DirectionEnd[2] = part->TrjPoints[ilast].Direction.X();
+    }
   }
 }
 

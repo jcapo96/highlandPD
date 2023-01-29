@@ -98,6 +98,33 @@ public:
 
 };
 
+//trajectory point representation. Has position and direction information.
+//this information is somehow redundant since each hit has a tjp associated 
+//from which position and direction are obtained. This should be solved at
+//some point. However, all tjp are needed to compute track lenght and sce
+//systematics
+class AnaTrajectoryPointPD{
+public:
+  AnaTrajectoryPointPD();
+  virtual ~AnaTrajectoryPointPD(){}
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+  /// Copy constructor
+  AnaTrajectoryPointPD(const AnaTrajectoryPointPD& tjp);
+  
+public:
+
+  TVector3 Position;
+  TVector3 Direction;
+
+  TVector3 Position_NoSCE;
+  TVector3 Direction_NoSCE;
+
+  bool IsValid() {return (Position_NoSCE.X() != -999 && Position_NoSCE.Y() != -999 && Position_NoSCE.Z() != -999);}
+};
+
 /// AnaParticle
 class AnaParticlePD: public AnaParticle{
 public :
@@ -164,6 +191,9 @@ public:
 
   /// Total Number of hits in each wire plane (The vector of Hits above might be a subsample)
   Int_t NHitsPerPlane[3];
+
+  // Vector of trajectory points
+  std::vector<AnaTrajectoryPointPD> TrjPoints;
 
   /// Libo truncated mean
   Float_t truncLibo_dEdx;
