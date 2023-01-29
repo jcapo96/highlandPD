@@ -103,22 +103,16 @@ void CreateMichelRemovingMiniTree::ClearUninterestingTracks(){
 bool CreateMichelRemovingMiniTree::PartHasGoodAngles(AnaParticlePD* part){
 //********************************************************************
   
-  if(((abs(180/TMath::Pi()*part->ThetaXZ) > _ThetaXZ_max && 
-       abs(180/TMath::Pi()*part->ThetaXZ) < 180-_ThetaXZ_max)
-      ||
-      (abs(180/TMath::Pi()*part->ThetaXZ) < _ThetaXZ_min && 
-       abs(180/TMath::Pi()*part->ThetaXZ) > 180-_ThetaXZ_min))
-     
-     ||
-     
-     ((abs(180/TMath::Pi()*part->ThetaYZ) > _ThetaYZ_max && 
-       abs(180/TMath::Pi()*part->ThetaYZ) < 180-_ThetaYZ_max)
-      ||
-      (abs(180/TMath::Pi()*part->ThetaYZ) < _ThetaYZ_min && 
-       abs(180/TMath::Pi()*part->ThetaYZ) > 180-_ThetaYZ_min)))
-    return false;
-  else
+  double xz = abs(180/TMath::Pi()*part->ThetaXZ);
+  double yz = abs(180/TMath::Pi()*part->ThetaYZ);
+  if(((xz>_ThetaXZ_min && xz<_ThetaXZ_max) || 
+      (xz>180-_ThetaXZ_max && xz<180-_ThetaXZ_min)) 
+     &&
+     ((yz>_ThetaYZ_min && yz<_ThetaYZ_max) || 
+      (yz>180-_ThetaYZ_max && yz<180-_ThetaYZ_min)))
     return true;
+  else 
+    return false;
 }
 
 //********************************************************************
