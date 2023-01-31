@@ -75,8 +75,10 @@ public:
   
   CoherentSample* GetSignalPlusBackgroundSample() const {return fSignalPlusBackground;}
   CoherentSample* GetSignalSample() const {return fSignal;}
+  CoherentSample* GetSemiSignalSample() const {return fSemiSignal;}
   CoherentSample* GetBackgroundSample() const {return fBackground;}
   CoherentSample* GetTrueSignalSample() const {return fTrueSignal;}
+  CoherentSample* GetTrueSemiSignalSample() const {return fTrueSemiSignal;}
   CoherentSample* GetTrueBackgroundSample() const {return fTrueBackground;}
 
   CoherentSample* CreateTrueAllKaonsSample(const double RMIN, const double RMAX, const double STEP,
@@ -114,8 +116,10 @@ private:
 
   CoherentSample* fSignalPlusBackground;  
   CoherentSample* fSignal;
+  CoherentSample* fSemiSignal;
   CoherentSample* fBackground;
   CoherentSample* fTrueSignal;
+  CoherentSample* fTrueSemiSignal;
   CoherentSample* fTrueBackground;
   std::vector<CoherentSample*> fToySamples;
 

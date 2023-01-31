@@ -25,6 +25,10 @@ namespace CoherentFitUtils{
   TH1F* GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
 						const double RMIN, const double RMAX,
 						const double Chi2Cut);
+
+  TH1F* GetSemiSignalHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
+						const double RMIN, const double RMAX,
+						const double Chi2Cut);
   
   TH1F* GetAllKaonsHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
 					      const double RMIN, const double RMAX,
@@ -58,6 +62,7 @@ namespace CoherentFitUtils{
 
  
   Double_t Langaus(Double_t *x, Double_t *par);
+  Double_t LangausPlusConstant(Double_t *x, Double_t *par);
   Double_t DoubleLangaus(Double_t *x, Double_t *par);
 
   Double_t ABCParametrization(Double_t *x, Double_t *par);

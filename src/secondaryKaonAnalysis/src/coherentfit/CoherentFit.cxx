@@ -21,8 +21,10 @@ CoherentFit::CoherentFit(){
   fSpill = NULL;
   fSignalPlusBackground = NULL;
   fSignal = NULL;
+  fSemiSignal = NULL;
   fBackground = NULL;
   fTrueSignal = NULL;
+  fTrueSemiSignal = NULL;
   fTrueBackground = NULL;
   fToySamples.clear();
   h_toy_A = NULL;
@@ -57,8 +59,10 @@ CoherentFit::CoherentFit(const std::string& filename){
   
   fSignalPlusBackground = NULL;
   fSignal = NULL;
+  fSemiSignal = NULL;
   fBackground = NULL;
   fTrueSignal = NULL;
+  fTrueSemiSignal = NULL;
   fTrueBackground = NULL;
   fToySamples.clear();
 
@@ -115,8 +119,10 @@ void CoherentFit::CreateCoherentSamples(const Double_t Chi2Cut){
   
   fSignalPlusBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kSignalPlusBackground);
   fSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kSignal);
+  fSemiSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kSemiSignal);
   fBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kBackground);
   fTrueSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSignal);
+  fTrueSemiSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSemiSignal);
   fTrueBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueBackground);
   
   CreateSampleLinks();
@@ -172,14 +178,17 @@ void CoherentFit::GenerateTrueMCHistograms(const double RMIN, const double RMAX,
     fSignalPlusBackground->AddToRRVector(std::make_pair((rmin+rmax)/2,(rmax-rmin)/2));
     fSignalPlusBackground->AddToHistVector(CoherentFitUtils::GetHistogramFromResRangeSlice(fTree, fSpill, rmin, rmax, Chi2Cut, bin_min, bin_max, bin_width));
     fTrueSignal->AddToHistVector(CoherentFitUtils::GetSignalHistogramFromResRangeSlice(fTree, fSpill, fSignalPlusBackground->GetHistVector().back(), rmin, rmax, Chi2Cut));
+    fTrueSemiSignal->AddToHistVector(CoherentFitUtils::GetSemiSignalHistogramFromResRangeSlice(fTree, fSpill, fSignalPlusBackground->GetHistVector().back(), rmin, rmax, Chi2Cut));
     fTrueBackground->AddToHistVector(CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(fTree, fSpill, fSignalPlusBackground->GetHistVector().back(), rmin, rmax, Chi2Cut));
     rmin += STEP;
     rmax += STEP;
   }
   
   fTrueSignal->SetRRVector(fSignalPlusBackground->GetRRVector());
+  fTrueSemiSignal->SetRRVector(fSignalPlusBackground->GetRRVector());
   fTrueBackground->SetRRVector(fSignalPlusBackground->GetRRVector());
   fSignal->SetRRVector(fSignalPlusBackground->GetRRVector());
+  fSemiSignal->SetRRVector(fSignalPlusBackground->GetRRVector());
   fBackground->SetRRVector(fSignalPlusBackground->GetRRVector());
   
   if(normalize)NormalizeHistograms();
@@ -470,6 +479,7 @@ void CoherentFit::NormalizeHistograms(){
   fSignalPlusBackground->NormalizeHistograms();
   if(GetIsMC()){
     fTrueSignal->NormalizeHistograms(fSignalPlusBackground->GetIntegralVector());
+    fTrueSemiSignal->NormalizeHistograms(fSignalPlusBackground->GetIntegralVector());
     fTrueBackground->NormalizeHistograms(fSignalPlusBackground->GetIntegralVector());
   }
 }

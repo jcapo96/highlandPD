@@ -217,11 +217,81 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
 	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
 	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
 	  if(!truePart)continue;
-	  if(truePart->PDG==321 && truePart->ProcessEnd == 2)continue;
+	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2)continue;
+	  if((truePart->PDG==321 && truePart->ProcessEnd == 2) ||
+	     (truePart->PDG==321 && truePart->ProcessEnd != 2 && part->Chi2Proton/part->Chi2ndf<100))continue;
 	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2){
 	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
 	    if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
 	      h->Fill(part->Hits[2][ihit].dEdx);
+	  }
+	}
+      }
+    }
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hb_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
+  else{
+    //fill histogram
+    TH1F* h = GetHistogramFromResRangeSliceFromFlatTree(t,
+							RMIN,RMAX,
+							ha->GetXaxis()->GetXmin(), ha->GetXaxis()->GetXmax(), ha->GetXaxis()->GetBinWidth(0),
+							"&& !(bestcandidate_truepdg==321 && bestcandidate_trueendproc==2)");
+    
+    //set histogram title
+    std::stringstream srl, srh;
+    srl << RMIN;
+    srh << RMAX;
+    std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
+    h->SetName(("hb_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetTitle((st).c_str());
+    
+    return h;
+  }
+}
+
+//********************************************
+TH1F* CoherentFitUtils::GetSemiSignalHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
+								const double RMIN, const double RMAX,
+								const double Chi2Cut){
+//********************************************
+
+  if(spill){
+    if(!spill->GetIsMC()){
+      std::cout << "this MiniTree is not MC, can't get background histogram!" << std::endl;
+      std::exit(1);
+    }
+    
+    TH1F* h = (TH1F*)ha->Clone();
+    h->Reset();
+    
+    //fill histogram
+    double rr_0 = (RMIN+RMAX)/2;
+    double rr_r = (RMAX-RMIN)/2;
+    
+    //loop over candidates
+    for(int ientry = 0; ientry < t->GetEntries(); ientry++){
+      t->GetEntry(ientry);
+      AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
+      for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
+	AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
+	if(!part || (int)part->Hits[2].size()<2)continue;
+	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
+	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+	  if(!truePart)continue;
+	  if(truePart->PDG==321 && truePart->ProcessEnd != 2 && part->Chi2Proton/part->Chi2ndf<100){
+	    for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
+	      if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
+		h->Fill(part->Hits[2][ihit].dEdx);
+	    }
 	  }
 	}
       }
@@ -249,7 +319,7 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
     srl << RMIN;
     srh << RMAX;
     std::string st = srl.str()+" < Residual Range [cm] < "+srh.str();
-    h->SetName(("hb_"+srl.str()+"_"+srh.str()+"").c_str());
+    h->SetName(("hss_"+srl.str()+"_"+srh.str()+"").c_str());
     h->SetTitle((st).c_str());
     
     return h;
@@ -575,6 +645,61 @@ Double_t CoherentFitUtils::Langaus(Double_t *x, Double_t *par) {
 }
 
 //********************************************
+Double_t CoherentFitUtils::LangausPlusConstant(Double_t *x, Double_t *par) {
+//********************************************
+   //Fit parameters:
+   //par[0]=Width (scale) parameter of Landau density
+   //par[1]=Most Probable (MP, location) parameter of Landau density
+   //par[2]=Total area (integral -inf to inf, normalization constant)
+   //par[3]=Width (sigma) of convoluted Gaussian function
+   //
+   //In the Landau distribution (represented by the CERNLIB approximation), 
+   //the maximum is located at x=-0.22278298 with the location parameter=0.
+   //This shift is corrected within this function, so that the actual
+   //maximum is identical to the MP parameter.
+
+  // Numeric constants
+  Double_t invsq2pi = 0.3989422804014;   // (2 pi)^(-1/2)
+  Double_t mpshift  = -0.22278298;       // Landau maximum location
+  
+  // Control constants
+  //Double_t np = 100.0;      // number of convolution steps
+  Double_t np = 1000.0;      // number of convolution steps
+  Double_t sc =   5.0;      // convolution extends to +-sc Gaussian sigmas
+  
+  // Variables
+  Double_t xx;
+  Double_t mpc;
+  Double_t fland;
+  Double_t sum = 0.0;
+  Double_t xlow,xupp;
+  Double_t step;
+  Double_t i;
+  
+  // MP shift correction
+  mpc = par[1] - mpshift * par[0]; 
+  
+  // Range of convolution integral
+  xlow = x[0] - sc * par[3];
+  xupp = x[0] + sc * par[3];
+  
+  step = (xupp-xlow) / np;
+  
+  // Convolution integral of Landau and Gaussian by sum
+  for(i=1.0; i<=np/2; i++) {
+    xx = xlow + (i-.5) * step;
+    fland = TMath::Landau(xx,mpc,par[0]) / par[0];
+    sum += fland * TMath::Gaus(x[0],xx,par[3]);
+    
+    xx = xupp - (i-.5) * step;
+    fland = TMath::Landau(xx,mpc,par[0]) / par[0];
+    sum += fland * TMath::Gaus(x[0],xx,par[3]);
+  }
+  
+  return (par[2] * step * sum * invsq2pi / par[3])+par[4];
+}
+
+//********************************************
 Double_t CoherentFitUtils::DoubleLangaus(Double_t *x, Double_t *par) {
 //********************************************
 
@@ -611,15 +736,18 @@ TF1* CoherentFitUtils::LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample
 		   h->GetBinCenter(h->GetMaximumBin()),//landau mpv
 		   0.8,                                //normalization
 		   h->GetRMS());                       //gaussian width
-  if(sample == CoherentSample::SampleTypeEnum::kTrueSignal || sample == CoherentSample::SampleTypeEnum::kSignal)
-    f->SetParLimits(0,0.03,2);
-  else
-    f->SetParLimits(0,0.1,2);
+  // if(sample == CoherentSample::SampleTypeEnum::kTrueSignal || sample == CoherentSample::SampleTypeEnum::kSignal)
+  //   f->SetParLimits(0,0.03,2);
+  // else
+  //   f->SetParLimits(0,0.1,2);
   f->SetParLimits(1,h->GetBinCenter(1),h->GetBinCenter(h->GetNbinsX()));
   f->SetParLimits(3,0,10);
-  if(use_poisson)h->Fit("f","NQWL");
-  else h->Fit("f","NQ");
+  if(use_poisson)h->Fit("f","L");//NQWL");
+  else h->Fit("f","");//"NQ");
 
+  h->Draw();
+  gPad->Update();gPad->WaitPrimitive();
+  
   return f;
 }
 

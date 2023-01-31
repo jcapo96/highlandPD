@@ -16,9 +16,11 @@ public:
 
   enum SampleTypeEnum {kUnassigned=0,
 		       kSignalPlusBackground,
-		       kSignal, 
+		       kSignal,
+		       kSemiSignal, 
 		       kBackground,
 		       kTrueSignal,
+		       kTrueSemiSignal,
 		       kTrueBackground};
   
   enum BackgroundModelEnum {kFitUnassigned=0,
@@ -76,10 +78,12 @@ public:
   void CoherentFitBackgroundCheb();
   void CoherentFitBackgroundLag();
   void CoherentFitBackgroundLagMPV();
+  void CoherentFitBackgroundMiau();
   void CoherentFitSignalPlusBackgroundQuadraticWidths();
   void CoherentFitSignalPlusBackgroundCheb();
   void CoherentFitSignalPlusBackgroundLag();
   void CoherentFitSignalPlusBackgroundLagMPV();
+  void CoherentFitSignalPlusBackgroundMiau();
   
   void StoreCoherentFits();
 
@@ -102,9 +106,11 @@ public:
   static void fcnBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnBackgroundMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalPlusBackgroundMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   
   CoherentSample* GetSignal() const {return fSignal;}
   void SetSignal(CoherentSample* Signal){fSignal = Signal;}
