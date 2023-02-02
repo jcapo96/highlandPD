@@ -84,6 +84,7 @@ public:
   void CoherentFitSignalPlusBackgroundLag();
   void CoherentFitSignalPlusBackgroundLagMPV();
   void CoherentFitSignalPlusBackgroundMiau();
+  void CoherentFitSemiSignal();
   
   void StoreCoherentFits();
 
@@ -111,13 +112,18 @@ public:
   static void fcnSignalPlusBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSemiSignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   
   CoherentSample* GetSignal() const {return fSignal;}
   void SetSignal(CoherentSample* Signal){fSignal = Signal;}
+  CoherentSample* GetSemiSignal() const {return fSemiSignal;}
+  void SetSemiSignal(CoherentSample* SemiSignal){fSemiSignal = SemiSignal;}
   CoherentSample* GetBackground() const {return fBackground;}
   void SetBackground(CoherentSample* Background){fBackground = Background;}
   CoherentSample* GetTrueSignal() const {return fTrueSignal;}
   void SetTrueSignal(CoherentSample* Signal){fTrueSignal = Signal;}
+  CoherentSample* GetTrueSemiSignal() const {return fTrueSemiSignal;}
+  void SetTrueSemiSignal(CoherentSample* SemiSignal){fTrueSemiSignal = SemiSignal;}
   CoherentSample* GetTrueBackground() const {return fTrueBackground;}
   void SetTrueBackground(CoherentSample* Background){fTrueBackground = Background;}
 
@@ -256,8 +262,10 @@ public:
 private:
 
   CoherentSample* fSignal;
+  CoherentSample* fSemiSignal;
   CoherentSample* fBackground;
   CoherentSample* fTrueSignal;
+  CoherentSample* fTrueSemiSignal;
   CoherentSample* fTrueBackground;
   
   SampleTypeEnum      fType;

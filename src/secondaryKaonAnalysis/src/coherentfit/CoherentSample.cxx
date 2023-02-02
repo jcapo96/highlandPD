@@ -386,7 +386,7 @@ void CoherentSample::StoreCoherentFits(){
 
     else{
       CoherentSample* satb = NULL;
-      if(fType == SampleTypeEnum::kTrueBackground)satb = GetTrueSignal();
+      if(fType == SampleTypeEnum::kTrueBackground || fType == SampleTypeEnum::kTrueSemiSignal)satb = GetTrueSignal();
       if(fType == SampleTypeEnum::kBackground)    satb = GetSignal();
       
       fClwFit = new TF1("lw_par" ,CoherentFitUtils::QuadraticABCParametrization,0,60,6);
@@ -626,6 +626,12 @@ void CoherentSample::CoherentFit(){
     //CoherentFitSignalCheb();
     //CoherentFitSignalLag();
     CoherentFitSignalLagMPV();
+  }
+  if(fType == SampleTypeEnum::kTrueSemiSignal){
+    //CoherentFitSignal();
+    //CoherentFitSignalCheb();
+    //CoherentFitSignalLag();
+    CoherentFitSemiSignal();
   }
   else if(fType == SampleTypeEnum::kTrueBackground){
     //CoherentFitBackgroundQuadraticWidths();
@@ -2107,7 +2113,7 @@ void CoherentSample::CoherentFitSignalLagMPV(){
   CSMinuit = this;
 
   //create Minuit
-  const int CPAR = 11;
+  const int CPAR = 11+1;
   const int NPAR = CPAR;
   fMinuit = new TMinuit(NPAR);
   fMinuit->SetFCN(fcnSignalLagMPV);
@@ -2123,9 +2129,9 @@ void CoherentSample::CoherentFitSignalLagMPV(){
   for(int i = 0; i < (int)fInorm.size(); i++)mean_norm += fInorm[i].first;
   mean_norm = 0.4;//mean_norm / fInorm.size();
 
-  fMinuit->mnparm(0,  "lw A" , 1.95      , 0.1  , 0, 0, ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
-  fMinuit->mnparm(1,  "lw B" , -1.94     , 0.1  , 0, 0, ierflg);//0.9*-2.18 , 1.1*-2.18 , ierflg);//
-  fMinuit->mnparm(2,  "lw C" , 0.49      , 0.1  , 0, 0, ierflg);//0.9*-2.18 , 1.1*-2.18 , ierflg);//
+  fMinuit->mnparm(0,  "lw A" , 0.1      , 0.1  , 0, 0, ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);// 1.95
+  fMinuit->mnparm(1,  "lw B" , 0     , 0.1  , 0, 0, ierflg);//0.9*-2.18 , 1.1*-2.18 , ierflg);//-1.94
+  fMinuit->mnparm(2,  "lw C" , 0      , 0.1  , 0, 0, ierflg);//0.9*-2.18 , 1.1*-2.18 , ierflg);//0.49
   fMinuit->mnparm(3,  "mpv A", -78       , 10   , 0, 0, ierflg);//0.9*0.65  , 1.1*0.65  , ierflg);//
   fMinuit->mnparm(4,  "mpv B",  295      , 10   , 0, 0, ierflg);//0.9*9.48  , 1.1*9.48  , ierflg);//
   fMinuit->mnparm(5,  "mpv C", -341      , 10   , 0, 0, ierflg);//0.9*-11.50, 1.1*-11.50, ierflg);//
@@ -2134,11 +2140,17 @@ void CoherentSample::CoherentFitSignalLagMPV(){
   fMinuit->mnparm(8,  "gw B" , -3.85     , 0.1  , 0, 0, ierflg);//0.9*-2.18 , 1.1*-2.18 , ierflg);//
   fMinuit->mnparm(9,  "gw C" , 1.11      , 0.1  , 0, 0, ierflg);//0.9*-2.18 , 1.1*-2.18 , ierflg);//
   fMinuit->mnparm(10, "norm" , mean_norm , 0.1  , 0, 1, ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
+  fMinuit->mnparm(11, "const", 0.001     , 0.1  , 0, 1, ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
 
+  fMinuit->FixParameter(1);
+  fMinuit->FixParameter(2);
+  
   // Now ready for minimization step
+  arglist[0] = 2;
+  fMinuit->mnexcm("SET STR", arglist, 1, ierflg);
   arglist[0] = 500000;
   arglist[1] = 1.;
-  //fMinuit->mnexcm("HESSE", arglist, 1, ierflg);
+  fMinuit->mnexcm("HESSE", arglist, 1, ierflg);
   fMinuit->mnexcm("MIGRAD", arglist, 2, ierflg);
  
   // Print results
@@ -2178,11 +2190,12 @@ void CoherentSample::fcnSignalLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Do
   double gwB  = par[8];
   double gwC  = par[9];
   double norm = par[10];
+  double C    = par[11];
 
   //define function to fit to each histogram
   double lw,mpv,gw;
   double Likelihood = 0;
-  TF1* flg = new TF1("flg",CoherentFitUtils::Langaus,1,30,4);
+  TF1* flg = new TF1("flg",CoherentFitUtils::LangausPlusConstant,1,30,5);
   //TF1* flg = new TF1("flg",CoherentFitUtils::LangausPlusConstant,1,30,5);
   for(int ibin = 0; ibin < (int)CSMinuit->fh.size(); ibin++){
     //get RR depending parameters
@@ -2193,7 +2206,7 @@ void CoherentSample::fcnSignalLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Do
     lw   = lwA + lwB*sqrt(mpv)+lwC*mpv;
     gw   = gwA + gwB*sqrt(mpv)+gwC*mpv;
     //std::cout << lw << " " << mpv << " " << norm << " " << gw << std::endl;
-    flg->SetParameters(lw,mpv,norm,gw);
+    flg->SetParameters(lw,mpv,norm,gw,C);
     Likelihood = Likelihood + CoherentFitUtils::ComputeLikelihood(CSMinuit->fh[ibin],flg,CSMinuit->fIntegral[ibin]);
     // CSMinuit->fh[ibin]->Draw();
     // flg->Draw("same");
@@ -2512,7 +2525,7 @@ void CoherentSample::CoherentFitBackgroundMiau(){
   CSMinuit = this;
 
   //create Minuit
-  const int CPAR = 7;
+  const int CPAR = 10;
   const int NPAR = CPAR;
   fMinuit = new TMinuit(NPAR);
   fMinuit->SetFCN(fcnBackgroundMiau);
@@ -2528,16 +2541,16 @@ void CoherentSample::CoherentFitBackgroundMiau(){
   for(int i = 0; i < (int)fInorm.size(); i++)mean_norm += fInorm[i].first;
   mean_norm = 0.6;//mean_norm / fInorm.size();
 
-  fMinuit->mnparm(0,  "lw A" , 1.95       , 10 , 0 , 0, ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
-  fMinuit->mnparm(1,  "lw B" , -1.94       , 10 , 0 , 0, ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
-  fMinuit->mnparm(2,  "lw C" , 0.6        , 10 , 0 , 0, ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
-  fMinuit->mnparm(3,  "mpv A", 1.7        , 10 , 0 , 0 , ierflg);//0.9*0.65  , 1.1*0.65  , ierflg);//
-  fMinuit->mnparm(4,  "mpv B", -0.0005        , 10 , 0 , 0 , ierflg);//0.9*0.65  , 1.1*0.65  , ierflg);//
-  fMinuit->mnparm(5,  "gw"   , 0.1          , 10 , 0 , 0 , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
-  fMinuit->mnparm(6,  "norm" , mean_norm , 1  , 0 , 1 , ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
-
-  //fMinuit->FixParameter(0);
-  //fMinuit->FixParameter(3);
+  fMinuit->mnparm(0,  "lw"   , 0.08      , 10 , 0 , 0   , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
+  fMinuit->mnparm(1,  "mpv"  , 1.65      , 10 , 0 , 0   , ierflg);//0.9*0.65  , 1.1*0.65  , ierflg);//
+  fMinuit->mnparm(2,  "gw"   , 0.08      , 10 , 0 , 0   , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
+  fMinuit->mnparm(3,  "norm" , mean_norm , 1  , 0 , 1   , ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
+  fMinuit->mnparm(4,  "shift", 3.6       , 10 , 0 , 0   , ierflg);//0.9*0.65  , 1.1*0.65  , ierflg);//
+  fMinuit->mnparm(5,  "gw"   , 0.08      , 10 , 0 , 0   , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
+  fMinuit->mnparm(6,  "gw"   , 0.08      , 10 , 0 , 0   , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
+  fMinuit->mnparm(7,  "gw"   , 0.08      , 10 , 0 , 0   , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
+  fMinuit->mnparm(8,  "norm2", 0.05      , 1  , 0 , 0.5 , ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
+  fMinuit->mnparm(9,  "const", 0.01     , 1  , 0 , 1   , ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
   
   // Now ready for minimization step
   arglist[0] = 500000;
@@ -2552,12 +2565,14 @@ void CoherentSample::CoherentFitBackgroundMiau(){
 
   //retrieve parameters for next stage
   fMinuit->GetParameter(0,  fClwA.first,  fClwA.second);
-  fMinuit->GetParameter(1,  fClwB.first,  fClwB.second);
-  fMinuit->GetParameter(2,  fClwC.first,  fClwC.second);
-  fMinuit->GetParameter(3,  fCmpvA.first,  fCmpvA.second);
-  fMinuit->GetParameter(4,  fCmpvB.first,  fCmpvB.second);
+  fMinuit->GetParameter(1,  fCmpvA.first, fCmpvA.second);
+  fMinuit->GetParameter(2,  fClwB.first,  fCgwA.second);
+  fMinuit->GetParameter(3,  fCnorm.first, fCnorm.second);
+  fMinuit->GetParameter(4,  fCshift.first,fCmpvA.second);
   fMinuit->GetParameter(5,  fCgwA.first,  fCgwA.second);
-  fMinuit->GetParameter(6,  fCnorm.first, fCnorm.second);
+  fMinuit->GetParameter(6,  fCgwB.first,  fCgwA.second);
+  fMinuit->GetParameter(7,  fCgwC.first,  fCgwA.second);
+  fMinuit->GetParameter(8,  fCmpvB.first,  fCnorm.second);
   StoreCoherentFits();
 }
 
@@ -2566,24 +2581,36 @@ void CoherentSample::fcnBackgroundMiau(Int_t &npar, Double_t *gin, Double_t &f, 
 //********************************************************************
 
   //set each parameter
-  double lwA  = par[0];
-  double lwB  = par[1];
-  double lwC  = par[2];
-  double mpvA = par[3];
-  double mpvB = par[4];
-  double gw   = par[5];
-  double norm = par[6];
+  double lw    = par[0];
+  double mpv   = par[1];
+  double gw    = par[2];
+  double norm  = par[3];
+  double shift = par[4];
+  double gwA   = par[5];
+  double gwB   = par[6];
+  double gwC   = par[7];
+  double norm2 = par[8];
+  double C     = par[9];
+
+  double smpvA = CSMinuit->GetTrueSignal()->GetCmpvA().first;
+  double smpvB = CSMinuit->GetTrueSignal()->GetCmpvB().first;
+  double smpvC = CSMinuit->GetTrueSignal()->GetCmpvC().first;
+  double smpvD = CSMinuit->GetTrueSignal()->GetCmpvD().first;
 
   //define function to fit to each histogram
-  double lw,mpv;
   double Likelihood = 0;
-  TF1* flg = new TF1("flg",CoherentFitUtils::Langaus,1,30,4);
+  double mu,sigma;
+  TF1* flg = new TF1("flg",CoherentFitUtils::DoubleLangausPlusConstant,1,30,9);
   for(int ibin = 0; ibin < (int)CSMinuit->fh.size(); ibin++){
     //get RR depending parameters
-    double x   = CSMinuit->fRR[ibin].first;
-    mpv  = mpvA + mpvB*x;
-    lw   = lwA + lwB*sqrt(mpv)+lwC*mpv;
-    flg->SetParameters(lw,mpv,norm,gw);
+    double x   = CSMinuit->fRR[ibin].first+shift;
+    double x_t = (x-1)/(x+1);
+    mu = smpvA*ROOT::Math::laguerre(0,x_t)+smpvB*ROOT::Math::laguerre(1,x_t)+smpvC*ROOT::Math::laguerre(2,x_t)+smpvD*ROOT::Math::laguerre(3,x_t);
+    sigma = gwA + gwB*sqrt(mu) + gwC*mu;
+    flg->SetParameters(lw,mpv,norm,gw,lw,mu,norm2,sigma,C);
+    // CSMinuit->fh[ibin]->Draw();
+    // flg->Draw("same");
+    // gPad->Update();
     Likelihood = Likelihood + CoherentFitUtils::ComputeLikelihood(CSMinuit->fh[ibin],flg,CSMinuit->fIntegral[ibin]);
   }
   f = -Likelihood;
@@ -2596,11 +2623,11 @@ void CoherentSample::CoherentFitSignalPlusBackgroundMiau(){
   CSMinuit = this;
 
   //create Minuit
-  const int CPAR = 17;
+  const int CPAR = 12;
   const int NPAR = CPAR;
   fMinuit = new TMinuit(NPAR);
   fMinuit->SetFCN(fcnSignalPlusBackgroundMiau);
-
+  
   Double_t arglist[10];
   Int_t ierflg = 0;
 
@@ -2608,60 +2635,62 @@ void CoherentSample::CoherentFitSignalPlusBackgroundMiau(){
   fMinuit->mnexcm("SET ERR", arglist ,1,ierflg);
 
   //initial par
-  fMinuit->mnparm(0,  "lw A"      , 1.95   , 100 ,0,0, ierflg);  // 2.73938e+00 
-  fMinuit->mnparm(1,  "lw B"      , -1.94  , 100 ,0,0, ierflg);  //-6.30265e+00
-  fMinuit->mnparm(2,  "lw C"      , 0.49   , 100 ,0,0, ierflg);  // 5.22968e+00
-  fMinuit->mnparm(3,  "mpv A"     , -78    , 100 ,0,0, ierflg);  //-7.80112e+01
-  fMinuit->mnparm(4,  "mpv B"     ,  295   , 100 ,0,0, ierflg);  // 2.95159e+02
-  fMinuit->mnparm(5,  "mpv C"     , -341   , 100 ,0,0, ierflg);  //-3.41434e+02
-  fMinuit->mnparm(6,  "mpv D"     ,  136   , 100 ,0,0, ierflg);  // 1.36370e+02
-  fMinuit->mnparm(7,  "gw A"      , 3.56   , 100 ,0,0, ierflg);  // 7.61715e-02
-  fMinuit->mnparm(8,  "gw B"      , -3.85  , 100 ,0,0, ierflg);  // 2.02543e+00
-  fMinuit->mnparm(9,  "gw C"      , 1.11   , 100 ,0,0, ierflg);  // 2.02543e+00a
-  fMinuit->mnparm(10, "blw A"     , -0.0416, 100 ,0,0, ierflg);
-  fMinuit->mnparm(11, "blw B"     , -1.94  , 100 ,0,0, ierflg);
-  fMinuit->mnparm(12, "blw C"     , 1.58   , 100 ,0,0, ierflg);
-  fMinuit->mnparm(13, "bmpv A"    , 1.7    , 100 ,0,0, ierflg);
-  fMinuit->mnparm(14, "bmpv B"    , -0.0005, 100 ,0,0, ierflg);
-  fMinuit->mnparm(15, "bgw"       , 0.09   , 100 ,0,0, ierflg);
-  fMinuit->mnparm(16, "norm"      , 0.4    , 100 ,0,0, ierflg);// 8.74262e-01
+  fMinuit->mnparm(0,  "slw"   ,  6.84127e-02   , 0.01 ,0.05,0.2, ierflg);// 5.73423e-02
+  fMinuit->mnparm(1,  "mpv A" , -9.19527e+01   , 1  ,0   ,0  , ierflg);//-6.79884e+01
+  fMinuit->mnparm(2,  "mpv B" ,  3.53382e+02   , 10 ,0  ,0  , ierflg);// 2.64140e+02
+  fMinuit->mnparm(3,  "mpv C" , -4.18293e+02   , 10 ,0   ,0  , ierflg);//-3.07377e+02
+  fMinuit->mnparm(4,  "mpv D" ,  1.73110e+02   , 10 ,0   ,0  , ierflg);// 1.25650e+02
+  fMinuit->mnparm(5,  "gw A"  ,  2.24769e+00   , 0.1 ,0   ,0  , ierflg);// 3.60804e+00
+  fMinuit->mnparm(6,  "gw B"  , -2.57348e+00   , 0.1 ,0   ,0  , ierflg);//-3.82723e+00
+  fMinuit->mnparm(7,  "gw C"  ,  7.93072e-01   , 0.1 ,0   ,0  , ierflg);// 1.07999e+00
+  fMinuit->mnparm(8,  "bmpv"  ,  1.67790e+00   , 0.1,0,0, ierflg);
+  fMinuit->mnparm(9,  "bgw"   ,  8.65530e-02   , 0.01 ,0,0, ierflg);
+  fMinuit->mnparm(10, "snorm" ,  3.86569e-01   , 0.01 ,0,1, ierflg);
+  fMinuit->mnparm(11, "const" ,  0.001         , 0.001 ,0,0, ierflg);
 
+  //fMinuit->FixParameter(11);
+  
+  arglist[0] = 2;
+  fMinuit->mnexcm("SET STR", arglist, 1, ierflg);
   arglist[0] = 50000;
   arglist[1] = 1.;
   fMinuit->mnexcm("MIGRAD", arglist, 2, ierflg);
 
+  fMinuit->mnexcm("SHO EIG", arglist, 2, ierflg);
+  
   // Print results
   Double_t amin,edm,errdef;
   Int_t nvpar,nparx,icstat;
   fMinuit->mnstat(amin,edm,errdef,nvpar,nparx,icstat);
   fMinuit->mnprin(3,amin);
 
-  double slwA,slwB,slwC,smpvA,smpvB,smpvC,smpvD,sgwA,sgwB,sgwC,norm;
   double dummy;
-  double blwA,blwB,blwC,bmpvA, bmpvB,bgwA;
+  double lwA;
+  double smpvA,smpvB,smpvC,smpvD,sgwA,sgwB,sgwC,norm;
+  double shift,ssgwA,ssgwB,ssgwC,ssnorm,alpha;
+  double blw,bmpv,bgw,bnorm;
   
   //retrieve parameters for next stage
-  fMinuit->GetParameter(0,  slwA  , dummy);
-  fMinuit->GetParameter(1,  slwB  , dummy);
-  fMinuit->GetParameter(2,  slwC  , dummy);
-  fMinuit->GetParameter(3,  smpvA , dummy);
-  fMinuit->GetParameter(4,  smpvB , dummy);
-  fMinuit->GetParameter(5,  smpvC , dummy);
-  fMinuit->GetParameter(6,  smpvD , dummy);
-  fMinuit->GetParameter(7,  sgwA  , dummy);
-  fMinuit->GetParameter(8,  sgwB  , dummy);
-  fMinuit->GetParameter(9,  sgwC  , dummy);
-  fMinuit->GetParameter(10, blwA , dummy);
-  fMinuit->GetParameter(11, blwB , dummy);
-  fMinuit->GetParameter(12, blwC , dummy);
-  fMinuit->GetParameter(13, bmpvA , dummy);
-  fMinuit->GetParameter(14, bmpvB , dummy);
-  fMinuit->GetParameter(15, bgwA , dummy);
-  fMinuit->GetParameter(16, norm  , dummy);
+  fMinuit->GetParameter(0,  lwA  , dummy);
+  fMinuit->GetParameter(1,  smpvA , dummy);
+  fMinuit->GetParameter(2,  smpvB , dummy);
+  fMinuit->GetParameter(3,  smpvC , dummy);
+  fMinuit->GetParameter(4,  smpvD , dummy);
+  fMinuit->GetParameter(5,  sgwA  , dummy);
+  fMinuit->GetParameter(6,  sgwB  , dummy);
+  fMinuit->GetParameter(7,  sgwC  , dummy);
+  // fMinuit->GetParameter(8,  blw  , dummy);
+  fMinuit->GetParameter(8,  bmpv  , dummy);
+  fMinuit->GetParameter(9,  bgw   , dummy);
+  // fMinuit->GetParameter(11, shift , dummy);
+  // fMinuit->GetParameter(12,  ssgwA  , dummy);
+  // fMinuit->GetParameter(13,  ssgwB  , dummy);
+  // fMinuit->GetParameter(14,  ssgwC  , dummy);
+  fMinuit->GetParameter(10,  norm   , dummy);
+  //fMinuit->GetParameter(12,  bnorm   , dummy);
+  // fMinuit->GetParameter(16,  alpha  , dummy);
 
-  GetSignal()->SetClwA(std::make_pair(slwA  ,dummy));
-  GetSignal()->SetClwB(std::make_pair(slwB  ,dummy));
-  GetSignal()->SetClwC(std::make_pair(slwC  ,dummy));
+  GetSignal()->SetClwA(std::make_pair(lwA  ,dummy));
   GetSignal()->SetCmpvA(std::make_pair(smpvA,dummy));
   GetSignal()->SetCmpvB(std::make_pair(smpvB,dummy));
   GetSignal()->SetCmpvC(std::make_pair(smpvC,dummy));
@@ -2671,12 +2700,16 @@ void CoherentSample::CoherentFitSignalPlusBackgroundMiau(){
   GetSignal()->SetCgwC(std::make_pair(sgwC  ,dummy));
   GetSignal()->SetCnorm(std::make_pair(norm ,dummy));
 
-  GetBackground()->SetClwA(std::make_pair(blwA,dummy));
-  GetBackground()->SetClwB(std::make_pair(blwB,dummy));
-  GetBackground()->SetClwC(std::make_pair(blwC,dummy));
-  GetBackground()->SetCgwA(std::make_pair(bgwA,dummy));
-  GetBackground()->SetCmpvA(std::make_pair(bmpvA,dummy));
-  GetBackground()->SetCmpvB(std::make_pair(bmpvB,dummy));
+  GetBackground()->SetClwA(std::make_pair(lwA,dummy));
+  GetBackground()->SetCmpvA(std::make_pair(bmpv,dummy));
+  GetBackground()->SetCgwA(std::make_pair(bgw,dummy));
+  GetBackground()->SetCnorm(std::make_pair(bnorm,dummy));
+  
+  GetSemiSignal()->SetCshift(std::make_pair(shift,dummy));
+  GetSemiSignal()->SetCgwA(std::make_pair(ssgwA,dummy));
+  GetSemiSignal()->SetCgwB(std::make_pair(ssgwB,dummy));
+  GetSemiSignal()->SetCgwC(std::make_pair(ssgwC,dummy));
+  GetSemiSignal()->SetCnorm(std::make_pair(bnorm*alpha,dummy));
 
   StoreCoherentFits();
 }
@@ -2686,44 +2719,137 @@ void CoherentSample::fcnSignalPlusBackgroundMiau(Int_t &npar, Double_t *gin, Dou
 //********************************************************************
 
   //set each parameter
-  double slwA  = par[0];
-  double slwB  = par[1];
-  double slwC  = par[2];
-  double smpvA = par[3];
-  double smpvB = par[4];
-  double smpvC = par[5];
-  double smpvD = par[6];
-  double sgwA  = par[7];
-  double sgwB  = par[8];
-  double sgwC  = par[9];
-  double blwA  = par[10];
-  double blwB  = par[11];
-  double blwC  = par[12];
-  double bmpvA = par[13];
-  double bmpvB = par[14];
-  double bgwA  = par[15];
-  double norm  = par[16];
+  double lw    = par[0];
+  double smpvA = par[1];
+  double smpvB = par[2];
+  double smpvC = par[3];
+  double smpvD = par[4];
+  double sgwA  = par[5];
+  double sgwB  = par[6];
+  double sgwC  = par[7];
+  // double blw   = par[8];
+  double bmpv  = par[8];
+  double bgw   = par[9];
+  double snorm = par[10];
+  double C     = par[11];
 
   //define function to fit to each histogram
-  double slw,smpv,sgw,snorm,blw,bmpv,bgw,bnorm;
+  double smpv,sgw,bnorm;
   double Likelihood = 0;
-  TF1* flg = new TF1("flg",CoherentFitUtils::DoubleLangaus,1,30,8);
+  TF1* flg = new TF1("flg",CoherentFitUtils::DoubleLangausPlusConstant,1,30,9);
   for(int ibin = 0; ibin < (int)CSMinuit->fh.size(); ibin++){
     //get RR depending parameters
-    double x   = CSMinuit->fRR[ibin].first;
-    double x_t = (x-1)/(x+1);
+    double x    = CSMinuit->fRR[ibin].first;
+    double x_t  = (x-1)/(x+1);
 
     smpv  = smpvA*ROOT::Math::laguerre(0,x_t) + smpvB*ROOT::Math::laguerre(1,x_t) + smpvC*ROOT::Math::laguerre(2,x_t) + smpvD*ROOT::Math::laguerre(3,x_t);
-    slw   = slwA + slwB*sqrt(smpv) + slwC*smpv;
     sgw   = sgwA + sgwB*sqrt(smpv) + sgwC*smpv;
-    snorm = norm;
 
-    bmpv  = bmpvA + bmpvB*x;
-    blw   = blwA + blwB*sqrt(bmpv) + blwC*bmpv;
-    bgw   = bgwA;
-    bnorm = 1-norm;
+    bnorm = 1-snorm;
+    
+    double params[] = {lw,smpv,snorm,sgw,lw,bmpv,bnorm,bgw,C};
+    flg->SetParameters(params);
+    // CSMinuit->fh[ibin]->Draw();
+    // flg->Draw("same");
+    // gPad->Update();
+    Likelihood = Likelihood + CoherentFitUtils::ComputeLikelihood(CSMinuit->fh[ibin],flg,CSMinuit->fIntegral[ibin]);
+  }
+  f = -Likelihood;
+}
 
-    flg->SetParameters(slw,smpv,snorm,sgw,blw,bmpv,bnorm,bgw);
+//********************************************************************
+void CoherentSample::CoherentFitSemiSignal(){
+//********************************************************************
+
+  CSMinuit = this;
+
+  //create Minuit
+  const int CPAR = 4;
+  const int NPAR = CPAR;
+  fMinuit = new TMinuit(NPAR);
+  fMinuit->SetFCN(fcnSemiSignal);
+
+  Double_t arglist[11];
+  Int_t ierflg = 0;
+
+  arglist[0] = 0.5;
+  fMinuit->mnexcm("SET ERR", arglist ,1,ierflg);
+
+  //Set starting values and step sizes for parameters
+  double mean_norm = 0;
+  for(int i = 0; i < (int)fInorm.size(); i++)mean_norm += fInorm[i].first;
+  mean_norm = 0.06;//mean_norm / fInorm.size();
+
+  //fMinuit->mnparm(0,  "lw Q" , 0       , 10 , 0 , 0 , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
+  fMinuit->mnparm(0,  "mpv S", 3.4     , 10 , 0 , 0 , ierflg);//0.9*0.65  , 1.1*0.65  , ierflg);//
+  fMinuit->mnparm(1,  "gw A" , 0.1      , 10 , 0 , 0 , ierflg);//0.9*2.25  , 1.1*2.25  , ierflg);//
+  fMinuit->mnparm(2,  "norm" , mean_norm , 0.01  , 0 , 1 , ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
+  fMinuit->mnparm(3,  "const" , 0.001 , 0.01  , 0 , 1 , ierflg);//0.9*0.88  , 1.1*0.88  , ierflg);//
+
+  // fMinuit->FixParameter(1);
+  //fMinuit->FixParameter(2);
+
+  // Now ready for minimization step
+  arglist[0] = 500000;
+  arglist[1] = 1.;
+  fMinuit->mnexcm("MIGRAD", arglist, 2, ierflg);
+ 
+  // Print results
+  Double_t amin,edm,errdef;
+  Int_t nvpar,nparx,icstat;
+  fMinuit->mnstat(amin,edm,errdef,nvpar,nparx,icstat);
+  fMinuit->mnprin(3,amin);
+
+  //retrieve parameters for next stage
+  //fMinuit->GetParameter(0,  fClwA.first,  fClwA.second);
+  fMinuit->GetParameter(0,  fCshift.first,  fCshift.second);
+  fMinuit->GetParameter(1,  fCgwA.first,  fCgwA.second);
+  fMinuit->GetParameter(2,  fCnorm.first, fCnorm.second);
+  StoreCoherentFits();
+}
+
+//********************************************************************
+void CoherentSample::fcnSemiSignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag){
+//********************************************************************
+
+  //set each parameter
+  //double lwQ   = par[0];
+  double shift = par[0];
+  double gwA   = par[1];
+  double norm  = par[2];
+  double C     = par[3];
+
+  double smpvA = CSMinuit->GetTrueSignal()->GetCmpvA().first;
+  double smpvB = CSMinuit->GetTrueSignal()->GetCmpvB().first;
+  double smpvC = CSMinuit->GetTrueSignal()->GetCmpvC().first;
+  double smpvD = CSMinuit->GetTrueSignal()->GetCmpvD().first;
+
+  double slwA = CSMinuit->GetTrueSignal()->GetClwA().first;
+  double slwB = CSMinuit->GetTrueSignal()->GetClwB().first;
+  double slwC = CSMinuit->GetTrueSignal()->GetClwC().first;
+
+  double sgwA = CSMinuit->GetTrueSignal()->GetCgwA().first;
+  double sgwB = CSMinuit->GetTrueSignal()->GetCgwB().first;
+  double sgwC = CSMinuit->GetTrueSignal()->GetCgwC().first;
+      
+  //define function to fit to each histogram
+  double lw,mpv,gw;
+  double Likelihood = 0;
+  //TF1* flg = new TF1("flg",CoherentFitUtils::LangausPlusConstant,1,30,5);
+  TF1* flg = new TF1("flg","gaus(0)+pol0(3)",1,30);
+  for(int ibin = 0; ibin < (int)CSMinuit->fh.size(); ibin++){
+    //get RR depending parameters
+    double x   = CSMinuit->fRR[ibin].first+shift;
+    double x_t = (x-1)/(x+1);
+    mpv  = smpvA*ROOT::Math::laguerre(0,x_t)+smpvB*ROOT::Math::laguerre(1,x_t)+smpvC*ROOT::Math::laguerre(2,x_t)+smpvD*ROOT::Math::laguerre(3,x_t);
+    //lw   = sqrt(pow(slwA + slwB*sqrt(mpv)+slwC*mpv,2) + pow(lwQ,2));
+    //gw   = sqrt(pow(sgwA + sgwB*sqrt(mpv)+sgwC*mpv,2) + pow(gwQ,2));
+    //flg->SetParameters(lw,mpv,norm,gw,C);
+    gw = gwA*mpv;
+    flg->SetParameters(norm,mpv,gw,C);
+    CSMinuit->fh[ibin]->Draw();
+    flg->Draw("same");
+    gPad->Update();
     Likelihood = Likelihood + CoherentFitUtils::ComputeLikelihood(CSMinuit->fh[ibin],flg,CSMinuit->fIntegral[ibin]);
   }
   f = -Likelihood;

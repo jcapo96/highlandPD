@@ -63,7 +63,11 @@ namespace CoherentFitUtils{
  
   Double_t Langaus(Double_t *x, Double_t *par);
   Double_t LangausPlusConstant(Double_t *x, Double_t *par);
+  Double_t LangausPlusGausPlusConstant(Double_t *x, Double_t *par);
   Double_t DoubleLangaus(Double_t *x, Double_t *par);
+  Double_t DoubleLangausPlusConstant(Double_t *x, Double_t *par);
+  Double_t TripleLangausPlusConstant(Double_t *x, Double_t *par);
+  Double_t DoubleLangausPlusGausPlusConstant(Double_t *x, Double_t *par);
 
   Double_t ABCParametrization(Double_t *x, Double_t *par);
   Double_t QuadraticABCParametrization(Double_t *x, Double_t *par);

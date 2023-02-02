@@ -149,7 +149,8 @@ TH1F* CoherentFitUtils::GetSignalHistogramFromResRangeSlice(TTree* t, AnaSpillB*
 	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
 	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
 	  if(!truePart)continue;
-	  if(truePart->PDG==321 && truePart->ProcessEnd == 2){
+	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<100){
+	  if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<90){
 	    for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
 	      if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
 		h->Fill(part->Hits[2][ihit].dEdx);
@@ -218,8 +219,9 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
 	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
 	  if(!truePart)continue;
 	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2)continue;
-	  if((truePart->PDG==321 && truePart->ProcessEnd == 2) ||
-	     (truePart->PDG==321 && truePart->ProcessEnd != 2 && part->Chi2Proton/part->Chi2ndf<100))continue;
+	  if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<90)continue;
+	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2 && part->Chi2Proton/part->Chi2ndf<90)continue;
+	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2){
 	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2){
 	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
 	    if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
@@ -287,7 +289,8 @@ TH1F* CoherentFitUtils::GetSemiSignalHistogramFromResRangeSlice(TTree* t, AnaSpi
 	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
 	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
 	  if(!truePart)continue;
-	  if(truePart->PDG==321 && truePart->ProcessEnd != 2 && part->Chi2Proton/part->Chi2ndf<100){
+	  if((truePart->PDG==321 && truePart->ProcessEnd != 2 && part->Chi2Proton/part->Chi2ndf<100) ||
+	     (truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf>100)){
 	    for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
 	      if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
 		h->Fill(part->Hits[2][ihit].dEdx);
@@ -723,6 +726,110 @@ Double_t CoherentFitUtils::DoubleLangaus(Double_t *x, Double_t *par) {
 }
 
 //********************************************
+Double_t CoherentFitUtils::DoubleLangausPlusConstant(Double_t *x, Double_t *par) {
+//********************************************
+
+  double slw    = par[0];
+  double smpv   = par[1];
+  double snorm  = par[2];
+  double sgw    = par[3];
+  double blw    = par[4];
+  double bmpv   = par[5];
+  double bnorm  = par[6];
+  double bgw    = par[7];
+  double C      = par[8];
+
+  double spar[] = {slw,smpv,snorm,sgw};
+  double bpar[] = {blw,bmpv,bnorm,bgw};
+
+  float S = CoherentFitUtils::Langaus(x,spar);
+  float B = CoherentFitUtils::Langaus(x,bpar);
+
+  return S+B+C;
+  
+}
+
+//********************************************
+Double_t CoherentFitUtils::TripleLangausPlusConstant(Double_t *x, Double_t *par) {
+//********************************************
+
+  double slw    = par[0];
+  double smpv   = par[1];
+  double snorm  = par[2];
+  double sgw    = par[3];
+  double sslw   = par[4];
+  double ssmpv  = par[5];
+  double ssnorm = par[6];
+  double ssgw   = par[7];
+  double blw    = par[8];
+  double bmpv   = par[9];
+  double bnorm  = par[10];
+  double bgw    = par[11];
+  double C      = par[12];
+
+  double spar[]  = {slw ,smpv ,snorm ,sgw};
+  double sspar[] = {sslw,ssmpv,ssnorm,ssgw};
+  double bpar[]  = {blw ,bmpv ,bnorm ,bgw};
+
+  float S  = CoherentFitUtils::Langaus(x,spar);
+  float SS = CoherentFitUtils::Langaus(x,sspar);
+  float B  = CoherentFitUtils::Langaus(x,bpar);
+
+  return S+SS+B+C; 
+}
+
+//********************************************
+Double_t CoherentFitUtils::LangausPlusGausPlusConstant(Double_t *x, Double_t *par) {
+//********************************************
+
+  double llw    = par[0];
+  double lmpv   = par[1];
+  double lnorm  = par[2];
+  double lgw    = par[3];
+  double gnorm  = par[4];
+  double gmu    = par[5];
+  double gsigma = par[6];
+  double C      = par[7];
+
+  double lpar[]  = {llw ,lmpv ,lnorm ,lgw};
+
+  float L  = CoherentFitUtils::Langaus(x,lpar);
+  float G = gnorm*TMath::Gaus(*x,gmu,gsigma,true);
+
+  return L+G+C;
+  
+}
+
+//********************************************
+Double_t CoherentFitUtils::DoubleLangausPlusGausPlusConstant(Double_t *x, Double_t *par) {
+//********************************************
+
+  double slw    = par[0];
+  double smpv   = par[1];
+  double snorm  = par[2];
+  double sgw    = par[3];
+  double ssnorm = par[4];
+  double ssmpv  = par[5];
+  double ssgw   = par[6];
+  double blw    = par[7];
+  double bmpv   = par[8];
+  double bnorm  = par[9];
+  double bgw    = par[10];
+  double C      = par[11];
+
+  double spar[]  = {slw ,smpv ,snorm ,sgw};
+  double sspar[] = {ssnorm,ssmpv,ssgw};
+  double bpar[]  = {blw ,bmpv ,bnorm ,bgw};
+
+  float S  = CoherentFitUtils::Langaus(x,spar);
+  float SS = ssnorm*TMath::Gaus(*x,ssmpv,ssgw,true);
+  float B  = CoherentFitUtils::Langaus(x,bpar);
+
+  return S+SS+B+C;
+  
+}
+
+//********************************************
 TF1* CoherentFitUtils::LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample, bool use_poisson){
 //********************************************
 
@@ -736,17 +843,17 @@ TF1* CoherentFitUtils::LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample
 		   h->GetBinCenter(h->GetMaximumBin()),//landau mpv
 		   0.8,                                //normalization
 		   h->GetRMS());                       //gaussian width
-  // if(sample == CoherentSample::SampleTypeEnum::kTrueSignal || sample == CoherentSample::SampleTypeEnum::kSignal)
-  //   f->SetParLimits(0,0.03,2);
-  // else
-  //   f->SetParLimits(0,0.1,2);
+   if(sample == CoherentSample::SampleTypeEnum::kTrueSignal || sample == CoherentSample::SampleTypeEnum::kSignal)
+     f->SetParLimits(0,0.03,2);
+   if(sample == CoherentSample::SampleTypeEnum::kTrueSemiSignal)
+     f->SetParLimits(0,0.1,2);
   f->SetParLimits(1,h->GetBinCenter(1),h->GetBinCenter(h->GetNbinsX()));
   f->SetParLimits(3,0,10);
-  if(use_poisson)h->Fit("f","L");//NQWL");
-  else h->Fit("f","");//"NQ");
+  if(use_poisson)h->Fit("f","NQWL");
+  else h->Fit("f","NQ");
 
-  h->Draw();
-  gPad->Update();gPad->WaitPrimitive();
+  // h->Draw();
+  // gPad->Update();gPad->WaitPrimitive();
   
   return f;
 }
@@ -844,6 +951,7 @@ double CoherentFitUtils::ComputeLikelihood(TH1F* h, TF1* f, double integral){
   double Likelihood = 0;
   for(int i = 0; i < h->GetNbinsX(); i++){
     double hvalue = h->GetBinContent(i+1);
+    if(hvalue*integral<1)continue;
     double fvalue = f->Eval(h->GetBinCenter(i+1));
     Likelihood = Likelihood + log(ROOT::Math::poisson_pdf(hvalue*integral,fvalue*integral));
   }
