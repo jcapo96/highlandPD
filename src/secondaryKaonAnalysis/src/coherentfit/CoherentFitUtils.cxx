@@ -8,6 +8,7 @@
 #include "TF1.h"
 #include "TGraphErrors.h"
 #include "Math/PdfFuncMathCore.h"
+#include "Math/SpecFuncMathMore.h"
 
 //********************************************
 TH1F* CoherentFitUtils::CreateHistogram(double bin_min, double bin_max, double bin_width){
@@ -91,7 +92,7 @@ TH1F* CoherentFitUtils::GetHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill
     h->SetName(("h_"+srl.str()+"_"+srh.str()+"").c_str());
     h->SetTitle((st).c_str());
     
-    return h;
+    return h;//ChangeHistogramToVariableBinning(h,1,10);
   }
   else{
     //fill histogram
@@ -145,12 +146,15 @@ TH1F* CoherentFitUtils::GetSignalHistogramFromResRangeSlice(TTree* t, AnaSpillB*
       AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[0]);
       for(int ipart = 0; ipart < (int)bunch->Particles.size(); ipart++){
 	AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
-	if(!part || (int)part->Hits[2].size()<2)continue;
+	if(!part || (int)part->Hits[2].size()<2 || abs(part->PositionEnd[2]-230)<20)continue;
 	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
 	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
 	  if(!truePart)continue;
 	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<100){
-	  if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<90){
+	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<90){
+	  // if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<80){
+	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2){
+	  if(truePart->PDG==321){
 	    for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
 	      if(abs(part->Hits[2][ihit].ResidualRange-rr_0)<rr_r)
 		h->Fill(part->Hits[2][ihit].dEdx);
@@ -159,7 +163,7 @@ TH1F* CoherentFitUtils::GetSignalHistogramFromResRangeSlice(TTree* t, AnaSpillB*
 	}
       }
     }
-    
+
     //set histogram title
     std::stringstream srl, srh;
     srl << RMIN;
@@ -218,9 +222,10 @@ TH1F* CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(TTree* t, AnaSpi
 	if(part->Chi2Proton/part->Chi2ndf<Chi2Cut && part->Chi2Proton>0){
 	  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
 	  if(!truePart)continue;
+	  if(truePart->PDG==321)continue;
 	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2)continue;
-	  if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<90)continue;
-	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2 && part->Chi2Proton/part->Chi2ndf<90)continue;
+	  //if(truePart->PDG==321 && truePart->ProcessEnd == 2 && part->Chi2Proton/part->Chi2ndf<90)continue;
+	  //if(truePart->PDG==321 && truePart->ProcessEnd==2 && part->Chi2Proton/part->Chi2ndf<90)continue;
 	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2){
 	  //if(truePart->PDG==321 && truePart->ProcessEnd != 2){
 	  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
@@ -561,6 +566,40 @@ TH1F* CoherentFitUtils::ChangeHistogramToVariableBinning(TH1F* h_original, const
 }
 
 //********************************************
+std::vector<TH1F*> CoherentFitUtils::GetReducedHistograms(std::vector<TH1F*> h_originals, const double xmin, const double xmax, const int min_counts){
+//********************************************
+
+  std::vector<TH1F*> h;
+  
+  double bin_min = 0;
+  double bin_max = 0;
+  double dis_to_min = 100;
+  double dis_to_max = 100;
+  for(int ihist = 0; ihist < h_originals.size(); ihist++){
+    for(int ibin = 0; ibin < h_originals[ihist]->GetNbinsX(); ibin++){
+      if(abs(h_originals[ihist]->GetBinLowEdge(ibin+1)-xmin)<dis_to_min){
+	dis_to_min = abs(h_originals[ihist]->GetBinLowEdge(ibin+1)-xmin);
+	bin_min = h_originals[ihist]->GetBinLowEdge(ibin+1);
+      }
+      if(abs(h_originals[ihist]->GetBinLowEdge(ibin+1)+h_originals[ihist]->GetBinWidth(ibin+1)-xmax)<dis_to_max){
+	dis_to_max = abs(h_originals[ihist]->GetBinLowEdge(ibin+1)+h_originals[ihist]->GetBinWidth(ibin+1)-xmax);
+	bin_max = h_originals[ihist]->GetBinLowEdge(ibin+1)+h_originals[ihist]->GetBinWidth(ibin+1);
+      }
+    }
+    std::cout << bin_min << " " << bin_max << std::endl;
+    h.push_back(CreateHistogram(bin_min,bin_max,0.1));
+    for(int ibin = 0; ibin < h[ihist]->GetNbinsX(); ibin++){
+      for(int jbin = 0; jbin < h_originals[ihist]->GetNbinsX(); jbin++){
+	if(h[ihist]->GetBinCenter(ibin+1)==h_originals[ihist]->GetBinCenter(jbin+1))
+	  h[ihist]->SetBinContent(ibin+1,h_originals[ihist]->GetBinContent(jbin+1));
+      }
+    }
+  }
+
+  return h;
+}
+
+//********************************************
 void CoherentFitUtils::CopyHistogramBinning(TH1F* h_original, TH1F* h_copy){
 //********************************************
 
@@ -726,6 +765,34 @@ Double_t CoherentFitUtils::DoubleLangaus(Double_t *x, Double_t *par) {
 }
 
 //********************************************
+Double_t CoherentFitUtils::TripleLangaus(Double_t *x, Double_t *par) {
+//********************************************
+
+  double slw    = par[0];
+  double smpv   = par[1];
+  double snorm  = par[2];
+  double sgw    = par[3];
+  double sslw   = par[4];
+  double ssmpv  = par[5];
+  double ssnorm = par[6];
+  double ssgw   = par[7];
+  double blw    = par[8];
+  double bmpv   = par[9];
+  double bnorm  = par[10];
+  double bgw    = par[11];
+
+  double spar[]  = {slw ,smpv ,snorm ,sgw};
+  double sspar[] = {sslw,ssmpv,ssnorm,ssgw};
+  double bpar[]  = {blw ,bmpv ,bnorm ,bgw};
+
+  float S  = CoherentFitUtils::Langaus(x,spar);
+  float SS = CoherentFitUtils::Langaus(x,sspar);
+  float B  = CoherentFitUtils::Langaus(x,bpar);
+
+  return S+SS+B; 
+}
+
+//********************************************
 Double_t CoherentFitUtils::DoubleLangausPlusConstant(Double_t *x, Double_t *par) {
 //********************************************
 
@@ -776,6 +843,48 @@ Double_t CoherentFitUtils::TripleLangausPlusConstant(Double_t *x, Double_t *par)
   float B  = CoherentFitUtils::Langaus(x,bpar);
 
   return S+SS+B+C; 
+}
+
+//********************************************
+Double_t CoherentFitUtils::LangausPlusLandau(Double_t *x, Double_t *par) {
+//********************************************
+
+  double slw    = par[0];
+  double smpv   = par[1];
+  double snorm  = par[2];
+  double sgw    = par[3];
+  double bnorm  = par[4];
+  double bmpv   = par[5];
+  double blw    = par[6];
+
+  double lpar[]  = {slw ,smpv ,snorm ,sgw};
+
+  float L  = CoherentFitUtils::Langaus(x,lpar);
+  float G = bnorm*TMath::Gaus(*x,bmpv,blw,true);
+
+  return L+G;
+  
+}
+
+//********************************************
+Double_t CoherentFitUtils::LangausPlusGaus(Double_t *x, Double_t *par) {
+//********************************************
+
+  double llw    = par[0];
+  double lmpv   = par[1];
+  double lnorm  = par[2];
+  double lgw    = par[3];
+  double gnorm  = par[4];
+  double gmu    = par[5];
+  double gsigma = par[6];
+
+  double lpar[]  = {llw ,lmpv ,lnorm ,lgw};
+
+  float L  = CoherentFitUtils::Langaus(x,lpar);
+  float G = gnorm*TMath::Gaus(*x,gmu,gsigma,true);
+
+  return L+G;
+  
 }
 
 //********************************************
@@ -830,6 +939,19 @@ Double_t CoherentFitUtils::DoubleLangausPlusGausPlusConstant(Double_t *x, Double
 }
 
 //********************************************
+Double_t CoherentFitUtils::LaguerreSum(Double_t *x, Double_t *par) {
+//********************************************
+
+  double xt = (x[0]-1)/(x[0]+1);
+  double result = par[0]*ROOT::Math::laguerre(0,xt)
+    + par[1]*ROOT::Math::laguerre(1,xt)
+    + par[2]*ROOT::Math::laguerre(2,xt)
+    + par[3]*ROOT::Math::laguerre(3,xt);
+  
+  return result;
+}
+
+//********************************************
 TF1* CoherentFitUtils::LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample, bool use_poisson){
 //********************************************
 
@@ -852,6 +974,40 @@ TF1* CoherentFitUtils::LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample
   if(use_poisson)h->Fit("f","NQWL");
   else h->Fit("f","NQ");
 
+  // h->Draw();
+  // gPad->Update();gPad->WaitPrimitive();
+  
+  return f;
+}
+
+//********************************************
+TF1* CoherentFitUtils::DoubleLangausFit(TH1F* h, bool use_poisson){
+//********************************************
+
+  if(h->GetEntries() == 0){
+    std::cout << "Empty histogram" << std::endl;
+    return NULL;
+  }
+
+  std::string fname(h->GetTitle());
+  fname = fname+"_IncoherentFit";
+  
+  TF1* f = new TF1(fname.c_str(),DoubleLangaus,h->GetBinCenter(1),h->GetBinCenter(h->GetNbinsX()),8);
+  f->SetParameters(0.1,                                //landau width
+		   h->GetBinCenter(h->GetMaximumBin()),//landau mpv
+		   0.4,                                //normalization
+		   0.1,                                //gaussian width
+		   0.1,                                //landau width
+		   2.0,                                //landau mpv
+		   0.4,                                //normalization
+		   0.1);                               //gaussian width
+
+  f->SetParLimits(0,0.03,1); //landau with below this value gives shaky behaviour
+  f->SetParLimits(3,0   ,5); //landau with must be positive
+  f->SetParLimits(4,0.03,1); //landau with below this value gives shaky behaviour
+  f->SetParLimits(7,0   ,5); //landau with must be positive
+  
+  h->Fit(fname.c_str(),"NQL");
   // h->Draw();
   // gPad->Update();gPad->WaitPrimitive();
   
@@ -945,6 +1101,101 @@ void CoherentFitUtils::GetABCDRParametrization(double &A, double &B, double &C, 
 }
 
 //********************************************
+void CoherentFitUtils::GetLaguerreParametrization(double &l1, double &l2, double &l3, double &l4,
+						  double &error_l1, double &error_l2, double &error_l3, double &error_l4,
+						  std::vector<std::pair<double,double>> X,
+						  std::vector<std::pair<double,double>> Y){
+//********************************************
+
+  std::vector<double> x, x_error, y, y_error;
+  SeparatePair(X,x,x_error);
+  SeparatePair(Y,y,y_error);
+
+  int n = std::min((int)x.size(),(int)y.size());
+  TGraphErrors* tg = new TGraphErrors(n,&x[0],&y[0],&x_error[0],&y_error[0]);
+  tg->SetMarkerStyle(20);
+  
+  TF1* f = new TF1("f",CoherentFitUtils::LaguerreSum,1,61,4);
+  if(l4 == 0)f->FixParameter(3,0);
+
+  tg->Fit("f","WWQ");
+  tg->Fit("f","Q");
+  
+  l1 = f->GetParameter(0);
+  l2 = f->GetParameter(1);
+  l3 = f->GetParameter(2);
+  l4 = f->GetParameter(3);
+  error_l1 = f->GetParError(0);
+  error_l2 = f->GetParError(1);
+  error_l3 = f->GetParError(2);
+  error_l4 = f->GetParError(3);
+
+  tg->Draw("ap");
+  gPad->Update();gPad->WaitPrimitive();
+}
+
+//********************************************
+void CoherentFitUtils::GetLinearParametrization(double &l1, double &l2,
+						double &error_l1, double &error_l2,
+						std::vector<std::pair<double,double>> X,
+						std::vector<std::pair<double,double>> Y){
+//********************************************
+  
+  std::vector<double> x, x_error, y, y_error;
+  SeparatePair(X,x,x_error);
+  SeparatePair(Y,y,y_error);
+
+  int n = std::min((int)x.size(),(int)y.size());
+  TGraphErrors* tg = new TGraphErrors(n,&x[0],&y[0],&x_error[0],&y_error[0]);
+  tg->SetMarkerStyle(20);
+  
+  TF1* f = new TF1("f","pol1(0)",1,61);
+
+  tg->Fit("f","WWQ");
+  tg->Fit("f","Q");
+  
+  l1 = f->GetParameter(0);
+  l2 = f->GetParameter(1);
+  error_l1 = f->GetParError(0);
+  error_l2 = f->GetParError(1);
+
+  tg->Draw("ap");
+  gPad->Update();gPad->WaitPrimitive();
+}
+
+//********************************************
+void CoherentFitUtils::GetDiLogParametrization(double &l1, double &l2, double &l3,
+					       double &error_l1, double &error_l2, double &error_l3,
+					       std::vector<std::pair<double,double>> X,
+					       std::vector<std::pair<double,double>> Y){
+//********************************************
+  
+  std::vector<double> x, x_error, y, y_error;
+  SeparatePair(X,x,x_error);
+  SeparatePair(Y,y,y_error);
+
+  int n = std::min((int)x.size(),(int)y.size());
+  TGraphErrors* tg = new TGraphErrors(n,&x[0],&y[0],&x_error[0],&y_error[0]);
+  tg->SetMarkerStyle(20);
+  
+  TF1* f = new TF1("f","[0]+[1]*TMath::DiLog(x+[2])",1,61);
+  f->SetParameters(2.16533e+00,7.37390e-02,8.85421e-01);
+
+  tg->Fit("f","WWQ");
+  tg->Fit("f","Q");
+  
+  l1 = f->GetParameter(0);
+  l2 = f->GetParameter(1);
+  l3 = f->GetParameter(2);
+  error_l1 = f->GetParError(0);
+  error_l2 = f->GetParError(1);
+  error_l3 = f->GetParError(2);
+
+  tg->Draw("ap");
+  gPad->Update();gPad->WaitPrimitive();
+}
+
+//********************************************
 double CoherentFitUtils::ComputeLikelihood(TH1F* h, TF1* f, double integral){
 //********************************************
   
@@ -983,6 +1234,24 @@ double CoherentFitUtils::NormRegularization(const std::vector<double> norm, cons
     double diff  = pow(integral[i]*(norm[i]-enorm),2);
     double error = sqrt(integral[i]*(norm[i]+enorm)/2)/integral[i];
     regularization += diff / (2*error);
+  }
+
+  return regularization;
+}
+
+//********************************************
+double CoherentFitUtils::AlphaRegularization(const std::vector<double> alpha, const std::vector<double> fw){
+//********************************************
+  
+  if(alpha.empty())return 0;
+
+  double regularization = 0;
+
+  for(int i = 1; i < (int)alpha.size()-1; i++){
+    double ealpha = (alpha[i-1]+alpha[i+1])/2;
+    double diff  = pow((alpha[i]-ealpha),2);
+    double error = pow(fw[i],2);
+    regularization += diff / error;
   }
 
   return regularization;

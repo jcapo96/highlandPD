@@ -61,13 +61,18 @@ public:
   
   void SequentialCoherentFit();
   void IncoherentFit();
-  void GetInitialParValuesForCoherentFit(bool equal_weights = false, bool draw_fits = false);
+  void IncoherentFitSignal();
+  void IncoherentFitBackground();
+  void GetInitialParValuesForCoherentFit();
+  void GetInitialParValuesForSignal();
+  void GetInitialParValuesForBackground();
   void CoherentFit();
 
   void CoherentFitSignal();
   void CoherentFitSignalCheb();
   void CoherentFitSignalLag();
   void CoherentFitSignalLagMPV();
+  void CoherentFitSignalMiau();
   //void CoherentFitSignalAlpha();
   //void CoherentFitBackgroundAllFree();
   //void CoherentFitSignalPlusBackgroundAllFree();
@@ -84,6 +89,7 @@ public:
   void CoherentFitSignalPlusBackgroundLag();
   void CoherentFitSignalPlusBackgroundLagMPV();
   void CoherentFitSignalPlusBackgroundMiau();
+  void CoherentFitSignalPlusBackgroundPLEASE();
   void CoherentFitSemiSignal();
   
   void StoreCoherentFits();
@@ -96,6 +102,7 @@ public:
   static void fcnSignalCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   //static void fcnSignalAlpha(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   //static void fcnBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   //static void fcnSignalPlusBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
@@ -112,6 +119,7 @@ public:
   static void fcnSignalPlusBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSignalPlusBackgroundMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalPlusBackgroundPLEASE(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   static void fcnSemiSignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   
   CoherentSample* GetSignal() const {return fSignal;}
@@ -198,6 +206,8 @@ public:
   std::vector<std::pair<double,double>> GetIfwVector() const {return fIfw;}
   std::vector<double> GetIfwVectorValue() const;
   std::vector<double> GetIfwVectorError() const;
+  void AddToIfwVector(std::pair<double,double> fw){fIfw.push_back(fw);}
+  void ResetIfwVector(){fIfw.clear();}
 
   std::vector<double> GetIalphaVector() const;
 
