@@ -453,6 +453,43 @@ Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part)
 }
 
 //***************************************************************
+Float_t pdAnaUtils::ComputeTrackLengthFromTrajectoryPoints(AnaParticlePD* part){
+//***************************************************************
+  
+  if(!part)return -999;
+  
+  Float_t length = 0.;
+  
+  int ntps = part->TrjPoints.size();
+  int i0 = 0;
+  double x0 = 0,y0 = 0,z0 = 0,dx = 0,dy = 0,dz = 0;
+  for(int itp = 0; itp < ntps; itp++){
+    if(part->TrjPoints[itp].IsValid()){
+      x0 = part->TrjPoints[itp].Position.X();
+      y0 = part->TrjPoints[itp].Position.Y();
+      z0 = part->TrjPoints[itp].Position.Z();
+      i0 = itp;
+      break;
+    }
+  }
+
+  for(int itp = i0; itp < ntps; itp++){
+    if(!part->TrjPoints[itp].IsValid())continue;
+    dx = part->TrjPoints[itp].Position.X()-x0;
+    dy = part->TrjPoints[itp].Position.Y()-y0;
+    dz = part->TrjPoints[itp].Position.Z()-z0;
+    
+    length += sqrt(dx*dx+dy*dy+dz*dz);
+    
+    x0 = part->TrjPoints[itp].Position.X();
+    y0 = part->TrjPoints[itp].Position.Y();
+    z0 = part->TrjPoints[itp].Position.Z();
+  }
+  
+  return length;
+}
+
+//***************************************************************
 Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> dEdx){
 //***************************************************************
 

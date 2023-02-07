@@ -853,12 +853,16 @@ void SpaceCharge::ApplyTrjPointDirectionCorrection(AnaParticlePD* part) const {
   }
 
   for(int itp = 1; itp < ntps; itp++){
-    if(part->TrjPoints[ntps-1-itp].IsValid()){
-      part->TrjPoints[ntps-1].Direction = part->TrjPoints[ntps-1-itp].Direction;
+    if(part->TrjPoints[ntps-itp].IsValid()){
+      for(int jtp = itp; jtp < ntps; jtp++){
+	if(part->TrjPoints[ntps-jtp-1].IsValid()){
+	  part->TrjPoints[ntps-itp].Direction = part->TrjPoints[ntps-jtp-1].Direction;
+	  break;
+	}
+      }
       break;
     }
   }
-  
 }
 
 //********************************************************************
