@@ -1,15 +1,15 @@
-#ifndef SCEResidualRangeVariation_h
-#define SCEResidualRangeVariation_h
+#ifndef SCEGeometricVariation_h
+#define SCEGeometricVariation_h
 
 #include "EventVariationBase.hxx"
 #include "BinnedParams.hxx"
 #include "Calorimetry.hxx"
 
-class SCEResidualRangeVariation: public EventVariationBase, public BinnedParams{
+class SCEGeometricVariation: public EventVariationBase, public BinnedParams{
 public:
 
-  SCEResidualRangeVariation();
-  virtual ~SCEResidualRangeVariation(); 
+  SCEGeometricVariation();
+  virtual ~SCEGeometricVariation(); 
   
   /// Apply the systematic
   virtual void Apply(const ToyExperiment& toy, AnaEventC& event);
