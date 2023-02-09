@@ -20,6 +20,17 @@ SCEGeometricVariation::~SCEGeometricVariation(){
 }
 
 //********************************************************************
+void SCEGeometricVariation::Initialize(){
+//********************************************************************
+  
+  std::cout << "SCEGeometricVariation::Initialize(). Initializing toy SCE" << std::endl;
+  for(int i = 0; i < 100; i++){
+    _sce[i] = new SpaceCharge();
+    _sce[i]->Initialize();
+  }
+}
+
+//********************************************************************
 void SCEGeometricVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 //********************************************************************
 
@@ -132,8 +143,8 @@ void SCEGeometricVariation::VarySCEMap(const ToyExperiment& toy){
   
   int toy_index = toy.GetToyIndex();
 
-  if(toy_index==0)std::cout << "SCEGeometricVariation::VarySCEMap(). Generating toy maps" << std::endl;
-  if(toy_index==99)std::cout << "SCEGeometricVariation::VarySCEMap(). Toy maps generated" << std::endl;
+  if(toy_index==0)std::cout << "SCEGeometricVariation::VarySCEMap(). Varying toy maps" << std::endl;
+  if(toy_index==99)std::cout << "SCEGeometricVariation::VarySCEMap(). Toy maps varied" << std::endl;
 
   Float_t sigma;
   GetSigmaValueForBin(0, sigma); //only 1 bin

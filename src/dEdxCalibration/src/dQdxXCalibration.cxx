@@ -80,7 +80,7 @@ bool dQdxXCalibration::Initialize(){
   }
   
   //get yz correction histogram
-  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_lowerangles.root").c_str());
+  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_corrections_5770_lifetime_20ms.root").c_str());
   yz_correction     = (TH2F*)yzfile->Get("correction_yz");
   yz_correction->SetDirectory(0);
   yz_correction_toy = (TH3F*)yzfile->Get("toy_correction_yz");

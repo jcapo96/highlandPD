@@ -12,6 +12,12 @@ LifetimeVariation::LifetimeVariation():EventVariationBase(),BinnedParams(std::st
   _cal = new Calorimetry();
   _cal->Initialize();
 }
+//********************************************************************
+LifetimeVariation::~LifetimeVariation(){
+//********************************************************************
+
+  if(_cal)delete _cal;
+}
 
 //********************************************************************
 void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){

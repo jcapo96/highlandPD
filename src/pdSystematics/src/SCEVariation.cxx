@@ -35,6 +35,17 @@ SCEVariation::~SCEVariation(){
 }
 
 //********************************************************************
+void SCEVariation::Initialize(){
+//********************************************************************
+  
+  std::cout << "SCEVariation::Initialize(). Initializing toy SCE" << std::endl;
+  for(int i = 0; i < 100; i++){
+    _sce[i] = new SpaceCharge();
+    _sce[i]->Initialize();
+  }
+}
+
+//********************************************************************
 void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 //********************************************************************
 
@@ -44,13 +55,7 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
 
   //initialize the SCE for this toy if it has not been initialized yet 
   int toy_index = toy.GetToyIndex();
-  if(!_sce[toy_index]){
-    _sce[toy_index] = new SpaceCharge();
-    _sce[toy_index]->Initialize();
-    _cal->SetSCE(_sce[toy_index],false);
-  }
-  else
-    _cal->SetSCE(_sce[toy_index],false);
+  _cal->SetSCE(_sce[toy_index],false);
 
   //Vary SCE map if it hasn't been varied yet
   if(!_sce[toy_index]->IsVaried())
@@ -110,8 +115,8 @@ void SCEVariation::VarySCEMapGlobally(const ToyExperiment& toy){
   
   int toy_index = toy.GetToyIndex();
 
-  if(toy_index==0)std::cout << "SCEVariation::VarySCEMap(). Generating toy maps" << std::endl;
-  if(toy_index==99)std::cout << "SCEVariation::VarySCEMap(). Toy maps generated" << std::endl;
+  if(toy_index==0)std::cout << "SCEVariation::VarySCEMap(). Varying toy maps" << std::endl;
+  if(toy_index==99)std::cout << "SCEVariation::VarySCEMap(). Toy maps varied" << std::endl;
 
   Float_t sigma;
   GetSigmaValueForBin(0, sigma); //only 1 bin
@@ -124,8 +129,8 @@ void SCEVariation::VarySCEMapLocally(const ToyExperiment& toy){
   
   int toy_index = toy.GetToyIndex();
 
-  if(toy_index==0)std::cout << "SCEVariation::VarySCEMap(). Generating toy maps" << std::endl;
-  if(toy_index==99)std::cout << "SCEVariation::VarySCEMap(). Toy maps generated" << std::endl;
+  if(toy_index==0)std::cout << "SCEVariation::VarySCEMap(). Varying toy maps" << std::endl;
+  if(toy_index==99)std::cout << "SCEVariation::VarySCEMap(). Toy maps Varied" << std::endl;
 
   //get map binning
   int nbinsx = _sce[toy_index]->GetNbinsX();

@@ -3,46 +3,34 @@
 #include "pdAnalysisUtils.hxx"
 
 double XZmin = 0;
-double XZmax = 0;
+double XZmax = 60;
 double YZmin = 0;
-double YZmax = 0;
+double YZmax = 80;
 
 //********************************************************************
 dEdxTrackSelection::dEdxTrackSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxdEdx) {
 //********************************************************************
-  
+
   //initialize to default values
-  _ThetaXZ_min = 0;
-  _ThetaXZ_max = 60;
-  _ThetaYZ_min = 0;
-  _ThetaYZ_max = 80;
+  _ThetaXZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min");
+  _ThetaXZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_max");
+  _ThetaYZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min");
+  _ThetaYZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max");
+
+  std::cout << "-----------------------------------------" << std::endl;
+  std::cout << "ANGLE BINNING FOR TRACK SELECTION" << std::endl;
+  std::cout << _ThetaXZ_min << " < thetaXZ <" << _ThetaXZ_max << std::endl;
+  std::cout << 180-_ThetaXZ_min << " < thetaXZ <" << 180-_ThetaXZ_max << std::endl;
+  std::cout << _ThetaYZ_min << " < thetaYZ <" << _ThetaYZ_max << std::endl;
+  std::cout << 180-_ThetaYZ_min << " < thetaYZ <" << 180-_ThetaYZ_max << std::endl;
+  std::cout << "-----------------------------------------" << std::endl;
+
+  XZmin = _ThetaXZ_min;
+  XZmax = _ThetaXZ_max;
+  YZmin = _ThetaYZ_min;
+  YZmax = _ThetaYZ_max;
 
 }
-
-// //********************************************************************
-// void dEdxTrackSelection::Initialize(){
-// //********************************************************************
-  
-//   _ThetaXZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min");
-//   _ThetaXZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_max");
-//   _ThetaYZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min");
-//   _ThetaYZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max");
-
-//   std::cout << "-----------------------------------------" << std::endl;
-//   std::cout << "ANGLE BINNING FOR TRACK SELECTION" << std::endl;
-//   std::cout << _ThetaXZ_min << " < thetaXZ <" << _ThetaXZ_max << std::endl;
-//   std::cout << 180-_ThetaXZ_min << " < thetaXZ <" << 180-_ThetaXZ_max << std::endl;
-//   std::cout << _ThetaYZ_min << " < thetaYZ <" << _ThetaYZ_max << std::endl;
-//   std::cout << 180-_ThetaYZ_min << " < thetaYZ <" << 180-_ThetaYZ_max << std::endl;
-//   std::cout << "-----------------------------------------" << std::endl;
-
-//   XZmin = _ThetaXZ_min;
-//   XZmax = _ThetaXZ_max;
-//   YZmin = _ThetaYZ_min;
-//   YZmax = _ThetaYZ_max;
-
-//   SelectionBase::Initialize();
-// }
 
 //********************************************************************
 void dEdxTrackSelection::DefineSteps(){

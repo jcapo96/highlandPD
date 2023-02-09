@@ -9,7 +9,7 @@ class LifetimeVariation: public EventVariationBase, public BinnedParams{
 public:
 
   LifetimeVariation();
-  virtual ~LifetimeVariation(){} 
+  virtual ~LifetimeVariation();
   
   /// Apply the systematic
   virtual void Apply(const ToyExperiment& toy, AnaEventC& event);

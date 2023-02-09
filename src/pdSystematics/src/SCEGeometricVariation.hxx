@@ -10,6 +10,8 @@ public:
 
   SCEGeometricVariation();
   virtual ~SCEGeometricVariation(); 
+
+  void Initialize();
   
   /// Apply the systematic
   virtual void Apply(const ToyExperiment& toy, AnaEventC& event);

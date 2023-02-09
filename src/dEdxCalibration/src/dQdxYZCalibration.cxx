@@ -4,6 +4,7 @@
 //system
 #include <sys/time.h>
 #include <iomanip>
+#include <climits>
 
 //root
 #include "Math/MinimizerOptions.h"
@@ -39,6 +40,7 @@ dQdxYZCalibration::dQdxYZCalibration(AnalysisAlgorithm* ana) : baseAnalysis(ana)
 //********************************************************************
 
   _SelectedTracks = 0;
+  _MaxTracks = INT_MAX; //arbitrarily large number
 
   h_global_yz     = NULL;
   h_global_yz_toy = NULL;
@@ -60,6 +62,8 @@ bool dQdxYZCalibration::Initialize(){
 
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("dEdxCalibration.YZ.MinAccumLevelToSave"));
+
+  _MaxTracks = ND::params().GetParameterI("dEdxCalibration.YZ.MaxTracks");
 
   _SaveAna = ND::params().GetParameterI("dEdxCalibration.YZ.SaveAna");
   _SaveToy = ND::params().GetParameterI("dEdxCalibration.YZ.SaveToy");
@@ -178,7 +182,7 @@ void dQdxYZCalibration::DefineTruthTree(){
 void dQdxYZCalibration::FillMicroTrees(bool addBase){
 //********************************************************************
   
-  if(_SelectedTracks > 200000)Finalize();
+  if(_SelectedTracks > _MaxTracks)Finalize();
 
   //fill histograms withoug systematics
   int ntracks = box().Tracks.size();
@@ -266,7 +270,8 @@ void dQdxYZCalibration::Finalize(){
   if(_enableAllSystConfig)
     FillToyHistograms();
 
-  // std::exit(1);
+  output().CloseOutputFile();
+  std::exit(1);
 }
 
 //********************************************************************
@@ -320,7 +325,8 @@ void dQdxYZCalibration::FillHistograms(){
       delete h_local_yz[iz][iy];
       h_local_yz[iz][iy] = NULL;
     }
-    std::cout << (double)(iz+1)/nbinsz*100 << "% of local fits completed" << std::setprecision(4) << std::endl;
+    int per = (double)(iz+1)/nbinsz*100;
+    if(per%10 == 0)std::cout << per << "% of local fits completed" << std::endl;
   }
   
   gettimeofday(&tim, NULL);
@@ -406,7 +412,8 @@ void dQdxYZCalibration::FillToyHistograms(){
       delete h_local_yz_toy[iz][iy];
       h_local_yz_toy[iz][iy] = NULL;
     }
-    std::cout << (double)(iz+1)/nbinsz*100 << "% of local fits completed" << std::setprecision(4) << std::endl;
+    int per = (double)(iz+1)/nbinsz*100;
+    if(per%10 == 0)std::cout << per << "% of local fits completed" << std::endl;
   }
 
   gettimeofday(&tim, NULL);
