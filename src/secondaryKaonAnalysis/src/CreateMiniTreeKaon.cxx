@@ -87,7 +87,6 @@ void CreateMiniTreeKaon::DeleteUninterestingParticles(){
   }
 
   bunch->Particles = goodParticles;
-  std::cout << "bunch with " << bunch->Particles.size() << " particles" << std::endl;
 }
 
 //********************************************************************
