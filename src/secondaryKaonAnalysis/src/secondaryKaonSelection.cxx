@@ -33,7 +33,7 @@ void secondaryKaonSelection::DefineSteps(){
     AddStep(i, StepBase::kCut, "kaon daughter mom cut",      new MuonRangeMomCut(0.210,0.237), true);
     AddStep(i, StepBase::kCut, "kaon-muon angle cut",        new KaonMuonAngleCut(-0.98,0.64), true);
     AddStep(i, StepBase::kCut, "kaon-muon distance cut",     new KaonMuonDistanceCut(0,9.9),   true);
-    AddStep(i, StepBase::kCut, "Proton chi2 cut",            new ProtonChi2Cut(0,84),          true);
+    // AddStep(i, StepBase::kCut, "Proton chi2 cut",            new ProtonChi2Cut(0,84),          true);
   }
 
   //Set the branch aliases to the different branches 

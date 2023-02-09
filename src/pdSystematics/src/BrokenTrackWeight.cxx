@@ -20,9 +20,10 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
   // Initialy the weight is 1
   Weight_h eventWeight = 1;
 
-  // Systematic source parameters
+  // Get the breaking probability for bin 0 (there is a single bin);
   BinnedParamsParams params;
   int index;
+  if(!GetBinValues(0.5, params, index))	return eventWeight;
 
   // Casts the toyBox. The systematic box is not needed
   const ToyBoxKaon& box = *static_cast<const ToyBoxKaon*>(&boxB);   
@@ -32,14 +33,19 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
    
   //get bestcandidate
   AnaParticlePD* part = box.Candidates[box.BestCandidateIndex];
-  //AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
-  //if(!truePart)return eventWeight;
 
   //is it in the broken bin?
-  if(abs(part->PositionStart[2]-230)<10){
-    eventWeight = 0.6;
+  bool broken = false;
+  if((part->PositionStart[2]>222 && part->PositionStart[2]<234) ||
+     (part->PositionStart[2]>458 && part->PositionStart[2]<466)){
+    broken = true;
+    eventWeight *= systUtils::ComputeEffLikeWeight(broken, toy, GetIndex(), index, params);
   }
-  else eventWeight = 1.027;
+  else if(part->PositionStart[2]<466){
+    broken = false;
+    eventWeight *= systUtils::ComputeEffLikeWeight(broken, toy, GetIndex(), index, params);
+  }
+ 
   return eventWeight;
 }
 

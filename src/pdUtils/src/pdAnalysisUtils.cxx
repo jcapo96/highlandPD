@@ -490,6 +490,48 @@ Float_t pdAnaUtils::ComputeTrackLengthFromTrajectoryPoints(AnaParticlePD* part){
 }
 
 //***************************************************************
+void pdAnaUtils::ComputeParticlePositionAndDirection(AnaParticlePD* part){
+//***************************************************************
+  
+  if(!part)return;
+
+  int ntps = part->TrjPoints.size();
+  if(ntps<1)return;
+
+  int ifirst = -1;
+  for(int itp = 0; itp < ntps; itp++){
+    if(part->TrjPoints[itp].IsValid()){
+      ifirst = itp;
+      break;
+    }
+  }
+  if(ifirst != -1){
+    part->PositionStart[0] = part->TrjPoints[ifirst].Position.X();
+    part->PositionStart[1] = part->TrjPoints[ifirst].Position.Y();
+    part->PositionStart[2] = part->TrjPoints[ifirst].Position.Z();
+    part->DirectionStart[0] = part->TrjPoints[ifirst].Direction.X();
+    part->DirectionStart[1] = part->TrjPoints[ifirst].Direction.Y();
+    part->DirectionStart[2] = part->TrjPoints[ifirst].Direction.Z();
+  }
+  
+  int ilast  = -1;
+  for(int itp = 1; itp < ntps; itp++){
+    if(part->TrjPoints[ntps-itp].IsValid()){
+      ilast = ntps-itp;
+      break;
+    }
+  }
+  if(ilast != -1){
+    part->PositionEnd[0] = part->TrjPoints[ilast].Position.X();
+    part->PositionEnd[1] = part->TrjPoints[ilast].Position.Y();
+    part->PositionEnd[2] = part->TrjPoints[ilast].Position.Z();
+    part->DirectionEnd[0] = part->TrjPoints[ilast].Direction.X();
+    part->DirectionEnd[1] = part->TrjPoints[ilast].Direction.Y();
+    part->DirectionEnd[2] = part->TrjPoints[ilast].Direction.Z();
+  } 
+}
+
+//***************************************************************
 Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> dEdx){
 //***************************************************************
 
