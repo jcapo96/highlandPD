@@ -2,11 +2,47 @@
 #include "EventBoxdEdx.hxx"
 #include "pdAnalysisUtils.hxx"
 
+double XZmin = 0;
+double XZmax = 0;
+double YZmin = 0;
+double YZmax = 0;
+
 //********************************************************************
 dEdxTrackSelection::dEdxTrackSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxdEdx) {
 //********************************************************************
+  
+  //initialize to default values
+  _ThetaXZ_min = 0;
+  _ThetaXZ_max = 60;
+  _ThetaYZ_min = 0;
+  _ThetaYZ_max = 80;
 
 }
+
+// //********************************************************************
+// void dEdxTrackSelection::Initialize(){
+// //********************************************************************
+  
+//   _ThetaXZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min");
+//   _ThetaXZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_max");
+//   _ThetaYZ_min = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min");
+//   _ThetaYZ_max = ND::params().GetParameterI("dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max");
+
+//   std::cout << "-----------------------------------------" << std::endl;
+//   std::cout << "ANGLE BINNING FOR TRACK SELECTION" << std::endl;
+//   std::cout << _ThetaXZ_min << " < thetaXZ <" << _ThetaXZ_max << std::endl;
+//   std::cout << 180-_ThetaXZ_min << " < thetaXZ <" << 180-_ThetaXZ_max << std::endl;
+//   std::cout << _ThetaYZ_min << " < thetaYZ <" << _ThetaYZ_max << std::endl;
+//   std::cout << 180-_ThetaYZ_min << " < thetaYZ <" << 180-_ThetaYZ_max << std::endl;
+//   std::cout << "-----------------------------------------" << std::endl;
+
+//   XZmin = _ThetaXZ_min;
+//   XZmax = _ThetaXZ_max;
+//   YZmin = _ThetaYZ_min;
+//   YZmax = _ThetaYZ_max;
+
+//   SelectionBase::Initialize();
+// }
 
 //********************************************************************
 void dEdxTrackSelection::DefineSteps(){
@@ -50,14 +86,19 @@ bool TracksAngleAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   //cast the box
   ToyBoxdEdx& box = *static_cast<ToyBoxdEdx*>(&boxB);   
-  
+
   //keep only tracks with a particular angular distribution
   for(int itrk = 0; itrk < (int)box.Tracks.size(); itrk++){
-    if((abs(180/TMath::Pi()*box.Tracks[itrk]->ThetaXZ)>60 && 
-	abs(180/TMath::Pi()*box.Tracks[itrk]->ThetaXZ)<120)
-       ||
-       (abs(180/TMath::Pi()*box.Tracks[itrk]->ThetaYZ)>80 && 
-	abs(180/TMath::Pi()*box.Tracks[itrk]->ThetaYZ)<100)){
+    AnaParticlePD* part =  box.Tracks[itrk];
+    double xz = abs(180/TMath::Pi()*part->ThetaXZ);
+    double yz = abs(180/TMath::Pi()*part->ThetaYZ);
+    if(((xz>XZmin && xz<XZmax) || 
+	(xz>180-XZmax && xz<180-XZmin)) 
+       &&
+       ((yz>YZmin && yz<YZmax) || 
+	(yz>180-YZmax && yz<180-YZmin)))
+      continue;
+    else {
       box.Tracks.erase(box.Tracks.begin()+itrk);
       itrk--;
     }

@@ -15,6 +15,8 @@ class dEdxTrackSelection: public SelectionBase{
   dEdxTrackSelection(bool forceBreak=true);
   virtual ~dEdxTrackSelection(){}
 
+  //void Initialize();
+
   //---- These are mandatory functions
   void DefineSteps();
   void DefineDetectorFV(){SetDetectorFV(SubDetId::kSubdet1_1);} //dummy (not needed for this particular selection)
@@ -30,6 +32,12 @@ class dEdxTrackSelection: public SelectionBase{
   //------------------
   
 protected:
+
+  double _ThetaXZ_min;
+  double _ThetaXZ_max;
+  double _ThetaYZ_min;
+  double _ThetaYZ_max;
+
 };
 
 //---- Steps and actions for the analysis  

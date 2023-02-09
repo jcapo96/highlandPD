@@ -62,7 +62,7 @@ bool CreateMichelRemovingMiniTree::Process(){
     // Mark this spill as saved
     _lastSpillSaved=true;
   }
-  
+
   return true;
 }
 

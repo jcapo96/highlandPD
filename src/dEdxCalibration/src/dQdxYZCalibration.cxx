@@ -38,6 +38,8 @@
 dQdxYZCalibration::dQdxYZCalibration(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
+  _SelectedTracks = 0;
+
   h_global_yz     = NULL;
   h_global_yz_toy = NULL;
     
@@ -176,9 +178,12 @@ void dQdxYZCalibration::DefineTruthTree(){
 void dQdxYZCalibration::FillMicroTrees(bool addBase){
 //********************************************************************
   
+  if(_SelectedTracks > 200000)Finalize();
+
   //fill histograms withoug systematics
   int ntracks = box().Tracks.size();
   if(!(ntracks > 0))return;
+  _SelectedTracks += ntracks;
   
   int zbin,ybin;
   for(int itrk = 0; itrk < ntracks; itrk++){
@@ -210,7 +215,7 @@ void dQdxYZCalibration::FillToyVarsInMicroTrees(bool addBase){
   int ntracks = box().Tracks.size();
   if(!(ntracks > 0))return; 
   int itoy = conf().GetToyIndex();
-  
+
   int zbin,ybin;
   for(int itrk = 0; itrk < ntracks; itrk++){
     AnaParticlePD* part = box().Tracks[itrk];
@@ -240,6 +245,15 @@ void dQdxYZCalibration::FillCategories(){
 }
 
 //********************************************************************
+void dQdxYZCalibration::FinalizeAnalysisLoop(){
+//********************************************************************
+  
+  baseAnalysis::FinalizeBunch();
+  input().DeleteSpill();
+  baseAnalysis::Finalize();
+}
+
+//********************************************************************
 void dQdxYZCalibration::Finalize(){
 //********************************************************************
   
@@ -251,6 +265,8 @@ void dQdxYZCalibration::Finalize(){
   FillHistograms();
   if(_enableAllSystConfig)
     FillToyHistograms();
+
+  // std::exit(1);
 }
 
 //********************************************************************
@@ -280,6 +296,7 @@ void dQdxYZCalibration::FillHistograms(){
   double global_mpv_error = f->GetParError(1);
   double global_rel_error = global_mpv_error/global_mpv;
   delete h_global_yz;
+  h_global_yz = NULL;
 
   gettimeofday(&tim, NULL);
   double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
@@ -301,6 +318,7 @@ void dQdxYZCalibration::FillHistograms(){
       correction->SetBinContent(iz+1,iy+1,global_mpv/local_mpv);
       correction->SetBinError(iz+1,iy+1,global_mpv/local_mpv*sqrt(pow(global_rel_error,2)+pow(local_rel_error,2)));
       delete h_local_yz[iz][iy];
+      h_local_yz[iz][iy] = NULL;
     }
     std::cout << (double)(iz+1)/nbinsz*100 << "% of local fits completed" << std::setprecision(4) << std::endl;
   }
@@ -356,6 +374,7 @@ void dQdxYZCalibration::FillToyHistograms(){
   global_syst_error = hsyst->GetRMS();
   hsyst->Reset();
   delete h_global_yz_toy;
+  h_global_yz_toy = NULL;
 
   gettimeofday(&tim, NULL);
   double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
@@ -385,6 +404,7 @@ void dQdxYZCalibration::FillToyHistograms(){
       error_map->SetBinContent(iz+1,iy+1,sqrt(pow(global_syst_error/global_mpv,2)+pow(local_syst_error/local_mpv,2))*100);
 
       delete h_local_yz_toy[iz][iy];
+      h_local_yz_toy[iz][iy] = NULL;
     }
     std::cout << (double)(iz+1)/nbinsz*100 << "% of local fits completed" << std::setprecision(4) << std::endl;
   }

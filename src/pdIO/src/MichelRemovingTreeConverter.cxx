@@ -37,7 +37,10 @@ void MichelRemovingTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& 
     //fill particle info
     FillParticleInfo(part,itrk);
     //add particle to vector of particles
-    bunch->Particles.push_back(part);
+    if(part->Hits[2].size()>0)
+      bunch->Particles.push_back(part);
+    else
+      delete part;
   }
 }
 
@@ -61,7 +64,7 @@ void MichelRemovingTreeConverter::FillParticleInfo(AnaParticlePD* part, const in
   //loop over hits
   for(int ihit = 0; ihit < _MaxHits; ihit++){
     //create an AnaHit
-    if(!IsUsableHit(itrk,ihit))continue;
+    if(!IsUsableHit(itrk,ihit) || !IsInterestingHit(itrk,ihit))continue;
     AnaHitPD hit;
     //fill calo info
     hit.dQdx_elife    = trkdqdx[itrk][2][ihit];
@@ -86,9 +89,24 @@ bool MichelRemovingTreeConverter::IsUsableHit(const int itrk, const int ihit){
 //*****************************************************************************
 
   bool ItIs = true;
+
   if(trkhitx[itrk][2][ihit] == -99999 || trkhity[itrk][2][ihit] == -99999 || 
      trkhitz[itrk][2][ihit] == -99999 || trkdqdx[itrk][2][ihit] == -99999) ItIs = false;
   
+  return ItIs;
+}
+
+//*****************************************************************************
+bool MichelRemovingTreeConverter::IsInterestingHit(const int itrk, const int ihit){
+//*****************************************************************************
+
+  bool ItIs = false;
+
+  if(trkhitx[itrk][2][ihit] > -360 && trkhitx[itrk][2][ihit] < 0 &&
+     abs(trkhity[itrk][2][ihit]-300) < 300 &&
+     abs(trkhitz[itrk][2][ihit]-350) < 350)
+    ItIs = true;
+
   return ItIs;
 }
 

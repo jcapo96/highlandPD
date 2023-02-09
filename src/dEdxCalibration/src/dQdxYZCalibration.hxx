@@ -44,6 +44,7 @@ class dQdxYZCalibration: public baseAnalysis {
   void DefineInputConverters();
 
   void Finalize();
+  void FinalizeAnalysisLoop();
   void FillHistograms();
   void FillToyHistograms();
   
@@ -71,6 +72,8 @@ class dQdxYZCalibration: public baseAnalysis {
   virtual AnaTrueVertexB* GetTrueVertex() const {return box().TrueVertex;}
   
 private:
+
+  int _SelectedTracks;
 
   bool _SaveAna;
   bool _SaveToy;

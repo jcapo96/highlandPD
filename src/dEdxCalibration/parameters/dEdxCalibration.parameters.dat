@@ -12,12 +12,12 @@
  < dEdxCalibration.YZ.SaveToy = 0 >   // Save toy variables
 
 --- Corrections --------
- < dEdxCalibration.YZ.ApplySCEPositionCorrection = 1 >
- < dEdxCalibration.YZ.ApplySCEPitchCorrection = 1 >
+ < dEdxCalibration.YZ.ApplySCEPositionCorrection = 0 >
+ < dEdxCalibration.YZ.ApplySCEPitchCorrection = 0 >
  < dEdxCalibration.YZ.ApplyLifetimeCorrection = 0 >
 
 --- Systematics --------
- < dEdxCalibration.YZ.ApplySCESystematic = 0 >
+ < dEdxCalibration.YZ.ApplySCESystematic = 1 >
  < dEdxCalibration.YZ.ApplyLifetimeSystematic = 1 >
 
 -----------------------
@@ -40,7 +40,7 @@
 
 --- Systematics --------
  < dEdxCalibration.X.ApplySCESystematic = 1 >
- < dEdxCalibration.X.ApplyLifetimeSystematic = 1 >
+ < dEdxCalibration.X.ApplyLifetimeSystematic = 0 >
 
 -----------------------
 --- dEdx calibration --
@@ -68,9 +68,9 @@
 --- MichelMiniTree ----
 -----------------------
 
- < dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min = 30 >
+ < dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min = 0 >
  < dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_max = 60 >
- < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min = 40 >
+ < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min = 0 >
  < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max = 80 >
 
 ###############################################################################
@@ -130,5 +130,5 @@ Create configurations with a single systematic ( a configuration for each system
 
 Enable/disable the configuration with all systematics (or the ones selected above)
 
- < baseAnalysis.Configurations.EnableAllSystematics = 1 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 0 >
  

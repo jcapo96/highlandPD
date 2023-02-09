@@ -28,6 +28,7 @@ public:
 
   void FillParticleInfo(AnaParticlePD* part, const int itrk);
   bool IsUsableHit(const int itrk, const int ihit);
+  bool IsInterestingHit(const int itrk, const int ihit);
   
 
 protected:
