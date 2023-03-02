@@ -65,6 +65,9 @@ class dQdxXCalibration: public baseAnalysis {
   
 private:
 
+  int _SelectedTracks;
+  int _MaxTracks;
+
   bool _SaveAna;
   bool _SaveToy;
 

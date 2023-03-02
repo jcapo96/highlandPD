@@ -263,12 +263,14 @@ void dQdxYZCalibration::Finalize(){
   
   //speed up fitting procedure
   ROOT::EnableImplicitMT();
-  ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
-  ROOT::Math::MinimizerOptions::SetDefaultTolerance(10);
+  // ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
+  // ROOT::Math::MinimizerOptions::SetDefaultTolerance(10);
 
   FillHistograms();
   if(_enableAllSystConfig)
     FillToyHistograms();
+
+  std::cout << "TOTAL TRACKS " << _SelectedTracks << std::endl;
 
   output().CloseOutputFile();
   std::exit(1);
@@ -406,6 +408,8 @@ void dQdxYZCalibration::FillToyHistograms(){
       }
       local_mpv = hsyst->GetMean();
       local_syst_error = hsyst->GetRMS();
+      if(iz == 50 && iy == 50)
+	std::cout << "Local MPV = " << iz << ":" << iy << " " << local_mpv << " +/- " << local_syst_error << std::endl;
       hsyst->Reset();
       error_map->SetBinContent(iz+1,iy+1,sqrt(pow(global_syst_error/global_mpv,2)+pow(local_syst_error/local_mpv,2))*100);
 

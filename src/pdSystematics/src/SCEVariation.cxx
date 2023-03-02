@@ -120,7 +120,7 @@ void SCEVariation::VarySCEMapGlobally(const ToyExperiment& toy){
 
   Float_t sigma;
   GetSigmaValueForBin(0, sigma); //only 1 bin
-  _sce[toy_index]->ApplyGlobalVariation(1 + sigma*toy.GetToyVariations(_index)->Variations[0]);  
+  _sce[toy_index]->ApplyGlobalVariation(1 + sigma*toy.GetToyVariations(_index)->Variations[0]);
 }
 
 //********************************************************************
