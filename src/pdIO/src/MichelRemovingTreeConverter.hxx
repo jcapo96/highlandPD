@@ -29,9 +29,15 @@ public:
   void FillParticleInfo(AnaParticlePD* part, const int itrk);
   bool IsUsableHit(const int itrk, const int ihit);
   bool IsInterestingHit(const int itrk, const int ihit);
+  bool AngleCut(const int itrk);
   
 
 protected:
+
+  double _XZmax;
+  double _XZmin;
+  double _YZmax;
+  double _YZmin;
   
   const static int _MaxTracks = 30;
   const static int _NPlanes = 3;

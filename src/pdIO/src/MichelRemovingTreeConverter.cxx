@@ -8,7 +8,18 @@
 MichelRemovingTreeConverter::MichelRemovingTreeConverter(const std::string& name):pdBaseConverter(name){
 //********************************************************************
 
-  //nothing to do here for the moment
+  _XZmin = ND::params().GetParameterI("pdIO.MichelRemoving.ThetaXZ_min");
+  _XZmax = ND::params().GetParameterI("pdIO.MichelRemoving.ThetaXZ_max");
+  _YZmin = ND::params().GetParameterI("pdIO.MichelRemoving.ThetaYZ_min");
+  _YZmax = ND::params().GetParameterI("pdIO.MichelRemoving.ThetaYZ_max");
+
+  std::cout << "-----------------------------------------" << std::endl;
+  std::cout << "ANGLE BINNING FOR TRACK SELECTION" << std::endl;
+  std::cout << _XZmin << " < thetaXZ <" << _XZmax << std::endl;
+  std::cout << 180-_XZmin << " < thetaXZ <" << 180-_XZmax << std::endl;
+  std::cout << _YZmin << " < thetaYZ <" << _YZmax << std::endl;
+  std::cout << 180-_YZmin << " < thetaYZ <" << 180-_YZmax << std::endl;
+  std::cout << "-----------------------------------------" << std::endl;
 }
 
 //*****************************************************************************
@@ -32,6 +43,7 @@ void MichelRemovingTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& 
   
   //loop over tracks
   for(int itrk = 0; itrk < cross_trks; itrk++){
+    if(!AngleCut(itrk))continue;
     //create new AnaParticle
     AnaParticlePD* part = MakeParticle();
     //fill particle info
@@ -108,6 +120,21 @@ bool MichelRemovingTreeConverter::IsInterestingHit(const int itrk, const int ihi
     ItIs = true;
 
   return ItIs;
+}
+
+//*****************************************************************************
+bool MichelRemovingTreeConverter::AngleCut(const int itrk){
+//*****************************************************************************
+
+  double xz = abs(180/TMath::Pi()*trackthetaxz[itrk]);
+  double yz = abs(180/TMath::Pi()*trackthetayz[itrk]);
+  if(((xz>_XZmin && xz<_XZmax) || 
+      (xz>180-_XZmax && xz<180-_XZmin)) 
+     &&
+     ((yz>_YZmin && yz<_YZmax) || 
+      (yz>180-_YZmax && yz<180-_YZmin)))
+    return true;
+  else return false;
 }
 
 //*****************************************************************************
