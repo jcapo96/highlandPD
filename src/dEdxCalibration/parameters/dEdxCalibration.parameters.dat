@@ -7,7 +7,7 @@
 
  < dEdxCalibration.YZ.MichelRemovingTree = 0 >   
 
- < dEdxCalibration.YZ.MaxTracks = 1 >   
+ < dEdxCalibration.YZ.MaxTracks = 8000000 >   
 
 --- Output Tree --------
  < dEdxCalibration.YZ.SaveAna = 0 >   // Save standard analysis tree
@@ -19,8 +19,8 @@
  < dEdxCalibration.YZ.ApplyLifetimeCorrection = 0 >
 
 --- Systematics --------
- < dEdxCalibration.YZ.ApplySCESystematic = 0 >
- < dEdxCalibration.YZ.ApplyLifetimeSystematic = 0 >
+ < dEdxCalibration.YZ.ApplySCESystematic = 1 >
+ < dEdxCalibration.YZ.ApplyLifetimeSystematic = 1 >
 
 -----------------------
 --- X calibration -----
@@ -29,7 +29,9 @@
 --- Cut levels --------
  < dEdxCalibration.X.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
 
- < dEdxCalibration.X.MichelRemovingTree = 0 >   
+ < dEdxCalibration.X.MichelRemovingTree = 0 >
+
+ < dEdxCalibration.X.MaxTracks = 8000000 >      
 
 --- Output Tree --------
  < dEdxCalibration.X.SaveAna = 0 >   // Save standard analysis tree
@@ -73,7 +75,12 @@
  < dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min = 0 >
  < dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_max = 60 >
  < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min = 0 >
- < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max = 80 >
+ < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max = 30 >
+
+ < pdIO.MichelRemoving.ThetaXZ_min = 0 >
+ < pdIO.MichelRemoving.ThetaXZ_max = 60 >
+ < pdIO.MichelRemoving.ThetaYZ_min = 0 >
+ < pdIO.MichelRemoving.ThetaYZ_max = 30 >
 
 ###############################################################################
   baseAnalysis parameters
@@ -132,5 +139,5 @@ Create configurations with a single systematic ( a configuration for each system
 
 Enable/disable the configuration with all systematics (or the ones selected above)
 
- < baseAnalysis.Configurations.EnableAllSystematics = 0 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 1 >
  

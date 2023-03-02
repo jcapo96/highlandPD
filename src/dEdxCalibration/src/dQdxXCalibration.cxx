@@ -2,6 +2,7 @@
 
 #include <sys/time.h>
 #include <iomanip>
+#include <climits>
 
 #include "Math/MinimizerOptions.h"
 
@@ -30,9 +31,12 @@
 dQdxXCalibration::dQdxXCalibration(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
+  _SelectedTracks = 0;
+  _MaxTracks = INT_MAX; //arbitrarily large number
+
   h_global_x     = NULL;
   h_global_x_toy = NULL;
-    
+
   for(int ix = 0; ix < nbinsx; ix++){
     h_local_x[ix]     = NULL;
     h_local_x_toy[ix] = NULL;
@@ -53,6 +57,8 @@ bool dQdxXCalibration::Initialize(){
 
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("dEdxCalibration.X.MinAccumLevelToSave"));
+
+  _MaxTracks = ND::params().GetParameterI("dEdxCalibration.X.MaxTracks");
 
   _SaveAna = ND::params().GetParameterI("dEdxCalibration.X.SaveAna");
   _SaveToy = ND::params().GetParameterI("dEdxCalibration.X.SaveToy");
@@ -80,7 +86,7 @@ bool dQdxXCalibration::Initialize(){
   }
   
   //get yz correction histogram
-  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_corrections_5770_lifetime_20ms.root").c_str());
+  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_corrections_data_yz_60-90_sce_lifetime_v2.root").c_str());
   yz_correction     = (TH2F*)yzfile->Get("correction_yz");
   yz_correction->SetDirectory(0);
   yz_correction_toy = (TH3F*)yzfile->Get("toy_correction_yz");
@@ -175,12 +181,13 @@ void dQdxXCalibration::DefineTruthTree(){
 void dQdxXCalibration::FillMicroTrees(bool addBase){
 //********************************************************************
 
-  
+  if(_SelectedTracks > _MaxTracks)Finalize();
   
   //fill histograms
   int ntracks = box().Tracks.size();
   if(!(ntracks > 0))return; 
-  
+  _SelectedTracks += ntracks;
+
   int zbin,ybin,xbin;
   for(int itrk = 0; itrk < ntracks; itrk++){
     AnaParticlePD* part = box().Tracks[itrk];
@@ -283,6 +290,11 @@ void dQdxXCalibration::Finalize(){
   FillHistograms();
   if(_enableAllSystConfig)
     FillToyHistograms();
+
+  std::cout << "TOTAL TRACKS " << _SelectedTracks << std::endl;
+
+  output().CloseOutputFile();
+  std::exit(1);
 }
 
 //********************************************************************
