@@ -18,21 +18,21 @@ void secondaryKaonSelection::DefineSteps(){
   // the step sequence is broken if cut is not passed (default is "false")
 
   //copy steps from pandoraPreselection
-  AddStep(StepBase::kAction,   "find Pandora track",         new FindBeamTrackAction(),true);// in pdBaseAnalysis/src/pandoraPreselection  
-  AddStep(StepBase::kCut,      "candidate exists",           new BeamTrackExistsCut(), true);// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kAction,   "FIND PANDORA TRACK",         new FindBeamTrackAction(),true);// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kCut,      "BEAM TRACK EXISTS",           new BeamTrackExistsCut(), true);// in pdBaseAnalysis/src/pandoraPreselection  
   //select events using beam instrumentation
-  AddStep(StepBase::kCut,      "beam pdg filter",            new BeamHadronCut(),      true);
-  AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsAction(),     true);
-  AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonCut(),    true);
+  //AddStep(StepBase::kCut,      "beam pdg filter",            new BeamHadronCut(),      true);
+  AddStep(StepBase::kAction,   "GET VECTOR OF KAONS",      new GetKaonsAction(),     true);
+  AddStep(StepBase::kCut,      "CANDIDATE EXISTS",             new EventHasKaonCut(),    true);
   //split the selection in branches, one for each possible candidate
   AddSplit(secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
   //next cuts have to be applied to each branch
   for(int i = 0; i < (int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
-    AddStep(i, StepBase::kCut, "kaon daughter is a track",   new MuonIsTrackCut(),             true);
-    AddStep(i, StepBase::kCut, "kaon daughter chi2 cut",     new MuonChi2Cut(0.64,5.84),       true);
-    AddStep(i, StepBase::kCut, "kaon daughter mom cut",      new MuonRangeMomCut(0.210,0.237), true);
-    AddStep(i, StepBase::kCut, "kaon-muon angle cut",        new KaonMuonAngleCut(-0.98,0.64), true);
-    AddStep(i, StepBase::kCut, "kaon-muon distance cut",     new KaonMuonDistanceCut(0,9.9),   true);
+    AddStep(i, StepBase::kCut, "DAUGHTER TRACK-LIKE",   new MuonIsTrackCut(),             true);
+    AddStep(i, StepBase::kCut, "DAUGHTER #chi^{2}",     new MuonChi2Cut(0.5,6.00),        true);
+    AddStep(i, StepBase::kCut, "DAUGHTER MOM",          new MuonRangeMomCut(0.221,0.245), true);
+    AddStep(i, StepBase::kCut, "ANGLE",                 new KaonMuonAngleCut(-1,0.64),    true);
+    AddStep(i, StepBase::kCut, "DISTANCE",              new KaonMuonDistanceCut(0,7.7),   true);
     // AddStep(i, StepBase::kCut, "Proton chi2 cut",            new ProtonChi2Cut(0,84),          true);
   }
 

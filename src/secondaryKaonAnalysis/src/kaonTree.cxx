@@ -211,6 +211,12 @@ void kaonTree::AddKaonVariables_KaonBestCandidateReco(OutputManager& output){
   AddVarF  (output, bestcandidate_dau_calE,            "bestcandidate dau calorimetry energy deposition");
   AddVarF  (output, bestcandidate_dau_vtx_michelscore, "bestcandidate dau michelscore in the vertex"    );
   AddVarI  (output, bestcandidate_dau_vtx_nhits,       "bestcandidate dau points in the vertex"         );
+
+  AddVarI  (output, bestcandidate_parent_ndau,       "bestcandidate parent' daughters"       );
+  AddVar4VF(output, bestcandidate_parent_pos,        "bestcandidate parent position"         ); 
+  AddVar3VF(output, bestcandidate_parent_dir,        "bestcandidate parent direction"        );
+  AddVar4VF(output, bestcandidate_parent_endpos,     "bestcandidate parent position"         ); 
+  AddVar3VF(output, bestcandidate_parent_enddir,     "bestcandidate parent direction"        );
 }
 
 //********************************************************************
@@ -245,15 +251,24 @@ void kaonTree::AddKaonVariables_KaonBestCandidateTrue(OutputManager& output){
   AddVarI (output, bestcandidate_trueendproc,    "bestcandidate true end process" );
   AddVarF (output, bestcandidate_truemom,        "bestcandidate true momentum"    );
   AddVarF (output, bestcandidate_trueendmom,     "bestcandidate true end momentum");
+  AddVarI (output, bestcandidate_trueId,         "bestcandidate true Id");
+  AddVarF (output, bestcandidate_trueendmom_atAPA,     "bestcandidate true end momentum at APA border");
 
   AddVarI (output, bestcandidate_dau_truendau,    "bestcandidate daughter' true ndaughters"  );
   AddVarI (output, bestcandidate_dau_truepdg,     "bestcandidate daughter true pdg"          );
-  AddVar4VF(output, bestcandidate_dau_truepos,     "bestcandidate daughter true position"    );
-  AddVar4VF(output, bestcandidate_dau_trueendpos,  "bestcandidate daughter true end position");
+  AddVar4VF(output, bestcandidate_dau_truepos,    "bestcandidate daughter true position"     );
+  AddVar4VF(output, bestcandidate_dau_trueendpos, "bestcandidate daughter true end position" );
   AddVarI (output, bestcandidate_dau_trueproc,    "bestcandidate daughter true process"      );
   AddVarI (output, bestcandidate_dau_trueendproc, "bestcandidate daughter true end process"  );
   AddVarF (output, bestcandidate_dau_truemom,     "bestcandidate daughter true momentum"     );
   AddVarF (output, bestcandidate_dau_trueendmom,  "bestcandidate daughter true end momentum" );
+
+  AddVarI (output, bestcandidate_parent_trueId,   "bestcandidate parent true Id");
+  AddVar4VF (output, bestcandidate_parent_truepos,  "bestcandidate parent true pos");
+  AddVar4VF (output, bestcandidate_parent_trueendpos,  "bestcandidate parent true end pos");
+  AddVar3VF (output, bestcandidate_parent_truedir,  "bestcandidate parent true dir");
+  AddVar3VF (output, bestcandidate_parent_trueenddir,  "bestcandidate parent true end dir");
+  AddVarF (output, bestcandidate_parent_trueendmom_atAPA,   "bestcandidate parent true end mom at apa");
 }
 
 //********************************************************************
@@ -506,8 +521,15 @@ void kaonTree::FillKaonVariables_KaonBestCandidateReco(OutputManager& output, An
   output.FillVar               (bestcandidate_vtx_michelscore,  part->vtx_CNN_michelscore);
   output.FillVar               (bestcandidate_vtx_nhits,        part->vtx_CNN_NHits);
 
-  if(parent)output.FillVar(bestcandidate_distance_mother,         pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));
-
+  if(parent){
+    output.FillVar(bestcandidate_distance_mother,         pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));
+    output.FillVar               (bestcandidate_parent_ndau,      (Int_t)parent->Daughters.size() );
+    output.FillVectorVarFromArray(bestcandidate_parent_pos,              parent->PositionStart,  4);
+    output.FillVectorVarFromArray(bestcandidate_parent_dir,              parent->DirectionStart, 3); 
+    output.FillVectorVarFromArray(bestcandidate_parent_endpos,           parent->PositionEnd,    4);
+    output.FillVectorVarFromArray(bestcandidate_parent_enddir,           parent->DirectionEnd,   3); 
+  }
+    
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[0]);
   if (!dau) return;
   output.FillVar               (bestcandidate_distance_dau,         pdAnaUtils::ComputeDistanceMotherDaughter(part,dau));
@@ -585,7 +607,7 @@ void kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output
 }
 
 //********************************************************************
-void kaonTree::FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part){
+void kaonTree::FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent){
 //********************************************************************
 
   if (!part) return;  
@@ -601,6 +623,20 @@ void kaonTree::FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, An
   output.FillVar               (bestcandidate_trueendproc, (Int_t)truePart->ProcessEnd      );
   output.FillVar               (bestcandidate_truemom,            truePart->Momentum        );
   output.FillVar               (bestcandidate_trueendmom,         truePart->MomentumEnd     );
+  output.FillVar               (bestcandidate_trueendmom_atAPA,   (Float_t)pdAnaUtils::EstimateTrueMomAtAPABorder(part));
+  output.FillVar               (bestcandidate_trueId,             truePart->ID     );
+
+  if(parent){
+    AnaTrueParticle* parentTruePart = static_cast<AnaTrueParticle*>(parent->TrueObject);
+    if(parentTruePart){
+      output.FillVar(bestcandidate_parent_trueId,             parentTruePart->ID);
+      output.FillVectorVarFromArray(bestcandidate_parent_truepos,            parentTruePart->Position,      4);
+      output.FillVectorVarFromArray(bestcandidate_parent_trueendpos,         parentTruePart->PositionEnd,   4);
+      output.FillVectorVarFromArray(bestcandidate_parent_truedir,            parentTruePart->Direction,      3);
+      output.FillVectorVarFromArray(bestcandidate_parent_trueenddir,         parentTruePart->DirectionEnd,   3);
+      output.FillVar(bestcandidate_parent_trueendmom_atAPA,             (Float_t)pdAnaUtils::EstimateTrueMomAtAPABorder(parent));
+    }
+  }
 
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[0]);
   if(!dau)return;

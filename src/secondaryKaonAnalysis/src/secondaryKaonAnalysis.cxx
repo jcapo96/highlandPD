@@ -23,10 +23,12 @@
 #include "BrokenTrackWeight.hxx"
 #include "SCEVariation.hxx"
 #include "SCEGeometricVariation.hxx"
+#include "NominalBeamMomWeight.hxx"
 
 #include "HitPitchSCECorrection.hxx"
 #include "HitPositionSCECorrection.hxx"
 #include "CalorimetryCalibration.hxx"
+#include "ParticlePositionSCECorrection.hxx"
 
 //********************************************************************
 secondaryKaonAnalysis::secondaryKaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
@@ -88,7 +90,7 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
-  //corr().AddCorrection(0, "calorimetry calibration", new CalorimetryCalibration());
+  corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
 }
 
 //********************************************************************
@@ -100,13 +102,14 @@ void secondaryKaonAnalysis::DefineSystematics(){
 
   //evar().AddEventVariation(kdQdx_Xcal,"dQdx X calibration variation",                new dQdxXCalVariation());
   //evar().AddEventVariation(kdQdx_YZcal,"dQdx YZ calibration variation",                new dQdxYZCalVariation());
-  evar().AddEventVariation(kRecombination,"Recombination variation",                new RecombinationVariation());
+  //evar().AddEventVariation(kRecombination,"Recombination variation",                new RecombinationVariation());
   //evar().AddEventVariation(0,"dQdx normalization variation",                new dQdxNormVariation());
   //eweight().AddEventWeight(0,"beam particle identification efficiency", new BeamPartIdEffWeight());
-  //eweight().AddEventWeight(0,"Broken track weight", new BrokenTrackWeight());
+  eweight().AddEventWeight(0,"Broken track weight", new BrokenTrackWeight());
   //evar().AddEventVariation(0,"SCE variation",                new SCEVariation());
   //evar().AddEventVariation(0,"SCE Geometric variation",                new SCEGeometricVariation());
   //evar().AddEventVariation(0,"dQdx cal variation",                new dQdxCalVariation());
+  // eweight().AddEventWeight(0,"Beam Prop Weight", new NominalBeamMomWeight());
 }
 
 //********************************************************************
@@ -120,10 +123,11 @@ void secondaryKaonAnalysis::DefineConfigurations(){
   if(_enableAllSystConfig){
     //conf().EnableEventVariation(kdQdx_Xcal,all_syst);
     //conf().EnableEventVariation(kdQdx_YZcal,all_syst);
-    conf().EnableEventVariation(kRecombination,all_syst);
+    //conf().EnableEventVariation(kRecombination,all_syst);
     //if(ND::params().GetParameterI("secondaryKaonAnalysis.Systematics.EnableBeamPartIdEff"))conf().EnableEventWeight(0,all_syst);
     //conf().EnableEventVariation(0,all_syst);
     //conf().EnableEventVariation(0,all_syst);
+    conf().EnableEventWeight(0,all_syst);
   }
   /*if(_enableSingleVariationSystConf){
     AddConfiguration(conf(), dQdx_Xcal, _ntoys, _randomSeed, new baseToyMaker(_randomSeed));  
@@ -161,8 +165,8 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
   
   // -------- Add toy variables ---------------------------------
-  AddToyVarVF(output(), bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", 100);
-  AddToyVarVF(output(), bestcandidate_hit_dedx_toy, "bestcandidate hit dEdx", 100);
+  AddToyVarVF(output(), bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", 300);
+  AddToyVarVF(output(), bestcandidate_hit_dedx_toy, "bestcandidate hit dEdx", 300);
 }
 
 //********************************************************************
@@ -221,7 +225,7 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
     AnaParticlePD* parent = static_cast<AnaParticlePD*>(anaUtils::GetParticleByID(GetBunch(), box().Candidates[branchmax]->ParentID));
     kaonTree::FillKaonVariables_KaonBestCandidateReco    (output(), box().Candidates[branchmax], parent);
     kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(output(), box().Candidates[branchmax]);
-    kaonTree::FillKaonVariables_KaonBestCandidateTrue    (output(), box().Candidates[branchmax]);
+    kaonTree::FillKaonVariables_KaonBestCandidateTrue    (output(), box().Candidates[branchmax], parent);
   }  
 }
 
@@ -252,7 +256,8 @@ void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
   if(best->Hits[2].empty())
     return;
   
-  for(int ihit = 0; ihit < 100; ihit++){
+  int nhits = std::min((int)best->Hits[2].size(),300);
+  for(int ihit = 0; ihit < nhits; ihit++){
     output().FillToyVectorVar(bestcandidate_hit_resrange_toy,best->Hits[2][ihit].ResidualRange,ihit);
     output().FillToyVectorVar(bestcandidate_hit_dedx_toy,best->Hits[2][ihit].dEdx,ihit);
   }

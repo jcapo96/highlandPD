@@ -27,7 +27,7 @@ namespace kaonTree{
 
   void FillKaonVariables_KaonBestCandidateReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
   void FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
-  void FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part);
+  void FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
 
   // Enum with unique indexes for output tree variables  
   enum enumKaonMicroTrees{
@@ -228,6 +228,8 @@ namespace kaonTree{
     bestcandidate_trueendproc,
     bestcandidate_truemom,
     bestcandidate_trueendmom,
+    bestcandidate_trueId,
+    bestcandidate_trueendmom_atAPA,
 
     //kaon bestcandidate dau info
     bestcandidate_dau_ndau,
@@ -266,6 +268,22 @@ namespace kaonTree{
     bestcandidate_dau_truemom,
     bestcandidate_dau_trueendmom,
 
+
+    //kaon bestcandidate parent info
+    bestcandidate_parent_ndau,
+    bestcandidate_parent_pos,
+    bestcandidate_parent_dir,
+    bestcandidate_parent_endpos,
+    bestcandidate_parent_enddir,
+
+    //kaon bestcandidate parent true info
+    bestcandidate_parent_trueId,
+    bestcandidate_parent_truepos,
+    bestcandidate_parent_truedir,
+    bestcandidate_parent_trueendpos,
+    bestcandidate_parent_trueenddir,
+    bestcandidate_parent_trueendmom_atAPA,
+    
     enumKaonMicroTreesLast
   };
 }
