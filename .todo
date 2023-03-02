@@ -61,3 +61,5 @@
 - Why pdAnalysisUtils defines its own namespace (pdAnaUtils) instead of extend the AnaUtils namespace from highland? 
 
 - Centralice CalorimetryCalibration
+
+- Event selections do not work if you add splits before any cut. A first global cut is needed and then applying splits. Is this done on purpose? if not, it should be explained somewhere
