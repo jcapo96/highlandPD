@@ -42,12 +42,6 @@ void Calorimetry::SetSCE(SpaceCharge* sce, bool remove){
   if(remove)
     delete _sce;
   _sce = sce;
-  // if(!_sce)
-  //   _sce = sce;
-  // else{
-  //   delete _sce;
-  //   _sce = sce;
-  // }
 }
 
 //********************************************************************
@@ -63,7 +57,7 @@ void Calorimetry::Initialize(){
   _ModBoxA = 0.930;
   _ModBoxB = 0.212; 
 
-  _Lifetime = 35000;
+  _Lifetime = ND::params().GetParameterI("pdUtils.Calorimetry.ElectronLifetime.MC"); //initialize to MC by default
   _Vdrift   = 0.156461;
   _APAx     = 368.351;
 
@@ -235,6 +229,21 @@ void Calorimetry::CreateYZCalHistogram(){
     _h_YZCal[plane][side]->Fill(z,y,corr);
   }
   fclose(tf);    
+}
+
+//********************************************************************
+void Calorimetry::SetLifetime(const AnaEventPD &event){
+//********************************************************************
+  
+  int run = event.EventInfo->Run;
+  //if(event.GetIsMC())
+  if(run>10000)
+    _Lifetime = ND::params().GetParameterI("pdUtils.Calorimetry.ElectronLifetime.MC");
+  else{
+    std::stringstream ssrun;
+    ssrun << run;
+    _Lifetime = ND::params().GetParameterI(("pdUtils.Calorimetry.ElectronLifetime.Run"+ssrun.str()+"").c_str());
+  }
 }
 
 //********************************************************************

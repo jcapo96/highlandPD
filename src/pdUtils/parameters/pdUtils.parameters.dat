@@ -5,5 +5,23 @@
  < pdUtils.SCE.EnableCalEfieldSCE  = 1   >
  < pdUtils.SCE.Efield              = 500 >
 
+--- Calorimetry --------
+ < pdUtils.Calorimetry.ElectronLifetime.MC = 35000 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5758 = 13210 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5759 = 13430 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5760 = 13430 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5762 = 15390 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5765 = 13060 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5766 = 15820 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5768 = 15820 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5769 = 15820 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5770 = 19730 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5771 = 19730 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5772 = 19490 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5773 = 19490 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5774 = 21450 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5775 = 21450 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5776 = 21450 >
+
 --- CNN --------------
  < pdUtils.CNN.PBfile              = cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoduneBeamAndCosmicsMCC11.pb >

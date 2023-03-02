@@ -46,6 +46,7 @@ public:
   double GetYZCalibration(AnaHitPD &hit) const;
 
   double GetLifetime() const {return _Lifetime;}
+  void SetLifetime(const AnaEventPD &event);
   void SetLifetime(double Lifetime){_Lifetime = Lifetime;}
   void ResetLifetime(){_Lifetime = 35000;}
   
