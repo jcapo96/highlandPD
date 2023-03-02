@@ -31,17 +31,21 @@ void ParticlePositionSCECorrection::Apply(AnaSpillC& spillC){
     if (!original) continue; //?
 
     int ntps = part->TrjPoints.size();
-    if(ntps<1)continue;
-
-    //correct trajectory points
-    _sce->ApplyTrjPointPositionCorrection(part);
-    _sce->ApplyTrjPointDirectionCorrection(part);
-    
-    //correct length
-    part->Length = pdAnaUtils::ComputeTrackLengthFromTrajectoryPoints(part);
-
-    //correct end and start position/direction
-    pdAnaUtils::ComputeParticlePositionAndDirection(part);
+    //if no trajectory points correct only position start end
+    if(ntps<1){
+      _sce->ApplyParticlePositionCorrection(part);
+    }
+    else{
+      //correct trajectory points
+      _sce->ApplyTrjPointPositionCorrection(part);
+      _sce->ApplyTrjPointDirectionCorrection(part);
+      
+      //correct length
+      part->Length = pdAnaUtils::ComputeTrackLengthFromTrajectoryPoints(part);
+      
+      //correct end and start position/direction
+      pdAnaUtils::ComputeParticlePositionAndDirection(part);
+    }
   }
 }
 
