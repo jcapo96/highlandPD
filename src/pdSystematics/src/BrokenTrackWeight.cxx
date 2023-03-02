@@ -6,7 +6,7 @@
 #include "SystematicUtils.hxx"
 
 //********************************************************************
-BrokenTrackWeight::BrokenTrackWeight():EventWeightBase(), BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","brokenTrack", BinnedParams::k1D_SYMMETRIC){
+BrokenTrackWeight::BrokenTrackWeight():EventWeightBase(), BinnedParams(std::string(getenv("PDSYSTEMATICSROOT"))+"/data","brokenTrack", BinnedParams::k1D_EFF_SYMMETRIC){
 //********************************************************************
 
   // Read the systematic source parameters from the data files
@@ -36,16 +36,16 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
 
   //is it in the broken bin?
   bool broken = false;
-  if((part->PositionStart[2]>222 && part->PositionStart[2]<234) ||
+  if((part->PositionStart[2]>220 && part->PositionStart[2]<234) ||
      (part->PositionStart[2]>458 && part->PositionStart[2]<466)){
     broken = true;
     eventWeight *= systUtils::ComputeEffLikeWeight(broken, toy, GetIndex(), index, params);
   }
-  else if(part->PositionStart[2]<466){
+  else{
     broken = false;
     eventWeight *= systUtils::ComputeEffLikeWeight(broken, toy, GetIndex(), index, params);
   }
- 
+
   return eventWeight;
 }
 
