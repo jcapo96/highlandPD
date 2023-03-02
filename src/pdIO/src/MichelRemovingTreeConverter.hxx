@@ -21,7 +21,7 @@ public:
 
   // ----------------------------
   
-  virtual void FillEventInfo(AnaEventInfo* info);  
+  virtual void FillEventInfo(AnaEventInfoPD* info);  
   virtual void FillTrueInfo(AnaSpill* spill){return;} //no true info needed so far
   virtual void FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam){return;} //no beam info needed so far
   virtual void FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam);

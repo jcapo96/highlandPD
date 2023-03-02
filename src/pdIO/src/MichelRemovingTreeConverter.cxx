@@ -12,7 +12,7 @@ MichelRemovingTreeConverter::MichelRemovingTreeConverter(const std::string& name
 }
 
 //*****************************************************************************
-void MichelRemovingTreeConverter::FillEventInfo(AnaEventInfo* info){
+void MichelRemovingTreeConverter::FillEventInfo(AnaEventInfoPD* info){
 //*****************************************************************************
 
   info->Run    = run;

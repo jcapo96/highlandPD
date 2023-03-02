@@ -16,13 +16,15 @@ PDSPAnalyzerTreeConverter::PDSPAnalyzerTreeConverter():pdBaseConverter("pduneana
 }
 
 //*****************************************************************************
-void PDSPAnalyzerTreeConverter::FillEventInfo(AnaEventInfo* info){
+void PDSPAnalyzerTreeConverter::FillEventInfo(AnaEventInfoPD* info){
 //*****************************************************************************
 
   info->Run    = run;
   info->SubRun = subrun;
   info->Event  = event;
   info->IsMC   = MC;
+  info->EmptyEvent = !reco_reconstructable_beam_event; 
+  info->HasPandora = (n_beam_slices>0);
 }
 
 //*****************************************************************************
@@ -141,6 +143,7 @@ void PDSPAnalyzerTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& tru
   
   //Fill beam info
   beam->nMomenta = beam_inst_nMomenta;
+  beam->nTracks = beam_inst_nTracks;
   beam->nFibers[0] = beam_inst_nFibersP1;
   beam->nFibers[1] = beam_inst_nFibersP2;
   beam->nFibers[2] = beam_inst_nFibersP3;    
@@ -196,16 +199,17 @@ void PDSPAnalyzerTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& tr
     FillDaughterParticleTrackInfo(trueParticles, i, dautrk);
     bunch->Particles.push_back(dautrk);
     part->Daughters.push_back(dautrk);
+    part->DaughtersIDs.push_back(dautrk->UniqueID);
   }
 
-  // The daughter showers
-  for(size_t i = 0; i < reco_daughter_allShower_ID->size(); i++){
-    AnaParticlePD* dausho = MakeParticle();
-    FillDaughterPFPInfo(i, dausho);
-    FillDaughterParticleShowerInfo(trueParticles, i, dausho);
-    bunch->Particles.push_back(dausho);
-    part->Daughters.push_back(dausho);
-  }
+  // // The daughter showers
+  // for(size_t i = 0; i < reco_daughter_allShower_ID->size(); i++){
+  //   AnaParticlePD* dausho = MakeParticle();
+  //   FillDaughterPFPInfo(i, dausho);
+  //   FillDaughterParticleShowerInfo(trueParticles, i, dausho);
+  //   bunch->Particles.push_back(dausho);
+  //   part->Daughters.push_back(dausho);
+  // }
 }
 
 
@@ -261,10 +265,11 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
       // Add hits
       AnaHitPD hit;//(plane,0,0,0, point);
 
-      hit.dEdx          = (*reco_beam_dEdX_SCE)[j];
+      //hit.dEdx          = (*reco_beam_dEdX_SCE)[j];
       hit.dQdx          = (*reco_beam_dQdX_SCE)[j];
-      hit.dEdx_calib    = (*reco_beam_calibrated_dEdX_SCE)[j];      
+      hit.dEdx          = (*reco_beam_calibrated_dEdX_SCE)[j];      
       hit.ResidualRange = (*reco_beam_resRange_SCE)[j];
+      hit.Pitch         = (*reco_beam_TrkPitch_SCE)[j];
            
       part->Hits[plane].push_back(hit);
     }
@@ -385,6 +390,12 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
   part->DirectionStart[1] = (*reco_daughter_allTrack_trackDirY)[itrk];
   part->DirectionStart[2] = (*reco_daughter_allTrack_trackDirZ)[itrk];
   */
+
+  TVector3 dir(part->PositionEnd[0]-part->PositionStart[0],part->PositionEnd[1]-part->PositionStart[1],part->PositionEnd[2]-part->PositionStart[2]);
+  dir.SetMag(1);
+  part->DirectionStart[0] = dir.X();
+  part->DirectionStart[1] = dir.Y();
+  part->DirectionStart[2] = dir.Z();
 
   part->Length     = (*reco_daughter_allTrack_len)[itrk];
   part->Length_alt = (*reco_daughter_allTrack_alt_len)[itrk];
@@ -845,6 +856,8 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("subrun",&subrun,&b_subrun);
   fChain->SetBranchAddress("event",&event,&b_event);
   fChain->SetBranchAddress("MC",&MC,&b_MC);
+  fChain->SetBranchAddress("reco_reconstructable_beam_event",&reco_reconstructable_beam_event,&b_reco_reconstructable_beam_event);
+  fChain->SetBranchAddress("n_beam_slices",&n_beam_slices,&b_n_beam_slices);
   fChain->SetBranchAddress("true_beam_PDG",&true_beam_PDG,&b_true_beam_PDG);
   fChain->SetBranchAddress("true_beam_mass",&true_beam_mass,&b_true_beam_mass);
   fChain->SetBranchAddress("true_beam_ID",&true_beam_ID,&b_true_beam_ID);
@@ -1136,5 +1149,6 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("beam_inst_nFibersP2",&beam_inst_nFibersP2,&b_beam_inst_nFibersP2);
   fChain->SetBranchAddress("beam_inst_nFibersP3",&beam_inst_nFibersP3,&b_beam_inst_nFibersP3);
   fChain->SetBranchAddress("beam_inst_nMomenta",&beam_inst_nMomenta,&b_beam_inst_nMomenta);
+  fChain->SetBranchAddress("beam_inst_nTracks",&beam_inst_nTracks,&b_beam_inst_nTracks);
   fChain->SetBranchAddress("beam_inst_valid",&beam_inst_valid,&b_beam_inst_valid);
 }

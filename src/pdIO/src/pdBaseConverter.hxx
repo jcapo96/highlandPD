@@ -48,7 +48,7 @@ class pdBaseConverter: public InputConverter{
   virtual AnaBunch*           MakeBunch()       { return new AnaBunch(); }
   virtual AnaBeamPD*          MakeBeam()        { return new AnaBeamPD(); }
   virtual AnaDataQuality*     MakeDataQuality() { return new AnaDataQuality(); }
-  virtual AnaEventInfo*       MakeEventInfo()   { return new AnaEventInfo(); }
+  virtual AnaEventInfoPD*     MakeEventInfo()   { return new AnaEventInfoPD(); }
   virtual AnaTrigger*         MakeTrigger()     { return new AnaTrigger(); }
 
   virtual AnaTrueParticlePD*  MakeTrueParticle(){ return new AnaTrueParticlePD(); }
@@ -63,7 +63,7 @@ class pdBaseConverter: public InputConverter{
   virtual void FillTrueInfo(AnaSpill* spill) = 0;
   virtual void FillBeamInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBeamPD* beam) = 0;
   virtual void FillBunchInfo(std::vector<AnaTrueParticleB*>& trueParticles, AnaBunch* bunch, AnaBeamPD* beam) = 0;
-  virtual void FillEventInfo(AnaEventInfo* info) = 0;
+  virtual void FillEventInfo(AnaEventInfoPD* info) = 0;
   //-----------------
 
 protected:
@@ -76,8 +76,15 @@ protected:
   Int_t _previousRefEventID;
 
  protected:
+
   Bool_t _isMC;
   std::string _softwareVersion;
+
+  Bool_t _FillEventInfo;
+  Bool_t _FillDQInfo;
+  Bool_t _FillBeamInfo;
+  Bool_t _FillBunchInfo;
+  Bool_t _FillTrueInfo;
 }; 
 
 #endif
