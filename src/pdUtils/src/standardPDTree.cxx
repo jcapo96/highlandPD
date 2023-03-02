@@ -55,6 +55,7 @@ void standardPDTree::AddStandardVariables_BeamReco(OutputManager& output){
   AddVarFixVD(output,  beam_ckov_pressure, "beam ckov pressure",2);  
 
   AddVarVI(  output, beam_pdgs,             "beam pdgs", beam_npdgs);
+  AddVarVI(  output, beam_ntracks,             "beam pdgs", beam_ntracks);
 }
 
 //********************************************************************
@@ -89,6 +90,7 @@ void standardPDTree::AddStandardVariables_CandidateReco(OutputManager& output){
   // AddVarI(    output, seltrk_kaon_PID_ndf,       "candidate chi2 ndf");
   //AddVarFixMF(output, seltrk_pid,            "candidate PID variables", 3,8);
   //AddVarFixMF(output, seltrk_calo,           "candidate CALO variables",3,5); 
+  AddVarF(    output, seltrk_deposited_energy,       "candidate energy deposited along path");
 }
 
 //********************************************************************
@@ -132,6 +134,8 @@ void standardPDTree::AddStandardVariables_CandidateTrue(OutputManager& output){
   AddVarI(  output, seltrk_truepdg,     "candidate true pdg code");
   AddVarF(  output, seltrk_trueeff,     "candidate true-reco matching eff");
   AddVarF(  output, seltrk_truepur,     "candidate true-reco matching pur");
+
+  AddVarI(  output, seltrk_trueId,     "true ID object");
 }
 
 //********************************************************************
@@ -186,6 +190,7 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersTrue(OutputManager& 
   AddVarMaxSizeVF(output,  seltrk_dau_trueendmom,  "daughters true end momentum",seltrk_ndau,nmax);
   AddVarMaxSizeVI(output,  seltrk_dau_truepdg,     "daughters true pdg",         seltrk_ndau,nmax);
   AddVarMaxSizeVI(output,  seltrk_dau_truendau,    "daughters' true ndaughters", seltrk_ndau,nmax);
+  AddVarMaxSizeVI(output,  seltrk_dau_trueId,     "daughters' true ID"        , seltrk_ndau,nmax);
 }
 
 //********************************************************************
@@ -387,6 +392,7 @@ void standardPDTree::FillStandardVariables_BeamReco(OutputManager& output, AnaBe
     output.FillVectorVar(beam_pdgs,beam->PDGs[i]);
     output.IncrementCounter(beam_npdgs);
   }  
+  output.FillVar(beam_ntracks,(int)beam->nTracks);
 }
 
 //********************************************************************
@@ -462,6 +468,8 @@ void standardPDTree::FillStandardVariables_CandidateTrue(OutputManager& output, 
   output.FillVar(seltrk_trueeff,                  part->TrueEff);
 
   output.FillVar(seltrk_truendau,          (Int_t)truePart->Daughters.size());
+
+  output.FillVar(seltrk_trueId,            (Int_t)truePart->ID);
 }
 
 //********************************************************************
@@ -494,6 +502,7 @@ void standardPDTree::FillStandardVariables_CandidateReco(OutputManager& output, 
   output.FillVar(seltrk_chi2_prot,               part->Chi2Proton);
   output.FillVar(seltrk_chi2_muon,               part->Chi2Muon);
   output.FillVar(seltrk_chi2_ndf,                part->Chi2ndf);
+  output.FillVar(seltrk_deposited_energy,        (Float_t)pdAnaUtils::ComputeDepositedEnergy(part));
   // std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
   // output.FillVar(seltrk_kaon_PID,                (float)kaon_PID.first);
   // output.FillVar(seltrk_kaon_PID_ndf,            (int)kaon_PID.second);
@@ -604,6 +613,7 @@ void standardPDTree::FillStandardVariables_CandidateDaughterTrue(OutputManager& 
   output.FillVectorVar(seltrk_dau_truemom,             dauTruePart->Momentum);
   output.FillVectorVar(seltrk_dau_trueendmom,          dauTruePart->MomentumEnd);
   output.FillVectorVar(seltrk_dau_truendau,     (Int_t)dauTruePart->Daughters.size());
+  output.FillVectorVar(seltrk_dau_trueId,       (Int_t)dauTruePart->ID);
 }
 
 //********************************************************************

@@ -69,6 +69,10 @@ namespace pdAnaUtils{
   void EstimateHitsDirection(AnaParticlePD* part);
 
   void ComputeResidualRange(AnaParticlePD* part);
+
+  Double_t ComputeDepositedEnergy(AnaParticlePD* part);
+ 
+  Double_t EstimateTrueMomAtAPABorder(AnaParticlePD* part);
 }
 
 #endif

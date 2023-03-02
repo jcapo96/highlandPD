@@ -751,3 +751,53 @@ void pdAnaUtils::ComputeResidualRange(AnaParticlePD* part){
   for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++)
     part->Hits[2][ihit].ResidualRange = new_rr[ihit];
 }
+
+//***************************************************************
+Double_t pdAnaUtils::ComputeDepositedEnergy(AnaParticlePD* part){
+//***************************************************************
+  
+  Double_t E = -999;
+  if(!part)return E;
+  
+  int nhits = part->Hits[2].size();
+  if(nhits <= 0)return E;
+
+  E = 0;
+  for(int ihit = 0; ihit < nhits; ihit++)
+    E += part->Hits[2][ihit].dEdx * part->Hits[2][ihit].Pitch;
+  
+  return E;
+}
+
+//***************************************************************
+Double_t pdAnaUtils::EstimateTrueMomAtAPABorder(AnaParticlePD* part){
+//***************************************************************
+
+  Double_t momf = -999;
+  if(!part)return momf;
+
+  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+  if(!truePart)return momf;
+  
+  if(part->PositionStart[2]>220)return momf;
+
+  int nhits = part->Hits[2].size();
+  if(nhits <= 0)return momf;
+
+  double depE = 0;
+  for(int ihit = 0; ihit < nhits; ihit++){
+    if(part->Hits[2][ihit].Position.Z()>220)break;
+    depE += part->Hits[2][ihit].dEdx * part->Hits[2][ihit].Pitch;
+  }
+
+  double mass;
+  if(abs(truePart->PDG) == 211)mass       = 139.57;
+  else if(abs(truePart->PDG) == 321)mass  = 493.7;
+  else if(abs(truePart->PDG) == 2212)mass = 938.27;
+  else return momf;
+
+  double momi = truePart->Momentum*1000;
+  momf = sqrt(pow(sqrt(momi*momi+mass*mass)-depE,2)-mass*mass);
+
+  return momf;
+}

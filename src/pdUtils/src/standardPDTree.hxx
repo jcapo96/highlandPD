@@ -72,6 +72,7 @@ namespace standardPDTree{
     seltrk_truedir,
     seltrk_trueeff,
     seltrk_truepur,
+    seltrk_trueId,
 
     // selected track reco info
     seltrk_ndau,
@@ -103,6 +104,7 @@ namespace standardPDTree{
     //seltrk_length_raw,
     //seltrk_dedx_exp,
     //seltrk_pid,
+    seltrk_deposited_energy,
 
     seltrk_hit_dedx,
     seltrk_hit_dedx_raw,
@@ -156,6 +158,7 @@ namespace standardPDTree{
     seltrk_dau_trueendproc,
     seltrk_dau_truemom,
     seltrk_dau_trueendmom,
+    seltrk_dau_trueId,
 
     // selected track gdaughters reco info
     seltrk_gdau_ndau,
@@ -283,6 +286,7 @@ namespace standardPDTree{
     beam_ckov_pressure,
     beam_npdgs,
     beam_pdgs,
+    beam_ntracks,
     
     // global counters
     truebeamdau_npi0,
