@@ -788,7 +788,28 @@ double SpaceCharge::InterpolateSplines(TH3F* interp_hist, double xVal, double yV
   return interp_val;
 }
 
+//********************************************************************
+void SpaceCharge::ApplyParticlePositionCorrection(AnaParticlePD* part) const {
+//********************************************************************
 
+  if(!part)return;
+  if(part->PositionStart[0] == -999 || part->PositionStart[1] == -999 || part->PositionStart[2] == -999)
+    return;
+  
+  //position start
+  TVector3 pos(part->PositionStart[0],part->PositionStart[1],part->PositionStart[2]);
+  TVector3 offset = GetCalPosOffsets(pos,1);
+  part->PositionStart[0] -= offset.X();
+  part->PositionStart[1] += offset.Y();
+  part->PositionStart[2] += offset.Z();
+
+  //position end
+  pos.SetXYZ(part->PositionEnd[0],part->PositionEnd[1],part->PositionEnd[2]);
+  offset = GetCalPosOffsets(pos,1);
+  part->PositionEnd[0] -= offset.X();
+  part->PositionEnd[1] += offset.Y();
+  part->PositionEnd[2] += offset.Z();
+}
 
 //********************************************************************
 void SpaceCharge::ApplyPositionCorrection(AnaParticlePD* part) const {

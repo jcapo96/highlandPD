@@ -32,6 +32,8 @@ public:
   TVector3 GetCalPosOffsets(TVector3 const& point, int const& TPCid) const;
   TVector3 GetCalEfieldOffsets(TVector3 const& point, int const& TPCid) const;
 
+  void ApplyParticlePositionCorrection(AnaParticlePD* part) const;
+
   void ApplyPositionCorrection(AnaParticlePD* part) const;
   void ApplyPositionCorrection(AnaHitPD& hit) const;
 
