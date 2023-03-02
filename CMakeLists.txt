@@ -236,6 +236,16 @@ target_include_directories(CreateMichelRemovingMiniTree.exe PRIVATE ${HIGHLAND_I
 target_link_libraries(CreateMichelRemovingMiniTree.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS CreateMichelRemovingMiniTree.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(BrokenTracks.exe ${CMAKE_SOURCE_DIR}/src/BrokenTracks/app/RunBrokenTracks.cxx)
+target_include_directories(BrokenTracks.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(BrokenTracks.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS BrokenTracks.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+add_executable(BeamWeights.exe ${CMAKE_SOURCE_DIR}/src/BeamWeights/app/RunBeamWeights.cxx)
+target_include_directories(BeamWeights.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(BeamWeights.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS BeamWeights.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 
 #-------------------------------------------------------
 #------- custom targets --------------------------------
@@ -254,6 +264,8 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
+add_dependencies(BeamWeights.exe                   BrokenTracks.exe)
+add_dependencies(BrokenTracks.exe                  CreateMichelRemovingMiniTree.exe)
 add_dependencies(CreateMichelRemovingMiniTree.exe  dEdxCalibration.exe)
 add_dependencies(dEdxCalibration.exe               dQdxXCalibration.exe)
 add_dependencies(dQdxXCalibration.exe              dQdxYZCalibration.exe)
