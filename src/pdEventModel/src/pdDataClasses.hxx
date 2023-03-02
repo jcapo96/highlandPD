@@ -451,6 +451,9 @@ protected:
 public:
 
   Float_t NominalBeamMom;
+
+  Bool_t EmptyEvent; //this should probably go in DataQuality
+  Bool_t HasPandora; //this should probably go in DataQuality
 };
 
 

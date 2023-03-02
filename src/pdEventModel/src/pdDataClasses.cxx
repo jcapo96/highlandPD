@@ -583,6 +583,8 @@ AnaEventInfoPD::AnaEventInfoPD():AnaEventInfo(){
 //********************************************************************
 
   NominalBeamMom = kFloatUnassigned;
+  EmptyEvent = false;
+  HasPandora = false;
 }
 
 //********************************************************************
@@ -596,6 +598,8 @@ AnaEventInfoPD::AnaEventInfoPD(const AnaEventInfoPD& eventinfo):AnaEventInfo(eve
 //********************************************************************
 
   NominalBeamMom = eventinfo.NominalBeamMom;
+  EmptyEvent = eventinfo.EmptyEvent;
+  HasPandora = eventinfo.HasPandora;
 }
 
 //********************************************************************
