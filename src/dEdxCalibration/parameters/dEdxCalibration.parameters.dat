@@ -14,13 +14,13 @@
  < dEdxCalibration.YZ.SaveToy = 0 >   // Save toy variables
 
 --- Corrections --------
- < dEdxCalibration.YZ.ApplySCEPositionCorrection = 0 >
- < dEdxCalibration.YZ.ApplySCEPitchCorrection = 0 >
+ < dEdxCalibration.YZ.ApplySCEPositionCorrection = 1 >
+ < dEdxCalibration.YZ.ApplySCEPitchCorrection = 1 >
  < dEdxCalibration.YZ.ApplyLifetimeCorrection = 0 >
 
 --- Systematics --------
- < dEdxCalibration.YZ.ApplySCESystematic = 1 >
- < dEdxCalibration.YZ.ApplyLifetimeSystematic = 0 >
+ < dEdxCalibration.YZ.ApplySCESystematic = 0 >
+ < dEdxCalibration.YZ.ApplyLifetimeSystematic = 1 >
 
 -----------------------
 --- X calibration -----

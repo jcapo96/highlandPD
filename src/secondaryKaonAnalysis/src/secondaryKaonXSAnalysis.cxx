@@ -1,4 +1,4 @@
-#include "secondaryKaonAnalysis.hxx"
+#include "secondaryKaonXSAnalysis.hxx"
 #include "Parameters.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
@@ -6,7 +6,7 @@
 #include "baseToyMaker.hxx"
 #include "pdDataClasses.hxx"
 
-#include "secondaryKaonSelection.hxx"
+#include "secondaryKaonXSSelection.hxx"
 #include "secondaryKaonSelectionNoBranches.hxx"
 #include "secondaryKaonXSSelection.hxx"
 #include "kaonAnalysisUtils.hxx"
@@ -26,22 +26,22 @@
 #include "SCEGeometricVariation.hxx"
 #include "NominalBeamMomWeight.hxx"
 #include "BeamCompositionWeight.hxx"
-#include "ProtonBackgroundWeight.hxx"
 
 #include "HitPitchSCECorrection.hxx"
 #include "HitPositionSCECorrection.hxx"
 #include "CalorimetryCalibration.hxx"
 #include "ParticlePositionSCECorrection.hxx"
 #include "DaughterFinderCorrection.hxx"
+#include "KaonEnergyCorrection.hxx"
 
 //********************************************************************
-secondaryKaonAnalysis::secondaryKaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
+secondaryKaonXSAnalysis::secondaryKaonXSAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
 }
 
 //********************************************************************
-bool secondaryKaonAnalysis::Initialize(){
+bool secondaryKaonXSAnalysis::Initialize(){
 //********************************************************************
 
   // Initialize the baseAnalysis (highland/src/highland2/baseAnalysis)
@@ -49,20 +49,6 @@ bool secondaryKaonAnalysis::Initialize(){
 
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("secondaryKaonAnalysis.MinAccumLevelToSave"));
-
-  _ApplydQdxSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplydQdxSystematic");
-  _ApplyRecombinationSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyRecombinationSystematic");
-  _ApplySCESystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplySCESystematic");
-  _ApplyBrokenTracksSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyBrokenTracksSystematic");
-  _ApplyBeamPIDEfficiencySystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyBeamPIDEfficiencySystematic");
-  _ApplyBeamPartWeightSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyBeamPartWeightSystematic");
-  _ApplyBeamMomWeightSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyBeamMomWeightSystematic");
-  _ApplyProtonBackgroundWeightSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyProtonBackgroundWeightSystematic");
-
-  // Parameters
-  _xs_selection = ND::params().GetParameterI("secondaryKaonAnalysis.XSSelection");
-  if(_xs_selection)_selection_name = "secondaryKaonXSSelection";
-  else             _selection_name = "secondaryKaonSelection";
 
   // Define standard categories for color drawing
   anaUtils::AddStandardCategories();        // This is for the candidate particle
@@ -76,14 +62,14 @@ bool secondaryKaonAnalysis::Initialize(){
   anaUtils::AddStandardObjectCategories("candidate"   ,kaonTree::ncandidates,"ncandidates",1);
   anaUtils::AddStandardObjectCategories("candidatedau",kaonTree::ncandidates,"ncandidates",1);
 
-  // Add our own categories (in secondaryKaonAnalysisUtils.cxx)
+  // Add our own categories (in secondaryKaonXSAnalysisUtils.cxx)
   kaonAnaUtils::AddCustomCategories();
 
   return true;
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::DefineInputConverters(){
+void secondaryKaonXSAnalysis::DefineInputConverters(){
 //********************************************************************
 
   // add a single converter (a copy of the one in highland/baseAnalysis)
@@ -93,78 +79,40 @@ void secondaryKaonAnalysis::DefineInputConverters(){
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::DefineSelections(){
+void secondaryKaonXSAnalysis::DefineSelections(){
 //********************************************************************
 
-  if(_xs_selection)sel().AddSelection(_selection_name.c_str(), "kaon XS selection", new secondaryKaonXSSelection(false));
-  //else             sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelection(false));  
-  else             sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelectionNoBranches(false));  
+  sel().AddSelection("XS", "kaon XS selection", new secondaryKaonXSSelection(false));
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::DefineCorrections(){
+void secondaryKaonXSAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
   corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
-  // corr().AddCorrection(1, "daughter finder", new DaughterFinderCorrection());
+  corr().AddCorrection(1, "Kaon Energy Correction",   new KaonEnergyCorrection());
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::DefineSystematics(){
+void secondaryKaonXSAnalysis::DefineSystematics(){
 //********************************************************************
 
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineSystematics();
-
-  if(_ApplySCESystematic)
-    evar().AddEventVariation(kSCEGeometric     ,"SCE variation",           new SCEGeometricVariation());
-  if(_ApplydQdxSystematic)
-    evar().AddEventVariation(kdQdxCalibration  ,"dQdx cal variation",      new dQdxCalVariation());
-  if(_ApplyRecombinationSystematic)
-    evar().AddEventVariation(kRecombination    ,"Recombination variation", new RecombinationVariation());
-  if(_ApplyBrokenTracksSystematic)
-    eweight().AddEventWeight(kBrokenTracks     ,"Broken track weight",     new BrokenTrackWeight());
-  if(_ApplyBeamPIDEfficiencySystematic)				          
-    eweight().AddEventWeight(kBeamPIDEfficiency,"Beam PID efficiency",     new BeamPartIdEffWeight());
-  if(_ApplyBeamMomWeightSystematic)				          
-    eweight().AddEventWeight(kBeamMomWeight    ,"Beam Nom Mom Weight",     new NominalBeamMomWeight());
-  if(_ApplyBeamPartWeightSystematic)
-    eweight().AddEventWeight(kBeamPartWeight   ,"Beam Particle Weight",    new BeamCompositionWeight());
-  if(_ApplyProtonBackgroundWeightSystematic)
-    eweight().AddEventWeight(kProtonBackgroundWeight   ,"ProtonBackground Weight",    new ProtonBackgroundWeight());
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::DefineConfigurations(){
+void secondaryKaonXSAnalysis::DefineConfigurations(){
 //********************************************************************
 
   // Some configurations are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
   baseAnalysis::DefineConfigurations();
 
-  // Enable all variation systematics in the all_syst configuration (created in baseAnalysis)
-  if(_enableAllSystConfig){
-    if(_ApplySCESystematic)
-      conf().EnableEventVariation(kSCEGeometric,all_syst);
-    if(_ApplydQdxSystematic)
-      conf().EnableEventVariation(kdQdxCalibration,all_syst);
-    if(_ApplyRecombinationSystematic)
-      conf().EnableEventVariation(kRecombination,all_syst);
-    if(_ApplyBrokenTracksSystematic)
-      conf().EnableEventWeight(kBrokenTracks,all_syst);
-    if(_ApplyBeamPIDEfficiencySystematic)
-      conf().EnableEventWeight(kBeamPIDEfficiency,all_syst);
-    if(_ApplyBeamPartWeightSystematic)
-      conf().EnableEventWeight(kBeamPartWeight,all_syst);
-    if(_ApplyBeamMomWeightSystematic)
-      conf().EnableEventWeight(kBeamMomWeight,all_syst);
-    if(_ApplyProtonBackgroundWeightSystematic)
-      conf().EnableEventWeight(kProtonBackgroundWeight,all_syst);
-  }
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
+void secondaryKaonXSAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
 
   // -------- Add variables to the analysis tree ----------------------
@@ -183,32 +131,18 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
   standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),20);
 
   // -------- Add candidates variables ----------------------
-  kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
-  kaonTree::AddKaonVariables_KaonCandidatesHitsReco(output(),secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
-  kaonTree::AddKaonVariables_KaonCandidatesTrue    (output(),secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),secondaryKaonXSAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesHitsReco(output(),secondaryKaonXSAnalysisConstants::NMAXSAVEDCANDIDATES);
+  kaonTree::AddKaonVariables_KaonCandidatesTrue    (output(),secondaryKaonXSAnalysisConstants::NMAXSAVEDCANDIDATES);
 
   // -------- Add best candidate variables ----------------------
   kaonTree::AddKaonVariables_KaonBestCandidateReco    (output());
   kaonTree::AddKaonVariables_KaonBestCandidateHitsReco(output());
   kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
-  
-  // -------- Add toy variables ---------------------------------
-  AddToyVarVF(output(), bestcandidate_hit_resrange_toy, "bestcandidate hit residual range", 300);
-  AddToyVarVF(output(), bestcandidate_hit_dedx_toy, "bestcandidate hit dEdx", 300);
-
-  AddToyVarVF(output(), bestcandidate_dau_hit_resrange_toy, "bestcandidate dau hit residual range", 300);
-  AddToyVarVF(output(), bestcandidate_dau_hit_dedx_toy, "bestcandidate dau hit dEdx", 300);
-
-  AddToyVarF(output(), bestcandidate_chi2_kaon_perndf_toy, "bestcandidate chi2 kaon divided by ndf");
-  AddToyVarF(output(), bestcandidate_Zstart_toy          , "bestcandidate Z start toy");
-  AddToyVarF(output(), bestcandidate_Zend_toy            , "bestcandidate Z end toy");
-  AddToyVarF(output(), bestcandidate_calE_toy            , "bestcandidate calE toy");
-  AddToyVarF(output(), bestcandidate_length_toy          , "bestcandidate length toy");
-  AddToyVarF(output(), bestcandidate_dau_calE_toy        , "bestcandidate dau calE toy");
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::DefineTruthTree(){
+void secondaryKaonXSAnalysis::DefineTruthTree(){
 //********************************************************************
 
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
@@ -222,7 +156,7 @@ void secondaryKaonAnalysis::DefineTruthTree(){
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
+void secondaryKaonXSAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
   
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
@@ -244,7 +178,7 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
   
   // ---------- kaon candidates variables --------------
   if(box().Candidates.size()>0){
-    for(int i = 0; i < std::min((int)box().Candidates.size(),(int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES); i++){
+    for(int i = 0; i < std::min((int)box().Candidates.size(),(int)secondaryKaonXSAnalysisConstants::NMAXSAVEDCANDIDATES); i++){
       AnaParticlePD* parent = static_cast<AnaParticlePD*>(anaUtils::GetParticleByID(GetBunch(), box().Candidates[i]->ParentID));
       kaonTree::FillKaonVariables_KaonCandidatesReco    (output(), box().Candidates[i] ,parent);
       kaonTree::FillKaonVariables_KaonCandidatesHitsReco(output(), box().Candidates[i]);
@@ -255,7 +189,7 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
   
   // ---------- best kaon candidate variables --------------
   //get the kaon selection and get the branch with a larger AccumLevel
-  SelectionBase* ksel = sel().GetSelection(_selection_name.c_str()); //todo fix this
+  SelectionBase* ksel = sel().GetSelection("XS"); //todo fix this
   int branchmax = 0;
   int max       = 0;  
   for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
@@ -274,58 +208,15 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
+void secondaryKaonXSAnalysis::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
 
   // Fill the common variables  (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
-
-  // ---------- best kaon candidate variables --------------
-  //get the kaon selection and get the branch with a larger AccumLevel
-  SelectionBase* ksel = sel().GetSelection(_selection_name.c_str()); //todo fix this
-  int branchmax = 0;
-  int max       = 0;  
-  for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
-    if(ksel->GetAccumCutLevel(ibranch) > max){
-      max = ksel->GetAccumCutLevel(ibranch);
-      branchmax = ibranch;
-    }
-  }
- 
-  //if there is no candidate for this toy, skip
-  if(box().Candidates.size() == 0)return;
-  
-  AnaParticlePD* best = box().Candidates[branchmax];
-  
-  std::pair<double,int> chi2 = pdAnaUtils::Chi2PID(*best,321);
-  output().FillToyVar(bestcandidate_chi2_kaon_perndf_toy,(float)chi2.first/chi2.second);
-  output().FillToyVar(bestcandidate_Zstart_toy,          best->PositionStart[2]);
-  output().FillToyVar(bestcandidate_Zend_toy,            best->PositionEnd[2]);
-  output().FillToyVar(bestcandidate_calE_toy,            (float)(Float_t)pdAnaUtils::ComputeDepositedEnergy(best));
-  output().FillToyVar(bestcandidate_length_toy,          best->Length);
-
-  //if candidate has no hits, skip
-  if(best->Hits[2].empty())
-    return;
-  
-  int nhits = std::min((int)best->Hits[2].size(),300);
-  for(int ihit = 0; ihit < nhits; ihit++){
-    output().FillToyVectorVar(bestcandidate_hit_resrange_toy,best->Hits[2][ihit].ResidualRange,ihit);
-    output().FillToyVectorVar(bestcandidate_hit_dedx_toy,best->Hits[2][ihit].dEdx,ihit);
-  }
-
-  AnaParticlePD* bestdau = static_cast<AnaParticlePD*>(best->Daughters[0]);
-  int nhits_dau = std::min((int)bestdau->Hits[2].size(),300);
-  for(int ihit = 0; ihit < nhits_dau; ihit++){
-    output().FillToyVectorVar(bestcandidate_dau_hit_resrange_toy,bestdau->Hits[2][ihit].ResidualRange,ihit);
-    output().FillToyVectorVar(bestcandidate_dau_hit_dedx_toy,bestdau->Hits[2][ihit].dEdx,ihit);
-  }
-
-  output().FillToyVar(bestcandidate_dau_calE_toy,            (float)(Float_t)pdAnaUtils::ComputeDepositedEnergy(bestdau));
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::FillTruthTree(){
+void secondaryKaonXSAnalysis::FillTruthTree(){
 //********************************************************************
 
   // Fill the "truth" tree
@@ -394,7 +285,7 @@ void secondaryKaonAnalysis::FillTruthTree(){
 }
 
 //********************************************************************
-bool secondaryKaonAnalysis::CheckFillTruthTree(const AnaTrueParticlePD* part){
+bool secondaryKaonXSAnalysis::CheckFillTruthTree(const AnaTrueParticlePD* part){
 //********************************************************************
 
   if(!part)return false;
@@ -405,7 +296,7 @@ bool secondaryKaonAnalysis::CheckFillTruthTree(const AnaTrueParticlePD* part){
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
+void secondaryKaonXSAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 //********************************************************************
 
   // Fill the common variables (highland/src/highland2/baseAnalysis)
@@ -425,7 +316,7 @@ void secondaryKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 }
 
 //********************************************************************
-void secondaryKaonAnalysis::FillCategories(){
+void secondaryKaonXSAnalysis::FillCategories(){
 //********************************************************************
 
   // For the beam track
@@ -440,16 +331,17 @@ void secondaryKaonAnalysis::FillCategories(){
   if(box().Candidates.size()>0){
     for(int i = 0; i < (int)box().Candidates.size(); i++){
       anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]),              "candidate",   1);
-      anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]->Daughters[0]),"candidatedau",1);
+      if(!box().Candidates[i]->Daughters.empty())
+	anaUtils::FillObjectCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[i]->Daughters[0]),"candidatedau",1);
       kaonAnaUtils::FillCandidateParticleReducedCategory(box().Candidates[i]);
       kaonAnaUtils::FillCandidateDaughterParticleReducedCategory(box().Candidates[i]);
-      kaonAnaUtils::FillCandidateDaughterMuonCategory(box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]));
-      kaonAnaUtils::FillCandidateDaughterMuonReducedCategory(box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]));
+      //kaonAnaUtils::FillCandidateDaughterMuonCategory(box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]));
+      //kaonAnaUtils::FillCandidateDaughterMuonReducedCategory(box().Candidates[i], static_cast<AnaParticlePD*>(box().Candidates[i]->Daughters[0]));
     }
   }
   
   //get the kaon selection and get the branch with a larger AccumLevel
-  SelectionBase* ksel = sel().GetSelection(_selection_name.c_str());
+  SelectionBase* ksel = sel().GetSelection("XS");
   int branchmax = 0;
   int max       = 0;  
   for(UInt_t ibranch = 0; ibranch < ksel->GetNBranches(); ibranch++){
@@ -462,7 +354,7 @@ void secondaryKaonAnalysis::FillCategories(){
   // ---------- best kaon candidate variables --------------
   if(box().Candidates.size()>0){
     anaUtils::FillCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[branchmax]), "bestcandidate");
-    anaUtils::FillCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[branchmax]->Daughters[0]), "bestcandidatedau");
+    //anaUtils::FillCategories(&GetEvent(), static_cast<AnaParticleB*>(box().Candidates[branchmax]->Daughters[0]), "bestcandidatedau");
   }
 
 
@@ -475,7 +367,7 @@ void secondaryKaonAnalysis::FillCategories(){
 }
 
 //********************************************************************
-bool secondaryKaonAnalysis::FinalizeConfiguration(){
+bool secondaryKaonXSAnalysis::FinalizeConfiguration(){
 //********************************************************************
   
   // This is called before FillMicroTrees()

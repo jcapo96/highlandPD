@@ -73,6 +73,7 @@ namespace standardPDTree{
     seltrk_trueeff,
     seltrk_truepur,
     seltrk_trueId,
+    seltrk_true_matched,
 
     // selected track reco info
     seltrk_ndau,
@@ -134,6 +135,7 @@ namespace standardPDTree{
     seltrk_dau_mom_prot,
     seltrk_dau_CNNscore,
     seltrk_dau_chi2_prot,
+    seltrk_dau_chi2_kaon,
     seltrk_dau_chi2_muon,
     seltrk_dau_chi2_ndf,
 
@@ -147,6 +149,7 @@ namespace standardPDTree{
     seltrk_dau_hit_resrange,
     seltrk_dau_hit_cnn,
     seltrk_dau_hit_ch,
+    seltrk_dau_truncated_dedx,
     //seltrk_dau_nhits2,
 
     // selected track daughters true info

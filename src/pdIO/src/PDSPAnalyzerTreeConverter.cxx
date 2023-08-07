@@ -327,6 +327,13 @@ void PDSPAnalyzerTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* true
       truePart->DirectionEnd[2] = reco_beam_true_byHits_endPz/reco_beam_true_byHits_endP;
     }
     
+    truePart->Position[0] = true_beam_startX;
+    truePart->Position[1] = true_beam_startY;
+    truePart->Position[2] = true_beam_startZ;
+    
+    truePart->PositionEnd[0] = true_beam_endX;
+    truePart->PositionEnd[1] = true_beam_endY;
+    truePart->PositionEnd[2] = true_beam_endZ;
   }
   else{
     truePart->ID  = reco_beam_true_byE_ID;
@@ -413,40 +420,21 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
   part->vtx_CNN_NHits       = (*reco_daughter_allTrack_vertex_nHits)[itrk];
 
   //fill hits info
-  Float_t dedx, dqdx, dedx_cal, resRange;
-  part->AveragedEdx = 0;
-  part->AveragedQdx = 0;
-  Int_t ncontrib=0;
   for(size_t plane = 2; plane < 3; plane++){   // only the last slice 
     UInt_t nHits = std::min((int)NMAXHITSPERPLANE,(int)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size());
     for(size_t j = 0; j < nHits; j++){   
-      dedx = (*reco_daughter_allTrack_dEdX_SCE)[itrk][j];
-      dqdx = (*reco_daughter_allTrack_dQdX_SCE)[itrk][j];
-      dedx_cal = (*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk][j];
-      resRange = (*reco_daughter_allTrack_resRange_SCE)[itrk][j];  
 
-      part->AveragedEdx += dedx;
-      part->AveragedQdx += dqdx;
-      
       // Add hits
       //no spatial information on the input tree
       AnaHitPD hit;//(plane,0,0,0,point);
       
-      hit.dEdx         = dedx;
-      hit.dQdx         = dqdx;
-      hit.dEdx_calib   = dedx_cal;
-      hit.ResidualRange= resRange;
+      hit.dEdx         = (*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk][j];
+      hit.dQdx         = (*reco_daughter_allTrack_dQdX_SCE)[itrk][j];
+      hit.ResidualRange= (*reco_daughter_allTrack_resRange_SCE)[itrk][j];  
       
       part->Hits[plane].push_back(hit);
-      
-      ncontrib++;
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk]);
-  }
-
-  if (ncontrib!=0){
-    part->AveragedEdx /= 1.*ncontrib;
-    part->AveragedQdx /= 1.*ncontrib;
   }
 
   //------ Truth association ------- //TODO

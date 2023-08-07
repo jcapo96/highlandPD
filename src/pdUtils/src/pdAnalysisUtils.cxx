@@ -286,6 +286,21 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(const std::vector<AnaTrueParticle
 }
 
 //*****************************************************************************
+AnaParticlePD* pdAnaUtils::GetRecoParticleWithAssociatedTrueID(const std::vector<AnaParticleB*> particles, Int_t true_ID){
+//*****************************************************************************
+ 
+  // loop over reconstructed tracks
+  for(UInt_t i = 0; i < particles.size(); i++){
+    AnaTrueParticlePD* truepart = static_cast<AnaTrueParticlePD*>(particles[i]->TrueObject);
+    if(!truepart)continue;
+    if(truepart->ID == true_ID)
+      return static_cast<AnaParticlePD*>(particles[i]);
+  }
+
+  return NULL;
+}
+
+//*****************************************************************************
 std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const int pdg ){
 //*****************************************************************************	
 

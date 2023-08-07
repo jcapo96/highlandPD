@@ -34,7 +34,7 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   
   //set appropiate lifetime depending on mc/data and run
   _cal->SetLifetime(*eventpd);
-  
+
   //compute varied lt from varied rQ
   Float_t nom_lt = _cal->GetLifetime()/1000; //us to ms
   Float_t nom_rQ = exp(-2.3/nom_lt);

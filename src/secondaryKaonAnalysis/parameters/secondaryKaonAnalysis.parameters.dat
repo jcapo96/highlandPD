@@ -1,12 +1,19 @@
 --- Cut levels --------
- < secondaryKaonAnalysis.MinAccumLevelToSave = 7 >   // minimum accum level to save the event
+ < secondaryKaonAnalysis.MinAccumLevelToSave = 3 >   // minimum accum level to save the event
+
+--- Systematics ------------
+ < secondaryKaonAnalysis.ApplydQdxSystematic                   = 1 >
+ < secondaryKaonAnalysis.ApplyRecombinationSystematic          = 1 >
+ < secondaryKaonAnalysis.ApplySCESystematic                    = 1 >
+ < secondaryKaonAnalysis.ApplyBrokenTracksSystematic           = 1 >
+ < secondaryKaonAnalysis.ApplyBeamPIDEfficiencySystematic      = 1 >
+ < secondaryKaonAnalysis.ApplyBeamPartWeightSystematic         = 1 >
+ < secondaryKaonAnalysis.ApplyBeamMomWeightSystematic          = 0 >
+ < secondaryKaonAnalysis.ApplyProtonBackgroundWeightSystematic = 0 >
 
 --- Selection -------------
  < secondaryKaonAnalysis.XSSelection               = 0 >
  < secondaryKaonAnalysis.XSSelection.BeamPDGFilter = 211 >
-
---- Systematics ------------
-
 
 
 ###############################################################################
@@ -61,10 +68,10 @@ Use a different random generator for each systematic
 
 Create configurations with a single systematic ( a configuration for each systematic selected above)
 
- < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 1 >
+ < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 0 >
  < baseAnalysis.Configurations.EnableSingleWeightSystConfigurations    = 0 >
 
 Enable/disable the configuration with all systematics (or the ones selected above)
 
- < baseAnalysis.Configurations.EnableAllSystematics = 0 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 1 >
  
