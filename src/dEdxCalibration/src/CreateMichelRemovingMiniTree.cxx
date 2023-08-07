@@ -105,6 +105,7 @@ bool CreateMichelRemovingMiniTree::PartHasGoodAngles(AnaParticlePD* part){
   
   double xz = abs(180/TMath::Pi()*part->ThetaXZ);
   double yz = abs(180/TMath::Pi()*part->ThetaYZ);
+
   if(((xz>_ThetaXZ_min && xz<_ThetaXZ_max) || 
       (xz>180-_ThetaXZ_max && xz<180-_ThetaXZ_min)) 
      &&

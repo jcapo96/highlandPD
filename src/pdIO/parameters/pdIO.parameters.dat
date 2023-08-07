@@ -11,7 +11,7 @@
 < pdIO.MichelRemoving.ThetaXZ_min = 0 >
 < pdIO.MichelRemoving.ThetaXZ_max = 60 >
 < pdIO.MichelRemoving.ThetaYZ_min = 0 >
-< pdIO.MichelRemoving.ThetaYZ_max = 15 >
+< pdIO.MichelRemoving.ThetaYZ_max = 80 >
 
 
 --- anselmo stuff ------------
