@@ -22,10 +22,10 @@ void dQdxCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
 
-   //Get the systematic source values
-  Float_t width;
-  GetSigmaValueForBin(0, width); //only 1 bin 
-
+  // to get the uncertantainty
+  BinnedParamsParams params;
+  int index;
+  
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
 
@@ -37,8 +37,10 @@ void dQdxCalVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     if(!original)continue;
     //loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
+      if(!GetBinValues(abs(part->Hits[2][ihit].Position.X()), params, index))return;
+      double width = params.sigma;
       //get the calibration
-      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (1 + width*toy.GetToyVariations(_index)->Variations[0]);
+      part->Hits[2][ihit].dQdx = part->Hits[2][ihit].dQdx * (1 + width*toy.GetToyVariations(_index)->Variations[index]);
       //recompute dEdx
       _cal->ApplyRecombination(part->Hits[2][ihit]);
     }

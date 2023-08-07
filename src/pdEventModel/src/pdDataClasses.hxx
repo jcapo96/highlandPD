@@ -233,6 +233,10 @@ public:
 
   /// PIDA
   Float_t PIDA[3]; 
+
+  /// Migue test
+  bool forced_daughter;
+  bool forced_daughter_matched;
 };
 
 /// AnaTrueParticle

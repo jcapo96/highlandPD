@@ -32,8 +32,26 @@ void RecombinationVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   if(!_BP_A->GetBinValues(0.5, A_mean,  A_var,  A_index))return;
   if(!_BP_B->GetBinValues(0.5, B_mean,  B_var,  B_index))return;
 
-  Float_t ModBoxA = _cal->GetModBoxA()*(A_mean +  A_var*toy.GetToyVariations(_index)->Variations[A_index]);
-  Float_t ModBoxB = _cal->GetModBoxB()*(B_mean +  B_var*toy.GetToyVariations(_index)->Variations[B_index+_BP_A->GetNBins()]); 
+  // They are correlated. To throw correlated random numbers, we have to generate a vector of 2 random numbers and 
+  // multiply it by the Cholesky decomposition of the correlation matrix.
+  double cholesky[2][2] = {{1,0},{0.85,1}};
+
+  // these are the uncorrelated random numbers
+  double var[2] = {toy.GetToyVariations(_index)->Variations[A_index],
+		   toy.GetToyVariations(_index)->Variations[B_index+_BP_A->GetNBins()]};
+
+  // now we compute the correlated random numbers
+  double cvar[2] = {0};
+  for(int irow = 0; irow < 2; irow++){
+    double product = 0;
+    for(int icolumn = 0; icolumn < 2; icolumn++)
+      product += cholesky[irow][icolumn]*var[icolumn];
+    cvar[irow] = product;
+  }
+
+  // and now we modify the modbox model parameters in a correlated way
+  Float_t ModBoxA = _cal->GetModBoxA()*(A_mean +  A_var*cvar[0]);
+  Float_t ModBoxB = _cal->GetModBoxB()*(B_mean +  B_var*cvar[1]); 
 
   //modify alpha and beta values on calorimetry class
   _cal->SetModBoxA(ModBoxA);

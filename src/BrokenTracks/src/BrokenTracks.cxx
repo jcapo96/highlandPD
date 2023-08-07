@@ -103,6 +103,8 @@ void BrokenTracks::DefineMicroTrees(bool addBase){
   standardPDTree::AddStandardVariables_CandidateTrue(output());
   standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),5);
   standardPDTree::AddStandardVariables_CandidateDaughtersTrue(output(),5);
+
+  AddVarI(output(), seltrk_ndau_APAs, "seltrk ndaughters in APA region");
 }
 
 //********************************************************************
@@ -126,14 +128,18 @@ void BrokenTracks::FillMicroTrees(bool addBase){
   standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
   standardPDTree::FillStandardVariables_CandidateTrue(    output(), box().MainTrack);    
   
+  int ndau_APAs = 0;
   int ntracks = std::min((int)box().MainTrack->DaughtersIDs.size(),5);
   for(int idau = 0; idau < ntracks; idau++){
     AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[idau]);
     standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
     standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
     output().IncrementCounter(standardPDTree::seltrk_ndau);
+    double Z = dau->PositionEnd[2];
+    if(Z>205 && Z < 249)ndau_APAs++;
   }
-  
+
+  output().FillVar(seltrk_ndau_APAs, ndau_APAs);
 }
 
 //********************************************************************
@@ -174,9 +180,9 @@ void BrokenTracks::FillCategories(){
 void BrokenTracks::AddBrokenCategory(){
 //********************************************************************
 
-  std::string part_types[] = {"Broken", "Not broken"};
-  int part_codes[]         = {1       , 2           };
-  int part_colors[]        = {4       , 2           };
+  std::string part_types[] = {"Broken", "Not broken", "No Truth", NAMEOTHER};
+  int part_codes[]         = {1       , 2           , 3, CATOTHER};
+  int part_colors[]        = {4       , 2           , COLNOTRUTH, COLOTHER};
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
   
   std::reverse(part_types,  part_types  + NPART);
@@ -184,9 +190,9 @@ void BrokenTracks::AddBrokenCategory(){
   std::reverse(part_colors, part_colors + NPART);
 
   anaUtils::_categ->AddCategory("broken", NPART, part_types, part_codes, part_colors);
-  anaUtils::_categ->AddObjectCategory("brokendaughter", standardPDTree::seltrk_ndau, "seltrk_ndau", 
-				      NPART, part_types, part_codes, part_colors, 
-				      1, -100);
+  // anaUtils::_categ->AddObjectCategory("brokendaughter", standardPDTree::seltrk_ndau, "seltrk_ndau", 
+  // 				      NPART, part_types, part_codes, part_colors, 
+  // 				      1, -100);
 }
 
 //********************************************************************
@@ -197,26 +203,34 @@ void BrokenTracks::FillBrokenCategory(AnaParticlePD* part){
   AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
   if(!truePart)return;
 
-  bool broken = false;
-  int ndau = part->Daughters.size();
-  int broken_dau = -1;
-  for(int idau = 0; idau < ndau; idau++){
-    AnaTrueParticlePD* dauTruePart = static_cast<AnaTrueParticlePD*>(part->Daughters[idau]->TrueObject);
-    if(!dauTruePart)continue;
-    if(truePart->ID == dauTruePart->ID){
-      broken = true;
-      broken_dau = idau;
-      break;
-    }
-  }
+  // bool broken = false;
+  // int ndau = part->Daughters.size();
+  // int broken_dau = -1;
+  // for(int idau = 0; idau < ndau; idau++){
+  //   AnaTrueParticlePD* dauTruePart = static_cast<AnaTrueParticlePD*>(part->Daughters[idau]->TrueObject);
+  //   if(!dauTruePart)continue;
+  //   if(truePart->ID == dauTruePart->ID){
+  //     broken = true;
+  //     broken_dau = idau;
+  //     break;
+  //   }
+  // }
 
-  //beam part category
-  if(broken)anaUtils::_categ->SetCode("broken", 1, CATOTHER);
-  else      anaUtils::_categ->SetCode("broken", 2, CATOTHER);
+  // //beam part category
+  // if(broken)anaUtils::_categ->SetCode("broken", 1, CATOTHER);
+  // else      anaUtils::_categ->SetCode("broken", 2, CATOTHER);
 
-  //daughters category
-  for(int idau = 0; idau < ndau; idau++){
-    if(idau == broken_dau)anaUtils::_categ->SetObjectCode("brokendaughter", 1, CATOTHER, -1);
-    else                  anaUtils::_categ->SetObjectCode("brokendaughter", 2, CATOTHER, -1);
+  // //daughters category
+  // for(int idau = 0; idau < ndau; idau++){
+  //   if(idau == broken_dau)anaUtils::_categ->SetObjectCode("brokendaughter", 1, CATOTHER, -1);
+  //   else                  anaUtils::_categ->SetObjectCode("brokendaughter", 2, CATOTHER, -1);
+  // }
+
+  if(!truePart->Matched)anaUtils::_categ->SetCode("broken", 3, CATOTHER);
+  else{
+    double Z = truePart->PositionEnd[2];
+    if(Z>215.0 && Z<234.0)anaUtils::_categ->SetCode("broken", 2, CATOTHER);
+    else if (Z>234)       anaUtils::_categ->SetCode("broken", 1, CATOTHER);
+    else                  anaUtils::_categ->SetCode("broken", 4, CATOTHER);
   }
 }

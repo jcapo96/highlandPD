@@ -23,13 +23,14 @@ Weight_h BeamCompositionWeight::ComputeWeight(const ToyExperiment& toy, const An
   // Get the true beam particle
   AnaTrueParticlePD* trueBeamPart = pdAnaUtils::GetTrueBeamParticle(event);
   if (!trueBeamPart) return eventWeight;
+  const AnaEventInfoPD* EventInfo = static_cast<const AnaEventInfoPD*>(static_cast<const AnaEventB*>(&event)->EventInfo);
   
   // We need the errors part of the data file but as well the relative uncertainty for sigma
   Float_t weight_mean, weight_error;
   Int_t weight_index;
     
   // Get the systematics parameters for this particle type and momentum
-  if (!GetBinValues(abs(trueBeamPart->PDG), trueBeamPart->Momentum, weight_mean,  weight_error,  weight_index))  return eventWeight;
+  if (!GetBinValues(abs(trueBeamPart->PDG), EventInfo->NominalBeamMom, weight_mean,  weight_error,  weight_index))  return eventWeight;
 
   // compute the weight
   eventWeight.Systematic = weight_mean +  weight_error*toy.GetToyVariations(_index)->Variations[weight_index];

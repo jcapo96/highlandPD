@@ -9,9 +9,6 @@
 secondaryKaonXSSelection::secondaryKaonXSSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxKaon) {
 //********************************************************************
   
-  //Read parameters before base initialization because DefineSteps needs parameters to be defined
-  _BeamPDGFilter = ND::params().GetParameterI("secondaryKaonAnalysis.XSSelection.BeamPDGFilter");
-
 }
 
 //********************************************************************
@@ -24,33 +21,16 @@ void secondaryKaonXSSelection::DefineSteps(){
 
   //select events using beam instrumentation
   //AddStep(StepBase::kCut,      "beam quality cut"    ,       new BeamQualityCut()    );
-  if(_BeamPDGFilter==211 )AddStep(StepBase::kCut, "beam pdg filter", new BeamFilterForXSCut());
-  if(_BeamPDGFilter==2212)AddStep(StepBase::kCut, "beam pdg filter", new BeamPDGCut(2212)    );
-  if(_BeamPDGFilter==321 )AddStep(StepBase::kCut, "beam pdg filter", new BeamPDGCut(321)     );
+  AddStep(StepBase::kCut, "beam pdg filter", new BeamFilterForXSCut());
 
   //kaon selection
   AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsForXSAction()   );
   AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonCut(),  true);
-  //split the selection in branches, one for each possible candidate
-  AddSplit(secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
-  //next cuts have to be applied to each branch
-  for(int i = 0; i < (int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
-    AddStep(i, StepBase::kCut, "kaon daughter is a track",   new MuonIsTrackCut(),             true);
-    AddStep(i, StepBase::kCut, "kaon daughter chi2 cut",     new MuonChi2Cut(0.64,5.84),       true);
-    AddStep(i, StepBase::kCut, "kaon daughter mom cut",      new MuonRangeMomCut(0.210,0.237), true);
-    AddStep(i, StepBase::kCut, "kaon CNN cut",               new KaonCNNCut(0.62,1.0),         true);
-    AddStep(i, StepBase::kCut, "kaon-muon distance cut",     new KaonMuonDistanceCut(0,16),    true);
-    AddStep(i, StepBase::kCut, "kaon chi2 cut",              new KaonChi2Cut(),                true);
-  }
-
-  //Set the branch aliases to the different branches 
-  for(int i = 0; i < (int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
-    std::stringstream ssi;
-    ssi << i;
-    SetBranchAlias(i,("possible candidate "+ssi.str()+"").c_str(),i);
-  }
+  AddStep(StepBase::kAction,   "get forced daughter",        new GetForcedDaughterAction()   );
 
   SetPreSelectionAccumLevel(-1);
+
+  SetBranchAlias(0,"NO BRANCH :)");
 }
 
 //**************************************************
@@ -59,8 +39,9 @@ bool BeamFilterForXSCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   
   BeamPDGCut* beamCut1 = new BeamPDGCut(211);
   BeamPDGCut* beamCut2 = new BeamPDGCut(13);
+  BeamPDGCut* beamCut3 = new BeamPDGCut(11);
 
-  if(beamCut1->Apply(event,boxB) || beamCut2->Apply(event,boxB))return true;
+  if(beamCut1->Apply(event,boxB) || beamCut2->Apply(event,boxB) || beamCut3->Apply(event,boxB))return true;
   else return false;
 }
 
@@ -134,7 +115,10 @@ bool GetKaonsForXSAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //look over daughters and look for candidates
   for(int i = 0; i < (int)beamTrack->Daughters.size(); i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(beamTrack->Daughters[i]);
-    if(part->DaughtersIDs.size() == 1)box.Candidates.push_back(part);
+    std::pair<double,int> pid = pdAnaUtils::Chi2PID(*part,321);
+    double chi = pid.first/pid.second;
+    double trunc = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,part->Hits[2]);
+    if(chi>0 && chi<3.65 && trunc>2.4 && trunc<4.6)box.Candidates.push_back(part);
   }
   
   return true;  
@@ -160,6 +144,62 @@ bool KaonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 }
 
 //**************************************************
+bool GetForcedDaughterAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+
+  (void)event;
+  
+  // Cast the ToyBox to the appropriate type
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
+
+  // Get the array of parts from the event
+  AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
+  int nParts           = static_cast<AnaEventB*>(&event)->nParticles;
+
+  // loop over candidates
+  for(int ican = 0; ican < (int)box.Candidates.size(); ican++){
+    AnaParticlePD* candidate = box.Candidates[ican];
+    // skip candidates with daughters
+    if(!candidate->Daughters.empty())continue;
+    double dis_min = 10000;
+    int i_closest = -1;
+    //loop over particles and look for the one starting closer to the end point of the candidate
+    for(int ipart = 0; ipart < nParts; ipart++){
+      AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[ipart]);
+      if(candidate->UniqueID == part->UniqueID)continue; //skip itself
+      if(part->Type!=2)continue; //skip showers
+      double dis = 0;
+      for(int i = 0; i < 3; i++)dis += pow(part->PositionStart[i]-candidate->PositionEnd[i],2);
+      dis = sqrt(dis);
+      if(dis < dis_min){
+	dis_min = dis;
+	i_closest = ipart;
+      }
+    }
+    if(i_closest == -1 || dis_min>5)continue;
+    //associate the closest one as forced daughter
+    AnaParticlePD* forced_dau = static_cast<AnaParticlePD*>(parts[i_closest]);
+    candidate->forced_daughter = true;
+    candidate->Daughters.push_back(forced_dau);
+    
+    //check true matching if possible
+    AnaTrueParticlePD* truecandidate = static_cast<AnaTrueParticlePD*>(candidate->TrueObject);
+    AnaTrueParticlePD* trueforced_dau = static_cast<AnaTrueParticlePD*>(forced_dau->TrueObject);
+    if(!truecandidate || !trueforced_dau)continue;
+    for(int i = 0; i < truecandidate->Daughters.size(); i++){
+      if(truecandidate->Daughters[i] == trueforced_dau->ID){
+	candidate->forced_daughter_matched = true;
+	break;
+      }
+    }
+    std::cout << "forced daughter found with distance " << dis_min << " " << candidate->forced_daughter_matched << std::endl;
+  }
+    
+  return true;  
+}
+
+
+//**************************************************
 void secondaryKaonXSSelection::InitializeEvent(AnaEventC& eventC){
 //**************************************************
 
@@ -169,7 +209,6 @@ void secondaryKaonXSSelection::InitializeEvent(AnaEventC& eventC){
   if (!event.EventBoxes[EventBoxId::kEventBoxKaon])
     event.EventBoxes[EventBoxId::kEventBoxKaon] = new EventBoxKaon();
 
-  boxUtils::FillCandidateAndDaughters(event);
-  boxUtils::FillTrueCandidateAndDaughters(event);
+  boxUtils::FillKaonXS(event);
 }
 

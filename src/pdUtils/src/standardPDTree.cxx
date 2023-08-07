@@ -136,6 +136,7 @@ void standardPDTree::AddStandardVariables_CandidateTrue(OutputManager& output){
   AddVarF(  output, seltrk_truepur,     "candidate true-reco matching pur");
 
   AddVarI(  output, seltrk_trueId,     "true ID object");
+  AddVarI(  output, seltrk_true_matched,     "is the beam particle properly matched?");
 }
 
 //********************************************************************
@@ -209,8 +210,10 @@ void standardPDTree::AddStandardVariables_CandidateDaughtersReco(OutputManager& 
   AddVarMaxSizeVI( output, seltrk_dau_ndau,       "daughters' daughters"     ,       seltrk_ndau,nmax);
   AddVarMaxSize3MF(output, seltrk_dau_CNNscore,   "candidate daughters CNN score",   seltrk_ndau,nmax);
   AddVarMaxSizeVF( output, seltrk_dau_chi2_prot,  "candidate daughters chi2 proton", seltrk_ndau,nmax);
+  AddVarMaxSizeVF( output, seltrk_dau_chi2_kaon,  "candidate daughters chi2 kaon", seltrk_ndau,nmax);
   AddVarMaxSizeVF( output, seltrk_dau_chi2_muon,  "candidate daughters chi2 proton", seltrk_ndau,nmax);
   AddVarMaxSizeVF( output, seltrk_dau_chi2_ndf,   "candidate daughters chi2 ndf",    seltrk_ndau,nmax);
+  AddVarMaxSizeVF( output, seltrk_dau_truncated_dedx,   "candidate daughters truncated dedx",    seltrk_ndau,nmax);
 
 }
 
@@ -470,6 +473,7 @@ void standardPDTree::FillStandardVariables_CandidateTrue(OutputManager& output, 
   output.FillVar(seltrk_truendau,          (Int_t)truePart->Daughters.size());
 
   output.FillVar(seltrk_trueId,            (Int_t)truePart->ID);
+  output.FillVar(seltrk_true_matched,            (Int_t)static_cast<AnaTrueParticlePD*>(truePart)->Matched);
 }
 
 //********************************************************************
@@ -592,8 +596,10 @@ void standardPDTree::FillStandardVariables_CandidateDaughterReco(OutputManager& 
   output.FillVectorVar         (seltrk_dau_ndau,      (Int_t)dau->Daughters.size());
   output.FillMatrixVarFromArray(seltrk_dau_CNNscore,         dau->CNNscore,      3); 
   output.FillVectorVar         (seltrk_dau_chi2_prot,        dau->Chi2Proton      );
+  output.FillVectorVar         (seltrk_dau_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*dau,321).first);
   output.FillVectorVar         (seltrk_dau_chi2_muon,        dau->Chi2Muon        );
   output.FillVectorVar         (seltrk_dau_chi2_ndf,         dau->Chi2ndf         );
+  output.FillVectorVar         (seltrk_dau_truncated_dedx,   (Float_t)pdAnaUtils::ComputeTruncatedMean(0.16,0.16,dau->Hits[2]));
 
 }
 

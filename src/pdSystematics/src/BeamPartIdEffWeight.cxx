@@ -30,9 +30,6 @@ Weight_h BeamPartIdEffWeight::ComputeWeight(const ToyExperiment& toy, const AnaE
   
   if(!GetBinValues(abs(trueBeamPart->PDG), EventInfo->NominalBeamMom, params, index))return eventWeight;  
   
-  // Get the SystBox for this event, and the appropriate selection and branch
-  //SystBoxB* SystBox = GetSystBox(event,box.SelectionEnabledIndex,box.SuccessfulBranch);
-
   // Get beam particle
   bool ID = false;
   AnaParticleB** parts = static_cast<const AnaEventB*>(&event)->Particles;

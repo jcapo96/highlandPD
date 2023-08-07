@@ -76,6 +76,11 @@ public:
     enumCorrLast_BrokenTracks
   };
 
+  enum enumStandardMicroTrees_BrokenTracks{
+    seltrk_ndau_APAs = standardPDTree::enumStandardMicroTreesLast_standardPDTree,
+    enumStandardMicroTreesLast_BrokenTracks
+  };
+
 };
 
 #endif

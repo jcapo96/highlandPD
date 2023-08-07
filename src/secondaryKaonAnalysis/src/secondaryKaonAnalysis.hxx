@@ -8,6 +8,7 @@
 #include "kaonTree.hxx"
 #include "kaonAnalysisUtils.hxx"
 
+#include "TH1F.h"
 
 namespace secondaryKaonAnalysisConstants{
 
@@ -74,20 +75,31 @@ private:
   bool _xs_selection;
   std::string _selection_name;
   
+  bool _ApplydQdxSystematic;
+  bool _ApplyRecombinationSystematic;
+  bool _ApplySCESystematic;
+  bool _ApplyBrokenTracksSystematic;
+  bool _ApplyBeamPIDEfficiencySystematic;
+  bool _ApplyBeamPartWeightSystematic;
+  bool _ApplyBeamMomWeightSystematic;
+  bool _ApplyProtonBackgroundWeightSystematic;
+
 public:
 
   enum enumConf_secondaryKaonAnalysis{
     detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
-    dQdx_Xcal,
-    dQdx_YZcal,
-    Recombination,
     enumConfLast_secondaryKaonAnalysis
   };
 
   enum enumSyst_secondaryKaonAnalysis{
-    kdQdx_Xcal=0,
-    kdQdx_YZcal,
+    kdQdxCalibration=0,
     kRecombination,
+    kSCEGeometric,
+    kBrokenTracks,
+    kBeamPIDEfficiency,
+    kBeamPartWeight,
+    kBeamMomWeight,
+    kProtonBackgroundWeight,
     enumSystLast_secondaryKaonAnalysis
   };
   
@@ -95,7 +107,15 @@ public:
 
     //true kaon candidates info
     bestcandidate_hit_resrange_toy = kaonTree::enumKaonMicroTreesLast+1,
-    bestcandidate_hit_dedx_toy
+    bestcandidate_hit_dedx_toy,
+    bestcandidate_dau_hit_resrange_toy,
+    bestcandidate_dau_hit_dedx_toy,
+    bestcandidate_chi2_kaon_perndf_toy,
+    bestcandidate_Zstart_toy,
+    bestcandidate_Zend_toy,
+    bestcandidate_calE_toy,
+    bestcandidate_length_toy,
+    bestcandidate_dau_calE_toy,
   };
   
 };

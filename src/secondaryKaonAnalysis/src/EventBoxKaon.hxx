@@ -17,6 +17,7 @@ class EventBoxKaon:public EventBoxB{
 
   enum RecObjectGroupEnum{
     kCandidatesAndDaughters = 0,
+    kKaonXS
   };
   
   enum TrueObjectGroupEnum{
@@ -32,6 +33,8 @@ namespace boxUtils{
 
   void FillKaonCandidatesAndDaughters(AnaEventB& event, SubDetId::SubDetEnum det = SubDetId::kSubdet1);
   void FillTrueCandidatesAndDaughters(AnaEventB& event);
+
+  void FillKaonXS(AnaEventB& event, SubDetId::SubDetEnum det = SubDetId::kSubdet1);
 }
 
 #endif
