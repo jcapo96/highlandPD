@@ -30,6 +30,8 @@ namespace pdAnaUtils{
   AnaTrueParticlePD* GetTrueParticle(AnaEventB* event, Int_t ID);
   AnaTrueParticlePD* GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID);
 
+  AnaParticlePD* GetRecoParticleWithAssociatedTrueID(const std::vector<AnaParticleB*> particles, Int_t true_ID);
+
   // retreieve the BI particle
   AnaParticlePD* GetBeamParticle(const AnaEventC& event);
 

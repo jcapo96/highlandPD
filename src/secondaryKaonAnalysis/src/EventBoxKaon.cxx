@@ -112,3 +112,27 @@ void boxUtils::FillTrueCandidatesAndDaughters(AnaEventB& event){
                         EventBox->nTrueObjectsInGroup[EventBoxKaon::kCandidateAndDaughters],
                         nCandidateAndDaughters);*/
 }
+
+//********************************************************************
+void boxUtils::FillKaonXS(AnaEventB& event, SubDetId::SubDetEnum det){
+//********************************************************************
+
+  EventBoxB* EventBox = event.EventBoxes[EventBoxId::kEventBoxKaon];
+
+  EventBox->nRecObjectsInGroup[EventBoxKaon::kKaonXS]=0;
+  anaUtils::CreateArray(EventBox->RecObjectsInGroup[EventBoxKaon::kKaonXS], 10*NMAXPARTICLES);
+
+  AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
+  int nParts           = static_cast<AnaEventB*>(&event)->nParticles;
+    
+  //loop over particles
+  int nCandidatesAndDaughters = 0;
+  for(Int_t i = 0; i < nParts; i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    EventBox->RecObjectsInGroup[EventBoxKaon::kKaonXS][EventBox->nRecObjectsInGroup[EventBoxKaon::kKaonXS]++] = part;
+    nCandidatesAndDaughters++;
+  }
+  anaUtils::ResizeArray(EventBox->RecObjectsInGroup [EventBoxKaon::kKaonXS], 
+                        EventBox->nRecObjectsInGroup[EventBoxKaon::kKaonXS],
+                        nCandidatesAndDaughters);
+}

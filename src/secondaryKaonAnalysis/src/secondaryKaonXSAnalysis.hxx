@@ -1,15 +1,24 @@
-#ifndef BrokenTracks_h
-#define BrokenTracks_h
+#ifndef secondaryKaonXSAnalysis_h
+#define secondaryKaonXSAnalysis_h
 
 #include "baseAnalysis.hxx"
+#include "ToyBoxKaon.hxx"
 #include "standardPDTree.hxx"
 #include "pdDataClasses.hxx"
-#include "ToyBoxdEdx.hxx"
+#include "kaonTree.hxx"
+#include "kaonAnalysisUtils.hxx"
 
-class BrokenTracks: public baseAnalysis {
+#include "TH1F.h"
+
+namespace secondaryKaonXSAnalysisConstants{
+
+  const UInt_t NMAXSAVEDCANDIDATES     = 10;
+}
+
+class secondaryKaonXSAnalysis: public baseAnalysis {
  public:
-  BrokenTracks(AnalysisAlgorithm* ana=NULL);
-  virtual ~BrokenTracks(){}
+  secondaryKaonXSAnalysis(AnalysisAlgorithm* ana=NULL);
+  virtual ~secondaryKaonXSAnalysis(){}
 
   //---- These are mandatory functions
   void DefineSelections();
@@ -23,17 +32,19 @@ class BrokenTracks: public baseAnalysis {
   void FillToyVarsInMicroTrees(bool addBase=true);
 
   bool CheckFillTruthTree(const AnaTrueVertex& vtx){return true;}
+  bool CheckFillTruthTree(const AnaTrueParticlePD* part);
 
-  using baseAnalysis::FillTruthTree;
-  void FillTruthTree(const AnaTrueVertex& vtx);
+  //using baseAnalysis::FillTruthTree;
+  bool FinalizeConfiguration();
+  void FillTruthTree();
+  void FillTruthTree(const AnaTrueVertex& vtx){return;}
+  void FillTruthTree(const AnaTrueParticlePD& part);
   //--------------------
 
   bool Initialize();
   void FillCategories();
   void DefineInputConverters();
 
-  void AddBrokenCategory();
-  void FillBrokenCategory(AnaParticlePD* part);
 
   /// Get a casted AnaSpillC to AnaSpillPD from the InputManager
   AnaSpillPD& GetSpill(){return *static_cast<AnaSpillPD*>(&input().GetSpill());}
@@ -49,38 +60,35 @@ class BrokenTracks: public baseAnalysis {
     return new AnaEventPD(GetSpill(),GetBunch());
   }
   
-  /// Returns the ToyBox
-  virtual const ToyBoxdEdx& box(Int_t isel=-1) const {return *static_cast<const ToyBoxdEdx*>(&boxB(isel));}
+  /// Returns the ToyBoxKaon
+  virtual const ToyBoxKaon& box(Int_t isel=-1) const {return *static_cast<const ToyBoxKaon*>(&boxB(isel));}
 
-  /// Returns the vertex for the ToyBoxPD
+  /// Returns the vertex for the ToyBoxKaon
   virtual AnaVertexB* GetVertex() const{return box().Vertex;}
 
-  /// Returns the true vertex for the ToyBoxPD
+  /// Returns the true vertex for the ToyBoxKaon
   virtual AnaTrueVertexB* GetTrueVertex() const {return box().TrueVertex;}
-  
+
+
 private:
 
 public:
 
-  enum enumSyst_BrokenTracks{
-    kSCE_syst=0,
-    kLifetime_syst,
-    enumSystLast_BrokenTracks
+  enum enumConf_secondaryKaonXSAnalysis{
+    detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
+    enumConfLast_secondaryKaonXSAnalysis
   };
 
-  enum enumCorr_BrokenTracks{
-    kSCE_corr=0,
-    kSCEPosition_corr,
-    kSCEPitch_corr,
-    kLifetime_corr,
-    enumCorrLast_BrokenTracks
-  };
-
-  enum enumStandardMicroTrees_BrokenTracks{
-    seltrk_ndau_APAs = standardPDTree::enumStandardMicroTreesLast_standardPDTree,
-    enumStandardMicroTreesLast_BrokenTracks
-  };
-
+  enum enumSyst_secondaryKaonXSAnalysis{
+    kdQdxCalibration=0,
+    kRecombination,
+    kSCEGeometric,
+    kBrokenTracks,
+    kBeamPIDEfficiency,
+    kBeamPartWeight,
+    kBeamMomWeight,
+    enumSystLast_secondaryKaonXSAnalysis
+  };  
 };
 
 #endif

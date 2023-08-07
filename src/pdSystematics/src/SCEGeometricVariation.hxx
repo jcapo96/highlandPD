@@ -20,7 +20,8 @@ public:
   bool UndoSystematic(AnaEventC& event);
 
   void VarySCEMap(const ToyExperiment& toy);
-  
+  void VarySCEMapLocally(const ToyExperiment& toy);  //apply an independent variation to each voxel
+
 protected:
   
   /// Is this particle relevant for this systematic ?

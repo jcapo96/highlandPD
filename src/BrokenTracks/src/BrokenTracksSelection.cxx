@@ -67,7 +67,7 @@ bool TrackIsBrokenCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB); 
 
   bool IsBroken = false;
-  double coscut = 0.8;
+  double coscut = 0.9;
   double discut = 13.;
 
   AnaParticlePD* part = box.MainTrack;
@@ -82,7 +82,7 @@ bool TrackIsBrokenCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     }
     cos = abs(cos);
     dis = sqrt(dis);
-    if(cos > coscut && dis < discut){
+    if(cos > coscut){// && dis < discut){
       IsBroken = true;
       break;
     }

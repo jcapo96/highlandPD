@@ -136,6 +136,8 @@ namespace kaonTree{
     candidates_dau_averagedEdx,
     candidates_dau_vtx_michelscore,
     candidates_dau_vtx_nhits,
+    candidates_dau_forced,
+    candidates_dau_forced_matched,
 
     candidates_dau_nhits,
     candidates_dau_hit_x,
@@ -201,6 +203,7 @@ namespace kaonTree{
     bestcandidate_CNNscore,
     bestcandidate_chi2_prot,
     bestcandidate_chi2_muon,
+    bestcandidate_chi2_kaon,
     bestcandidate_chi2_ndf,
     bestcandidate_distance_mother,
     bestcandidate_distance_dau,
@@ -208,6 +211,7 @@ namespace kaonTree{
     bestcandidate_averagedEdx,
     bestcandidate_vtx_michelscore,
     bestcandidate_vtx_nhits,
+    bestcandidate_calE,
 
     bestcandidate_nhits,
     bestcandidate_hit_x,

@@ -220,6 +220,9 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   }
 
   TrjPoints.clear();
+
+  forced_daughter = false;
+  forced_daughter_matched = false;
 }
 
 //********************************************************************
@@ -287,6 +290,9 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   }
 
   TrjPoints = part.TrjPoints;
+
+  forced_daughter = part.forced_daughter;
+  forced_daughter_matched = part.forced_daughter_matched;
 }
 
 //********************************************************************
