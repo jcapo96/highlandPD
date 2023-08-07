@@ -52,7 +52,8 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   // Get the SystBox for this event. The SystBox contains vector of objects that are relevant for this systematic.
   // In this way the loop over objects is restricted to the ones that really matter
   SystBoxB* box = GetSystBox(event);
-
+  const AnaEventPD* eventpd = static_cast<const AnaEventPD*>(&event);
+  
   //initialize the SCE for this toy if it has not been initialized yet 
   int toy_index = toy.GetToyIndex();
   _cal->SetSCE(_sce[toy_index],false);
@@ -61,6 +62,9 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
   if(!_sce[toy_index]->IsVaried())
     VarySCEMapGlobally(toy);
 
+  //set appropiate lifetime depending on mc/data and run
+  _cal->SetLifetime(*eventpd);
+  
   // Loop over all relevant tracks for this variation
   for(Int_t ipart = 0; ipart < box->nRelevantRecObjects; ipart++){
      AnaParticlePD* part = static_cast<AnaParticlePD*>(box->RelevantRecObjects[ipart]);

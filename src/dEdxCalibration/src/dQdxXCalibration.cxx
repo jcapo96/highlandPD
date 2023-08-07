@@ -84,9 +84,10 @@ bool dQdxXCalibration::Initialize(){
 				 ("x_local_toy_"+ssx.str()+"").c_str(),
 				 NTOYS,0,NTOYS,100,0,100);
   }
-  
+
   //get yz correction histogram
-  TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_corrections_data_yz_60-90_sce_lifetime_v2.root").c_str());
+  //TFile* yzfile = TFile::Open((std::string(getenv("DEDXCALIBRATIONROOT"))+"/data/yz_corrections_data_yz_60-90_sce_lifetime_v2.root").c_str());
+  TFile* yzfile = TFile::Open((std::string(getenv("HIGHLANDPDPATH"))+"/yz_corrections_mc_lifetime_mypc.root").c_str());
   yz_correction     = (TH2F*)yzfile->Get("correction_yz");
   yz_correction->SetDirectory(0);
   yz_correction_toy = (TH3F*)yzfile->Get("toy_correction_yz");
@@ -284,8 +285,8 @@ void dQdxXCalibration::Finalize(){
   
   //speed up fitting procedure
   ROOT::EnableImplicitMT();
-  ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
-  ROOT::Math::MinimizerOptions::SetDefaultTolerance(10);
+  // ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
+  // ROOT::Math::MinimizerOptions::SetDefaultTolerance(10);
 
   FillHistograms();
   if(_enableAllSystConfig)
@@ -307,6 +308,7 @@ void dQdxXCalibration::FillHistograms(){
 
   //compute means and erros, and fill final histograms
   TH1F* correction = new TH1F("correction_x","correction_x",nbinsx,XMIN,XMAX);
+  TH1F* h_dqdx     = new TH1F("dqdx","dqdx",nbinsx,XMIN,XMAX);
   
   //global values
   std::cout << "Fitting global value" << std::endl;
@@ -329,7 +331,6 @@ void dQdxXCalibration::FillHistograms(){
   double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
   std::cout << "Global MPV = " << global_mpv << " +/- " << global_mpv_error << std::endl;
   std::cout << "Fit time = " << t1-t0 << std::endl;
-
   //local values
   std::cout << "----------------------------------" << std::endl;
   std::cout << "Fitting local values" << std::endl;
@@ -343,6 +344,8 @@ void dQdxXCalibration::FillHistograms(){
     double local_rel_error = local_mpv_error/local_mpv;
     correction->SetBinContent(ix+1,global_mpv/local_mpv);
     correction->SetBinError(ix+1,global_mpv/local_mpv*sqrt(pow(global_rel_error,2)+pow(local_rel_error,2)));
+    h_dqdx->SetBinContent(ix+1,local_mpv);
+    h_dqdx->SetBinError(ix+1,local_mpv_error);
     delete h_local_x[ix];
   }
   
@@ -354,6 +357,7 @@ void dQdxXCalibration::FillHistograms(){
   std::cout << "----------------------------------" << std::endl;
   std::cout << "Writing correction histogram to root" << std::endl;
   correction->Write();
+  h_dqdx->Write();
 }
 
 //********************************************************************

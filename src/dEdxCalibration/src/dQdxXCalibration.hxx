@@ -85,10 +85,10 @@ private:
   TH1F* h_local_x[nbinsx];
   TH2F* h_global_x_toy;
   TH2F* h_local_x_toy[nbinsx];
-
+  
   TH2F* yz_correction;
   TH3F* yz_correction_toy;
-
+  
   SpaceCharge* _sce;
 
   SpaceCharge* GetSCE();
