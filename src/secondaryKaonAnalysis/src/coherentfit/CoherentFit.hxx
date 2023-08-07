@@ -11,7 +11,7 @@
 #include "TF1.h"
 #include "TRandom3.h"
 
-const int NHITS = 100;
+const int NHITS = 300;
 const int NTOYS = 100;
 
 class CoherentFit{
@@ -19,9 +19,10 @@ public:
   CoherentFit();
   virtual ~CoherentFit(){}
 
-  CoherentFit(const std::string& filename);
+  CoherentFit(const std::string& filename, bool IsMC = false);
 
   TTree* GetTreeFromRootFile();
+  TTree* GetSystTree();
   
   void WriteToRootFile(const std::string& filename);
   
@@ -45,24 +46,22 @@ public:
   void GenerateFakeBackground(const double RMIN, const double RMAX, const double STEP,
 			      const double Chi2Cut, const double shift_mean, const double shift_sigma);
 
-  void ComputeSelfSystematicError(const bool apply_all_var = true,
-				  const bool apply_only_s_lw_var  = false, 
-				  const bool apply_only_mpv_var   = false, 
-				  const bool apply_only_s_gw_var  = false,
-				  const bool apply_only_b_lw_var  = false, 
-				  const bool apply_only_b_gw_var  = false,
-				  const bool apply_only_shift_var = false,
-				  const bool apply_only_norm_var  = false);
+  void ComputeSelfSystematicError();
   
-  void PropagateSystematicErrors(bool apply_toy_weights = true, bool apply_toy_variations = true);
-  void GenerateToySamples(bool apply_toy_weights = true, bool apply_toy_variations = true);
+  void PropagateSystematicErrors(const std::string& filename, bool apply_toy_weights = true, bool apply_toy_variations = true);
+  void ToyLoop(bool apply_toy_weights = true, bool apply_toy_variations = true);
+  void GenerateToySample(bool apply_toy_weights = true, bool apply_toy_variations = true, const int itoy = -1);
   void GenerateToyHistograms(CoherentSample* ToySample,
 			     bool apply_toy_weights = true, bool apply_toy_variations = true, const int itoy = -1);
   void InitializeHistogramsForSystematicErrors();
-  void FitToySamples();
+  void InitializeHistogramsForSystematicErrors(std::vector<double> a, std::vector<double> b, std::vector<double> c, std::vector<double> eff);
+  void FillSystematicHistograms(std::vector<double> a, std::vector<double> b, std::vector<double> c, std::vector<double> eff);
+  void WriteSystematicHistograms(const std::string& filename);
+  void FitToySample(std::vector<double> &a, std::vector<double> &b, std::vector<double> &c, std::vector<double> &eff);
   
-  void SequentialCoherentFit();
+  void SequentialCoherentFit(bool minos = true);
   void DataCoherentFit(const CoherentFit* c);
+  void ScaleParameters();
 
   void SetParametersFromMCFit(const CoherentFit* c);
   
@@ -75,8 +74,10 @@ public:
   
   CoherentSample* GetSignalPlusBackgroundSample() const {return fSignalPlusBackground;}
   CoherentSample* GetSignalSample() const {return fSignal;}
+  CoherentSample* GetSemiSignalSample() const {return fSemiSignal;}
   CoherentSample* GetBackgroundSample() const {return fBackground;}
   CoherentSample* GetTrueSignalSample() const {return fTrueSignal;}
+  CoherentSample* GetTrueSemiSignalSample() const {return fTrueSemiSignal;}
   CoherentSample* GetTrueBackgroundSample() const {return fTrueBackground;}
 
   CoherentSample* CreateTrueAllKaonsSample(const double RMIN, const double RMAX, const double STEP,
@@ -84,6 +85,12 @@ public:
 					   const double bin_min = 0, const double bin_max = 50, const double bin_width = 0.1,
 					   const bool normalize = true,
 					   const bool resize = true) const;
+
+  CoherentSample* CreateTrueStoppingKaonsSample(const double RMIN, const double RMAX, const double STEP,
+						const double Chi2Cut,
+						const double bin_min = 0, const double bin_max = 50, const double bin_width = 0.1,
+						const bool normalize = true,
+						const bool resize = true) const;
 
   void SetSignalPlusBackgroundSample(CoherentSample *s){fSignalPlusBackground = s;}
   void SetSignalSample(CoherentSample *s){fSignal = s;}
@@ -106,6 +113,7 @@ private:
   TFile* fFile;
   
   TTree* fTree;
+  TTree* fTreeSystematics;
   bool fIsMiniTree;
   bool fIsSystTree;
   bool fIsMC;
@@ -114,16 +122,19 @@ private:
 
   CoherentSample* fSignalPlusBackground;  
   CoherentSample* fSignal;
+  CoherentSample* fSemiSignal;
   CoherentSample* fBackground;
+  CoherentSample* fSemiBackground;
   CoherentSample* fTrueSignal;
+  CoherentSample* fTrueSemiSignal;
   CoherentSample* fTrueBackground;
-  std::vector<CoherentSample*> fToySamples;
+  CoherentSample* fTrueSemiBackground;
+  CoherentSample* fToySample;
 
   TH1F* h_toy_A;
   TH1F* h_toy_B;
   TH1F* h_toy_C;
-  TH1F* h_toy_D;
-  TH1F* h_toy_R;
+  TH1F* h_toy_Eff;
   TH2F* h_toy_dEdx_RR;
 };
 
