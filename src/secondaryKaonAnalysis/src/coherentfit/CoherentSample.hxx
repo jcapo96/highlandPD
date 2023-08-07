@@ -9,6 +9,8 @@
 #include "TF1.h"
 #include "TMinuit.h"
 #include "TGraphErrors.h"
+#include "TGraphAsymmErrors.h"
+#include "TRatioPlot.h"
 #include "TRandom3.h"
 
 class CoherentSample{
@@ -19,9 +21,11 @@ public:
 		       kSignal,
 		       kSemiSignal, 
 		       kBackground,
+		       kSemiBackground,
 		       kTrueSignal,
 		       kTrueSemiSignal,
-		       kTrueBackground};
+		       kTrueBackground,
+		       kTrueSemiBackground};
   
   enum BackgroundModelEnum {kFitUnassigned=0,
 			    kAllParFree,
@@ -31,7 +35,7 @@ public:
     
   CoherentSample();
   CoherentSample(SampleTypeEnum type);
-  virtual ~CoherentSample(){}
+  virtual ~CoherentSample();
 
   /// Clone this object.
   CoherentSample* Clone() {
@@ -51,76 +55,41 @@ public:
   void UndoHistogramsNormalization() {for(int i = 0; i < (int)fh.size(); i++)fh[i]->Scale(fIntegral[i]);}
   void ChangeHistogramsToVariableBinning(const int min = 3);
   void SetCFitParameters(const CoherentSample* sample);
-  void SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r, const double sigma,
-				       const bool apply_all_var = true,
-				       const bool apply_only_lw_var = false, 
-				       const bool apply_only_mpv_var = false, 
-				       const bool apply_only_gw_var = false,
-				       const bool apply_only_shift_var = false,
-				       const bool apply_only_norm_var = false);
+  void SetCFitParametersWithVariations(const CoherentSample* sample, TRandom3* r);
+  std::pair<double,double> ApplyVariation(const std::pair<double,double> p, TRandom3* r);
   
-  void SequentialCoherentFit();
+  void SequentialCoherentFit(bool minos = true);
   void IncoherentFit();
   void IncoherentFitSignal();
   void IncoherentFitBackground();
   void GetInitialParValuesForCoherentFit();
   void GetInitialParValuesForSignal();
   void GetInitialParValuesForBackground();
-  void CoherentFit();
+  void CoherentFit(bool minos = true);
 
   void CoherentFitSignal();
-  void CoherentFitSignalCheb();
-  void CoherentFitSignalLag();
-  void CoherentFitSignalLagMPV();
-  void CoherentFitSignalMiau();
-  //void CoherentFitSignalAlpha();
-  //void CoherentFitBackgroundAllFree();
-  //void CoherentFitSignalPlusBackgroundAllFree();
-  //void CoherentFitBackgroundShift();
-  //void CoherentFitSignalPlusBackgroundShift();
-  //void CoherentFitBackground3Par();
-  void CoherentFitBackgroundQuadraticWidths();
-  void CoherentFitBackgroundCheb();
-  void CoherentFitBackgroundLag();
-  void CoherentFitBackgroundLagMPV();
-  void CoherentFitBackgroundMiau();
-  void CoherentFitSignalPlusBackgroundQuadraticWidths();
-  void CoherentFitSignalPlusBackgroundCheb();
-  void CoherentFitSignalPlusBackgroundLag();
-  void CoherentFitSignalPlusBackgroundLagMPV();
-  void CoherentFitSignalPlusBackgroundMiau();
-  void CoherentFitSignalPlusBackgroundPLEASE();
-  void CoherentFitSemiSignal();
+  void CoherentFitOnlySignal();
+  void CoherentFitBackground();
+  void CoherentFitSignalPlusBackground(bool minos = true, double step = 0.001);
+  void CoherentFitSignalPlusBackgroundToy(bool &result);
+  void TrySoloPeaks(bool &result);
+  void EstimateWhatIsLeft();
   
   void StoreCoherentFits();
+  void StoreCoherentFitsSignal();
+  void StoreCoherentFitsTrueSemiSignal();
+  void StoreCoherentFitsBackground();
+  void StoreCoherentFitsSemiBackground();
 
   void WriteToRootFile(const std::string& filename);
   void ReadFromRootFile(const std::string& filename);
   void ResetAllButHistograms();
   
   static void fcnSignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  //static void fcnSignalAlpha(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  //static void fcnBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  //static void fcnSignalPlusBackgroundAllFree(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  //static void fcnBackgroundShift(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  //static void fcnSignalPlusBackgroundShift(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  //static void fcnBackground3Par(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackgroundQuadraticWidths(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundQuadraticWidths(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnBackgroundMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundCheb(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundLag(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundLagMPV(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundMiau(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSignalPlusBackgroundPLEASE(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-  static void fcnSemiSignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnOnlySignal(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnBackground(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnSignalPlusBackground(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+  static void fcnEstimateWhatIsLeft(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
   
   CoherentSample* GetSignal() const {return fSignal;}
   void SetSignal(CoherentSample* Signal){fSignal = Signal;}
@@ -128,12 +97,16 @@ public:
   void SetSemiSignal(CoherentSample* SemiSignal){fSemiSignal = SemiSignal;}
   CoherentSample* GetBackground() const {return fBackground;}
   void SetBackground(CoherentSample* Background){fBackground = Background;}
+  CoherentSample* GetSemiBackground() const {return fSemiBackground;}
+  void SetSemiBackground(CoherentSample* SemiBackground){fSemiBackground = SemiBackground;}
   CoherentSample* GetTrueSignal() const {return fTrueSignal;}
   void SetTrueSignal(CoherentSample* Signal){fTrueSignal = Signal;}
   CoherentSample* GetTrueSemiSignal() const {return fTrueSemiSignal;}
   void SetTrueSemiSignal(CoherentSample* SemiSignal){fTrueSemiSignal = SemiSignal;}
   CoherentSample* GetTrueBackground() const {return fTrueBackground;}
   void SetTrueBackground(CoherentSample* Background){fTrueBackground = Background;}
+  CoherentSample* GetTrueSemiBackground() const {return fTrueSemiBackground;}
+  void SetTrueSemiBackground(CoherentSample* SemiBackground){fTrueSemiBackground = SemiBackground;}
 
   SampleTypeEnum GetSampleType() const {return fType;}
   void SetSampleType(SampleTypeEnum type) {fType = type;}
@@ -142,6 +115,8 @@ public:
 
   void SetChi2Cut(const Double_t Chi2Cut) {fChi2Cut = Chi2Cut;}
   Double_t GetChi2Cut() const {return fChi2Cut;}
+  
+  int GetSize() const {return (int)fh.size();}
   
   std::vector<TH1F*> GetHistVector() const {return fh;}
   void AddToHistVector(TH1F* h){fh.push_back(h);}
@@ -216,6 +191,7 @@ public:
   TGraphErrors* GetIgwGraph() const;
   TGraphErrors* GetInormGraph() const;
   TGraphErrors* GetIfwGraph() const;
+  TGraphErrors* GetIconstGraph() const;
     
   std::pair<double,double> GetClwA() const {return fClwA;}
   void SetClwA(std::pair<double,double> p){fClwA = p;} 
@@ -254,6 +230,9 @@ public:
   std::pair<double,double> GetCnorm() const {return fCnorm;}
   void SetCnorm(std::pair<double,double> p){fCnorm = p;}
 
+  std::pair<double,double> GetCconst() const {return fCconst;}
+  void SetCconst(std::pair<double,double> p){fCconst = p;}
+
   void SetHistogramMarker(int n){for(int i = 0; i < (int)fh.size(); i++)fh[i]->SetMarkerStyle(n);}
   void SetHistogramColor(int n){for(int i = 0; i < (int)fh.size(); i++){fh[i]->SetMarkerColor(n);fh[i]->SetLineColor(n);}}
   void SetHistogramLineWidth(int n){for(int i = 0; i < (int)fh.size(); i++){fh[i]->SetLineWidth(n);}}
@@ -265,18 +244,25 @@ public:
   void SetCFitStyle(int n){for(int i = 0; i < (int)fCFit.size(); i++)fCFit[i]->SetLineStyle(n);}
   void SetCFitColor(int n){for(int i = 0; i < (int)fCFit.size(); i++)fCFit[i]->SetLineColor(n);}
 
-  TGraphErrors* GetMPVErrorBand();
+  TGraphErrors* GetMPVErrorBandOld();
+  TGraphAsymmErrors* GetMPVErrorBand(const double min = 1, const double max = 31, const double step = 0.01);
+
+  TRatioPlot* GetFitRatio(const int ibin);
 
   void CopyHistogramsBinning(std::vector<TH1F*> vh);
+
+  std::vector<double> GetLikelihoodVector() const {return fPartialLikelihood;}
   
 private:
 
   CoherentSample* fSignal;
   CoherentSample* fSemiSignal;
   CoherentSample* fBackground;
+  CoherentSample* fSemiBackground;
   CoherentSample* fTrueSignal;
   CoherentSample* fTrueSemiSignal;
   CoherentSample* fTrueBackground;
+  CoherentSample* fTrueSemiBackground;
   
   SampleTypeEnum      fType;
   BackgroundModelEnum fBackgroundModel;
@@ -307,6 +293,8 @@ private:
   std::vector<std::pair<double,double>> fInorm;
   std::vector<std::pair<double,double>> fIgw;
   std::vector<std::pair<double,double>> fIfw;
+  std::vector<std::pair<double,double>> fIalpha;
+  std::vector<std::pair<double,double>> fIconst;
 
   //coherent signal results
   std::pair<double,double> fClwA;
@@ -328,6 +316,18 @@ private:
   std::pair<double,double> fCgwQa;
 
   std::pair<double,double> fCnorm;
+
+  std::pair<double,double> fCconst;
+
+  double fCmpvA_error_neg;
+  double fCmpvA_error_pos;
+  double fCmpvB_error_neg;
+  double fCmpvB_error_pos;
+  double fCmpvC_error_neg;
+  double fCmpvC_error_pos;
+
+  double fLikelihood;
+  std::vector<double> fPartialLikelihood;
 };
 
 #endif

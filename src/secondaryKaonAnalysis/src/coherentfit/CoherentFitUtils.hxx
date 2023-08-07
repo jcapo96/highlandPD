@@ -30,6 +30,10 @@ namespace CoherentFitUtils{
 						const double RMIN, const double RMAX,
 						const double Chi2Cut);
   
+  TH1F* GetStoppingKaonsHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
+						   const double RMIN, const double RMAX,
+						   const double Chi2Cut);
+
   TH1F* GetAllKaonsHistogramFromResRangeSlice(TTree* t, AnaSpillB* spill, TH1F* ha,
 					      const double RMIN, const double RMAX,
 					      const double Chi2Cut);
@@ -59,7 +63,8 @@ namespace CoherentFitUtils{
   Double_t GetFunctionNormalizationInsideHistogramBoundaries(const TH1F* h, const TF1* f);
   
   TF1* GausnFit(TH1F* h, bool use_poisson = true);
-  TF1* LangausFit(TH1F* h, CoherentSample::SampleTypeEnum sample, bool use_poisson = true);
+  TF1* LangausFit(TH1F* h, bool use_poisson = true);
+  TF1* LangausPlusConstantFit(TH1F* h, bool use_poisson = true);
   TF1* DoubleLangausFit(TH1F* h, bool use_poisson = true);
 
  
@@ -100,9 +105,25 @@ namespace CoherentFitUtils{
 				double &error_l1, double &error_l2,
 				std::vector<std::pair<double,double>> X, std::vector<std::pair<double,double>> Y);
 
+  void GetParabolicParametrization(double &l1, double &l2, 
+				   double &error_l1, double &error_l2,
+				   std::vector<std::pair<double,double>> X, std::vector<std::pair<double,double>> Y);
+
   void GetDiLogParametrization(double &l1, double &l2, double &l3, 
 			       double &error_l1, double &error_l2, double &error_l3,
 			       std::vector<std::pair<double,double>> X, std::vector<std::pair<double,double>> Y);
+  
+  void GetSignalLWEstimation(double &l1, double &l2, 
+			     double &error_l1, double &error_l2,
+			     std::vector<std::pair<double,double>> X, std::vector<std::pair<double,double>> Y);
+  
+  void GetSignalMPVEstimation(double &l1, double &l2, double &l3, 
+			      double &error_l1, double &error_l2, double &error_l3,
+			      std::vector<std::pair<double,double>> X, std::vector<std::pair<double,double>> Y);
+
+  void GetSignalGWEstimation(double &l1, double &l2, 
+			     double &error_l1, double &error_l2,
+			     std::vector<std::pair<double,double>> X, std::vector<std::pair<double,double>> Y);
 
   double ComputeLikelihood(TH1F* h, TF1* f, double integral);
   double NormRegularization(const std::vector<double> norm, const std::vector<double> integral);

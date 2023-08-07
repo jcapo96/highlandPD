@@ -1,6 +1,5 @@
 #include "CoherentFit.hxx"
 #include "CoherentFitUtils.hxx"
-
 #include "TPad.h"
 #include "TSystem.h"
 #include "TCanvas.h"
@@ -15,6 +14,7 @@ CoherentFit::CoherentFit(){
   fFilename = "";
   fFile = NULL;  
   fTree = NULL;
+  fTreeSystematics = NULL;
   fIsMiniTree = false;
   fIsSystTree = false;
   fIsMC = false;
@@ -23,20 +23,21 @@ CoherentFit::CoherentFit(){
   fSignal = NULL;
   fSemiSignal = NULL;
   fBackground = NULL;
+  fSemiBackground = NULL;
   fTrueSignal = NULL;
   fTrueSemiSignal = NULL;
   fTrueBackground = NULL;
-  fToySamples.clear();
+  fTrueSemiBackground = NULL;
+  fToySample = NULL;
   h_toy_A = NULL;
   h_toy_B = NULL;
   h_toy_C = NULL;
-  h_toy_D = NULL;
-  h_toy_R = NULL;
+  h_toy_Eff = NULL;
   h_toy_dEdx_RR = NULL;
 }
 
 //********************************************************************
-CoherentFit::CoherentFit(const std::string& filename){
+CoherentFit::CoherentFit(const std::string& filename, bool IsMC){
 //********************************************************************
   
   //get MiniTree
@@ -47,6 +48,8 @@ CoherentFit::CoherentFit(const std::string& filename){
     std::cout << "couldn't find " << fFilename << std::endl;
     std::exit(1);
   }
+
+  fIsMC = IsMC;
   
   fTree = GetTreeFromRootFile();//(TTree*)fFile->Get("MiniTree");
   if(fIsMiniTree){
@@ -56,21 +59,22 @@ CoherentFit::CoherentFit(const std::string& filename){
     fIsMC = fSpill->GetIsMC();
   }
   else fSpill = NULL;
-  
+
   fSignalPlusBackground = NULL;
   fSignal = NULL;
   fSemiSignal = NULL;
   fBackground = NULL;
+  fSemiBackground = NULL;
   fTrueSignal = NULL;
   fTrueSemiSignal = NULL;
   fTrueBackground = NULL;
-  fToySamples.clear();
+  fTrueSemiBackground = NULL;
+  fToySample = NULL;
 
   h_toy_A = NULL;
   h_toy_B = NULL;
   h_toy_C = NULL;
-  h_toy_D = NULL;
-  h_toy_R = NULL;
+  h_toy_Eff = NULL;
   h_toy_dEdx_RR = NULL;
 }
 
@@ -86,18 +90,37 @@ TTree* CoherentFit::GetTreeFromRootFile(){
     return t;
   }
 
-  t = (TTree*)fFile->Get("all_syst");
+  t = (TTree*)fFile->Get("ana");
   //t = (TTree*)fFile->Get("dQdx_YZcal");
   if(t){
     fIsMiniTree = false;
-    fIsSystTree = true;
-    fIsMC = true;
-    std::cout << "Input tree is flat tree with systematics" << std::endl;
+    fIsSystTree = false;
+    std::cout << "Input tree is flat tree" << std::endl;
     return t;
   }
 
   //if here, no known type of tree provided
   std::cout << "ERROR! TTree type not known. Please check your input file" << std::endl;
+  std::exit(1);
+}
+
+//********************************************************************
+TTree* CoherentFit::GetSystTree(){
+//********************************************************************
+
+  TFile* f = TFile::Open(fFilename.c_str());
+  
+  TTree* t = (TTree*)fFile->Get("all_syst");
+  if(t){
+    fIsMiniTree = false;
+    fIsSystTree = true;
+    std::cout << "Tree with systematics found" << std::endl;
+    f->Close();
+    return t;
+  }
+
+  //if here, no known type of tree provided
+  std::cout << "ERROR! No TTree with systematics found!" << std::endl;
   std::exit(1);
 }
 
@@ -121,9 +144,11 @@ void CoherentFit::CreateCoherentSamples(const Double_t Chi2Cut){
   fSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kSignal);
   fSemiSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kSemiSignal);
   fBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kBackground);
+  fSemiBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kSemiBackground);
   fTrueSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSignal);
   fTrueSemiSignal = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSemiSignal);
   fTrueBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueBackground);
+  fTrueSemiBackground = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSemiBackground);
   
   CreateSampleLinks();
   
@@ -145,12 +170,16 @@ void CoherentFit::CreateSampleLinks(){
   fSignal->SetBackground(fBackground);
   fSemiSignal->SetSignal(fSignal);
   fBackground->SetSignal(fSignal);
+  fBackground->SetSemiBackground(fSemiBackground);
+  fSemiBackground->SetBackground(fBackground);
   fSignalPlusBackground->SetTrueSignal(fTrueSignal);
   fSignalPlusBackground->SetTrueBackground(fTrueBackground);
   fTrueSignal->SetTrueSemiSignal(fTrueSemiSignal);
   fTrueSignal->SetTrueBackground(fTrueBackground);
   fTrueSemiSignal->SetTrueSignal(fTrueSignal);
   fTrueBackground->SetTrueSignal(fTrueSignal);
+  fTrueBackground->SetTrueSemiBackground(fTrueSemiBackground);
+  fTrueSemiBackground->SetTrueBackground(fTrueBackground);
 }
 
 //********************************************************************
@@ -175,6 +204,10 @@ void CoherentFit::GenerateTrueMCHistograms(const double RMIN, const double RMAX,
       std::exit(1);
     }
   }
+
+  // double min[15] = {5 ,4.5,4.5,4,3.5,3.5,3  ,3,3,2.5,2.5,2.5,2  ,2  ,2};
+  // double max[15] = {14,10 ,8  ,7,6.5,6  ,5.5,5,5,5  ,5  ,4.5,4.5,4.5,4.5};
+  // int counter = 0;
   
   double rmin = RMIN;
   double rmax = RMIN+STEP;
@@ -186,6 +219,7 @@ void CoherentFit::GenerateTrueMCHistograms(const double RMIN, const double RMAX,
     fTrueBackground->AddToHistVector(CoherentFitUtils::GetBackgroundHistogramFromResRangeSlice(fTree, fSpill, fSignalPlusBackground->GetHistVector().back(), rmin, rmax, Chi2Cut));
     rmin += STEP;
     rmax += STEP;
+    // counter++;
   }
   
   fTrueSignal->SetRRVector(fSignalPlusBackground->GetRRVector());
@@ -317,6 +351,40 @@ void CoherentFit::GenerateHistograms(const double RMIN, const double RMAX, const
 }
 
 //********************************************************************
+CoherentSample* CoherentFit::CreateTrueStoppingKaonsSample(const double RMIN, const double RMAX, const double STEP,
+							   const double Chi2Cut,
+							   const double bin_min, const double bin_max, const double bin_width,
+							   const bool normalize, const bool resize) const {
+//********************************************************************
+
+  if(fIsMiniTree){
+    fTree->GetEntry(0);
+    if(!fSpill->GetIsMC()){
+      std::cout << "this tree is not MC!!! cannot create signal and background histograms" << std::endl;
+      std::exit(1);
+    }
+  }
+  
+  CoherentSample* cs = new CoherentSample(CoherentSample::SampleTypeEnum::kTrueSignal);
+  
+  double rmin = RMIN;
+  double rmax = RMIN+STEP;
+  
+  int irr = 0;
+  while(rmax <= RMAX){
+    cs->AddToRRVector(std::make_pair((rmin+rmax)/2,(rmax-rmin)/2));
+    cs->AddToHistVector(CoherentFitUtils::GetStoppingKaonsHistogramFromResRangeSlice(fTree, fSpill, fSignalPlusBackground->GetHistVector()[irr], rmin, rmax, Chi2Cut));
+    rmin += STEP;
+    rmax += STEP;
+    irr++;
+  }
+  
+  if(normalize)cs->NormalizeHistograms(fSignalPlusBackground->GetIntegralVector());
+    
+  return cs;
+}
+
+//********************************************************************
 CoherentSample* CoherentFit::CreateTrueAllKaonsSample(const double RMIN, const double RMAX, const double STEP,
 						      const double Chi2Cut,
 						      const double bin_min, const double bin_max, const double bin_width,
@@ -351,86 +419,66 @@ CoherentSample* CoherentFit::CreateTrueAllKaonsSample(const double RMIN, const d
 }
 
 //********************************************************************
-void CoherentFit::ComputeSelfSystematicError(const bool apply_all_var,
-					     const bool apply_only_s_lw_var,
-					     const bool apply_only_mpv_var,
-					     const bool apply_only_s_gw_var,
-					     const bool apply_only_b_lw_var,
-					     const bool apply_only_b_gw_var,
-					     const bool apply_only_shift_var,
-					     const bool apply_only_norm_var){
+void CoherentFit::ComputeSelfSystematicError(){
 //********************************************************************
 
+  //InitializeHistogramsForSystematicErrors();
+  std::vector<double> a,b,c,eff;
+  
   TRandom3* r = new TRandom3();
   r->SetSeed(1);
 
-  CoherentSample* ClonedSample = fSignalPlusBackground->Clone();
-  ClonedSample->SetSignal(fSignal->Clone());
-  ClonedSample->SetBackground(fBackground->Clone());
+  fToySample = fSignalPlusBackground->Clone();
+  CoherentSample* ClonedSignal = fSignal->Clone();
+  CoherentSample* ClonedBackground = fBackground->Clone();
+  fToySample->SetSignal(ClonedSignal);
+  fToySample->SetBackground(ClonedBackground);
 
   //generate toy samples
   for(int itoy = 0; itoy < NTOYS; itoy++){
     std::cout << "toy sample " << itoy << std::endl;
-    fToySamples.push_back(ClonedSample);
-    //generate seed values for fitting
-    fToySamples[itoy]->GetSignal()->SetCFitParametersWithVariations(fSignal,r,0.05,
-								    apply_all_var,
-								    apply_only_s_lw_var,apply_only_mpv_var,apply_only_s_gw_var,
-								    apply_only_shift_var,apply_only_norm_var);
-    fToySamples[itoy]->GetBackground()->SetCFitParametersWithVariations(fBackground,r,0.05,
-									apply_all_var,
-									apply_only_b_lw_var,apply_only_mpv_var,apply_only_b_gw_var,
-									apply_only_shift_var,apply_only_norm_var);
-    //fit
-    fToySamples[itoy]->CoherentFit();
+    //set initial parameters values with variations
+    fToySample->GetSignal()->SetCFitParametersWithVariations(fSignal,r);
+    fToySample->GetBackground()->SetCFitParametersWithVariations(fBackground,r);
+
+    //coherent fit
+    bool result = false;
+    fToySample->CoherentFitSignalPlusBackgroundToy(result);
     //store results
-    for(int ibin = 0; ibin < 5900; ibin++)
-      h_toy_dEdx_RR->Fill(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1),
-			  fToySamples[itoy]->GetSignal()->GetCmpvFit()->Eval(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1)));
-    
-    /*for(int ihist = 0; ihist < fToySamples[itoy]->GetHistVector().size(); ihist++){
-      fToySamples[itoy]->GetHistVector()[ihist]->Draw("histo");
-      fToySamples[itoy]->GetCFitVector()[ihist]->Draw("same");
-      gPad->Update();gSystem->Sleep(10000);
-      }*/
+    a.push_back(fToySample->GetSignal()->GetCmpvA().first);
+    b.push_back(fToySample->GetSignal()->GetCmpvB().first);
+    c.push_back(fToySample->GetSignal()->GetCmpvC().first);
+    eff.push_back(result);
   }
+
+  InitializeHistogramsForSystematicErrors(a,b,c,eff);
+  FillSystematicHistograms(a,b,c,eff);
   
-  TFile* rfile = new TFile("selfsyst_norm.root","NEW");
-  h_toy_dEdx_RR->Write();
+  TFile* rfile = new TFile("selfsyst.root","NEW");
+  h_toy_A->Write();
+  h_toy_B->Write();
+  h_toy_C->Write();
+  h_toy_Eff->Write();
   rfile->Close();
 }
 
 //********************************************************************
-void CoherentFit::GenerateToySamples(const bool apply_toy_weights, const bool apply_toy_variations){
+void CoherentFit::GenerateToySample(const bool apply_toy_weights, const bool apply_toy_variations, const int itoy){
 //********************************************************************
 
   if(!fIsSystTree){
     std::cout << "ERROR! TTree is not a flat tree with systematic variations. Please check your input file" << std::endl;
     std::exit(1);
   }
-  
-  for(int itoy = 0; itoy < NTOYS; itoy++){
-    std::cout << "toy sample " << itoy << std::endl;
-    fToySamples.push_back(new CoherentSample(CoherentSample::SampleTypeEnum::kSignalPlusBackground));
-    GenerateToyHistograms(fToySamples.back(),apply_toy_weights,apply_toy_variations,itoy);
+
+  //delete previous one
+  if(fToySample){
+    delete fToySample;
+    fToySample = NULL;
   }
 
-  /*for(int i = 0; i < fSignalPlusBackground->GetRRVector().size(); i++){
-    for(int j = 0; j < fToySamples.size(); j++){
-      fToySamples[j]->SetHistogramColor(j+1);
-      fToySamples[j]->SetHistogramLineWidth(2);
-      std::stringstream ssj;
-      ssj << j+1;
-      fToySamples[j]->GetHistVector()[i]->SetTitle(("Toy "+ssj.str()+"").c_str());
-      if(j==0){
-	fToySamples[j]->GetHistVector()[i]->GetXaxis()->SetTitle("dEdx [MeV/cm]");
-	fToySamples[j]->GetHistVector()[i]->Draw("histo");
-      }
-      else    fToySamples[j]->GetHistVector()[i]->Draw("histosame");
-    }
-    gPad->BuildLegend();
-    gPad->Update();gSystem->Sleep(20000);//gPad->WaitPrimitive();
-    }*/
+  fToySample = new CoherentSample(CoherentSample::SampleTypeEnum::kSignalPlusBackground);
+  GenerateToyHistograms(fToySample,apply_toy_weights,apply_toy_variations,itoy);
 }
 
 //********************************************************************
@@ -450,12 +498,12 @@ void CoherentFit::GenerateToyHistograms(CoherentSample* ToySample, const bool ap
   double step = 2*fSignalPlusBackground->GetRRVector()[0].second;
   double rmin = fSignalPlusBackground->GetRRVector()[0].first - step/2;
   double rmax = fSignalPlusBackground->GetRRVector()[0].first + step/2;
-  
+
   for(int irr = 0; irr < (int)fSignalPlusBackground->GetRRVector().size(); irr++){
     double bin_min   = fSignalPlusBackground->GetHistVector()[irr]->GetXaxis()->GetXmin();
     double bin_max   = fSignalPlusBackground->GetHistVector()[irr]->GetXaxis()->GetXmax();
     double bin_width = fSignalPlusBackground->GetHistVector()[irr]->GetXaxis()->GetBinWidth(0);
-    ToySample->AddToHistVector(CoherentFitUtils::GetToyHistogramFromResRangeSlice(fTree,
+    ToySample->AddToHistVector(CoherentFitUtils::GetToyHistogramFromResRangeSlice(fTreeSystematics,
 										  rmin, rmax,
 										  bin_min, bin_max, bin_width,
 										  apply_toy_weights, apply_toy_variations, itoy));
@@ -473,14 +521,44 @@ void CoherentFit::InitializeHistogramsForSystematicErrors(){
   double mpvA_mean = fSignalPlusBackground->GetSignal()->GetCmpvA().first;
   double mpvB_mean = fSignalPlusBackground->GetSignal()->GetCmpvB().first;
   double mpvC_mean = fSignalPlusBackground->GetSignal()->GetCmpvC().first;
-  double mpvD_mean = fSignalPlusBackground->GetSignal()->GetCmpvD().first;
-  double mpvR_mean = fSignalPlusBackground->GetSignal()->GetCmpvR().first;
   h_toy_A = new TH1F("h_toy_A","h_toy_A",500,0.1*mpvA_mean,1.9*mpvA_mean);
-  h_toy_B = new TH1F("h_toy_B","h_toy_B",500,0.1*mpvB_mean,1.9*mpvB_mean);
+  h_toy_B = new TH1F("h_toy_B","h_toy_B",5000,0.1*mpvB_mean,1.9*mpvB_mean);
   h_toy_C = new TH1F("h_toy_C","h_toy_C",500,0.1*mpvC_mean,1.9*mpvC_mean);
-  h_toy_D = new TH1F("h_toy_D","h_toy_D",500,0.1*mpvD_mean,1.9*mpvD_mean);
-  h_toy_R = new TH1F("h_toy_R","h_toy_R",500,0.1*mpvR_mean,1.9*mpvR_mean);
+  h_toy_Eff = new TH1F("h_toy_Eff","h_toy_Eff",2,0,2);
   h_toy_dEdx_RR = new TH2F("h_toy_dEdx_RR","h_toy_dEdx_RR",5900,1,60,2000,0,20);
+}
+
+//********************************************************************
+void CoherentFit::InitializeHistogramsForSystematicErrors(std::vector<double> a, std::vector<double> b, std::vector<double> c, std::vector<double> eff){
+//********************************************************************
+
+  double amin = *std::min_element(a.begin(), a.end())*1.2; //a is negative
+  double amax = *std::max_element(a.begin(), a.end())*0.8; //a is negative
+  h_toy_A = new TH1F("h_toy_A","h_toy_A",5000,amin,amax); 
+
+  double bmin = *std::min_element(b.begin(), b.end())*0.8;
+  double bmax = *std::max_element(b.begin(), b.end())*1.2;
+  h_toy_B = new TH1F("h_toy_B","h_toy_B",5000,bmin,bmax);
+
+  double cmin = *std::min_element(c.begin(), c.end())*1.2; //c is negative
+  double cmax = *std::max_element(c.begin(), c.end())*0.8; //c is negative
+  h_toy_C = new TH1F("h_toy_C","h_toy_C",5000,cmin,cmax);
+
+  h_toy_Eff = new TH1F("h_toy_Eff","h_toy_Eff",2,0,2);
+}
+
+//********************************************************************
+void CoherentFit::FillSystematicHistograms(std::vector<double> a, std::vector<double> b, std::vector<double> c, std::vector<double> eff){
+//********************************************************************
+
+  for(int i = 0; i < (int)a.size(); i++){
+    h_toy_Eff->Fill(eff[i]);
+    if(eff[i] == 1){
+      h_toy_A->Fill(a[i]);
+      h_toy_B->Fill(b[i]);
+      h_toy_C->Fill(c[i]);
+    }
+  }
 }
 
 //********************************************************************
@@ -503,76 +581,45 @@ void CoherentFit::NormalizeHistograms(CoherentSample* cs){
 }
 
 //********************************************************************
-void CoherentFit::FitToySamples(){
+void CoherentFit::FitToySample(std::vector<double> &a, std::vector<double> &b, std::vector<double> &c, std::vector<double> &eff){
 //********************************************************************
 
   //create toy signal and background
-  CoherentSample* toySignal = fSignal->Clone();
+  //this is done so the seed is never changed
+  CoherentSample* toySignal = fSignal->Clone(); 
   CoherentSample* toyBackground = fBackground->Clone();
+  CoherentSample* toySemiBackground = fBackground->GetSemiBackground()->Clone();
+  toyBackground->SetSemiBackground(toySemiBackground);
   
-  for(int itoy = 0; itoy < NTOYS; itoy++){
-    std::cout << "fitting toy sample " << itoy << std::endl;
-    //make toy sample point to toysignal and toybackground
-    fToySamples[itoy]->SetSignal(toySignal);
-    fToySamples[itoy]->SetBackground(toyBackground);
-    fToySamples[itoy]->SetBackgroundModel(fSignalPlusBackground->GetBackgroundModel());
-    //initialize seed to original
-    fToySamples[itoy]->GetSignal()->SetCFitParameters(fSignal);
-    fToySamples[itoy]->GetBackground()->SetCFitParameters(fBackground);
-    //coherent fit
-    fToySamples[itoy]->CoherentFit();
-    //store results
-    h_toy_A->Fill(fToySamples[itoy]->GetSignal()->GetCmpvA().first);
-    h_toy_B->Fill(fToySamples[itoy]->GetSignal()->GetCmpvB().first);
-    h_toy_C->Fill(fToySamples[itoy]->GetSignal()->GetCmpvC().first);
-    h_toy_D->Fill(fToySamples[itoy]->GetSignal()->GetCmpvD().first);
-    h_toy_R->Fill(fToySamples[itoy]->GetSignal()->GetCmpvR().first);
-    for(int ibin = 0; ibin < 5900; ibin++)
-      h_toy_dEdx_RR->Fill(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1),
-			  fToySamples[itoy]->GetSignal()->GetCmpvFit()->Eval(h_toy_dEdx_RR->GetXaxis()->GetBinCenter(ibin+1)));
-  }
+  //make toy sample point to toysignal and toybackground
+  fToySample->SetSignal(toySignal);
+  fToySample->SetBackground(toyBackground);
+  //initialize seed to original
+  fToySample->GetSignal()->SetCFitParameters(fSignal);
+  fToySample->GetBackground()->SetCFitParameters(fBackground);
 
-  /*for(int i = 0; i < fSignalPlusBackground->GetRRVector().size(); i++){
-    for(int j = 0; j < fToySamples.size(); j++){
-      fToySamples[j]->SetHistogramColor(j+1);
-      fToySamples[j]->SetCFitColor(j+1);
-      fToySamples[j]->SetHistogramLineWidth(2);
-      std::stringstream ssj;
-      ssj << j+1;
-      fToySamples[j]->GetHistVector()[i]->SetTitle(("Toy "+ssj.str()+"").c_str());
-      fToySamples[j]->GetCFitVector()[i]->SetTitle(("Toy "+ssj.str()+" Fit").c_str());
-      if(j==0){
-	fToySamples[j]->GetHistVector()[i]->GetXaxis()->SetTitle("dEdx [MeV/cm]");
-	fToySamples[j]->GetHistVector()[i]->Draw("histo");
-	fToySamples[j]->GetCFitVector()[i]->Draw("same");
-      }
-      else{
-	fToySamples[j]->GetHistVector()[i]->Draw("histosame");
-	fToySamples[j]->GetCFitVector()[i]->Draw("same");
-      }
-    }
-    gPad->BuildLegend();
-    gPad->Update();gPad->WaitPrimitive();
-  }*/
+  //coherent fit
+  bool result = false;
+  fToySample->CoherentFitSignalPlusBackgroundToy(result);
+
+  //store results
+  a.push_back(fToySample->GetSignal()->GetCmpvA().first);
+  b.push_back(fToySample->GetSignal()->GetCmpvB().first);
+  c.push_back(fToySample->GetSignal()->GetCmpvC().first);
+  eff.push_back(result);
   
-  TFile* rfile = new TFile("syst_histos_Recombination.root","NEW");
-  h_toy_A->Write();
-  h_toy_B->Write();
-  h_toy_C->Write();
-  h_toy_D->Write();
-  h_toy_R->Write();
-  h_toy_dEdx_RR->Write();
-  rfile->Close();
-  
+  std::cout << fSignalPlusBackground->GetSignal()->GetCmpvA().first << " " << fToySample->GetSignal()->GetCmpvA().first << std::endl;
+  std::cout << fSignalPlusBackground->GetSignal()->GetCmpvB().first << " " << fToySample->GetSignal()->GetCmpvB().first << std::endl;
+  std::cout << fSignalPlusBackground->GetSignal()->GetCmpvC().first << " " << fToySample->GetSignal()->GetCmpvC().first << std::endl;
 }
 
 //********************************************************************
-void CoherentFit::SequentialCoherentFit(){
+void CoherentFit::SequentialCoherentFit(bool minos){
 //********************************************************************
   
   fTrueSignal->SequentialCoherentFit();
   fTrueBackground->SequentialCoherentFit();
-  fSignalPlusBackground->SequentialCoherentFit();
+  fSignalPlusBackground->SequentialCoherentFit(minos);
 }
 
 //********************************************************************
@@ -580,19 +627,69 @@ void CoherentFit::DataCoherentFit(const CoherentFit* c){
 //********************************************************************
   
   SetParametersFromMCFit(c);
-  fSignalPlusBackground->CoherentFit();
+  ScaleParameters();
+  fSignalPlusBackground->CoherentFitSignalPlusBackground(true,1);
 }
 
 //********************************************************************
-void CoherentFit::PropagateSystematicErrors(const bool apply_toy_weights, const bool apply_toy_variations){
+void CoherentFit::ScaleParameters(){
+//********************************************************************
+
+  double scale = 1.4;
+  fSignal->SetClwA(std::make_pair(fSignal->GetClwA().first*scale,fSignal->GetClwA().second*scale));
+  fSignal->SetCgwA(std::make_pair(fSignal->GetCgwA().first*scale,fSignal->GetCgwA().second*scale));
+  fBackground->SetClwA(std::make_pair(fBackground->GetClwA().first*scale,fBackground->GetClwA().second*scale));
+}
+
+//********************************************************************
+void CoherentFit::ToyLoop(const bool apply_toy_weights, const bool apply_toy_variations){
+//********************************************************************
+
+  //create vectors for storing results
+  std::vector<double> a, b, c, eff;
+  a.clear(); b.clear(); c.clear(); eff.clear();
+  
+  //loop over toys
+  for(int itoy = 0; itoy < NTOYS; itoy++){
+    std::cout << "---------------------" << std::endl;
+    std::cout << "TOY " << itoy << std::endl;
+    std::cout << "---------------------" << std::endl;
+    GenerateToySample(apply_toy_weights, apply_toy_variations, itoy);
+    FitToySample(a,b,c,eff);
+  }
+
+  InitializeHistogramsForSystematicErrors(a,b,c,eff);
+  FillSystematicHistograms(a,b,c,eff);
+}
+
+//********************************************************************
+void CoherentFit::WriteSystematicHistograms(const std::string& filename){
+//********************************************************************
+
+  TFile* rfile = new TFile(filename.c_str(),"NEW");
+  h_toy_A->Write();
+  h_toy_B->Write();
+  h_toy_C->Write();
+  h_toy_Eff->Write();
+  // h_toy_dEdx_RR->Write();
+  rfile->Close();
+}
+
+//********************************************************************
+void CoherentFit::PropagateSystematicErrors(const std::string& filename, const bool apply_toy_weights, const bool apply_toy_variations){
 //********************************************************************
 
   if(apply_toy_weights && !apply_toy_variations)std::cout << "propagating weight systematics" << std::endl;
   if(!apply_toy_weights && apply_toy_variations)std::cout << "propagating variation systematics" << std::endl;
   if(apply_toy_weights && apply_toy_variations) std::cout << "propagating all systematics" << std::endl;
-  GenerateToySamples(apply_toy_weights,apply_toy_variations);
-  InitializeHistogramsForSystematicErrors();
-  FitToySamples();
+  if(!fTreeSystematics){
+    std::cout << "ERROR! no tree with systematics found" << std::endl;
+    std::exit(1);
+  }
+  fTreeSystematics = GetSystTree();
+  // InitializeHistogramsForSystematicErrors();
+  ToyLoop(apply_toy_weights,apply_toy_variations);
+  WriteSystematicHistograms(filename);
 }
 
 
