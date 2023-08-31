@@ -4,11 +4,13 @@ void dEdx_plot_2D(){
   gStyle->SetPadRightMargin(0.15);
   gStyle->SetOptStat(0);
   
-  std::string d_name  = "~/Documents/PhD/tesis/files/microtrees/6-7GeV_prod4a_reco2_microtree_2023-02-13.root";
-  std::string mc_name = "~/Documents/PhD/tesis/files/microtrees/6-7GeV_prod4a_microtree_2023-02-13.root";
+  //get trees
+  std::string dir   = "/dune/app/users/miagarc/technical_note/files/";
+  std::string fdata = dir+"data/data.root";
+  std::string fmc   = dir+"mc/mc.root";
 
-  TFile* d_file = TFile::Open(d_name.c_str(),"r");
-  TFile* mc_file = TFile::Open(mc_name.c_str(),"r");
+  TFile* d_file = TFile::Open(fdata.c_str(),"r");
+  TFile* mc_file = TFile::Open(fmc.c_str(),"r");
 
   if(!d_file || !mc_file){
     std::cout << "no file found" << std::endl;
@@ -30,14 +32,14 @@ void dEdx_plot_2D(){
 
     //data
     d->Draw(("bestcandidate_hit_dedx["+ssi.str()+"]:bestcandidate_hit_resrange["+ssi.str()+"]>>h(60,0,100,60,0,12)").c_str(),
-	    "accum_level[0][]>7","colz");
+	    "accum_level[0][]>6","colz");
     hdummy = (TH2D*)gPad->GetPrimitive("h");
     d_h2->Add(hdummy);
     hdummy->Reset();
     
     //MC
     mc->Draw(("bestcandidate_hit_dedx["+ssi.str()+"]:bestcandidate_hit_resrange["+ssi.str()+"]>>h(60,0,100,60,0,12)").c_str(),
-    	     "accum_level[0][]>7","colz");
+    	     "accum_level[0][]>6","colz");
     hdummy = (TH2D*)gPad->GetPrimitive("h");
     mc_h2->Add(hdummy);
     hdummy->Reset();
@@ -69,19 +71,9 @@ void dEdx_plot_2D(){
   gPad->RedrawAxis();
   //gPad->SetLogz();
 
-  TF1* fs = new TF1("fs","[0]*(([1]*x-1)/([1]*x+1)+[2])",2,100);
-  TF1* fb = new TF1("fb","[0]+[1]*x",2,100);
-  fs->SetParameters(-4.63389e+00,2.08454e-01,-1.37488e+00);
-  fb->SetParameters(1.68280e+00,-5.71637e-04);
-  fs->SetLineColor(98);
-  fb->SetLineColor(1);
-  fb->SetLineStyle(2);
-
-  fs->Draw("same");
-  fb->Draw("same");
-  
-  gPad->Update();gPad->WaitPrimitive();
-  gPad->Print("../plots/CF_dedx_2d_data_cf.pdf");
+  gPad->Update();//gPad->WaitPrimitive();
+  gPad->Print("plots/CF_dedx_2d_data.pdf");
+  std::cout << "data printed" << std::endl;
 
   //draw MC
   //normalize to largest value
@@ -101,11 +93,5 @@ void dEdx_plot_2D(){
   tt2.DrawLatex(0.9,0.94,"MC");
   gPad->RedrawAxis();
 
-  fs->SetParameters(-3.96076e+00,1.59668e-01,-1.42034e+00);
-  fb->SetParameters( 1.68163e+00,-3.50635e-04);
-
-  fs->Draw("same");
-  fb->Draw("same");
-  
-  gPad->Print("../plots/CF_dedx_2d_mc_cf.pdf");
+  gPad->Print("plots/CF_dedx_2d_mc.pdf");
 }
