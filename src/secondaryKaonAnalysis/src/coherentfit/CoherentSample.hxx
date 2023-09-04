@@ -252,6 +252,9 @@ public:
   void CopyHistogramsBinning(std::vector<TH1F*> vh);
 
   std::vector<double> GetLikelihoodVector() const {return fPartialLikelihood;}
+
+  double GetCorrelationMatrixElement(int i, int j){if(i < 0 || i > 17 || j < 0 || j > 17)return -999.;
+                                                   else return fcorr_matrix[i][j];}
   
 private:
 
@@ -328,6 +331,8 @@ private:
 
   double fLikelihood;
   std::vector<double> fPartialLikelihood;
+
+  double fcorr_matrix[18][18];
 };
 
 #endif

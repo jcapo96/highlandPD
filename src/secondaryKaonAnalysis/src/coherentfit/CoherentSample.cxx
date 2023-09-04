@@ -73,6 +73,10 @@ CoherentSample::CoherentSample(){
 
   fLikelihood = -999.;
   fPartialLikelihood.clear();
+
+  for(int i = 0; i < 18; i++)
+    for(int j = 0; j < 18; j++)
+      fcorr_matrix[i][j] = -999.;
 }
 
 //********************************************************************
@@ -1651,6 +1655,9 @@ void CoherentSample::CoherentFitSignalPlusBackground(bool minos, double step){
     fMinuit->mnerrs(2,fCmpvA_error_pos,fCmpvA_error_neg,smpvA_error,dummy);
     fMinuit->mnerrs(3,fCmpvB_error_pos,fCmpvB_error_neg,smpvB_error,dummy);
     fMinuit->mnerrs(4,fCmpvC_error_pos,fCmpvC_error_neg,smpvC_error,dummy);
+    smpvA_error = (fCmpvA_error_pos-fCmpvA_error_neg)/2;
+    smpvB_error = (fCmpvB_error_pos-fCmpvB_error_neg)/2;
+    smpvC_error = (fCmpvC_error_pos-fCmpvC_error_neg)/2;
   }
 
   fSignal->SetClwA(std::make_pair(slwA  ,slwA_error ));
@@ -1676,7 +1683,6 @@ void CoherentSample::CoherentFitSignalPlusBackground(bool minos, double step){
   fBackground->SetCgwA(std::make_pair(bgw   ,bgw_error));
   fBackground->SetCnorm(std::make_pair(bnorm,bnorm_error));
   fBackground->SetCconst(std::make_pair(bC  ,bC_error));
-
   
   fMinuit->GetParameter(14, sslwA  ,sslwA_error);
   fMinuit->GetParameter(15, sslwB  ,sslwB_error);
@@ -1690,6 +1696,13 @@ void CoherentSample::CoherentFitSignalPlusBackground(bool minos, double step){
   fBackground->fSemiBackground->SetCgwA(std::make_pair(ssgw,ssgw_error));
   //fBackground->fSemiBackground->SetCnorm(std::make_pair(ssnorm ,ssnorm_error));
   fBackground->fSemiBackground->SetCnorm(std::make_pair(1-snorm-bnorm ,ssnorm_error));
+
+  //get correlation matrix
+  double cov[18][18] = {0};
+  fMinuit->mnemat(&cov[0][0],18);
+  for(int i = 0; i < 18; i++)
+    for(int j = 0; j < 18; j++)
+      fcorr_matrix[i][j] = cov[i][j]/sqrt(cov[i][i]*cov[j][j]);
   
   StoreCoherentFits();  
 }
