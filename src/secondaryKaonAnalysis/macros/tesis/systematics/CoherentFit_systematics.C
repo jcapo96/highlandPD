@@ -202,8 +202,8 @@ void CoherentFit_systematics(){
   gROOT->ProcessLine(".L ../selection/protoDUNEStyle.C");
 
   //open files
-  CoherentFit* cf_mc = new CoherentFit("/home/migue/Documents/Work/tesis/files/microtrees/systematics/syst_all_merged_dedx.root",true);
-  CoherentFit* cf_d  = new CoherentFit("/home/migue/Public/highland/files/test/data_dedx.root",false);
+  CoherentFit* cf_mc = new CoherentFit("/dune/app/users/miagarc/technical_note/files/systematics/all_systematics_dedx/all_systematics_dedx_merged.root",true);
+  CoherentFit* cf_d  = new CoherentFit("/dune/app/users/miagarc/technical_note/files/data/data_dedx.root",false);
 
   //run coherent fit in MC
   cf_mc->CreateCoherentSamples(999);

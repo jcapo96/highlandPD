@@ -50,6 +50,8 @@ bool secondaryKaonAnalysis::Initialize(){
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("secondaryKaonAnalysis.MinAccumLevelToSave"));
 
+  _UseDetailedSelection = ND::params().GetParameterI("secondaryKaonAnalysis.UseDetailedSelection");
+
   _ApplydQdxSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplydQdxSystematic");
   _ApplyRecombinationSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyRecombinationSystematic");
   _ApplySCESystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplySCESystematic");
@@ -97,8 +99,10 @@ void secondaryKaonAnalysis::DefineSelections(){
 //********************************************************************
 
   if(_xs_selection)sel().AddSelection(_selection_name.c_str(), "kaon XS selection", new secondaryKaonXSSelection(false));
-  //else             sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelection(false));  
-  else             sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelectionNoBranches(false));  
+  else{
+    if(_UseDetailedSelection)sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelection(false));  
+    else                     sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelectionNoBranches(false));  
+  }
 }
 
 //********************************************************************

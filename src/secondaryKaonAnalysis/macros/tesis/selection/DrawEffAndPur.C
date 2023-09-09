@@ -69,8 +69,8 @@ void DrawEffAndPur(){
   gStyle->SetPadBottomMargin(0.17);
   
   //get trees
-  std::string dir = "/data4/DUNE/migue/analysis/files/";
-  std::string fmc   = dir+"mc/prod4a/6-7GeV_prod4a_microtree_2023-04-04.root";
+  std::string dir = "/dune/app/users/miagarc/technical_note/files/";
+  std::string fmc   = dir+"mc/mc.root";
 
   TFile *_file1 = TFile::Open(fmc.c_str());
 
@@ -133,5 +133,5 @@ void DrawEffAndPur(){
 
   gPad->Update();
 
-  gPad->Print("selection_pureff.pdf");
+  gPad->Print("plots/selection_pureff.pdf");
 }

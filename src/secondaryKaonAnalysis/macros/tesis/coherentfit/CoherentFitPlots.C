@@ -1258,8 +1258,12 @@ void CoherentFitPlots(){        //Main function*
   gROOT->ProcessLine(".L ../selection/protoDUNEStyle.C");
 
   //open files
-  CoherentFit* cf_mc = new CoherentFit("/home/migue/Public/highland/files/test/mc_dedx.root",true);
-  CoherentFit* cf_d  = new CoherentFit("/home/migue/Public/highland/files/test/data_dedx.root",false);
+  std::string dir = "/dune/app/users/miagarc/technical_note/files/";
+  std::string fdata = dir+"data/data_dedx.root";
+  std::string fmc   = dir+"mc/mc_dedx.root";
+
+  CoherentFit* cf_mc = new CoherentFit(fmc.c_str(),true);
+  CoherentFit* cf_d  = new CoherentFit(fdata.c_str(),false);
 
   //run coherent fit in MC
   cf_mc->CreateCoherentSamples(999);

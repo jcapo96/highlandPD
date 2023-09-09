@@ -1,16 +1,10 @@
 void DrawSyst_dEdx(){
   
-  gStyle->SetOptStat(0);
+  //gStyle->SetOptStat(0);
   //load trees
-  std::string hostname = gSystem->HostName();
-
-  std::string dir = "/data4/DUNE/migue/analysis/files/";
-
-  std::string fdata = dir+"data/6-7GeV_prod4a_reco2_microtree_nobranches_2023-04-18.root";
-  //std::string fmc   = dir+"systematics/6-7GeV_prod4a_microtree_syst_all_0__2023-04-15.root";
-  //std::string fmc   = dir+"systematics/syst_noMom.root";std::string fmc   = dir+"systematics/syst_noMom.root";
-  //std::string fmc   = dir+"systematics/syst_noWeights.root";
-  std::string fmc   = dir+"systematics/syst_noBeamMomNorm.root";
+  std::string dir = "/dune/app/users/miagarc/technical_note/files/";
+  std::string fdata = dir+"data/data_dedx.root";
+  std::string fmc   = dir+"systematics/all_systematics_selection/syst_selection_merged.root";
 
   TFile *_file0 = TFile::Open(fdata.c_str());
   TFile *_file1 = TFile::Open(fmc.c_str());
@@ -108,5 +102,5 @@ void DrawSyst_dEdx(){
   tt1.SetNDC();
   tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
   gPad->RedrawAxis(); //gPad->Update();//always redraw axis
-  gPad->Print("SYST_final_kaon_dedx.pdf");
+  gPad->Print("plots/SYST_final_kaon_dedx.pdf");
 }

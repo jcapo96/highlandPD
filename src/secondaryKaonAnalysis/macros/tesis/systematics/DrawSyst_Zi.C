@@ -1,14 +1,9 @@
 void DrawSyst_Zi(){
 
   //load trees
-  std::string hostname = gSystem->HostName();
-
-  std::string dir = "/data4/DUNE/migue/analysis/files/";
-
-  std::string fdata = dir+"data/6-7GeV_prod4a_reco2_microtree_2023-04-04.root";
-  // std::string fmc   = dir+"systematics/6-7GeV_prod4a_microtree_syst_all_0__2023-04-15.root";
-  //std::string fmc   = dir+"systematics/6-7GeV_prod4a_microtree_syst_BrokenTracks_2023-05-03.root";
-  std::string fmc   = dir+"systematics/syst_noBeamMomNorm.root";
+  std::string dir = "/dune/app/users/miagarc/technical_note/files/";
+  std::string fdata = dir+"data/data_dedx.root";
+  std::string fmc   = dir+"systematics/all_systematics_selection/syst_selection_merged.root";
 
   TFile *_file0 = TFile::Open(fdata.c_str());
   TFile *_file1 = TFile::Open(fmc.c_str());
@@ -26,8 +21,6 @@ void DrawSyst_Zi(){
   gStyle->SetErrorX(0.5);
 
   //binning for the plot
-  // const int nbins = 7;
-  // double edges[nbins+1] = {0,50,100,150,200,300,500,700};
   const int nbins = 17;
   double edges[nbins+1] = {0,35,70,105,140,175,210,245,280,315,350,385,420,455,500,550,600,700};
 
@@ -50,7 +43,6 @@ void DrawSyst_Zi(){
     double st_error = h_mc_syst->GetBinError(i+1);
     double syst_error = h_mc_syst_rel->GetBinContent(i+1)*h_mc_syst->GetBinContent(i+1);
     double tot_error = sqrt(pow(st_error,2)+pow(syst_error,2));
-    std::cout << st_error << " " << syst_error << " " << tot_error << std::endl;
     h_mc_syst->SetBinError(i+1,tot_error);
   }
 
@@ -64,7 +56,7 @@ void DrawSyst_Zi(){
   //data
   TH1F* h_data = new TH1F("h_data","h_data",nbins,edges);
   h_data->SetMarkerStyle(20);
-  d->Project("h_data","bestcandidate_pos[2]","accum_level[0][]>6");
+  d->Project("h_data","bestcandidate_pos[2]","accum_level>2");
 
   double integral_data = h_data->GetSumOfWeights();
   double integral_mc   = h_mc_nominal->GetSumOfWeights();
@@ -108,5 +100,5 @@ void DrawSyst_Zi(){
   tt1.SetNDC();
   tt1.DrawLatex(0.1,0.94,"#bf{DUNE:ProtoDUNE-SP}");
   gPad->RedrawAxis(); gPad->Update();//always redraw axis
-  gPad->Print("SYST_final_Zi.pdf");
+  gPad->Print("plots/SYST_final_Zi.pdf");
 }

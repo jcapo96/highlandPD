@@ -75,6 +75,8 @@ private:
   bool _xs_selection;
   std::string _selection_name;
   
+  bool _UseDetailedSelection;
+
   bool _ApplydQdxSystematic;
   bool _ApplyRecombinationSystematic;
   bool _ApplySCESystematic;
