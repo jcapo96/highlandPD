@@ -12,7 +12,7 @@
 #include "TRandom3.h"
 
 const int NHITS = 300;
-const int NTOYS = 100;
+//const int NTOYS = 100; //not const variable
 
 class CoherentFit{
 public:
@@ -105,6 +105,12 @@ public:
   void ReplaceBackgroundSample(CoherentSample *s){delete fBackground; SetBackgroundSample(s);}
 
   bool GetIsMC() {return fIsMC;}
+
+  int GetNToys(TTree* t);
+
+  TH1F* GetmpvASystHisto() const {return h_toy_A;}
+  TH1F* GetmpvBSystHisto() const {return h_toy_B;}
+  TH1F* GetmpvCSystHisto() const {return h_toy_C;}
   
 private:
 
@@ -131,6 +137,8 @@ private:
   CoherentSample* fTrueSemiBackground;
   CoherentSample* fToySample;
 
+  int fNTOYS;
+  
   TH1F* h_toy_A;
   TH1F* h_toy_B;
   TH1F* h_toy_C;

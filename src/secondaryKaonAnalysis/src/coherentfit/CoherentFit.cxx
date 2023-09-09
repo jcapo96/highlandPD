@@ -29,6 +29,7 @@ CoherentFit::CoherentFit(){
   fTrueBackground = NULL;
   fTrueSemiBackground = NULL;
   fToySample = NULL;
+  fNTOYS = -999;
   h_toy_A = NULL;
   h_toy_B = NULL;
   h_toy_C = NULL;
@@ -91,7 +92,6 @@ TTree* CoherentFit::GetTreeFromRootFile(){
   }
 
   t = (TTree*)fFile->Get("ana");
-  //t = (TTree*)fFile->Get("dQdx_YZcal");
   if(t){
     fIsMiniTree = false;
     fIsSystTree = false;
@@ -435,7 +435,7 @@ void CoherentFit::ComputeSelfSystematicError(){
   fToySample->SetBackground(ClonedBackground);
 
   //generate toy samples
-  for(int itoy = 0; itoy < NTOYS; itoy++){
+  for(int itoy = 0; itoy < fNTOYS; itoy++){
     std::cout << "toy sample " << itoy << std::endl;
     //set initial parameters values with variations
     fToySample->GetSignal()->SetCFitParametersWithVariations(fSignal,r);
@@ -650,7 +650,7 @@ void CoherentFit::ToyLoop(const bool apply_toy_weights, const bool apply_toy_var
   a.clear(); b.clear(); c.clear(); eff.clear();
   
   //loop over toys
-  for(int itoy = 0; itoy < NTOYS; itoy++){
+  for(int itoy = 0; itoy < fNTOYS; itoy++){
     std::cout << "---------------------" << std::endl;
     std::cout << "TOY " << itoy << std::endl;
     std::cout << "---------------------" << std::endl;
@@ -676,18 +676,34 @@ void CoherentFit::WriteSystematicHistograms(const std::string& filename){
 }
 
 //********************************************************************
+int CoherentFit::GetNToys(TTree* t){
+//********************************************************************
+
+  TH1F* h = new TH1F("v","v",1,0.,1.);
+  t->Project("v","0.5","(1==1)*NTOYS","",1);
+  return (int)(h->GetBinContent(1));
+}
+
+//********************************************************************
 void CoherentFit::PropagateSystematicErrors(const std::string& filename, const bool apply_toy_weights, const bool apply_toy_variations){
 //********************************************************************
 
+  std::cout << "---------------------" << std::endl;
+  std::cout << "Starting propagation of systematics" << std::endl;
   if(apply_toy_weights && !apply_toy_variations)std::cout << "propagating weight systematics" << std::endl;
   if(!apply_toy_weights && apply_toy_variations)std::cout << "propagating variation systematics" << std::endl;
-  if(apply_toy_weights && apply_toy_variations) std::cout << "propagating all systematics" << std::endl;
+  if(apply_toy_weights && apply_toy_variations) std::cout << "propagating weight and variation systematics" << std::endl;
+
+  fTreeSystematics = GetSystTree();
   if(!fTreeSystematics){
     std::cout << "ERROR! no tree with systematics found" << std::endl;
     std::exit(1);
   }
-  fTreeSystematics = GetSystTree();
-  // InitializeHistogramsForSystematicErrors();
+  fNTOYS = GetNToys(fTreeSystematics);
+
+  std::cout << "Systematic tree has " << fNTOYS << " toys, this will take a while..." << std::endl;
+  std::cout << "---------------------" << std::endl;
+
   ToyLoop(apply_toy_weights,apply_toy_variations);
   WriteSystematicHistograms(filename);
 }
