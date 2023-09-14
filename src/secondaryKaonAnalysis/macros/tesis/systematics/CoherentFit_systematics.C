@@ -159,9 +159,9 @@ void PlotMPVWithSystematicErrors(CoherentFit* cf_mc, CoherentFit* cf_d){
     double x   = tgmc_syst->GetPointX(i);
     double y_d  = tgd->GetPointY(i)-tgd->GetPointY(i);
     double y_mc = tgmc_syst->GetPointY(i)-tgd->GetPointY(i);
-    tg_diffdata_data->AddPoint(x,y_d);
-    tg_diffdata_mc_st->AddPoint(x,y_mc);
-    tg_diffdata_mc_syst->AddPoint(x,y_mc);
+    tg_diffdata_data->SetPoint(i,x,y_d);
+    tg_diffdata_mc_st->SetPoint(i,x,y_mc);
+    tg_diffdata_mc_syst->SetPoint(i,x,y_mc);
     tg_diffdata_data->SetPointError(i,0,tgd->GetErrorY(i));
     tg_diffdata_mc_st->SetPointError(i,0,tgmc_stat->GetErrorY(i));
     tg_diffdata_mc_syst->SetPointError(i,0,tgmc_syst->GetErrorY(i));
