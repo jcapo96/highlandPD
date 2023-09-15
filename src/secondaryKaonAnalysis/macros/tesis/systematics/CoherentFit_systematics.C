@@ -97,15 +97,15 @@ void PlotMPVWithSystematicErrors(CoherentFit* cf_mc, CoherentFit* cf_d){
   double mean_A = cf_mc->GetmpvASystHisto()->GetMean();
   double mean_B = cf_mc->GetmpvBSystHisto()->GetMean();
   double mean_C = cf_mc->GetmpvCSystHisto()->GetMean();
-  double syst_error_A = cf_mc->GetmpvASystHisto()->GetRMS();
-  double syst_error_B = cf_mc->GetmpvBSystHisto()->GetRMS();
-  double syst_error_C = cf_mc->GetmpvCSystHisto()->GetRMS();
-  double stat_error_A = sb_sample->GetSignal()->GetCmpvA().second/sb_sample->GetSignal()->GetCmpvA().first*mean_A;
-  double stat_error_B = sb_sample->GetSignal()->GetCmpvB().second/sb_sample->GetSignal()->GetCmpvB().first*mean_B;
-  double stat_error_C = sb_sample->GetSignal()->GetCmpvC().second/sb_sample->GetSignal()->GetCmpvC().first*mean_C;
-  double total_error_A = sqrt(pow(stat_error_A,2)+pow(syst_error_A,2));
-  double total_error_B = sqrt(pow(stat_error_B,2)+pow(syst_error_B,2));
-  double total_error_C = sqrt(pow(stat_error_C,2)+pow(syst_error_C,2));
+  double syst_error_A = cf_mc->GetmpvASystHisto()->GetRMS()/mean_A;
+  double syst_error_B = cf_mc->GetmpvBSystHisto()->GetRMS()/mean_B;
+  double syst_error_C = cf_mc->GetmpvCSystHisto()->GetRMS()/mean_C;
+  double stat_error_A = sb_sample->GetSignal()->GetCmpvA().second/sb_sample->GetSignal()->GetCmpvA().first;
+  double stat_error_B = sb_sample->GetSignal()->GetCmpvB().second/sb_sample->GetSignal()->GetCmpvB().first;
+  double stat_error_C = sb_sample->GetSignal()->GetCmpvC().second/sb_sample->GetSignal()->GetCmpvC().first;
+  double total_error_A = sqrt(pow(stat_error_A,2)+pow(syst_error_A,2))*mean_A;
+  double total_error_B = sqrt(pow(stat_error_B,2)+pow(syst_error_B,2))*mean_B;
+  double total_error_C = sqrt(pow(stat_error_C,2)+pow(syst_error_C,2))*mean_C;
 
   //stat errors
   double mc_params[3]       = {sb_sample->GetSignal()->GetCmpvA().first, sb_sample->GetSignal()->GetCmpvB().first, sb_sample->GetSignal()->GetCmpvC().first };
