@@ -1111,6 +1111,23 @@ void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
   
   gPad->Print("plots/CF_mpv_comparative_coherent-incoherent.pdf");
 
+  //plot ratio data/MC
+  TGraph* diff = new TGraph();
+  for(int i = 0; i < tgd->GetN(); i++){
+    double x = tgd->GetPointX(i);
+    double y = tgd->GetPointY(i)-tgmc->GetPointY(i);
+    double error = sqrt(pow(tgd->GetErrorY(i),2)+pow(tgmc->GetErrorY(i),2));
+    diff->SetPoint(i,x,y/error);
+  }
+  
+  diff->GetXaxis()->SetTitle("Residual Range [cm]");
+  diff->GetYaxis()->SetTitle("(Data-MC)/#sqrt(#sigma_{Data}^{2}+#sigma_{MC}^{2})");
+  diff->GetXaxis()->CenterTitle();
+  diff->GetYaxis()->CenterTitle();
+  diff->GetYaxis()->SetTitleOffset(0.9);
+  diff->Draw("l");
+  gPad->Print("plots/CF_mpv_comparative_differror.pdf");
+
   delete c;
 }
 
