@@ -1,0 +1,44 @@
+#define QPIXDataClasses_C
+
+#include "QPIXDataClasses.hxx"
+#include "AnalysisUtils.hxx"
+
+//********************************************************************
+AnaEventInfoQPIX::AnaEventInfoQPIX():AnaEventInfoPD(){
+//********************************************************************
+
+  IsBackground = false;
+  HasPotasium  = false;
+  HasGamma     = false;
+  for(int i = 0; i < 7; i++){
+    DetectedPhotons[i] = -999;
+    PDSwf[i].clear();
+  }
+}
+
+//********************************************************************
+AnaEventInfoQPIX::~AnaEventInfoQPIX(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaEventInfoQPIX::AnaEventInfoQPIX(const AnaEventInfoQPIX& EventInfo):AnaEventInfoPD(EventInfo){
+//********************************************************************
+
+  IsBackground = EventInfo.IsBackground;
+  HasPotasium  = EventInfo.HasPotasium;
+  HasGamma     = EventInfo.HasGamma;
+  for(int i = 0; i < 7; i++){
+    DetectedPhotons[i] = EventInfo.DetectedPhotons[i];
+    PDSwf[i]           = EventInfo.PDSwf[i];
+  } 
+}
+
+//********************************************************************
+void AnaEventInfoQPIX::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaEventInfoQPIX --------- " << std::endl;
+  AnaEventInfoPD::Print();
+}
