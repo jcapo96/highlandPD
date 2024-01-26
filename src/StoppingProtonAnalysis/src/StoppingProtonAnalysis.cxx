@@ -1,25 +1,28 @@
-#include "QPIXAnalysis.hxx"
+#include "StoppingProtonAnalysis.hxx"
 #include "Parameters.hxx"
-#include "QPIXSelection.hxx"
+#include "StoppingProtonSelection.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 
-#include "QPIXUtils.hxx"
+#include "pdAnalysisUtils.hxx"
 
-#include "QPIXTreeConverter.hxx"
+#include "PDSPAnalyzerTreeConverter.hxx"
+#include "HighlandMiniTreeConverter.hxx"
+
+#include "ParticlePositionSCECorrection.hxx"
 
 #include "baseToyMaker.hxx"
 
 //********************************************************************
-QPIXAnalysis::QPIXAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
+StoppingProtonAnalysis::StoppingProtonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version
-  //ND::versioning().AddPackage("QPIXAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("QPIXANALYSISROOT")));
+  //  ND::versioning().AddPackage("StoppingProtonAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("STOPPINGPROTONANALYSISROOT")));
 }
 
 //********************************************************************
-bool QPIXAnalysis::Initialize(){
+bool StoppingProtonAnalysis::Initialize(){
 //********************************************************************
 
   /* In this method we Initialize everything that requires access to parameters in the parameters file. 
@@ -31,16 +34,17 @@ bool QPIXAnalysis::Initialize(){
   if(!baseAnalysis::Initialize()) return false;
 
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
-  SetMinAccumCutLevelToSave(-1);//ND::params().GetParameterI("QPIXAnalysis.MinAccumLevelToSave"));
+  SetMinAccumCutLevelToSave(ND::params().GetParameterI("StoppingProtonAnalysis.MinAccumLevelToSave"));
 
   // Define categories for color drawing. Have a look at highland/src/highland2/highlandUtils/src/CategoriesUtils.hxx
-  QPIXUtils::AddCustomCategories();
+  anaUtils::AddStandardCategories();
+  anaUtils::AddStandardCategories("beam");
 
   return true;
 }
 
 //********************************************************************
-void QPIXAnalysis::DefineInputConverters(){
+void StoppingProtonAnalysis::DefineInputConverters(){
 //********************************************************************
   
   /* In this method we add the to the InputManager (accessed by input() ) the InputConverters created 
@@ -48,26 +52,28 @@ void QPIXAnalysis::DefineInputConverters(){
      which define the allowed input file formats.
   */
   
-  input().AddConverter("minitreefiltered", new QPIXTreeConverter("event_tree"));
+  input().AddConverter("minitreefiltered", new HighlandMiniTreeConverter("MiniTree"));
+  input().AddConverter("PDSPAnalyzerTree", new PDSPAnalyzerTreeConverter());
 }
 
 //********************************************************************
-void QPIXAnalysis::DefineSelections(){
+void StoppingProtonAnalysis::DefineSelections(){
 //********************************************************************
 
-  sel().AddSelection("QPIXSelection", "Dummy", new QPIXSelection(false)); // true/false for forcing break  
+  sel().AddSelection("StoppingProtonSelection", "Stopping Proton Selection", new StoppingProtonSelection(false)); // true/false for forcing break  
 }
 
 //********************************************************************
-void QPIXAnalysis::DefineCorrections(){
+void StoppingProtonAnalysis::DefineCorrections(){
 //********************************************************************
-  
+
   // Some corrections are defined in baseAnalysis
   baseAnalysis::DefineCorrections();
+  corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
 }
 
 //********************************************************************
-void QPIXAnalysis::DefineSystematics(){
+void StoppingProtonAnalysis::DefineSystematics(){
 //********************************************************************
   
   // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
@@ -75,7 +81,7 @@ void QPIXAnalysis::DefineSystematics(){
 }
 
 //********************************************************************
-void QPIXAnalysis::DefineConfigurations(){
+void StoppingProtonAnalysis::DefineConfigurations(){
 //********************************************************************
 
   // Some configurations are defined in baseAnalysis
@@ -83,16 +89,25 @@ void QPIXAnalysis::DefineConfigurations(){
 }
 
 //********************************************************************
-void QPIXAnalysis::DefineMicroTrees(bool addBase){
+void StoppingProtonAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
 
   // Variables from baseAnalysis (run, event, ...)
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
-  QPIXUtils::AddQPIXVariables(output());
+
+  // Add standard sets of variables for ProtoDUNE analysis (these methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  // beam instrumentation info
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
+  
+  // candidate track (beam track) info
+  standardPDTree::AddStandardVariables_BeamParticleTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleReco(output());
+  //standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
 }
 
 //********************************************************************
-void QPIXAnalysis::DefineTruthTree(){
+void StoppingProtonAnalysis::DefineTruthTree(){
 //********************************************************************
 
   // Variables from baseAnalysis (run, event, ...)
@@ -100,17 +115,28 @@ void QPIXAnalysis::DefineTruthTree(){
 }
 
 //********************************************************************
-void QPIXAnalysis::FillMicroTrees(bool addBase){
+void StoppingProtonAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
 
   // Variables from baseAnalysis (run, event, ...)
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase);
 
-  QPIXUtils::FillQPIXVariables(output(),&GetEvent());
+  // Fill standard variables for the PD analysis
+  standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
+
+  // ---------- Additional candidate variables --------------
+  if(box().MainTrack){        
+    AnaBeamPD* beam = static_cast<AnaBeamPD*>(GetSpill().Beam);
+    AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+    standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack, beamPart);
+    standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);    
+    //standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
+  }
 }
 
 //********************************************************************
-void QPIXAnalysis::FillToyVarsInMicroTrees(bool addBase){
+void StoppingProtonAnalysis::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
 
    // Fill the common variables
@@ -118,7 +144,7 @@ void QPIXAnalysis::FillToyVarsInMicroTrees(bool addBase){
 }
 
 //********************************************************************
-bool QPIXAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
+bool StoppingProtonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
   (void) vtx; // to avoid warning for unused vtx variable
@@ -128,7 +154,7 @@ bool QPIXAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 }
 
 //********************************************************************
-void QPIXAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
+void StoppingProtonAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
   // Fill the common variables
@@ -136,8 +162,14 @@ void QPIXAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 }
 
 //********************************************************************
-void QPIXAnalysis::FillCategories(){
+void StoppingProtonAnalysis::FillCategories(){
 //********************************************************************
 
-  QPIXUtils::FillCustomCategories(&GetEvent());
+  // For the candidate
+  if(box().MainTrack)
+    anaUtils::FillCategories(&GetEvent(), box().MainTrack,"");
+  
+  // For the beam track
+  AnaParticleB* beam = static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle;
+  if(beam)anaUtils::FillCategories(&GetEvent(), beam,"beam");
 }

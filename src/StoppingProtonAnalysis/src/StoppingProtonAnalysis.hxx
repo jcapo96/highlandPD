@@ -1,14 +1,14 @@
-#ifndef QPIXAnalysis_h
-#define QPIXAnalysis_h
+#ifndef StoppingProtonAnalysis_h
+#define StoppingProtonAnalysis_h
 
 #include "baseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
 
-class QPIXAnalysis: public baseAnalysis {
+class StoppingProtonAnalysis: public baseAnalysis {
  public:
-  QPIXAnalysis(AnalysisAlgorithm* ana=NULL);
-  virtual ~QPIXAnalysis(){}
+  StoppingProtonAnalysis(AnalysisAlgorithm* ana=NULL);
+  virtual ~StoppingProtonAnalysis(){}
 
   //---- These are mandatory functions
   void DefineSelections();
@@ -45,11 +45,20 @@ private:
 
 public:
 
-  enum enumStandardMicroTrees_QPIXAnalysis{
+  enum enumStandardMicroTrees_StoppingProtonAnalysis{
     seltrk_csdarange_prot = standardPDTree::enumStandardMicroTreesLast_standardPDTree,
     seltrk_ndau,
-    enumStandardMicroTreesLast_QPIXAnalysis
+    enumStandardMicroTreesLast_StoppingProtonAnalysis
   };
+
+  enum enumConf_StoppingProtonAnalysis{
+    detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,    
+    dedx_syst,
+    enumConfLast_StoppingProtonAnalysis
+  };
+
+
+
 };
 
 #endif
