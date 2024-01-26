@@ -45,60 +45,60 @@ bool BeamFilterForXSCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   else return false;
 }
 
-//**************************************************
-bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-//**************************************************
+// //**************************************************
+// bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+// //**************************************************
   
-  (void)event;
+//   (void)event;
   
-  //cast the box
-  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+//   //cast the box
+//   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
   
-  // Main track must exist
-  if(!box.MainTrack) return false;
+//   // Main track must exist
+//   if(!box.MainTrack) return false;
   
-  // get beam particle
-  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-  AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
-  if(!beamPart)return false;
+//   // get beam particle
+//   AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+//   AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+//   if(!beamPart)return false;
   
-  double data_mean_x  = -27.3;
-  double data_sigma_x = 4.76;
-  double data_mean_y  = 424.2;
-  double data_sigma_y = 4.75;
-  double data_mean_z  = 30.6;
-  double data_sigma_z = 1.20;
+//   double data_mean_x  = -27.3;
+//   double data_sigma_x = 4.76;
+//   double data_mean_y  = 424.2;
+//   double data_sigma_y = 4.75;
+//   double data_mean_z  = 30.6;
+//   double data_sigma_z = 1.20;
 
-  double mc_mean_x  = -28.6;
-  double mc_sigma_x = 4.15;
-  double mc_mean_y  = 422.6;
-  double mc_sigma_y = 3.94;
-  double mc_mean_z  = 29.7;
-  double mc_sigma_z = 0.54;
+//   double mc_mean_x  = -28.6;
+//   double mc_sigma_x = 4.15;
+//   double mc_mean_y  = 422.6;
+//   double mc_sigma_y = 3.94;
+//   double mc_mean_z  = 29.7;
+//   double mc_sigma_z = 0.54;
 
-  double mincos = 0.93;
+//   double mincos = 0.93;
 
-  double normalized_x = 0;
-  double normalized_y = 0;
-  double normalized_z = 0;
-  double cos = 0;
+//   double normalized_x = 0;
+//   double normalized_y = 0;
+//   double normalized_z = 0;
+//   double cos = 0;
 
-  if(event.GetIsMC()){
-    normalized_x = (box.MainTrack->PositionStart[0]-mc_mean_x)/mc_sigma_x;
-    normalized_y = (box.MainTrack->PositionStart[1]-mc_mean_y)/mc_sigma_y;
-    normalized_z = (box.MainTrack->PositionStart[2]-mc_mean_z)/mc_sigma_z;
-  }
-  else{
-    normalized_x = (box.MainTrack->PositionStart[0]-data_mean_x)/data_sigma_x;
-    normalized_y = (box.MainTrack->PositionStart[1]-data_mean_y)/data_sigma_y;
-    normalized_z = (box.MainTrack->PositionStart[2]-data_mean_z)/data_sigma_z;
-  }
+//   if(event.GetIsMC()){
+//     normalized_x = (box.MainTrack->PositionStart[0]-mc_mean_x)/mc_sigma_x;
+//     normalized_y = (box.MainTrack->PositionStart[1]-mc_mean_y)/mc_sigma_y;
+//     normalized_z = (box.MainTrack->PositionStart[2]-mc_mean_z)/mc_sigma_z;
+//   }
+//   else{
+//     normalized_x = (box.MainTrack->PositionStart[0]-data_mean_x)/data_sigma_x;
+//     normalized_y = (box.MainTrack->PositionStart[1]-data_mean_y)/data_sigma_y;
+//     normalized_z = (box.MainTrack->PositionStart[2]-data_mean_z)/data_sigma_z;
+//   }
 
-  for(int i = 0; i < 3; i++)cos = cos + box.MainTrack->DirectionStart[i]*beamPart->DirectionEnd[i];
+//   for(int i = 0; i < 3; i++)cos = cos + box.MainTrack->DirectionStart[i]*beamPart->DirectionEnd[i];
 
-  if(normalized_x < 3 && normalized_y < 3 && normalized_z < 3 && cos > mincos)return true;
-  else return false;
-}
+//   if(normalized_x < 3 && normalized_y < 3 && normalized_z < 3 && cos > mincos)return true;
+//   else return false;
+// }
 
 //**************************************************
 bool GetKaonsForXSAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{

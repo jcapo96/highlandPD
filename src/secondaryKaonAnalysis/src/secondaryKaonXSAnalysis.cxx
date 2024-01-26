@@ -122,13 +122,13 @@ void secondaryKaonXSAnalysis::DefineMicroTrees(bool addBase){
     
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::AddStandardVariables_EventInfo(output());
-  standardPDTree::AddStandardVariables_BeamReco(output());
-  standardPDTree::AddStandardVariables_BeamTrue(output());
-  standardPDTree::AddStandardVariables_CandidateTrue(output());
-  standardPDTree::AddStandardVariables_CandidateReco(output());
-  standardPDTree::AddStandardVariables_CandidateHitsReco(output());
-  standardPDTree::AddStandardVariables_CandidateDaughtersTrue(output(),20);
-  standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),20);
+  standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleReco(output());
+  standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),20);
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),20);
 
   // -------- Add candidates variables ----------------------
   kaonTree::AddKaonVariables_KaonCandidatesReco    (output(),secondaryKaonXSAnalysisConstants::NMAXSAVEDCANDIDATES);
@@ -149,7 +149,7 @@ void secondaryKaonXSAnalysis::DefineTruthTree(){
   baseAnalysis::DefineTruthTree();
 
   // Add standard sets of variables for ProtoDUNE analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  standardPDTree::AddStandardVariables_BeamTrue(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
   
   // Add specific variables for the kaon candidates
   kaonTree::AddKaonVariables_TrueKaonCandidates(output());
@@ -164,15 +164,15 @@ void secondaryKaonXSAnalysis::FillMicroTrees(bool addBase){
   
   // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::FillStandardVariables_EventInfo(        output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
-  standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
-  standardPDTree::FillStandardVariables_CandidateTrue(    output(), box().MainTrack);    
-  standardPDTree::FillStandardVariables_CandidateHitsReco(output(), box().MainTrack);
+  standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack);
+  standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);    
+  standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
   int ndau = std::min(20,(int)box().MainTrack->Daughters.size());
   for(int i = 0; i < ndau; i++){
-    standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
-    standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
+    standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
+    standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
     output().IncrementCounter(standardPDTree::seltrk_ndau);
   }
   
@@ -308,7 +308,7 @@ void secondaryKaonXSAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
   output().FillVar(evt,    GetSpill().EventInfo->Event);
   
   // Fill standard variables for the PD analysis (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  standardPDTree::FillStandardVariables_BeamTrue(output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(output(), GetSpill().Beam);
 
   // Fill true kaons candidate info
   //const kaonAnaTrueVertex& kvtx = static_cast<const kaonAnaTrueVertex&>(vtx);

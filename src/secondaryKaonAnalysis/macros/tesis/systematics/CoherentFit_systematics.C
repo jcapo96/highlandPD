@@ -129,7 +129,7 @@ void PlotMPVWithSystematicErrors(CoherentFit* cf_mc, CoherentFit* cf_d){
   mg->Add(tgd,"3");
 
   mg->GetXaxis()->SetTitle("Residual Range [cm]");
-  mg->GetYaxis()->SetTitle("#mu_{S} [MeV/cm]");
+  mg->GetYaxis()->SetTitle("MPV_{S} [MeV/cm]");
   mg->GetXaxis()->CenterTitle();
   mg->GetYaxis()->CenterTitle();
 
@@ -176,7 +176,7 @@ void PlotMPVWithSystematicErrors(CoherentFit* cf_mc, CoherentFit* cf_d){
   mg2->Add(tg_diffdata_data,"3");
 
   mg2->GetXaxis()->SetTitle("Residual Range [cm]");
-  mg2->GetYaxis()->SetTitle("(#mu_{S}-#mu_{S}^{data}) [MeV/cm]");
+  mg2->GetYaxis()->SetTitle("(MPV_{S}-MPV_{S}^{data}) [MeV/cm]");
   mg2->GetXaxis()->CenterTitle();
   mg2->GetYaxis()->CenterTitle();
   mg2->GetYaxis()->SetTitleOffset(1.2);

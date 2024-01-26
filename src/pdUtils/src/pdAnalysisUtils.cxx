@@ -4,6 +4,8 @@
 #include "standardPDTree.hxx"
 #include <TH3F.h>
 #include <TH2F.h>
+#include <TF1.h>
+#include <Math/VavilovAccurate.h>
 
 //data for range-momentum conversion, muons
 //http://pdg.lbl.gov/2012/AtomicNuclearProperties/MUON_ELOSS_TABLES/muonloss_289.pdf divided by LAr density for cm
@@ -328,6 +330,73 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
     if( part.Hits[plane][i].dEdx > 1000. || part.Hits[plane][i].dEdx==-999)
       continue;
 
+    int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
+
+    if( bin >= 1 && bin <= profile->GetNbinsX() ){
+      
+      double template_dedx = profile->GetBinContent( bin );
+      if( template_dedx < 1.e-6 ){
+        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;        
+      }
+      
+      
+      double template_dedx_err = profile->GetBinError( bin );
+      if( template_dedx_err < 1.e-6 ){
+        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
+      }
+
+      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx * part.Hits[plane][i].dEdx;      
+      dedx_res *= part.Hits[plane][i].dEdx; 
+      
+      
+      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
+      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
+            
+      ++npt;      
+    }	
+  }
+		
+  if( npt == 0 )	
+    return std::make_pair(9999., -1);
+	  	
+  return std::make_pair(pid_chi2, npt); 	
+}
+
+//*****************************************************************************
+std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, const int pdg, const double RR){
+//*****************************************************************************	
+
+  double pid_chi2 = 0.; 
+  int npt = 0;
+
+  Int_t plane=2;
+
+  TProfile* profile;
+  
+  if(pdg == 2212)profile = ProtonTemplate;
+  else if(pdg == 13)profile = MuonTemplate;
+  else if(pdg == 321)profile = KaonTemplate;
+  else{
+    std::cout << "no profile for pdg " << pdg << std::endl;
+    return std::make_pair(9999., -1);
+  }
+  
+  if( part.Hits[plane].size() < 1 )
+    return std::make_pair(9999., -1);
+
+  //check particles' length is at least as long as maximum RR
+  // if(part.Length<RR) 
+  //   return std::make_pair(9999., -1);
+
+  //Ignore first and last point
+  for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
+    //Skip large pulse heights
+    if( part.Hits[plane][i].dEdx > 1000. || part.Hits[plane][i].dEdx==-999)
+      continue;
+
+    //break whenever above RR upper limit, 26 cm is maximum
+    if(part.Hits[plane][i].ResidualRange > RR)break;
+    
     int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
 
     if( bin >= 1 && bin <= profile->GetNbinsX() ){
@@ -815,4 +884,329 @@ Double_t pdAnaUtils::EstimateTrueMomAtAPABorder(AnaParticlePD* part){
   momf = sqrt(pow(sqrt(momi*momi+mass*mass)-depE,2)-mass*mass);
 
   return momf;
+}
+
+//***************************************************************
+Double_t pdAnaUtils::ComputeDistanceToClosestParticle(AnaParticlePD* part, AnaParticleB** parts, const int nparts){
+//***************************************************************
+
+  double distance = 9999;
+  for(int ipart = 0; ipart < nparts; ipart++){
+    AnaParticlePD* other = static_cast<AnaParticlePD*>(parts[ipart]);
+    if(part->UniqueID == other->UniqueID)continue;
+    double dis;
+    for(int idis = 0; idis < 3; idis++)dis += pow(part->PositionEnd[idis]-part->PositionStart[idis],2);
+    dis = sqrt(dis);
+    if(dis < distance)distance = dis;
+  }
+
+  return distance;
+}
+
+
+//***************************************************************
+void pdAnaUtils::GetBeamQualityCuts(AnaEventPD* event, 
+				    double &mean_x, double &mean_y, double &mean_z,
+				    double &sigma_x, double &sigma_y, double &sigma_z,
+				    double &cos){
+//***************************************************************
+
+  //get nominal beam momentum. If none, set it to 1.
+  AnaEventInfoPD* EventInfo = static_cast<AnaEventInfoPD*>(event->EventInfo);
+  int NomBeamMom = (int)EventInfo->NominalBeamMom;
+  if(NomBeamMom < 0 || NomBeamMom > 3)NomBeamMom = 1; //we still have no values for 6 and 7 GeV
+
+  //get BQC parameters depending on beam mom and MC/data
+  std::stringstream ssmom;
+  ssmom << NomBeamMom;
+  if(event->GetIsMC()){
+    std::string parameter = "pdUtils.AnalysisUtils.BeamQualityCuts.MC."+ssmom.str()+".";
+    mean_x = ND::params().GetParameterD((parameter+"meanx").c_str());
+    mean_y = ND::params().GetParameterD((parameter+"meany").c_str());
+    mean_z = ND::params().GetParameterD((parameter+"meanz").c_str());
+    sigma_x = ND::params().GetParameterD((parameter+"sigmax").c_str());
+    sigma_y = ND::params().GetParameterD((parameter+"sigmay").c_str());
+    sigma_z = ND::params().GetParameterD((parameter+"sigmaz").c_str());
+    cos = ND::params().GetParameterD((parameter+"cos").c_str());
+  }
+  else{
+    std::string parameter = "pdUtils.AnalysisUtils.BeamQualityCuts.Data."+ssmom.str()+".";
+    mean_x = ND::params().GetParameterD((parameter+"meanx").c_str());
+    mean_y = ND::params().GetParameterD((parameter+"meany").c_str());
+    mean_z = ND::params().GetParameterD((parameter+"meanz").c_str());
+    sigma_x = ND::params().GetParameterD((parameter+"sigmax").c_str());
+    sigma_y = ND::params().GetParameterD((parameter+"sigmay").c_str());
+    sigma_z = ND::params().GetParameterD((parameter+"sigmaz").c_str());
+    cos = ND::params().GetParameterD((parameter+"cos").c_str());
+  }
+}
+
+//***************************************************************
+double pdAnaUtils::GetDensityCorrection(double beta, double gamma){
+//***************************************************************
+
+  //Parameters for the density correction
+  const double density_C  = 5.2146; 
+  const double density_y0 = 0.2; 
+  const double density_y1 = 3.0; 
+  const double density_a  = 0.19559;
+  const double density_k  = 3.0; 
+  
+  //Estimate the density correction
+  double density_y = TMath::Log10(beta * gamma); 
+  double ln10 = TMath::Log(10);
+  double this_delta = 0.;
+  if(density_y > density_y1){
+    this_delta = 2.0 * ln10 * density_y - density_C; 
+  }
+  else if (density_y < density_y0){
+    this_delta = 0.; 
+  }
+  else{
+    this_delta = 2.0 * ln10 * density_y - density_C + density_a * pow(density_y1 - density_y, density_k);
+  }
+  
+  return this_delta; 
+} 
+
+//***************************************************************
+double pdAnaUtils::GetdEdxBetheBloch(double KE, double mass){ 
+//***************************************************************
+
+  //Bethe-Bloch parameters, https://indico.fnal.gov/event/14933/contributions/28526/attachments/17961/22583/Final_SIST_Paper.pdf 
+  const double rho = 1.39; // [g/cm3], density of LAr
+  const double K   = 0.307075; // [MeV cm2 / mol]
+  const double A   = 39.948; // [g / mol], atomic mass of Ar 
+  const double I   = 188.0e-6; // [MeV], mean excitation energy
+  const double Me  = 0.511; // [Mev], mass of electron
+
+  double gamma = (KE/mass)+1.0;
+  double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+  double Wmax = (2.0 * Me * pow(beta * gamma, 2)) / (1.0 + 2.0 * Me * (gamma / mass) + pow((Me / mass),2));
+  double delta = GetDensityCorrection(beta, gamma);
+  
+  // == dE/dx with the density correction
+  double f = rho * K * (18.0 / A) * pow(1. / beta, 2); 
+  double a0 = 0.5 * TMath::Log(2.0 * Me * pow(beta * gamma, 2) * Wmax / (I * I));
+  double this_dEdx = f * ( a0 - pow(beta, 2) - delta / 2.0); // [MeV/cm] 
+  
+  return this_dEdx;
+}
+
+//***************************************************************
+double pdAnaUtils::GetWmax(double KE, double mass){ 
+//***************************************************************
+
+  const double Me  = 0.511; // [Mev], mass of electron
+  
+  double gamma = (KE/mass)+1.0;
+  double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+  double Wmax = (2.0 * Me * pow(beta * gamma, 2)) / (1.0 + 2.0 * Me * (gamma / mass) + pow((Me / mass),2));
+  
+  return Wmax; 
+} 
+
+//***************************************************************
+double pdAnaUtils::GetLandauXi(double KE, double dx, double mass){
+//***************************************************************
+ 
+  const double rho = 1.39; // [g/cm3], density of LAr
+  const double K   = 0.307075; // [MeV cm2 / mol]
+  const double A   = 39.948; // [g / mol], atomic mass of Ar 
+  
+  double gamma = (KE/mass)+1.0;
+  double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+  double xi = rho * dx * 0.5 * K * (18.0 / A) * pow(1. / beta, 2); 
+  return xi; 
+}    
+
+//***************************************************************
+double pdAnaUtils::dEdxPDF(double *x, double *par){ 
+//***************************************************************  
+
+  ROOT::Math::VavilovAccurate vav;
+
+  double a = par[2] / par[4];
+  double b = (0.422784 + par[1] + log(par[0])) * par[2] / par[4] + par[3]; 
+  double y = (x[0] - b) / a; 
+  
+  double this_vav = 0.;
+  
+  if(par[0] < 0.01){ // == Landau
+    this_vav = TMath::Landau(y); 
+    this_vav =this_vav / a;
+  }
+  else if(par[0] > 10.){ // == Gaussian
+    double mu = vav.Mean(par[0], par[1]);
+    double sigma = sqrt(vav.Variance(par[0], par[1])); 
+    this_vav =TMath::Gaus(y, mu, sigma); 
+  }
+  else{ // == Vavilov
+    this_vav = vav.Pdf(y, par[0], par[1]);
+    this_vav = this_vav / a;
+  }
+  
+  return this_vav;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::dEdxLikelihood(TGraph* tg, TGraph* tg_ke, 
+				   Float_t mass){
+//***************************************************************
+
+  double width = 0.65;
+  TF1* pdf = new TF1("pdf", dEdxPDF, -10., 20., 5);
+  double likelihood = 0;
+  for(int i = 0; i < tg->GetN(); i++){
+    double range = tg->GetPointX(i);//+L;
+    double dEdx = tg->GetPointY(i);
+    double ke = tg_ke->Eval(range);
+    double gamma = (ke/mass)+1.0;
+    double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+    double xi = GetLandauXi(ke, width, mass);
+    double Wmax = GetWmax(ke, mass);
+    double kappa = xi / Wmax;
+    double dEdx_BB = GetdEdxBetheBloch(ke, mass);
+    double par[5] = {kappa, beta * beta, xi, dEdx_BB, width};
+    pdf->SetParameters(par);
+    if(pdf->Eval(dEdx) == 0)continue;
+    else
+      likelihood += log(pdf->Eval(dEdx));
+  }
+  return likelihood;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return -999.;
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return -999.;
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  Float_t result = dEdxLikelihood(tg,tg_ke,mass);
+
+  delete tg;
+  file_ke->Close();
+
+  return result;
+}
+
+//***************************************************************
+std::pair<Float_t,Float_t> pdAnaUtils::dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke, 
+					    Float_t mass){
+//***************************************************************
+
+  double width = 0.65;
+  TF1* pdf = new TF1("pdf", dEdxPDF, -10., 20., 5);
+  double L  = 0;
+  double Lf = 10;
+  double step = 0.1;
+  std::vector<double> L_v,Likelihood_v;
+  L_v.clear();
+  Likelihood_v.clear();
+  while(L<Lf){
+    double likelihood = 0;
+    for(int i = 0; i < tg->GetN(); i++){
+      double range = tg->GetPointX(i)+L;
+      double dEdx = tg->GetPointY(i);
+      double ke = tg_ke->Eval(range);
+      double gamma = (ke/mass)+1.0;
+      double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+      double xi = GetLandauXi(ke, width, mass);
+      double Wmax = GetWmax(ke, mass);
+      double kappa = xi / Wmax;
+      double dEdx_BB = GetdEdxBetheBloch(ke, mass);
+      double par[5] = {kappa, beta * beta, xi, dEdx_BB, width};
+      pdf->SetParameters(par);
+      if(pdf->Eval(dEdx) == 0)continue;
+      else
+	likelihood += log(pdf->Eval(dEdx));
+    }
+    L_v.push_back(L);
+    Likelihood_v.push_back(likelihood);
+    L += step;
+  }
+  auto it = std::max_element(Likelihood_v.begin(), Likelihood_v.end());
+  int index = std::distance(Likelihood_v.begin(), it);
+  return std::make_pair(Likelihood_v[index],L_v[index]);
+}
+
+//***************************************************************
+std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange(AnaParticlePD* part, Int_t PDG){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return std::make_pair(-999.,-999.);
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return std::make_pair(-999.,-999.);
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
+  delete tg;
+  file_ke->Close();
+  
+  return result;
 }

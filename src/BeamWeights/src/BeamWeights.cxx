@@ -91,8 +91,8 @@ void BeamWeights::DefineMicroTrees(bool addBase){
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
   standardPDTree::AddStandardVariables_EventInfo(output());
-  standardPDTree::AddStandardVariables_BeamReco(output());
-  standardPDTree::AddStandardVariables_BeamTrue(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
 }
 
 //********************************************************************
@@ -111,8 +111,8 @@ void BeamWeights::FillMicroTrees(bool addBase){
   if(addBase) baseAnalysis::FillMicroTreesBase(addBase); 
 
   standardPDTree::FillStandardVariables_EventInfo(        output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
-  standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
 }
 
 //********************************************************************

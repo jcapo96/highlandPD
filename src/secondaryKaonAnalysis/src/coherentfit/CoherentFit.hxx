@@ -23,6 +23,8 @@ public:
 
   TTree* GetTreeFromRootFile();
   TTree* GetSystTree();
+
+  TTree* GetTree() const {return fTree;}
   
   void WriteToRootFile(const std::string& filename);
   

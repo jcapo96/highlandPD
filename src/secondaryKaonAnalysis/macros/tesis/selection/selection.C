@@ -41,7 +41,9 @@ void selection(){
   draw.ChangeCategoryColor("candidateparticlereduced",321,217); //change kaon colors for candidates plots
   draw.ChangeCategoryColor("particle",321,217);          //change kaon colors for candidates plots
   draw.ChangeCategoryColor("candidatedaughter",321,217);     //change kaon colors for candidates plots
-  
+  draw.ChangeCategoryColor("candidatedaumuonreduced",-130,217);     //change kaon colors for candidates plots
+  draw.SetStackFillStyle(1001);
+
   double default_legend_x_size = 0.3;
   
   //text to be drawn
@@ -54,97 +56,128 @@ void selection(){
   
   //beam momentum
   draw.SetLegendPos(0.57,0.88); //legend shouldnt be over the axis
-  draw.SetTitleX("BI momentum [GeV]");
-  draw.Draw(d,mc,"beam_mom",40,4,9,"beamparticlereduced","accum_level[0][0]>0 && beam_nominal_mom==6","","area pur ignoreempty");
-  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->RedrawAxis("fG"); gPad->Update();//always redraw axis
-  if(save_plots)gPad->Print("plots/selection_BI_mom.pdf");
+  // draw.SetTitleX("BI momentum [GeV]");
+ //  draw.Draw(d,mc,"beam_mom",40,4,9,"beamparticlereduced","accum_level[0][0]>0 && beam_nominal_mom==6","","area pur ignoreempty");
+ //  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->RedrawAxis("fG"); gPad->Update();//always redraw axis
+ //  if(save_plots)gPad->Print("plots/selection_BI_mom.pdf");
   
-  //candidates per event
-  draw.SetTitleX("Candidates per event");
-  draw.Draw(d,mc,"ncandidates",10,0,10,"beamparticlereduced","accum_level[0][]>0","","area pur ignoreempty");
-  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  if(save_plots)gPad->Print("plots/selection_ncandidates.pdf");
+ //  //candidates per event
+ //  draw.SetLegendPos(0.67,0.84); //legend shouldnt be over the axis
+ //  draw.SetLegendSize(0.2,0.08);
+ //  draw.SetTitleX("Candidates per event");
+ //  draw.SetMinY(1);
+ //  draw.SetLogY();
+ //  draw.Draw(d,mc,"ncandidates",10,0,10,"beamparticlereduced","accum_level[0][]>0","","area pur ignoreempty");
+ //  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->RedrawAxis();gPad->Update(); //always redraw axis
+ //  if(save_plots)gPad->Print("plots/selection_ncandidates.pdf");
   
-  //daughter type
-  draw.SetTitleX("Daughter Type");
-  draw.SetLegendPos("l");
-  draw.SetLegendSize(0.24,-999);
-  draw.Draw(d,mc,"candidates_dau_type",3,0,3,"candidatedauparticlereduced","accum_level[0][]>1","","area pur ignoreempty");
-  draw.DrawCutLinesVertical(2,3,true);
-  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  gPad->Update();
-  if(save_plots)gPad->Print("plots/selection_daughter_type.pdf");
+ //  //daughter type
+ //  draw.SetLogY(0);
+ //  draw.SetMinY(0);
+ //  gStyle->SetNdivisions(2, "x");
+ // draw.SetTitleX("");
+ //  draw.SetLegendPos("l");
+ //  draw.SetLegendSize(0.24,0);
+ //  draw.Draw(d,mc,"candidates_dau_type",3,0,3,"candidatedauparticlereduced","accum_level[0][]>1","","area pur ignoreempty");
+ //  draw.DrawCutLinesVertical(2,3,true);
+ //  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  std::string labels[3] = {"UNKNOWN","SHOWER","TRACK"};
+ //  draw.SetAlphanumericLabels(3,labels,0.08);
+ //  gPad->RedrawAxis("G");gPad->Update(); //always redraw axis
+ //  if(save_plots)gPad->Print("plots/selection_daughter_type.pdf");
   
-  //daughter chi2
-  draw.SetTitleX("Daughter #chi^{2}_{muon}");
-  draw.SetLegendPos("r");
-  draw.SetLegendPos(0.57,0.88); //legend shouldnt be over the axis
-  draw.SetLegendSize(default_legend_x_size,-999);
-  draw.Draw(d,mc,"candidates_dau_chi2_muon/candidates_dau_chi2_ndf",20,0,20,"candidatedaumuonreduced","accum_level[0][]>2 && candidates_dau_chi2_muon>0 && (abs(candidates_endpos[][2]-230)>20 && abs(candidates_endpos[][2]-460)>20) && (abs(candidates_dau_pos[][2]-230)>20 && abs(candidates_dau_pos[][2]-460)>20)","","area pur ignoreempty nostat");
-  draw.DrawCutLineVertical(6,true,"l");
-  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  if(save_plots)gPad->Print("plots/selection_daughter_chi2.pdf");
+ //  gStyle->SetNdivisions(506, "xy");
+ //  //daughter chi2
+ //  draw.SetTitleX("Daughter #chi^{2}_{muon}");
+ //  draw.SetLegendPos("r");
+ //  draw.SetLegendPos(0.57,0.88); //legend shouldnt be over the axis
+ //  draw.SetLegendSize(default_legend_x_size,-999);
+ //  draw.Draw(d,mc,"candidates_dau_chi2_muon/candidates_dau_chi2_ndf",20,0,20,"candidatedaumuonreduced","accum_level[0][]>2 && candidates_dau_chi2_muon>0 && (abs(candidates_endpos[][2]-230)>20 && abs(candidates_endpos[][2]-460)>20) && (abs(candidates_dau_pos[][2]-230)>20 && abs(candidates_dau_pos[][2]-460)>20)","","area pur ignoreempty nostat");
+ //  draw.DrawCutLineVertical(6,true,"l");
+ //  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->RedrawAxis();gPad->Update(); //always redraw axis
+ //  if(save_plots)gPad->Print("plots/selection_daughter_chi2.pdf");
   
-  //daughter mom range
-  draw.SetTitleX("Daughter Momentum by Range [MeV]");
-  draw.Draw(d,mc,"candidates_dau_mom_muon",30,0,0.6,"candidatedaumuonreduced","accum_level[0][]>3 && (abs(candidates_endpos[][2]-230)>20 && abs(candidates_endpos[][2]-460)>20) && (abs(candidates_dau_pos[][2]-230)>20 && abs(candidates_dau_pos[][2]-460)>20)","","area ignoreempty pur");
-  draw.DrawCutLinesVertical(0.221,0.245,false);
-  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  if(save_plots)gPad->Print("plots/selection_daughter_mom.pdf");
-  
-  //candidate daughter angle
-  draw.SetTitleX("cos(Candidate-Daughter)");
-  draw.SetMinY(5);
-  draw.SetLogY();
-  draw.SetLegendPos("l");
-  draw.Draw(d,mc,"candidates_cos_dau",50,-1,1,"candidateparticlereduced","accum_level[0][]>4","","area pur ignoreempty");
-  draw.DrawCutLineVertical(0.64,true,"l");
-  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  if(save_plots)gPad->Print("plots/selection_candidate_cos.pdf");
+ //  //daughter mom range
+ //  draw.SetTitleX("Daughter Momentum by Range [MeV]");
+ //  draw.Draw(d,mc,"candidates_dau_mom_muon*1000",30,0,600,"candidatedaumuonreduced","accum_level[0][]>3 && (abs(candidates_endpos[][2]-230)>20 && abs(candidates_endpos[][2]-460)>20) && (abs(candidates_dau_pos[][2]-230)>20 && abs(candidates_dau_pos[][2]-460)>20)","","area ignoreempty pur");
+ //  draw.DrawCutLinesVertical(221,245,false);
+ //  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->RedrawAxis();gPad->Update(); //always redraw axis
+ //  if(save_plots)gPad->Print("plots/selection_daughter_mom.pdf");
 
-  draw.SetTitleX("cos(Candidate-Daughter)");
-  draw.SetMinY(5);
-  draw.SetLogY();
-  draw.SetLegendPos("l");
-  draw.Draw(d,mc,"candidates_cos_dau",50,-1,1,"candidateendprocess","accum_level[0][]>4","","area pur ignoreempty");
-  draw.DrawCutLineVertical(0.64,true,"l");
-  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  if(save_plots)gPad->Print("plots/selection_candidate_cos_endprocess.pdf");
+ //  //daughter mom range
+ //  draw.SetTitleX("Daughter Length [cm]");
+ //  draw.Draw(d,mc,"candidates_dau_length",30,40,70,"candidatedaumuonreduced","accum_level[0][]>4 && (abs(candidates_endpos[][2]-230)>20 && abs(candidates_endpos[][2]-460)>20) && (abs(candidates_dau_pos[][2]-230)>20 && abs(candidates_dau_pos[][2]-460)>20)","","area ignoreempty pur");
+ //  tt1.DrawLatex(0.18,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->RedrawAxis();gPad->Update(); //always redraw axis
   
-  //candidate daughter distance
-  draw.SetTitleX("Distance Candidate-Daughter [cm]");
-  draw.SetMinY(1);
-  draw.SetLogY();
+ //  //candidate daughter angle
+ //  draw.SetTitleX("cos(Candidate-Daughter)");
+ //  draw.SetMinY(5);
+ //  draw.SetLogY();
+ //  draw.SetLegendPos("l");
+ //  draw.Draw(d,mc,"candidates_cos_dau",50,-1,1,"candidateparticlereduced","accum_level[0][]>4","","area pur ignoreempty");
+ //  draw.DrawCutLineVertical(0.64,true,"l");
+ //  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->RedrawAxis();gPad->Update(); //always redraw axis
+ //  if(save_plots)gPad->Print("plots/selection_candidate_cos.pdf");
+
+ //  draw.SetTitleX("cos(Candidate-Daughter)");
+ //  draw.SetMinY(5);
+ //  draw.SetLogY();
+ //  draw.SetLegendPos("l");
+ //  draw.Draw(d,mc,"candidates_cos_dau",50,-1,1,"candidateendprocess","accum_level[0][]>4","","area pur ignoreempty");
+ //  draw.DrawCutLineVertical(0.64,true,"l");
+ //  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->RedrawAxis();gPad->Update(); //always redraw axis
+ //  if(save_plots)gPad->Print("plots/selection_candidate_cos_endprocess.pdf");
+  
+ //  //candidate daughter distance
+ //  draw.SetTitleX("Distance Candidate-Daughter [cm]");
+ //  draw.SetMinY(1);
+ //  draw.SetLogY();
+ //  draw.SetLegendPos("r");
+ //  draw.SetLegendPos(0.57,0.88); //legend shouldnt be over the axis
+ //  draw.Draw(d,mc,"candidates_distance_dau",50,0,100,"candidateparticlereduced","accum_level[0][]>5","","area pur ignoreempty");
+ //  draw.DrawCutLineVertical(10,true,"l");
+ //  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ //  gPad->SetLogx();
+ //  gPad->RedrawAxis();gPad->Update(); //always redraw axis
+ //  gPad->Update();
+ //  if(save_plots)gPad->Print("plots/selection_candidate_dis.pdf");
+  
+ //  //**************************************
+ //  //selection result
+ //  //**************************************
+ //  gPad->SetLogx(0);
+ //  draw.SetLogY(0);
+ //  draw.SetMinY(0);
+ draw.SetTitleX("Candidate #chi^{2}_{K}");
+ draw.SetLegendPos("r");
+ draw.SetLegendPos(0.57,0.88); //legend shouldnt be over the axis
+ draw.Draw(d,mc,"candidates_chi2_kaon/candidates_chi2_ndf",20,0,150,"candidateparticlereduced","accum_level[0][]>6","","area pur ignoreempty");
+ tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+ gPad->RedrawAxis();gPad->Update(); //always redraw axis
+ if(save_plots)gPad->Print("plots/selection_result_chi2_kaon.pdf");
+
+  draw.SetTitleX("Candidate Zstart [cm]");
   draw.SetLegendPos("r");
   draw.SetLegendPos(0.57,0.88); //legend shouldnt be over the axis
-  draw.Draw(d,mc,"candidates_distance_dau",50,0,100,"candidateparticlereduced","accum_level[0][]>5","","area pur ignoreempty");
-  draw.DrawCutLineVertical(10,true,"l");
+  draw.Draw(d,mc,"candidates_pos[][2]",30,0,600,"candidateparticlereduced","accum_level[0][]>6","","area pur ignoreempty");
   tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-  gPad->SetLogx();
   gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  gPad->Update();
-  if(save_plots)gPad->Print("plots/selection_candidate_dis.pdf");
-  
-  //**************************************
-  //selection result
-  //**************************************
-  gPad->SetLogx(0);
-  draw.SetLogY(0);
-  draw.SetMinY(0);
-  draw.SetTitleX("Candidate #chi^{2}_{K}  [cm]");
+  if(save_plots)gPad->Print("plots/selection_result_chi2_Zstart.pdf");
+
+  draw.SetTitleX("Candidate Zend [cm]");
   draw.SetLegendPos("r");
   draw.SetLegendPos(0.57,0.88); //legend shouldnt be over the axis
-  draw.Draw(d,mc,"candidates_chi2_kaon/candidates_chi2_ndf",20,0,150,"candidateparticlereduced","accum_level[0][]>6","","area pur ignoreempty");
+  draw.Draw(d,mc,"candidates_endpos[][2]",30,0,600,"candidateparticlereduced","accum_level[0][]>6","","area pur ignoreempty");
   tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
   gPad->RedrawAxis();gPad->Update(); //always redraw axis
-  if(save_plots)gPad->Print("plots/selection_result_chi2_kaon.pdf");
+  if(save_plots)gPad->Print("plots/selection_result_chi2_Zend.pdf");
   
   //**************************************
   //efficiency and purity
@@ -174,4 +207,13 @@ void selection(){
   tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
   gPad->RedrawAxis();gPad->Update();
   if(save_plots)gPad->Print("plots/endselection_candidate_mom_beampart.pdf");		       
+
+  draw.SetTitleX("Candidate Kinetic Energy [MeV/c]");
+  draw.SetLegendPos("r");
+  draw.SetLegendPos(0.57,0.88);
+  draw.Draw(d,mc,"bestcandidate_calE",12,0,2000,"bestcandidateparticle","accum_level[0][0]>6 && bestcandidate_chi2_kaon/bestcandidate_chi2_ndf<50","","area pur ignoreempty");
+  draw.DrawCutLineVertical(0.340,false,"l");
+  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+  gPad->RedrawAxis();gPad->Update();
+  if(save_plots)gPad->Print("plots/endselection_candidate_kinetic.pdf");
 }

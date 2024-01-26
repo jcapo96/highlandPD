@@ -41,8 +41,9 @@ namespace pdAnaUtils{
   //checks if the beam particle selected by Pandora has been correctly selected. Basic implementation for the moment
   bool isBeamLike(AnaParticlePD* part, AnaBeamPD* beam);
   
-  // Compute the PID chi2 and ndf for protons
+  // Compute the PID chi2 and ndf depending of pdg hypothesis and up to a given residual range
   std::pair< double, int > Chi2PID(const AnaParticlePD& part, const int pdg);
+  std::pair< double, int > Chi2PID_UpToRR(const AnaParticlePD& part, const int pdg, const double RR);
 
   // Compute the track length using the hit positions
   Float_t ComputeTrackLengthFromHitPosition(const AnaParticlePD* part); 
@@ -75,6 +76,25 @@ namespace pdAnaUtils{
   Double_t ComputeDepositedEnergy(AnaParticlePD* part);
  
   Double_t EstimateTrueMomAtAPABorder(AnaParticlePD* part);
+
+  Double_t ComputeDistanceToClosestParticle(AnaParticlePD* part, AnaParticleB** parts, const int nparts);
+
+  void GetBeamQualityCuts(AnaEventPD* event, 
+			  double &mean_x, double &mean_y, double &mean_z,
+			  double &sigma_x, double &sigma_y, double &sigma_z,
+			  double &cos);
+
+  Float_t GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG);
+  Float_t dEdxLikelihood(TGraph* tg, TGraph* tg_ke, 
+			 Float_t mass);
+  std::pair<Float_t,Float_t> GetdEdxLikelihoodFreeRange(AnaParticlePD* part, Int_t PDG);
+  std::pair<Float_t,Float_t> dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke, 
+				  Float_t mass);
+  double GetDensityCorrection(double beta, double gamma);
+  double GetdEdxBetheBloch(double KE, double mass);
+  double GetWmax(double KE, double mass);
+  double GetLandauXi(double KE, double dx, double mass);
+  double dEdxPDF(double *x, double *par);
 }
 
 #endif

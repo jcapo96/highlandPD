@@ -214,6 +214,8 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
     
   Length_alt = kFloatUnassigned;
   Generation = kIntUnassigned;
+
+  Distance_to_closest_particle = kFloatUnassigned;
   
   for (int i=0; i<3; i++){
     Hits[i].clear();
@@ -284,6 +286,8 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
 
   Length_alt = part.Length_alt;
   Generation = part.Generation;
+
+  Distance_to_closest_particle = part.Distance_to_closest_particle;
 
   for (int i=0; i<3; i++){
     Hits[i] = part.Hits[i];

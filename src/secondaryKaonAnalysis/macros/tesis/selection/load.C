@@ -1,12 +1,10 @@
 {
   std::string hostname = gSystem->HostName();
 
-  std::string dir = "/data4/DUNE/migue/analysis/files/";
+  std::string dir = "/dune/app/users/miagarc/technical_note/files/";
 
-  std::string fdata = dir+"data/6-7GeV_prod4a_reco2_microtree_2023-04-04.root";
-  //std::string fdata   = dir+"mc/prod4a/6-7GeV_prod4a_microtree_2023-04-14_nobranch.root";
-  std::string fmc   = dir+"mc/prod4a/6-7GeV_prod4a_microtree_2023-04-04.root";
-  //  std::string fmc   = dir+"systematics/6-7GeV_prod4a_microtree_syst_brokentracks_2023-02-13.root";
+  std::string fdata = dir+"data/data_dedx.root";
+  std::string fmc   = dir+"mc/mc_dedx.root";
 
   TFile *_file0 = TFile::Open(fdata.c_str());
   TFile *_file1 = TFile::Open(fmc.c_str());

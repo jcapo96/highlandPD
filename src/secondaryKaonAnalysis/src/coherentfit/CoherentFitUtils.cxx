@@ -1104,10 +1104,10 @@ TF1* CoherentFitUtils::LangausPlusConstantFit(TH1F* h, bool use_poisson){
 		   0.01);                              //constant
   f->SetParLimits(0,0.03,2);
   f->SetParLimits(3,0   ,5);
-  f->SetParNames("#sigma_{L,B}","#mu_{B}","N_{B}","#sigma_{G,B}","C");
+  f->SetParNames("#sigma_{L,B}","MPV_{B}","N_{B}","#sigma_{G,B}","C");
   
   h->Fit("f","LNQ");
-  h->Fit("f","WLNQ");
+  h->Fit("f","WLQ");
 
   // h->Draw();
   // gPad->Update();gPad->WaitPrimitive();
@@ -1142,13 +1142,13 @@ TF1* CoherentFitUtils::DoubleLangausFit(TH1F* h, bool use_poisson){
   f->SetParLimits(4,0.03,1); //landau with below this value gives shaky behaviour
   f->SetParLimits(7,0   ,5); //landau with must be positive
 
-  f->SetParNames("#sigma_{L,S}","#mu_{S}","N_{S}","#sigma_{G,S}","#sigma_{L,RE}","#mu_{RE}","N_{RE}","#sigma_{G,RE}");
+  f->SetParNames("#sigma_{L,S}","MPV_{S}","N_{S}","#sigma_{G,S}","#sigma_{L,RE}","MPV_{RE}","N_{RE}","#sigma_{G,RE}");
   
   //h->Fit(fname.c_str(),"LNQ");
   // h->Draw();
   // gPad->Update();gPad->WaitPrimitive();
 
-   h->Fit(fname.c_str(),"WLNQ");
+   h->Fit(fname.c_str(),"WLQ");
   // h->Draw();
   // gPad->Update();//gPad->WaitPrimitive();
   

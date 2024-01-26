@@ -67,6 +67,10 @@ void DrawEffAndPur(){
 
   gROOT->ProcessLine(".L ./protoDUNEStyle.C");
   gStyle->SetPadBottomMargin(0.17);
+  gStyle->SetPadLeftMargin(0.06);
+  gStyle->SetPadRightMargin(0.14);
+
+  TCanvas* c = new TCanvas("c","c",900,500);
   
   //get trees
   std::string dir = "/dune/app/users/miagarc/technical_note/files/";
@@ -93,7 +97,7 @@ void DrawEffAndPur(){
   TH1F* h = new TH1F("","",8,0,8);
   h->GetYaxis()->SetRangeUser(0.001,1.5);
 
-  std::string axis[] = {"NO CUT","BEAM TRACK EXISTS","CANDIDATE EXISTS","DAUGHTER TRACK-LIKE","DAUGHTER #chi^{2}","DAUGHTER MOM","ANGLE","DISTANCE"};
+  std::string axis[] = {"NO CUT","BEAM TRACK EXISTS","CANDIDATE EXISTS","DAUGHTER TRACK-LIKE","DAUGHTER #chi^{2}","DAUGHTER MOM","ANGLE WRT DAUGHTER","DISTANCE TO DAUGHTER"};
   for(int i = 0; i < 8; i++)h->GetXaxis()->SetBinLabel(i+1,axis[i].c_str());
   h->GetXaxis()->SetTickLength(0);
 
@@ -115,7 +119,7 @@ void DrawEffAndPur(){
   }
 
   //draw legend now                                                                                                                                                                                        
-  TLegend* lg = new TLegend(0.15,0.40,0.35,0.60);                                                                                                                                                           
+  TLegend* lg = new TLegend(0.08,0.40,0.28,0.60);
   lg->AddEntry(Pur,"Purity","pl");
   lg->AddEntry(Eff,"Efficiency","pl");
   lg->Draw("same");
@@ -129,7 +133,7 @@ void DrawEffAndPur(){
   //text to be drawn
   TLatex tt1;
   tt1.SetNDC();
-  tt1.DrawLatex(0.1,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+  tt1.DrawLatex(0.06,0.94,"#bf{DUNE:ProtoDUNE-SP}");
 
   gPad->Update();
 

@@ -378,6 +378,8 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
 //*****************************************************************************
 
   //fill forced track info
+  part->Type = AnaParticlePD::kTrack; //obvious reasons xd
+
   part->TrackID  = (*reco_daughter_allTrack_ID)[itrk];
   
   part->PositionEnd[0]  = (*reco_daughter_allTrack_endX)[itrk];
@@ -436,6 +438,10 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk]);
   }
+
+  std::pair<double,int> result = pdAnaUtils::Chi2PID(*part,13);
+  part->Chi2Muon = result.first;
+  part->Chi2ndf = result.second;
 
   //------ Truth association ------- //TODO
   if(_isMC){

@@ -77,6 +77,14 @@ private:
   
   bool _UseDetailedSelection;
 
+  bool _FillBeamInstrumentationInfo;
+  bool _FillBeamParticleInfo;
+  bool _FillBeamParticleHitsInfo;
+  bool _FillBeamParticleDaughtersInfo;
+  bool _FillKaonCandidatesInfo;
+  bool _FillBestKaonCandidateInfo;
+  bool _FillToyVariablesInfo;
+
   bool _ApplydQdxSystematic;
   bool _ApplyRecombinationSystematic;
   bool _ApplySCESystematic;
@@ -118,6 +126,12 @@ public:
     bestcandidate_calE_toy,
     bestcandidate_length_toy,
     bestcandidate_dau_calE_toy,
+    
+    candidates_allhits,
+    candidates_hitvector_dedx,
+    candidates_hitvector_resrange,
+    candidates_hitvector_thetaYZ,
+    candidates_hitvector_thetaXZ,
   };
   
 };

@@ -55,8 +55,17 @@ void LifetimeVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     if(part->Hits[2].empty())continue;
 
     //correct every hit 
-    for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++)
+    for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
       _cal->ApplyLifetimeCorrection(part->Hits[2][ihit]);
+      _cal->ApplyRecombination(part->Hits[2][ihit]);
+    }
+
+    //recompute derived quantities
+    std::pair<double, int> chi2pidprot = pdAnaUtils::Chi2PID(*part, 2212);
+    part->Chi2Proton  = chi2pidprot.first;
+    std::pair<double, int> chi2pidmuon = pdAnaUtils::Chi2PID(*part, 13);
+    part->Chi2Muon    = chi2pidmuon.first;
+    part->Chi2ndf     = chi2pidmuon.second;
   }
 }
 

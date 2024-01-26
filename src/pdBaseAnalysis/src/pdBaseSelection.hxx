@@ -75,4 +75,11 @@ public:
   StepBase* MakeClone(){return new BeamPDGCut();}
 };
 
+class BeamQualityCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamQualityCut();}
+};
+
 #endif

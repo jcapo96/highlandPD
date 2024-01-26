@@ -1093,7 +1093,7 @@ TRatioPlot* CoherentSample::GetFitRatio(const int ibin){
 //********************************************************************
 
   TH1F* hdummy = (TH1F*)fh[ibin]->Clone("hdummy");
-  hdummy->GetXaxis()->SetTitle("dEdx [MeV/cm]");
+  hdummy->GetXaxis()->SetTitle("dE/dx [MeV/cm]");
   for(int i = 0; i < 13; i++)fCFit[ibin]->FixParameter(i,fCFit[ibin]->GetParameter(i));
 
   std::string name = fCFit[ibin]->GetTitle();
@@ -1696,6 +1696,9 @@ void CoherentSample::CoherentFitSignalPlusBackground(bool minos, double step){
   fBackground->fSemiBackground->SetCgwA(std::make_pair(ssgw,ssgw_error));
   //fBackground->fSemiBackground->SetCnorm(std::make_pair(ssnorm ,ssnorm_error));
   fBackground->fSemiBackground->SetCnorm(std::make_pair(1-snorm-bnorm ,ssnorm_error));
+
+  //Print covariance matrix
+  fMinuit->mnmatu(1);
 
   //get correlation matrix
   double cov[18][18] = {0};

@@ -217,18 +217,18 @@ void pdExampleAnalysis::DefineMicroTrees(bool addBase){
 
   // Add standard sets of variables for ProtoDUNE analysis (these methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   // beam instrumentation info
-  standardPDTree::AddStandardVariables_BeamTrue(output());
-  standardPDTree::AddStandardVariables_BeamReco(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
   
   // candidate track (beam track) info
-  standardPDTree::AddStandardVariables_CandidateTrue(output());
-  standardPDTree::AddStandardVariables_CandidateReco(output());
-  standardPDTree::AddStandardVariables_CandidateHitsReco(output());
-  
-  // candidate's daughters info
-  standardPDTree::AddStandardVariables_CandidateDaughtersTrue(output(),pdExampleAnalysisConstants::NMAXSAVEDDAUGHTERS);
-  standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),pdExampleAnalysisConstants::NMAXSAVEDDAUGHTERS);
-  standardPDTree::AddStandardVariables_CandidateDaughtersHitsReco(output(),pdExampleAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  standardPDTree::AddStandardVariables_BeamParticleTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleReco(output());
+  standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
+  				      
+  // candidate's daughters info	      
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),pdExampleAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),pdExampleAnalysisConstants::NMAXSAVEDDAUGHTERS);
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersHitsReco(output(),pdExampleAnalysisConstants::NMAXSAVEDDAUGHTERS);
   
   // all tracks info
   standardPDTree::AddStandardVariables_AllParticlesReco(output(),pdExampleAnalysisConstants::NMAXSAVEDPARTICLES);
@@ -256,7 +256,7 @@ void pdExampleAnalysis::DefineTruthTree(){
   baseAnalysis::DefineTruthTree();
 
   // Add standard sets of variables for PD analysis
-  standardPDTree::AddStandardVariables_BeamTrue(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
 
 }
 
@@ -273,11 +273,11 @@ void pdExampleAnalysis::FillMicroTrees(bool addBase){
   if (addBase) baseAnalysis::FillMicroTreesBase(addBase);
 
   // Fill standard variables for the PD analysis
-  standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
-  standardPDTree::FillStandardVariables_CandidateTrue(    output(), box().MainTrack);    
-  standardPDTree::FillStandardVariables_CandidateHitsReco(output(), box().MainTrack);
+  standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack);
+  standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);    
+  standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
 
   // Get all reconstructed parts in the event
   AnaParticleB** parts = GetEvent().Particles;
@@ -306,8 +306,8 @@ void pdExampleAnalysis::FillMicroTrees(bool addBase){
     Int_t maxdau = std::min((Int_t)pdExampleAnalysisConstants::NMAXSAVEDDAUGHTERS,ndau);
     for(Int_t i = 0; i < maxdau; i++){      
       AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
-      standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
-      standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
+      standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), dau);
+      standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), dau);
       output().IncrementCounter(seltrk_ndau);
     }    
   }
@@ -355,7 +355,7 @@ void pdExampleAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 
   // Fill standard variables for the PD analysis
   //  standardPDTree::FillStandardVariables_CountersTrue(output(), _globalCounters);
-  standardPDTree::FillStandardVariables_BeamTrue(    output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(    output(), GetSpill().Beam);
 
 }
 

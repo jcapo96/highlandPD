@@ -97,12 +97,12 @@ void BrokenTracks::DefineMicroTrees(bool addBase){
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
 
   standardPDTree::AddStandardVariables_EventInfo(output());
-  standardPDTree::AddStandardVariables_BeamReco(output());
-  standardPDTree::AddStandardVariables_BeamTrue(output());
-  standardPDTree::AddStandardVariables_CandidateReco(output());
-  standardPDTree::AddStandardVariables_CandidateTrue(output());
-  standardPDTree::AddStandardVariables_CandidateDaughtersReco(output(),5);
-  standardPDTree::AddStandardVariables_CandidateDaughtersTrue(output(),5);
+  standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleReco(output());
+  standardPDTree::AddStandardVariables_BeamParticleTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),5);
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),5);
 
   AddVarI(output(), seltrk_ndau_APAs, "seltrk ndaughters in APA region");
 }
@@ -123,17 +123,17 @@ void BrokenTracks::FillMicroTrees(bool addBase){
   if(addBase) baseAnalysis::FillMicroTreesBase(addBase); 
 
   standardPDTree::FillStandardVariables_EventInfo(        output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
-  standardPDTree::FillStandardVariables_BeamReco(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_BeamTrue(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_CandidateReco(    output(), box().MainTrack);
-  standardPDTree::FillStandardVariables_CandidateTrue(    output(), box().MainTrack);    
+  standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack);
+  standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);    
   
   int ndau_APAs = 0;
   int ntracks = std::min((int)box().MainTrack->DaughtersIDs.size(),5);
   for(int idau = 0; idau < ntracks; idau++){
     AnaParticlePD* dau = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[idau]);
-    standardPDTree::FillStandardVariables_CandidateDaughterReco(output(), dau);
-    standardPDTree::FillStandardVariables_CandidateDaughterTrue(output(), dau);
+    standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), dau);
+    standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), dau);
     output().IncrementCounter(standardPDTree::seltrk_ndau);
     double Z = dau->PositionEnd[2];
     if(Z>205 && Z < 249)ndau_APAs++;

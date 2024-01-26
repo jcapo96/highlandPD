@@ -9,6 +9,7 @@ namespace kaonAnaUtils{
   void AddCustomCategories();
 
   void AddBeamParticleReducedCategory();
+  void AddBestCandidateParticleReducedCategory();
   void AddCandidateParticleReducedCategory();
   void AddCandidateDaughterParticleReducedCategory();
   void AddCandidateDaughterMuonCategory();
@@ -16,6 +17,7 @@ namespace kaonAnaUtils{
   
   // Fill Custom categories
   void FillBeamParticleReducedCategory(AnaParticlePD* beampart);
+  void FillBestCandidateParticleReducedCategory(AnaParticlePD* part);
   void FillCandidateParticleReducedCategory(AnaParticlePD* part);
   void FillCandidateDaughterParticleReducedCategory(AnaParticlePD* part);
   void FillCandidateDaughterMuonCategory(AnaParticlePD* parent, AnaParticlePD* daughter);

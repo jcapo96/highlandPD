@@ -220,6 +220,9 @@ public:
   /// Generation of the particle (primary particle, daughter, granddaughter, etc.)
   Int_t Generation;
 
+  /// test
+  Double_t Distance_to_closest_particle;
+
   // ---- OBSOLETE PID VARIABLES ----------
   
   /// Particle ID hypothesis used in the fit (if any)

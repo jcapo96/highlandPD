@@ -80,7 +80,7 @@ void SCEVariation::Apply(const ToyExperiment& toy, AnaEventC& event){
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
       _sce[toy_index]->ApplyPositionCorrection(part->Hits[2][ihit]);
       _cal->ApplySCECorrection(part->Hits[2][ihit]);
-      _cal->ApplyLifetimeCorrection(part->Hits[2][ihit]);
+      //_cal->ApplyLifetimeCorrection(part->Hits[2][ihit]);
     }
   }
 }

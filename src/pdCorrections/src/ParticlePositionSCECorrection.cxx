@@ -24,7 +24,7 @@ void ParticlePositionSCECorrection::Apply(AnaSpillC& spillC){
   for(UInt_t ipart = 0; ipart < bunch->Particles.size(); ipart++){
     
     AnaParticlePD* part = static_cast<AnaParticlePD*>(bunch->Particles[ipart]);
-    
+
     // The un-corrected particle
     const AnaParticlePD* original = static_cast<const AnaParticlePD*>(part->Original);
     

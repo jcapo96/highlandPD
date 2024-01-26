@@ -654,7 +654,7 @@ protected:
   TBranch *b_beam_inst_nFibersP3; //!
   TBranch *b_beam_inst_nMomenta; //!
   TBranch *b_beam_inst_nTracks; //!
-  TBranch *b_beam_inst_valid; //!                                                                             
+  TBranch *b_beam_inst_valid; //!  
 }; 
 
 

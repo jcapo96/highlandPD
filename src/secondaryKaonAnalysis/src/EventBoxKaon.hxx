@@ -35,6 +35,8 @@ namespace boxUtils{
   void FillTrueCandidatesAndDaughters(AnaEventB& event);
 
   void FillKaonXS(AnaEventB& event, SubDetId::SubDetEnum det = SubDetId::kSubdet1);
+
+  void FillProtonCandidates(AnaEventB& event, SubDetId::SubDetEnum det = SubDetId::kSubdet1);
 }
 
 #endif

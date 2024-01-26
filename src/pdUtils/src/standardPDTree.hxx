@@ -8,59 +8,57 @@
 namespace standardPDTree{
 
   // Methods to add to the output tree the standard sets of variables
-  void AddStandardVariables_CountersTrue(OutputManager& output);
-  
   void AddStandardVariables_EventInfo(OutputManager& output);
 
-  void AddStandardVariables_BeamReco(OutputManager& output);
-  void AddStandardVariables_BeamTrue(OutputManager& output);
+  void AddStandardVariables_BeamInstrumentationReco(OutputManager& output);
+  void AddStandardVariables_BeamInstrumentationTrue(OutputManager& output);
 
-  void AddStandardVariables_CandidateReco(OutputManager& output);
-  void AddStandardVariables_CandidateTrue(OutputManager& output);
-  void AddStandardVariables_CandidateHitsReco(OutputManager& output);
+  void AddStandardVariables_BeamParticleReco(OutputManager& output);
+  void AddStandardVariables_BeamParticleTrue(OutputManager& output);
+  void AddStandardVariables_BeamParticleHitsReco(OutputManager& output);
 
   void AddStandardVariables_AllParticlesReco(OutputManager& output, UInt_t nmax);
   void AddStandardVariables_AllParticlesTrue(OutputManager& output, UInt_t nmax);
 
-  void AddStandardVariables_CandidateDaughtersReco(OutputManager& output, UInt_t nmax);
-  void AddStandardVariables_CandidateDaughtersTrue(OutputManager& output, UInt_t nmax);
-  void AddStandardVariables_CandidateDaughtersHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
+  void AddStandardVariables_BeamParticleDaughtersReco(OutputManager& output, UInt_t nmax);
+  void AddStandardVariables_BeamParticleDaughtersTrue(OutputManager& output, UInt_t nmax);
+  void AddStandardVariables_BeamParticleDaughtersHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
 
-  void AddStandardVariables_CandidateGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
-  void AddStandardVariables_CandidateGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
+  void AddStandardVariables_BeamParticleGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
+  void AddStandardVariables_BeamParticleGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters);
 
-  void AddStandardVariables_CandidateGGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
-  void AddStandardVariables_CandidateGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
+  void AddStandardVariables_BeamParticleGGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
+  void AddStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
 
   // Methods to fill the standard sets of variables in the output tree
   void FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters);
   
   void FillStandardVariables_EventInfo(OutputManager& output, AnaEventInfoPD* info);
 
-  void FillStandardVariables_BeamTrue(OutputManager& output, AnaBeamB* beamB);
-  void FillStandardVariables_BeamReco(OutputManager& output, AnaBeamB* beamB);
+  void FillStandardVariables_BeamInstrumentationTrue(OutputManager& output, AnaBeamB* beamB);
+  void FillStandardVariables_BeamInstrumentationReco(OutputManager& output, AnaBeamB* beamB);
 
   void FillStandardVariables_AllParticlesReco(OutputManager& output, AnaParticlePD* part);
   void FillStandardVariables_AllParticlesTrue(OutputManager& output, AnaParticlePD* part);
 
-  void FillStandardVariables_CandidateTrue(OutputManager& output, AnaParticlePD* part);
-  void FillStandardVariables_CandidateReco(OutputManager& output, AnaParticlePD* part);
-  void FillStandardVariables_CandidateHitsReco(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_BeamParticleTrue(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_BeamParticleReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* beamPart = NULL);
+  void FillStandardVariables_BeamParticleHitsReco(OutputManager& output, AnaParticlePD* part);
 
-  void FillStandardVariables_CandidateDaughterReco(OutputManager& output, AnaParticlePD* part);
-  void FillStandardVariables_CandidateDaughterTrue(OutputManager& output, AnaParticlePD* part);  
-  void FillStandardVariables_CandidateDaughterHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxsavedhits);
+  void FillStandardVariables_BeamParticleDaughtersReco(OutputManager& output, AnaParticlePD* part);
+  void FillStandardVariables_BeamParticleDaughtersTrue(OutputManager& output, AnaParticlePD* part);  
+  void FillStandardVariables_BeamParticleDaughtersHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxsavedhits);
 
-  void FillStandardVariables_CandidateGDaughterReco(OutputManager& output, AnaParticlePD* part, Int_t index);
-  void FillStandardVariables_CandidateGDaughterTrue(OutputManager& output, AnaParticlePD* part, Int_t index);  
+  void FillStandardVariables_BeamParticleGDaughtersReco(OutputManager& output, AnaParticlePD* part, Int_t index);
+  void FillStandardVariables_BeamParticleGDaughtersTrue(OutputManager& output, AnaParticlePD* part, Int_t index);  
 
-  void FillStandardVariables_CandidateGGDaughterReco(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
-  void FillStandardVariables_CandidateGGDaughterTrue(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);  
+  void FillStandardVariables_BeamParticleGGDaughtersReco(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
+  void FillStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);  
 
   // Enum with unique indexes for output tree variables  
   enum enumStandardMicroTrees_standardPDTree{
 
-    // selected track true info
+    // selected track (beam particle) true info
     seltrk_truemom = baseAnalysis::enumStandardMicroTreesLast_baseAnalysis+1,
     seltrk_trueendmom,
     seltrk_truepdg,
@@ -78,51 +76,29 @@ namespace standardPDTree{
     // selected track reco info
     seltrk_ndau,
     seltrk_pos,
-    seltrk_SCEpos,
     seltrk_endpos,
     seltrk_dir,
-    seltrk_SCEdir,
     seltrk_enddir,
-    seltrk_costheta,
     seltrk_length,
     seltrk_mom_muon,
     seltrk_mom_prot,
+    seltrk_csdarange_muon,
+    seltrk_csdarange_prot,
     seltrk_nhits,
-    seltrk_dqdx,
-    seltrk_dedx,
-    seltrk_dedx_raw,
     seltrk_CNNscore,
     seltrk_chi2_prot,
+    seltrk_chi2_kaon,
     seltrk_chi2_muon,
     seltrk_chi2_ndf,
-    seltrk_kaon_PID,
-    seltrk_kaon_PID_ndf,
-    //seltrk_calo,
-    //seltrk_nhitsperplane,
-    //seltrk_mom_muon_alt,
-    //seltrk_mom_prot_alt,
-    //seltrk_length_alt,
-    //seltrk_length_raw,
-    //seltrk_dedx_exp,
-    //seltrk_pid,
-    seltrk_deposited_energy,
+    seltrk_truncated_dedx,
+    seltrk_calE,
 
     seltrk_hit_dedx,
-    seltrk_hit_dedx_raw,
-    seltrk_hit_dedx_cal,
     seltrk_hit_dqdx,
-    seltrk_hit_dqdx_raw,
-    seltrk_hit_dqdx_noSCE,
-    seltrk_hit_ch,
-    seltrk_hit_t0,
     seltrk_hit_x,
     seltrk_hit_y,
     seltrk_hit_z,
-    seltrk_hit_x_raw,
-    seltrk_hit_y_raw,
-    seltrk_hit_z_raw,
     seltrk_hit_resrange,
-    seltrk_hit_cnn,
 
     // selected track daughters reco info
     seltrk_dau_ndau,
@@ -138,19 +114,14 @@ namespace standardPDTree{
     seltrk_dau_chi2_kaon,
     seltrk_dau_chi2_muon,
     seltrk_dau_chi2_ndf,
-
+    seltrk_dau_calE,
+    seltrk_dau_truncated_dedx,
     seltrk_dau_nhits,
     seltrk_dau_hit_x,
     seltrk_dau_hit_y,
     seltrk_dau_hit_z,
     seltrk_dau_hit_dedx,
-    seltrk_dau_hit_dedx_cal,
-    seltrk_dau_hit_dqdx_raw,    
     seltrk_dau_hit_resrange,
-    seltrk_dau_hit_cnn,
-    seltrk_dau_hit_ch,
-    seltrk_dau_truncated_dedx,
-    //seltrk_dau_nhits2,
 
     // selected track daughters true info
     seltrk_dau_truendau,
@@ -161,7 +132,6 @@ namespace standardPDTree{
     seltrk_dau_trueendproc,
     seltrk_dau_truemom,
     seltrk_dau_trueendmom,
-    seltrk_dau_trueId,
 
     // selected track gdaughters reco info
     seltrk_gdau_ndau,
@@ -175,13 +145,12 @@ namespace standardPDTree{
     seltrk_gdau_type,
     seltrk_gdau_CNNscore,
     seltrk_gdau_chi2_prot,
+    seltrk_gdau_chi2_kaon,
     seltrk_gdau_chi2_muon,
     seltrk_gdau_chi2_ndf,
     seltrk_gdau_nhits,
     seltrk_gdau_hit_dedx,
     seltrk_gdau_hit_resrange,
-    //seltrk_gdau_nhits2,
-    //seltrk_gdau_hit_dqdx_raw,    
     
     // selected track gdaughters true info
     seltrk_gdau_truendau,
@@ -247,9 +216,9 @@ namespace standardPDTree{
     trk_type,
     trk_CNNscore,
     trk_chi2_prot,
+    trk_chi2_kaon,
     trk_chi2_muon,
     trk_chi2_ndf,
-    trk_averagedEdx,
     trk_nhits,
 
     // all particles in the event, true info    
@@ -264,11 +233,10 @@ namespace standardPDTree{
     trk_truemom,
     trk_trueendmom,
 
-    // beam true info
+    // beam instrumentation true info
     beam_truepos,
     beam_trueendpos,
     beam_truemom,
-    beam_truemom_tpc,
     beam_truedir,
     beam_truepdg,
     beam_trueendproc,
@@ -278,27 +246,10 @@ namespace standardPDTree{
     beam_enddir,          
     beam_mom,                                 
     beam_nominal_mom,                                 
-    beam_mom_raw,                                 
-    beam_mom_tpc,                                 
-    beam_mom_tpc_raw,                                 
-    beam_trigger,      
     beam_tof,
-    beam_time,                                 
-    beam_ckov_status,  
-    beam_ckov_time,    
-    beam_ckov_pressure,
-    beam_npdgs,
-    beam_pdgs,
+    beam_pdg,
     beam_ntracks,
     
-    // global counters
-    truebeamdau_npi0,
-    truebeamdau_npiplus,
-    truebeamdau_npiminus,
-    truebeamdau_nproton,
-    truebeamdau_nneutron,
-    truebeamdau_nnucleus,
-        
     enumStandardMicroTreesLast_standardPDTree
   };
 }

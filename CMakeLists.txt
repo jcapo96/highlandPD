@@ -186,6 +186,11 @@ target_include_directories(secondaryKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${
 target_link_libraries(secondaryKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS secondaryKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(secondaryProton.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunSecondaryProtonAnalysis.cxx)
+target_include_directories(secondaryProton.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(secondaryProton.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS secondaryProton.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 add_executable(secondaryKaonXS.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunSecondaryKaonXSAnalysis.cxx)
 target_include_directories(secondaryKaonXS.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(secondaryKaonXS.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
@@ -251,6 +256,16 @@ target_include_directories(BeamWeights.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${hi
 target_link_libraries(BeamWeights.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS BeamWeights.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(StoppingProton.exe ${CMAKE_SOURCE_DIR}/src/StoppingProtonAnalysis/app/RunStoppingProtonAnalysis.cxx)
+target_include_directories(StoppingProton.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(StoppingProton.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS StoppingProton.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+add_executable(QPIX.exe ${CMAKE_SOURCE_DIR}/src/QPIXAnalysis/app/RunQPIXAnalysis.cxx)
+target_include_directories(QPIX.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(QPIX.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS QPIX.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 
 #-------------------------------------------------------
 #------- custom targets --------------------------------
@@ -269,6 +284,8 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
+add_dependencies(QPIX.exe                          StoppingProton.exe)
+add_dependencies(StoppingProton.exe                BeamWeights.exe)
 add_dependencies(BeamWeights.exe                   BrokenTracks.exe)
 add_dependencies(BrokenTracks.exe                  CreateMichelRemovingMiniTree.exe)
 add_dependencies(CreateMichelRemovingMiniTree.exe  dEdxCalibration.exe)
@@ -280,7 +297,8 @@ add_dependencies(CoherentFit.exe                   CreateMiniTreeCandidates.exe)
 add_dependencies(CreateMiniTreeCandidates.exe      CreateMiniTreeEventCandidates.exe)
 add_dependencies(CreateMiniTreeEventCandidates.exe CreateMiniTreeKaon.exe)
 add_dependencies(CreateMiniTreeKaon.exe            secondaryKaonXS.exe)
-add_dependencies(secondaryKaonXS.exe               secondaryKaon.exe)
+add_dependencies(secondaryKaonXS.exe               secondaryProton.exe)
+add_dependencies(secondaryProton.exe               secondaryKaon.exe)
 add_dependencies(secondaryKaon.exe                 highlandPD)
 add_dependencies(highlandPD                        ch_rootmap)
 add_dependencies(ch_rootmap                        highlandPD_dicts)

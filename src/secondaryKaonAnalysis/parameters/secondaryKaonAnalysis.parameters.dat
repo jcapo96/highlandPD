@@ -1,20 +1,29 @@
 --- Cut levels --------
  < secondaryKaonAnalysis.MinAccumLevelToSave = 3 >   // minimum accum level to save the event
 
+--- Selection -------------		     
+ < secondaryKaonAnalysis.UseDetailedSelection                  = 0 >
+ < secondaryKaonAnalysis.XSSelection                           = 0 >
+ < secondaryKaonAnalysis.XSSelection.BeamPDGFilter           = 211 >
+
+--- Output tree ------------
+ < secondaryKaonAnalysis.FillBeamInstrumentationInfo           = 1 >
+ < secondaryKaonAnalysis.FillBeamParticleInfo                  = 0 >
+ < secondaryKaonAnalysis.FillBeamParticleHitsInfo              = 0 >
+ < secondaryKaonAnalysis.FillBeamParticleDaughtersInfo         = 0 >
+ < secondaryKaonAnalysis.FillKaonCandidatesInfo                = 1 >
+ < secondaryKaonAnalysis.FillBestKaonCandidateInfo             = 1 >
+ < secondaryKaonAnalysis.FillToyVariablesInfo                  = 0 >
+
 --- Systematics ------------
- < secondaryKaonAnalysis.ApplydQdxSystematic                   = 1 >
- < secondaryKaonAnalysis.ApplyRecombinationSystematic          = 1 >
- < secondaryKaonAnalysis.ApplySCESystematic                    = 1 >
- < secondaryKaonAnalysis.ApplyBrokenTracksSystematic           = 1 >
- < secondaryKaonAnalysis.ApplyBeamPIDEfficiencySystematic      = 1 >
- < secondaryKaonAnalysis.ApplyBeamPartWeightSystematic         = 1 >
+ < secondaryKaonAnalysis.ApplydQdxSystematic                   = 0 >
+ < secondaryKaonAnalysis.ApplyRecombinationSystematic          = 0 >
+ < secondaryKaonAnalysis.ApplySCESystematic                    = 0 >
+ < secondaryKaonAnalysis.ApplyBrokenTracksSystematic           = 0 >
+ < secondaryKaonAnalysis.ApplyBeamPIDEfficiencySystematic      = 0 >
+ < secondaryKaonAnalysis.ApplyBeamPartWeightSystematic         = 0 >
  < secondaryKaonAnalysis.ApplyBeamMomWeightSystematic          = 0 >
  < secondaryKaonAnalysis.ApplyProtonBackgroundWeightSystematic = 0 >
-
---- Selection -------------
- < secondaryKaonAnalysis.XSSelection               = 0 >
- < secondaryKaonAnalysis.XSSelection.BeamPDGFilter = 211 >
-
 
 ###############################################################################
   baseAnalysis parameters
@@ -73,5 +82,5 @@ Create configurations with a single systematic ( a configuration for each system
 
 Enable/disable the configuration with all systematics (or the ones selected above)
 
- < baseAnalysis.Configurations.EnableAllSystematics = 1 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 0 >
  

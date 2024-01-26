@@ -93,7 +93,7 @@ bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 bool EventHasKaonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   (void)event;
 
   //cast the box
@@ -163,7 +163,7 @@ bool MuonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 
   //if there is kaon, cut in its daughter CNN score
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]->Daughters[0]);
-  if(dau->CNNscore[0] > 0.42 && dau->CNNscore[0] < 0.96){
+  if(dau->CNNscore[0] > _lower_cut && dau->CNNscore[0] < _upper_cut){
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
@@ -273,11 +273,14 @@ bool ProtonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //get the current branch  
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
+  //make sure there is a candidate for this branch
+  if(branchesIDs[0] > box.Candidates.size()-1)return false;
+
   //if there is kaon, cut in its chi2
   AnaParticlePD* part = static_cast<AnaParticlePD*>(box.Candidates[branchesIDs[0]]);
   double chi2 = part->Chi2Proton;
   double ndf  = part->Chi2ndf;
-  if(chi2/ndf > _lower_cut && chi2/ndf < _upper_cut && chi2 > 0){
+  if(chi2/ndf > _lower_cut && chi2/ndf < _upper_cut && chi2 > 0 && chi2>0){
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }

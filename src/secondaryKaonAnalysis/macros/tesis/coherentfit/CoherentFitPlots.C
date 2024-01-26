@@ -310,7 +310,7 @@ void GetHistoPlotsWithIncoherentFits(CoherentFit* cf_mc, CoherentFit* cf_d){
   TF1* f = new TF1("f",DoubleLangaus,0,30,8);
   f->SetParameters(0.1,1.7,0.5,0.05,0.1,8,0.5,0.1);
   f->SetParLimits(4,0.01,5);
-  f->SetParNames("#sigma_{L,B}","#mu_{B}","N_{B}","#sigma_{G,B}","#sigma_{L,S}","#mu_{S}","N_{S}","#sigma_{G,S}");
+  f->SetParNames("#sigma_{L,B}","MPV_{B}","N_{B}","#sigma_{G,B}","#sigma_{L,S}","MPV_{S}","N_{S}","#sigma_{G,S}");
 
   TH1F* dummy;
   //MC
@@ -493,7 +493,7 @@ void GetParametrizationPlots(CoherentFit* cf_mc){
   gPad->Update();//gPad->WaitPrimitive();
 
   tg_ts_mpv->GetXaxis()->SetTitle("Residual Range [cm]");
-  tg_ts_mpv->GetYaxis()->SetTitle("#mu_{S} [MeV/cm]");
+  tg_ts_mpv->GetYaxis()->SetTitle("MPV_{S} [MeV/cm]");
   tg_ts_mpv->GetXaxis()->CenterTitle();
   tg_ts_mpv->GetYaxis()->CenterTitle();
   tg_ts_mpv->SetTitle("");
@@ -546,7 +546,7 @@ void GetParametrizationPlots(CoherentFit* cf_mc){
   gPad->Update();//gPad->WaitPrimitive();
 
   tg_tb_mpv->GetXaxis()->SetTitle("Residual Range [cm]");
-  tg_tb_mpv->GetYaxis()->SetTitle("#mu_{B} [MeV/cm]");
+  tg_tb_mpv->GetYaxis()->SetTitle("MPV_{B} [MeV/cm]");
   tg_tb_mpv->GetXaxis()->CenterTitle();
   tg_tb_mpv->GetYaxis()->CenterTitle();
   tg_tb_mpv->SetTitle("");
@@ -1070,7 +1070,7 @@ void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
   mg->Add(tgd,"3");
 
   mg->GetXaxis()->SetTitle("Residual Range [cm]");
-  mg->GetYaxis()->SetTitle("#mu_{S} [MeV/cm]");
+  mg->GetYaxis()->SetTitle("MPV_{S} [MeV/cm]");
   mg->GetXaxis()->CenterTitle();
   mg->GetYaxis()->CenterTitle();
 
@@ -1093,7 +1093,7 @@ void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
   mg->RecursiveRemove(tgd);
   mg->Add(tg_ts_mpv,"p");
   mg->GetXaxis()->SetTitle("Residual Range [cm]");
-  mg->GetYaxis()->SetTitle("#mu_{S} [MeV/cm]");
+  mg->GetYaxis()->SetTitle("MPV_{S} [MeV/cm]");
   mg->GetXaxis()->CenterTitle();
   mg->GetYaxis()->CenterTitle();
   mg->GetYaxis()->SetTitleOffset(0.9);
