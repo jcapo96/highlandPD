@@ -383,11 +383,10 @@ std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, c
   
   if( part.Hits[plane].size() < 1 )
     return std::make_pair(9999., -1);
-
+  
   //check particles' length is at least as long as maximum RR
   // if(part.Length<RR) 
   //   return std::make_pair(9999., -1);
-
   //Ignore first and last point
   for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
     //Skip large pulse heights
@@ -395,7 +394,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, c
       continue;
 
     //break whenever above RR upper limit, 26 cm is maximum
-    if(part.Hits[plane][i].ResidualRange > RR)break;
+    if(part.Hits[plane][i].ResidualRange > RR)continue;
     
     int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
 
@@ -422,7 +421,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, c
       ++npt;      
     }	
   }
-		
+
   if( npt == 0 )	
     return std::make_pair(9999., -1);
 	  	
@@ -1125,6 +1124,55 @@ Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG){
 }
 
 //***************************************************************
+Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, const double maxRR){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return -999.;
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return -999.;
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    if(part->Hits[2][ihit].ResidualRange > maxRR)continue;
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  Float_t result = dEdxLikelihood(tg,tg_ke,mass);
+
+  delete tg;
+  file_ke->Close();
+
+  return result;
+}
+
+//***************************************************************
 std::pair<Float_t,Float_t> pdAnaUtils::dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke, 
 					    Float_t mass){
 //***************************************************************
@@ -1199,6 +1247,54 @@ std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange(AnaParticlePD*
   dedx.clear();
   rr.clear();
   for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
+  delete tg;
+  file_ke->Close();
+  
+  return result;
+}
+
+//***************************************************************
+std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaParticlePD* part, Int_t PDG, const double maxRR){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return std::make_pair(-999.,-999.);
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return std::make_pair(-999.,-999.);
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    if(part->Hits[2][ihit].ResidualRange > maxRR)continue;
     dedx.push_back(part->Hits[2][ihit].dEdx);
     rr.push_back(part->Hits[2][ihit].ResidualRange);
   }
