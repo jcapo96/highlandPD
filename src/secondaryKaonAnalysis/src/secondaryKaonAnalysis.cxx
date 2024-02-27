@@ -36,6 +36,7 @@
 #include "HitPositionSCECorrection.hxx"
 #include "CalorimetryCalibration.hxx"
 #include "RecombinationDataCorrection.hxx"
+#include "RecombinationMCCorrection.hxx"
 #include "ParticlePositionSCECorrection.hxx"
 #include "DaughterFinderCorrection.hxx"
 #include "dEdxMCCorrection.hxx"
@@ -98,8 +99,8 @@ bool secondaryKaonAnalysis::Initialize(){
     anaUtils::AddStandardObjectCategories("candidate"   ,kaonTree::ncandidates,"ncandidates",1);
     anaUtils::AddStandardObjectCategories("candidatedau",kaonTree::ncandidates,"ncandidates",1);
     // Add our own categories (in secondaryKaonAnalysisUtils.cxx)
-    kaonAnaUtils::AddCustomCategories();
   }
+  kaonAnaUtils::AddCustomCategories();//to be checked
 
   return true;
 }
@@ -135,6 +136,7 @@ void secondaryKaonAnalysis::DefineCorrections(){
   corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
   //corr().AddCorrection(1, "dEdx MC correction"      , new dEdxMCCorrection());
   //corr().AddCorrection(1, "recombination data correction", new RecombinationDataCorrection());
+  // corr().AddCorrection(1, "recombination mc correction", new RecombinationMCCorrection());
   // corr().AddCorrection(1, "daughter finder", new DaughterFinderCorrection());
 }
 
@@ -510,6 +512,7 @@ void secondaryKaonAnalysis::FillCategories(){
   if(_FillBeamParticleInfo){
     if(box().MainTrack){
       anaUtils::FillCategories(&GetEvent(), box().MainTrack,""); // method in highland/src/highland2/highlandUtils
+      kaonAnaUtils::FillBeamParticleReducedCategory(box().MainTrack);
       if(_FillBeamParticleDaughtersInfo){
 	int ndau = std::min(20,(int)box().MainTrack->Daughters.size());
 	for(int i = 0; i < ndau; i++)
