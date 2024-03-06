@@ -378,6 +378,7 @@ void GetHistoPlotsWithIncoherentFits(CoherentFit* cf_mc, CoherentFit* cf_d){
   for(int i = 0; i < sb_sample->GetSize(); i++){
     //Draw Histograms
     dummy = (TH1F*)sb_sample->GetHistVector()[i]->Clone();
+    dummy->GetYaxis()->SetTitleOffset(1.5);
     dummy->Draw();
     dummy->Fit("f","L");
     //TPaveStats *tps = (TPaveStats*)dummy->GetListOfFunctions()->FindObject("stats")->Clone("stats");
@@ -428,6 +429,7 @@ void GetHistoPlotsWithIncoherentFits(CoherentFit* cf_mc, CoherentFit* cf_d){
   for(int i = 0; i < sbd_sample->GetSize(); i++){
     //Draw Histograms
     dummy = (TH1F*)sbd_sample->GetHistVector()[i]->Clone();
+    dummy->GetYaxis()->SetTitleOffset(1.5);
     dummy->Draw();
     dummy->Fit("f","L");
     // sbd_sample->GetHistVector()[i]->Draw("");
@@ -484,9 +486,10 @@ void GetMCTrueHistoPlotsWithIncoherentFits(CoherentFit* cf_mc){
     ts->GetHistVector()[i]->GetYaxis()->CenterTitle();
     ts->GetHistVector()[i]->SetTitle(""); //we don't want title displayed in the top of the canvas
     ts->GetHistVector()[i]->Draw(); //we don't want title displayed in the top of the canvas
+    ts->GetHistVector()[i]->Draw("sames"); //we don't want title displayed in the top of the canvas
     ts->GetIFitVector()[i]->Draw("same");
-    //TF1* dummy = (TF1*)ts->GetIFitVector()[i]->Clone("dummy");
-    //ts->GetHistVector()[i]->Fit("dummy","L");
+    // TF1* dummy = (TF1*)ts->GetIFitVector()[i]->Clone("dummy");
+    // ts->GetHistVector()[i]->Fit("dummy","L");
 
     tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
 
@@ -504,9 +507,9 @@ void GetMCTrueHistoPlotsWithIncoherentFits(CoherentFit* cf_mc){
     std::stringstream ssh;
     ssh << i;
     gPad->Print(("plots/CF_IF_mc_ts_slice_"+ssh.str()+".pdf").c_str());
-    gPad->Update();//gPad->WaitPrimitive();
+    gPad->Update();gPad->WaitPrimitive();
 
-    //delete dummy;
+    // delete dummy;
   }
 
   gStyle->SetStatW(0.25);
@@ -519,15 +522,16 @@ void GetMCTrueHistoPlotsWithIncoherentFits(CoherentFit* cf_mc){
     tb->GetHistVector()[i]->GetXaxis()->CenterTitle();
     tb->GetHistVector()[i]->GetYaxis()->CenterTitle();
     tb->GetHistVector()[i]->SetTitle(""); //we don't want title displayed in the top of the canvas
-    tb->GetHistVector()[i]->Draw(); 
+    tb->GetHistVector()[i]->Draw();
+    tb->GetHistVector()[i]->Draw("sames"); 
     tb->GetIFitVector()[i]->Draw("same");
     // TH1F* d = (TH1F*)tb->GetHistVector()[i]->Clone("d");
     // d->Draw();
     // //tb->GetIFitVector()[i]->Draw("same");
-    // TF1* f = (TF1*)tb->GetIFitVector()[i]->Clone("f");
+    // TF1* fff = (TF1*)tb->GetIFitVector()[i]->Clone("fff");
     // // dummy->SetName("f");
     // // dummy->SetTitle("f");
-    // //tb->GetHistVector()[i]->Fit("f","L");
+    // tb->GetHistVector()[i]->Fit("fff","WL");
     // d->Fit("f","L");
 
     tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
@@ -541,8 +545,8 @@ void GetMCTrueHistoPlotsWithIncoherentFits(CoherentFit* cf_mc){
     tt2.DrawLatex(0.9,0.94,(""+srmin.str()+" < RR [cm] < "+srmax.str()+"").c_str());
 
     gPad->RedrawAxis();
-    gPad->Update();
-    	  
+    gPad->Update();gPad->WaitPrimitive();
+  	  
     //Print plots
     std::stringstream ssh;
     ssh << i;
@@ -551,7 +555,7 @@ void GetMCTrueHistoPlotsWithIncoherentFits(CoherentFit* cf_mc){
 
     //delete dummy;
     // delete d;
-    // delete f;
+    //delete f;
   }
   
 }
@@ -747,6 +751,7 @@ void GetCoherentFitPlots(CoherentFit* cf_mc, CoherentFit* cf_d){
     r->GetLowerRefYaxis()->SetLabelFont(43); 
     r->GetLowerRefYaxis()->SetLabelSize(20);
     r->GetLowerRefYaxis()->SetTitleOffset(1.55);
+    r->GetUpperRefYaxis()->SetTitleOffset(1.55);
     r->GetLowerRefXaxis()->SetTitleSize(20);
     r->GetLowerRefXaxis()->SetTitleFont(43);
     r->GetLowerRefXaxis()->SetLabelFont(43);
@@ -765,8 +770,9 @@ void GetCoherentFitPlots(CoherentFit* cf_mc, CoherentFit* cf_d){
 
     tt1.DrawLatex(0.10,0.91,"#bf{DUNE:ProtoDUNE-SP}");
     tt2.DrawLatex(0.9,0.91,"Simulation");
-  
-    gPad->Update();//gPad->WaitPrimitive();
+
+    c->cd();
+    gPad->Update();gPad->WaitPrimitive();
   
     //print plots
     std::stringstream ssh;
@@ -792,7 +798,7 @@ void GetCoherentFitPlots(CoherentFit* cf_mc, CoherentFit* cf_d){
     // //category plot
     // r->Draw();
     // r->GetUpperPad()->cd();
-    
+  
     // //binning
     // int nbins = sb_sample->GetHistVector()[i]->GetNbinsX();
     // double min = sb_sample->GetHistVector()[i]->GetBinCenter(1)-sb_sample->GetHistVector()[i]->GetBinWidth(1)/2;
@@ -826,62 +832,63 @@ void GetCoherentFitPlots(CoherentFit* cf_mc, CoherentFit* cf_d){
     // c->Print(("plots/CF_mc_slice_"+ssh.str()+"_categ.pdf").c_str());
   }
 
-  for(int i = 0; i < sbd_sample->GetSize(); i++){
-    c->cd();
-    TRatioPlot* r = sbd_sample->GetFitRatio(i);
-    r->Draw();
-    r->GetLowerRefYaxis()->SetTitle("Pulls");
-    r->GetLowerRefYaxis()->CenterTitle();
-    r->GetLowerRefXaxis()->CenterTitle();
-    r->GetLowerRefYaxis()->SetRangeUser(-3,3);
-    r->GetLowerRefYaxis()->SetTitleSize(20);
-    r->GetLowerRefYaxis()->SetTitleFont(43);
-    r->GetLowerRefYaxis()->SetLabelFont(43); 
-    r->GetLowerRefYaxis()->SetLabelSize(20);
-    r->GetLowerRefYaxis()->SetTitleOffset(1.55);
-    r->GetLowerRefXaxis()->SetTitleSize(20);
-    r->GetLowerRefXaxis()->SetTitleFont(43);
-    r->GetLowerRefXaxis()->SetLabelFont(43);
-    r->GetLowerRefXaxis()->SetLabelSize(20);
-    r->GetLowerRefXaxis()->SetTitleOffset(1.55);
+  // for(int i = 0; i < sbd_sample->GetSize(); i++){
+  //   c->cd();
+  //   TRatioPlot* r = sbd_sample->GetFitRatio(i);
+  //   r->Draw();
+  //   r->GetLowerRefYaxis()->SetTitle("Pulls");
+  //   r->GetLowerRefYaxis()->CenterTitle();
+  //   r->GetLowerRefXaxis()->CenterTitle();
+  //   r->GetLowerRefYaxis()->SetRangeUser(-3,3);
+  //   r->GetLowerRefYaxis()->SetTitleSize(20);
+  //   r->GetLowerRefYaxis()->SetTitleFont(43);
+  //   r->GetLowerRefYaxis()->SetLabelFont(43); 
+  //   r->GetLowerRefYaxis()->SetLabelSize(20);
+  //   r->GetLowerRefYaxis()->SetTitleOffset(1.55);
+  //   r->GetUpperRefYaxis()->SetTitleOffset(1.55);
+  //   r->GetLowerRefXaxis()->SetTitleSize(20);
+  //   r->GetLowerRefXaxis()->SetTitleFont(43);
+  //   r->GetLowerRefXaxis()->SetLabelFont(43);
+  //   r->GetLowerRefXaxis()->SetLabelSize(20);
+  //   r->GetLowerRefXaxis()->SetTitleOffset(1.55);
 
-    r->GetUpperPad()->cd();
+  //   r->GetUpperPad()->cd();
 
-    //draw the three functions
-    sbd_sample->GetSignal()->GetCFitVector()[i]->Draw("same");
-    sbd_sample->GetBackground()->GetCFitVector()[i]->Draw("same");
-    sbd_sample->GetBackground()->GetSemiBackground()->GetCFitVector()[i]->Draw("same");
+  //   //draw the three functions
+  //   sbd_sample->GetSignal()->GetCFitVector()[i]->Draw("same");
+  //   sbd_sample->GetBackground()->GetCFitVector()[i]->Draw("same");
+  //   sbd_sample->GetBackground()->GetSemiBackground()->GetCFitVector()[i]->Draw("same");
   
-    //draw the three functions
-    gPad->RedrawAxis(); gPad->Update();
+  //   //draw the three functions
+  //   gPad->RedrawAxis(); gPad->Update();
 
-    tt1.DrawLatex(0.10,0.91,"#bf{DUNE:ProtoDUNE-SP}");
-    tt2.DrawLatex(0.9,0.91,"Data");
+  //   tt1.DrawLatex(0.10,0.91,"#bf{DUNE:ProtoDUNE-SP}");
+  //   tt2.DrawLatex(0.9,0.91,"Data");
   
-    gPad->Update();//gPad->WaitPrimitive();
+  //   gPad->Update();//gPad->WaitPrimitive();
   
-    //print plots
-    std::stringstream ssh;
-    ssh << i;
-    c->Print(("plots//CF_d_slice_"+ssh.str()+".pdf").c_str());
+  //   //print plots
+  //   std::stringstream ssh;
+  //   ssh << i;
+  //   c->Print(("plots//CF_d_slice_"+ssh.str()+".pdf").c_str());
 
-    //fill pulls histogram
-    c->cd();
-    TGraph* pulls = r->GetCalculationOutputGraph();
-    for(int j = 0; j < pulls->GetN(); j++){
-      h_pulls_d->Fill(pulls->GetPointY(j));
-      h_pulls_d_total->Fill(pulls->GetPointY(j));
-    }
+  //   //fill pulls histogram
+  //   c->cd();
+  //   TGraph* pulls = r->GetCalculationOutputGraph();
+  //   for(int j = 0; j < pulls->GetN(); j++){
+  //     h_pulls_d->Fill(pulls->GetPointY(j));
+  //     h_pulls_d_total->Fill(pulls->GetPointY(j));
+  //   }
 
-    gStyle->SetOptStat("emr");
-    h_pulls_d->Draw();
-    tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-    tt2.DrawLatex(0.9,0.94,"Data");
-    gPad->Update();//gPad->WaitPrimitive();
-    c->Print(("plots//CF_d_slice_"+ssh.str()+"_pulls.pdf").c_str());
-    h_pulls_d->Reset();
-    gStyle->SetOptStat(0);
-  }
+  //   gStyle->SetOptStat("emr");
+  //   h_pulls_d->Draw();
+  //   tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+  //   tt2.DrawLatex(0.9,0.94,"Data");
+  //   gPad->Update();//gPad->WaitPrimitive();
+  //   c->Print(("plots//CF_d_slice_"+ssh.str()+"_pulls.pdf").c_str());
+  //   h_pulls_d->Reset();
+  //   gStyle->SetOptStat(0);
+  // }
 
   gStyle->SetOptStat("emr");
   TCanvas* c2 = new TCanvas("c2","c2",700,500);
@@ -1110,9 +1117,12 @@ TGraphErrors* GetLWGraph(double* params, double* params_error, double* correlati
 }
 
 //**********************************************
-void GetLWPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
+void GetLWPlots(CoherentFit* cf_mc, CoherentFit* cf_d){
 //**********************************************
 
+  CoherentSample* sb_sample = cf_mc->GetSignalPlusBackgroundSample();
+  CoherentSample* sbd_sample = cf_d->GetSignalPlusBackgroundSample();
+  
   TCanvas* c = new TCanvas("c","c",700,500);
   
   //data
@@ -1206,9 +1216,12 @@ void GetLWPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
 }
 
 //**********************************************
-void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
+void GetMPVPlots(CoherentFit* cf_mc, CoherentFit* cf_d){
 //**********************************************
 
+  CoherentSample* sb_sample = cf_mc->GetSignalPlusBackgroundSample();
+  CoherentSample* sbd_sample = cf_d->GetSignalPlusBackgroundSample();
+  
   TCanvas* c = new TCanvas("c","c",700,500);
   
   //data
@@ -1244,6 +1257,10 @@ void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
 
   TLatex tt1;
   tt1.SetNDC();
+  TLatex tt2;
+  tt2.SetNDC();
+  tt2.SetTextAlign(31);
+  
   tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
 
   gPad->RedrawAxis();
@@ -1293,7 +1310,7 @@ void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
   gPad->Print("plots/CF_mpv_comparative_differror.pdf");
 
   //get data and mc comparative with bethe block
-  TFile* f = TFile::Open("/dune/app/users/miagarc/technical_note/files/dedx_profiles.root");
+  TFile* f = TFile::Open("../../../../pdUtils/data/dedx_profiles.root");
   TGraph* bb = (TGraph*)f->Get("kaon");
   bb->SetLineWidth(3);
   bb->SetLineColor(1);
@@ -1323,8 +1340,8 @@ void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
   gPad->Print("plots/CF_mpv_comparative_d_bethebloch.pdf");
 
   //get data and mc comparative with landau vavilov
-  f->Close();
-  f = TFile::Open("/dune/app/users/miagarc/technical_note/files/dedx_mpv_profiles.root");
+  f->Close();//../../../../pdUtils/data/
+  f = TFile::Open("../../../../pdUtils/data/dedx_mpv_profiles.root");
   bb = (TGraph*)f->Get("kaon");
   bb->SetLineWidth(3);
   bb->SetLineColor(1);
@@ -1341,13 +1358,86 @@ void GetMPVPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
   gPad->BuildLegend(0.5,0.7,0.85,0.85,"","lf");
   gPad->Print("plots/CF_mpv_comparative_d_landauvavilov.pdf");
 
+  //get 2d mc with and without plot, same for data
+  TH2F* h2d_mc = new TH2F("h2d_mc","h2d_mc",60,0,100,60,0,12);
+  TH2F* h2d_d  = new TH2F("h2d_d" ,"h2d_d" ,60,0,100,60,0,12);
+  h2d_mc->SetStats(0);
+  h2d_d->SetStats(0);
+  cf_mc->GetTree()->Project("h2d_mc","bestcandidate_hit_dedx:bestcandidate_hit_resrange");
+  cf_d->GetTree()->Project("h2d_d","bestcandidate_hit_dedx:bestcandidate_hit_resrange");
+
+  //functions
+  TF1* f_mpv_s = new TF1("f_mpv_s","[0]*(([1]*x-1)/([1]*x+1)+[2])",0,100);
+  TF1* f_mpv_b = new TF1("f_mpv_b","[0]+[1]*x",0,100);
+  f_mpv_s->SetLineColor(2);
+  f_mpv_b->SetLineColor(1);
+  f_mpv_b->SetLineStyle(9);
+  
+  //prepare plots
+  double max = h2d_d->GetMaximum();
+  for(int ibinx = 0; ibinx < h2d_d->GetNbinsX(); ibinx++)
+    for(int ibiny = 0; ibiny < h2d_d->GetNbinsY(); ibiny++)h2d_d->SetBinContent(ibinx+1,ibiny+1,h2d_d->GetBinContent(ibinx+1,ibiny+1)/max);
+
+  max = h2d_mc->GetMaximum();
+  for(int ibinx = 0; ibinx < h2d_mc->GetNbinsX(); ibinx++)
+    for(int ibiny = 0; ibiny < h2d_mc->GetNbinsY(); ibiny++)h2d_mc->SetBinContent(ibinx+1,ibiny+1,h2d_mc->GetBinContent(ibinx+1,ibiny+1)/max);
+
+  h2d_d->GetXaxis()->SetTitle("Residual Range [cm]");
+  h2d_d->GetYaxis()->SetTitle("dE/dx [MeV/cm]");
+  h2d_d->GetZaxis()->SetTitle("Relative Frequency");
+  h2d_d->GetXaxis()->CenterTitle();
+  h2d_d->GetYaxis()->CenterTitle();
+  h2d_d->GetZaxis()->CenterTitle();
+
+  h2d_mc->GetXaxis()->SetTitle("Residual Range [cm]");
+  h2d_mc->GetYaxis()->SetTitle("dE/dx [MeV/cm]");
+  h2d_mc->GetZaxis()->SetTitle("Relative Frequency");
+  h2d_mc->GetXaxis()->CenterTitle();
+  h2d_mc->GetYaxis()->CenterTitle();
+  h2d_mc->GetZaxis()->CenterTitle();
+
+  //draw data
+  h2d_d->Draw("colz");
+  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+  tt2.DrawLatex(0.9,0.94,"Data");
+  gPad->RedrawAxis();
+  gPad->Update();//gPad->WaitPrimitive();
+  gPad->Print("plots/dedx_2d_data.pdf");
+
+  f_mpv_s->SetParameters(sbd_sample->GetSignal()->GetCmpvA().first, sbd_sample->GetSignal()->GetCmpvB().first, sbd_sample->GetSignal()->GetCmpvC().first);
+  f_mpv_b->SetParameters(sbd_sample->GetBackground()->GetCmpvA().first, sbd_sample->GetBackground()->GetCmpvB().first);
+  f_mpv_s->Draw("same");
+  f_mpv_b->Draw("same");
+  gPad->RedrawAxis();
+  gPad->Update();//gPad->WaitPrimitive();
+  gPad->Print("plots/CF_dedx_2d_data.pdf");
+
+  //draw simulation
+  h2d_mc->Draw("colz");
+  tt1.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+  tt2.DrawLatex(0.9,0.94,"Simulation");
+  gPad->RedrawAxis();
+  gPad->Update();//gPad->WaitPrimitive();
+  gPad->Print("plots/dedx_2d_mc.pdf");
+
+  f_mpv_s->SetParameters(sb_sample->GetSignal()->GetCmpvA().first, sb_sample->GetSignal()->GetCmpvB().first, sb_sample->GetSignal()->GetCmpvC().first);
+  f_mpv_b->SetParameters(sb_sample->GetBackground()->GetCmpvA().first, sb_sample->GetBackground()->GetCmpvB().first);
+  f_mpv_s->Draw("same");
+  f_mpv_b->Draw("same");
+  gPad->RedrawAxis();
+  gPad->Update();//gPad->WaitPrimitive();
+  gPad->Print("plots/CF_dedx_2d_mc.pdf");
+  
   delete c;
 }
 
 //**********************************************
-void GetGWPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
+void GetGWPlots(CoherentFit* cf_mc, CoherentFit* cf_d){
 //**********************************************
 
+  CoherentSample* sb_sample = cf_mc->GetSignalPlusBackgroundSample();
+  CoherentSample* sbd_sample = cf_d->GetSignalPlusBackgroundSample();
+  
   TCanvas* c = new TCanvas("c","c",700,500);
   
   //data
@@ -1445,12 +1535,9 @@ void GetGWPlots(CoherentSample* sb_sample, CoherentSample* sbd_sample){
 void GetCoherentFunctions(CoherentFit* cf_mc, CoherentFit* cf_d){
 //**********************************************
 
-  CoherentSample* sb_sample = cf_mc->GetSignalPlusBackgroundSample();
-  CoherentSample* sbd_sample = cf_d->GetSignalPlusBackgroundSample();
-
-  GetLWPlots(sb_sample, sbd_sample);
-  GetMPVPlots(sb_sample, sbd_sample);
-  GetGWPlots(sb_sample, sbd_sample);
+  GetLWPlots (cf_mc, cf_d);
+  GetMPVPlots(cf_mc, cf_d);
+  GetGWPlots (cf_mc, cf_d);
 }
 
 //**********************************************
@@ -1508,24 +1595,26 @@ void CoherentFitPlots_Extended(){        //Main function*
   
   //set ProtoDUNE-SP style
   gROOT->ProcessLine(".L ../selection/protoDUNEStyle.C");
+  gStyle->SetOptStat(1111);
 
   //open files
-  std::string dir = "/dune/app/users/miagarc/technical_note/files/";
+  std::string dir = "/home/w78488mg/Documents/Work/analysis/ProtoDUNE-SP/secondary_kaon_analysis/files/microtrees/";
   std::string fdata = dir+"data/data_dedx.root";
   std::string fmc   = dir+"mc/mc_dedx.root";
-
+  //std::string fmc   = dir+"mc/coherentfit_tests/mc_dedx_rec_-+.root";
+  
   CoherentFit* cf_mc = new CoherentFit(fmc.c_str(),true);
   CoherentFit* cf_d  = new CoherentFit(fdata.c_str(),false);
 
   //run coherent fit in MC
   cf_mc->CreateCoherentSamples(999);
   cf_mc->GenerateTrueMCHistograms(1,61,2,999,1,20); //parameters are Min RR, Max RR, RR slice size, chi2 cut, dEdx min histogram value, dEdx max histogram value
-  cf_mc->SequentialCoherentFit(true);
+  cf_mc->SequentialCoherentFit(false);
 
   //run coherent fit in data
   cf_d->CreateCoherentSamples(999);
   cf_d->GenerateHistograms(1,61,2,999,1,20);
-  cf_d->DataCoherentFit(cf_mc);
+  cf_d->DataCoherentFit(cf_mc,false);
 
   //drawing tools from highland
   draw = new DrawingTools(fmc);
@@ -1550,7 +1639,7 @@ void CoherentFitPlots_Extended(){        //Main function*
   //GetHistoPlotsWithIncoherentFits(cf_mc,cf_d);
   //GetMCTrueHistoPlotsWithIncoherentFits(cf_mc);
   //GetParametrizationPlots(cf_mc);
-  GetCoherentFitPlots(cf_mc,cf_d);
-  //GetCoherentFunctions(cf_mc,cf_d);
-  //GetLikelihoodPlot(cf_mc,cf_d);
+   GetCoherentFitPlots(cf_mc,cf_d);
+   //GetCoherentFunctions(cf_mc,cf_d);
+  // GetLikelihoodPlot(cf_mc,cf_d);
 }
