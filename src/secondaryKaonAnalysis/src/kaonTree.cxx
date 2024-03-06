@@ -72,9 +72,9 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
   AddVarMaxSizeVF (output, candidates_vtx_michelscore, "candidates michelscore in the vertex", ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_vtx_nhits,       "candidates points in the vertex",      ncandidates, nmax);
 
-  AddVarMaxSizeVF (output, candidates_lkl_proton          ,       "candidates distance to closest particle",      ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_freelkl_proton      ,       "candidates distance to closest particle",      ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_freelkl_proton_range,       "candidates distance to closest particle",      ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_lkl_prot          ,       "candidates distance to closest particle",      ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_freelkl_prot      ,       "candidates distance to closest particle",      ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_freelkl_prot_range,       "candidates distance to closest particle",      ncandidates, nmax);
 
   AddVarMaxSizeVI (output, candidates_dau_ndau,       "candidates daughter' daughters",        ncandidates, nmax);
   AddVarMaxSize4MF(output, candidates_dau_pos,        "candidates daughter position",          ncandidates, nmax); 
@@ -211,13 +211,41 @@ void kaonTree::AddKaonVariables_KaonBestCandidateReco(OutputManager& output){
   AddVarF  (output, bestcandidate_chi2_prot_perndf_25, "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_chi2_muon_perndf_25, "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_chi2_kaon_perndf_25, "bestcandidate chi2 proton");
-  AddVarF  (output, bestcandidate_lkl_proton, "bestcandidate chi2 proton");
-  AddVarF  (output, bestcandidate_freelkl_proton, "bestcandidate chi2 proton");
-  AddVarF  (output, bestcandidate_freelkl_proton_range, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_prot, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_prot, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_prot_range, "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_lkl_kaon, "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_freelkl_kaon, "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_freelkl_kaon_range, "bestcandidate chi2 proton");
- 
+  AddVarF  (output, bestcandidate_lkl_muon, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_muon, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_muon_range, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_prot_5, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_kaon_5, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_muon_5, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_prot_10, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_kaon_10, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_muon_10, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_prot_15, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_kaon_15, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_muon_15, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_prot_20, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_kaon_20, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_muon_20, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_prot_25, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_kaon_25, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_lkl_muon_25, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_prot_5, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_kaon_5, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_prot_10, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_kaon_10, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_prot_15, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_kaon_15, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_prot_20, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_kaon_20, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_prot_25, "bestcandidate chi2 proton");
+  AddVarF  (output, bestcandidate_freelkl_kaon_25, "bestcandidate chi2 proton");
+
   AddVarF  (output, bestcandidate_averagedEdx,     "bestcandidate average dEdx/hit"         );
   AddVarF  (output, bestcandidate_vtx_michelscore, "bestcandidate michelscore in the vertex");
   AddVarI  (output, bestcandidate_vtx_nhits,       "bestcandidate points in the vertex"     );
@@ -374,10 +402,10 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_vtx_michelscore,  part->vtx_CNN_michelscore);
   output.FillVectorVar         (candidates_vtx_nhits,        part->vtx_CNN_NHits);
   //output.FillVectorVar         (candidates_distance_tcp,        (Float_t)part->Distance_to_closest_particle);
-  // output.FillVectorVar         (candidates_lkl_proton,        (Float_t)pdAnaUtils::GetdEdxLikelihood(part,2212));
+  // output.FillVectorVar         (candidates_lkl_prot,        (Float_t)pdAnaUtils::GetdEdxLikelihood(part,2212));
   // std::pair<Float_t,Float_t>lkl_result = pdAnaUtils::GetdEdxLikelihoodFreeRange(part,2212);
-  // output.FillVectorVar         (candidates_freelkl_proton,    lkl_result.first);
-  // output.FillVectorVar         (candidates_freelkl_proton_range,    lkl_result.second);
+  // output.FillVectorVar         (candidates_freelkl_prot,    lkl_result.first);
+  // output.FillVectorVar         (candidates_freelkl_prot_range,    lkl_result.second);
 
   if(parent)output.FillVectorVar(candidates_distance_mother, pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));
 
@@ -595,14 +623,44 @@ void kaonTree::FillKaonVariables_KaonBestCandidateReco(OutputManager& output, An
   result = pdAnaUtils::Chi2PID_UpToRR(*part,321,25);
   output.FillVar(bestcandidate_chi2_kaon_perndf_25,(Float_t)result.first/result.second);
 
-  output.FillVar(bestcandidate_lkl_proton,pdAnaUtils::GetdEdxLikelihood(part,2212));
+  output.FillVar(bestcandidate_lkl_prot,pdAnaUtils::GetdEdxLikelihood(part,2212));
   output.FillVar(bestcandidate_lkl_kaon,pdAnaUtils::GetdEdxLikelihood(part,321));
+  output.FillVar(bestcandidate_lkl_muon,pdAnaUtils::GetdEdxLikelihood(part,13));
   std::pair<Float_t,Float_t>lkl_result = pdAnaUtils::GetdEdxLikelihoodFreeRange(part,2212);
-  output.FillVar(bestcandidate_freelkl_proton,lkl_result.first);
-  output.FillVar(bestcandidate_freelkl_proton_range,lkl_result.second);
+  output.FillVar(bestcandidate_freelkl_prot,lkl_result.first);
+  output.FillVar(bestcandidate_freelkl_prot_range,lkl_result.second);
   lkl_result = pdAnaUtils::GetdEdxLikelihoodFreeRange(part,321);
   output.FillVar(bestcandidate_freelkl_kaon,lkl_result.first);
   output.FillVar(bestcandidate_freelkl_kaon_range,lkl_result.second);
+  lkl_result = pdAnaUtils::GetdEdxLikelihoodFreeRange(part,13);
+  output.FillVar(bestcandidate_freelkl_muon,lkl_result.first);
+  output.FillVar(bestcandidate_freelkl_muon_range,lkl_result.second);
+  output.FillVar(bestcandidate_lkl_prot_5,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,2212,5));
+  output.FillVar(bestcandidate_lkl_kaon_5,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,321,5));
+  output.FillVar(bestcandidate_lkl_muon_5,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,13,5));
+  output.FillVar(bestcandidate_lkl_prot_10,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,2212,10));
+  output.FillVar(bestcandidate_lkl_kaon_10,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,321,10));
+  output.FillVar(bestcandidate_lkl_muon_10,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,13,10));
+  output.FillVar(bestcandidate_lkl_prot_15,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,2212,15));
+  output.FillVar(bestcandidate_lkl_kaon_15,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,321,15));
+  output.FillVar(bestcandidate_lkl_muon_15,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,13,15));
+  output.FillVar(bestcandidate_lkl_prot_20,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,2212,20));
+  output.FillVar(bestcandidate_lkl_kaon_20,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,321,20));
+  output.FillVar(bestcandidate_lkl_muon_20,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,13,20));
+  output.FillVar(bestcandidate_lkl_prot_25,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,2212,25));
+  output.FillVar(bestcandidate_lkl_kaon_25,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,321,25));
+  output.FillVar(bestcandidate_lkl_muon_25,pdAnaUtils::GetdEdxLikelihood_UpToRR(part,13,25));
+  output.FillVar(bestcandidate_freelkl_prot_5,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,2212,5).first);
+  output.FillVar(bestcandidate_freelkl_kaon_5,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,321,5).first);
+  output.FillVar(bestcandidate_freelkl_prot_10,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,2212,10).first);
+  output.FillVar(bestcandidate_freelkl_kaon_10,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,321,10).first);
+  output.FillVar(bestcandidate_freelkl_prot_15,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,2212,15).first);
+  output.FillVar(bestcandidate_freelkl_kaon_15,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,321,15).first);
+  output.FillVar(bestcandidate_freelkl_prot_20,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,2212,20).first);
+  output.FillVar(bestcandidate_freelkl_kaon_20,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,321,20).first);
+  output.FillVar(bestcandidate_freelkl_prot_25,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,2212,25).first);
+  output.FillVar(bestcandidate_freelkl_kaon_25,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,321,25).first);
+  
 
   if(parent){
     output.FillVar(bestcandidate_distance_mother,         pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));

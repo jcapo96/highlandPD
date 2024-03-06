@@ -34,13 +34,15 @@ void dEdxMCCorrection::Apply(AnaSpillC& spillC){
     
     if (!original) continue; //?
 
+    //get correction
+    Float_t correction = 1;
+    _params->GetMeanValueForBin(0, correction); //only 1 bin
+    
     // loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
       //the uncorrected dEdx
       double dEdx = part->Hits[2][ihit].dEdx;
       if(dEdx<0)continue;
-      Float_t correction = 1;
-      _params->GetMeanValueForBin(0, correction); //only 1 bin
       part->Hits[2][ihit].dEdx = dEdx*correction;   
     }
   }

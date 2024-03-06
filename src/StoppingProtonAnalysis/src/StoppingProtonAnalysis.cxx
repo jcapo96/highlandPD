@@ -8,6 +8,7 @@
 
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
+#include "kaonTree.hxx"
 
 #include "ParticlePositionSCECorrection.hxx"
 
@@ -39,6 +40,7 @@ bool StoppingProtonAnalysis::Initialize(){
   // Define categories for color drawing. Have a look at highland/src/highland2/highlandUtils/src/CategoriesUtils.hxx
   anaUtils::AddStandardCategories();
   anaUtils::AddStandardCategories("beam");
+  anaUtils::AddStandardCategories("bestcandidate");
 
   return true;
 }
@@ -103,7 +105,10 @@ void StoppingProtonAnalysis::DefineMicroTrees(bool addBase){
   // candidate track (beam track) info
   standardPDTree::AddStandardVariables_BeamParticleTrue(output());
   standardPDTree::AddStandardVariables_BeamParticleReco(output());
-  //standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
+
+  //bestcandidate variables (for comparative with kaons)
+  kaonTree::AddKaonVariables_KaonBestCandidateReco    (output());
+  kaonTree::AddKaonVariables_KaonBestCandidateTrue    (output());
 }
 
 //********************************************************************
@@ -131,7 +136,8 @@ void StoppingProtonAnalysis::FillMicroTrees(bool addBase){
     AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
     standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack, beamPart);
     standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);    
-    //standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
+    kaonTree::FillKaonVariables_KaonBestCandidateReco    (output(), box().MainTrack);
+    kaonTree::FillKaonVariables_KaonBestCandidateTrue    (output(), box().MainTrack);
   }
 }
 
@@ -166,8 +172,10 @@ void StoppingProtonAnalysis::FillCategories(){
 //********************************************************************
 
   // For the candidate
-  if(box().MainTrack)
+  if(box().MainTrack){
     anaUtils::FillCategories(&GetEvent(), box().MainTrack,"");
+    anaUtils::FillCategories(&GetEvent(), box().MainTrack,"bestcandidate");
+  }
   
   // For the beam track
   AnaParticleB* beam = static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle;

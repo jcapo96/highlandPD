@@ -11,6 +11,7 @@ void kaonAnaUtils::AddCustomCategories(){
 //********************************************************************
 
   AddBeamParticleReducedCategory();
+  AddBeamParticleOriginCategory();
   AddBestCandidateParticleReducedCategory();
   AddCandidateParticleReducedCategory();
   AddCandidateDaughterParticleReducedCategory();
@@ -32,6 +33,22 @@ void kaonAnaUtils::AddBeamParticleReducedCategory(){
   std::reverse(part_colors, part_colors + NPART);
 
   anaUtils::_categ->AddCategory("beamparticlereduced", NPART, part_types, part_codes, part_colors);
+}
+
+//********************************************************************
+void kaonAnaUtils::AddBeamParticleOriginCategory(){
+//********************************************************************
+
+  std::string part_types[] = {"beam", "cosmic", NAMEOTHER};
+  int part_codes[]         = {0     , 1       , CATOTHER};
+  int part_colors[]        = {9     , 98      , COLOTHER};
+  const int NPART = sizeof(part_types)/sizeof(part_types[0]);
+  
+  std::reverse(part_types,  part_types  + NPART);
+  std::reverse(part_codes,  part_codes  + NPART);
+  std::reverse(part_colors, part_colors + NPART);
+
+  anaUtils::_categ->AddCategory("beamorigin", NPART, part_types, part_codes, part_colors);
 }
 
 //********************************************************************
@@ -141,6 +158,21 @@ void kaonAnaUtils::FillBeamParticleReducedCategory(AnaParticlePD* beampart){
     else if (truepart->PDG == 321 )anaUtils::_categ->SetCode("beamparticlereduced", 321,        CATOTHER);
     else if (truepart->PDG == 2212)anaUtils::_categ->SetCode("beamparticlereduced", 2212,       CATOTHER);
     else                           anaUtils::_categ->SetCode("beamparticlereduced", CATOTHER,   CATOTHER);
+  }
+}
+
+//********************************************************************
+void kaonAnaUtils::FillBeamParticleOriginCategory(AnaParticlePD* beampart){
+//********************************************************************
+  
+  if(!beampart) return;  
+  AnaTrueParticlePD* truepart = static_cast<AnaTrueParticlePD*>(beampart->TrueObject);
+
+  if(!truepart)                    anaUtils::_categ->SetCode("beamorigin", CATNOTRUTH, CATNOTRUTH);
+  else{												          
+    if  (truepart->Origin==4)   anaUtils::_categ->SetCode("beamorigin", 0, CATOTHER);
+    else if(truepart->Origin==2)anaUtils::_categ->SetCode("beamorigin", 1, CATOTHER);
+    else                        anaUtils::_categ->SetCode("beamorigin", CATOTHER, CATOTHER);
   }
 }
 
