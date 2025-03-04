@@ -1,17 +1,19 @@
 #include "CoherentFitAlgorithm.hxx"
 #include <iostream>
+#include <getopt.h>
+#include <cstdlib>
 
 //********************************************************************
 CoherentFitAlgorithm::CoherentFitAlgorithm(int argc, char *argv[]){
 //********************************************************************
 
   //primary initializations
-  fRMIN    = 1; 
+  fRMIN    = 1;
   fRMAX    = 61;
   fSTEP    = 2;
   fNBINS   = 30;
   fChi2Cut = 84;
-  
+
   std::string dfile;
   std::string mcfile;
 
@@ -19,7 +21,7 @@ CoherentFitAlgorithm::CoherentFitAlgorithm(int argc, char *argv[]){
     int c = getopt(argc, argv, "d:m:");
     if(c < 0)
       break;
-    
+
     switch(c){
     case 'd':{
       dfile = optarg;
@@ -40,7 +42,7 @@ CoherentFitAlgorithm::CoherentFitAlgorithm(int argc, char *argv[]){
     std::cout << "MONIATO" << std::endl;
     std::exit(1);
   }
-  
+
   fdata = new CoherentFit(dfile);
   fmc   = new CoherentFit(mcfile);
 }
