@@ -4,7 +4,7 @@
 //********************************************************************
 void standardPDTree::AddStandardVariables_EventInfo(OutputManager& output){
 //********************************************************************
-  
+
   AddVarF(output, beam_nominal_mom,    "beam nominal momentum");
 }
 
@@ -19,11 +19,11 @@ void standardPDTree::AddStandardVariables_BeamInstrumentationTrue(OutputManager&
   AddVar4VF(output, beam_trueendpos ,  "true beam track true end position");
   AddVarI  (output, beam_trueendproc,  "true beam track true end process");
 }
-  
+
 //********************************************************************
 void standardPDTree::AddStandardVariables_BeamInstrumentationReco(OutputManager& output){
 //********************************************************************
-  
+
   AddVar3VF(output, beam_endpos , "beam instrumentation track end position");
   AddVar3VF(output, beam_enddir , "beam instrumentation track end direction");
   AddVarF(  output, beam_mom    , "beam instrumentation track momentum");
@@ -70,12 +70,12 @@ void standardPDTree::AddStandardVariables_BeamParticleHitsReco(OutputManager& ou
 void standardPDTree::AddStandardVariables_BeamParticleTrue(OutputManager& output){
 //********************************************************************
 
-  AddVar4VF(output, seltrk_truepos     , "beam particle true position");         
-  AddVar3VF(output, seltrk_truedir     , "beam particle true direction");         
+  AddVar4VF(output, seltrk_truepos     , "beam particle true position");
+  AddVar3VF(output, seltrk_truedir     , "beam particle true direction");
   AddVarF(  output, seltrk_truemom     , "beam particle true momentum");
   AddVarI(  output, seltrk_trueproc    , "beam particle true initial process");
   AddVarI(  output, seltrk_truendau    , "beam particle true number of daughters");
-  AddVar4VF(output, seltrk_trueendpos  , "beam particle true end position");      
+  AddVar4VF(output, seltrk_trueendpos  , "beam particle true end position");
   AddVarF(  output, seltrk_trueendmom  , "beam particle true end momentum");
   AddVarI(  output, seltrk_trueendproc , "beam particle true final process");
   AddVarI(  output, seltrk_truepdg     , "beam particle true pdg code");
@@ -105,11 +105,11 @@ void standardPDTree::AddStandardVariables_AllParticlesTrue(OutputManager& output
 void standardPDTree::AddStandardVariables_AllParticlesReco(OutputManager& output, UInt_t nmax){
 //********************************************************************
 
-  AddVarMaxSizeVI (output, trk_generation, "all tracks generation"       , ntracks, nmax);  
+  AddVarMaxSizeVI (output, trk_generation, "all tracks generation"       , ntracks, nmax);
   AddVarMaxSizeVI (output, trk_ndau      , "all tracks #daughters"       , ntracks, nmax);
-  AddVarMaxSize4MF(output, trk_pos       , "all tracks position"         , ntracks, nmax); 
+  AddVarMaxSize4MF(output, trk_pos       , "all tracks position"         , ntracks, nmax);
   AddVarMaxSize3MF(output, trk_dir       , "all tracks direction"        , ntracks, nmax);
-  AddVarMaxSize4MF(output, trk_endpos    , "all tracks position"         , ntracks, nmax); 
+  AddVarMaxSize4MF(output, trk_endpos    , "all tracks position"         , ntracks, nmax);
   AddVarMaxSize3MF(output, trk_enddir    , "all tracks direction"        , ntracks, nmax);
   AddVarMaxSizeVF (output, trk_length    , "all tracks length"           , ntracks, nmax);
   AddVarMaxSizeVF (output, trk_mom_muon  , "all tracks momentum (muon)"  , ntracks, nmax);
@@ -141,10 +141,10 @@ void standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(OutputManage
 //********************************************************************
 void standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(OutputManager& output, UInt_t nmax){
 //********************************************************************
-  
-  AddVarMaxSize4MF(output, seltrk_dau_pos,            "beam particle daughters position",                 seltrk_ndau,nmax); 
+
+  AddVarMaxSize4MF(output, seltrk_dau_pos,            "beam particle daughters position",                 seltrk_ndau,nmax);
   AddVarMaxSize3MF(output, seltrk_dau_dir,            "beam particle daughters direction",                seltrk_ndau,nmax);
-  AddVarMaxSize4MF(output, seltrk_dau_endpos,         "beam particle daughters position",                 seltrk_ndau,nmax); 
+  AddVarMaxSize4MF(output, seltrk_dau_endpos,         "beam particle daughters position",                 seltrk_ndau,nmax);
   AddVarMaxSize3MF(output, seltrk_dau_enddir,         "beam particle daughters direction",                seltrk_ndau,nmax);
   AddVarMaxSizeVF( output, seltrk_dau_length,         "beam particle daughters length",                   seltrk_ndau,nmax);
   AddVarMaxSizeVF( output, seltrk_dau_mom_muon,       "beam particle daughters momentum (muon)",          seltrk_ndau,nmax);
@@ -163,7 +163,7 @@ void standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(OutputManage
 //********************************************************************
 void standardPDTree::AddStandardVariables_BeamParticleDaughtersHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane){
 //********************************************************************
-  
+
   AddVarMF(output, seltrk_dau_hit_x,        "daughters x per hit",          seltrk_ndau,-nmax,nmaxhitsperplane);
   AddVarMF(output, seltrk_dau_hit_y,        "daughters y per hit",          seltrk_ndau,-nmax,nmaxhitsperplane);
   AddVarMF(output, seltrk_dau_hit_z,        "daughters z per hit",          seltrk_ndau,-nmax,nmaxhitsperplane);
@@ -192,7 +192,7 @@ void standardPDTree::AddStandardVariables_BeamParticleGDaughtersTrue(OutputManag
 //********************************************************************
 void standardPDTree::AddStandardVariables_BeamParticleGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters){
 //********************************************************************
-  
+
   Int_t seltrk_ndau = standardPDTree::seltrk_ndau;
   AddVarMI   (output, seltrk_gdau_ndau,         "gdaughters number of daughters", seltrk_ndau, -nmax, nmaxgdaughters);
   AddVar3D4MF(output, seltrk_gdau_pos,          "gdaughters position",            seltrk_ndau, -nmax, nmaxgdaughters);
@@ -211,7 +211,7 @@ void standardPDTree::AddStandardVariables_BeamParticleGDaughtersReco(OutputManag
   AddVarMI   (output, seltrk_gdau_nhits,        "gdaughters nhits",               seltrk_ndau, -nmax, nmaxgdaughters);
   AddVar3DMF (output, seltrk_gdau_hit_dedx,     "gdaughters hit dedx",            seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
   AddVar3DMF (output, seltrk_gdau_hit_resrange, "gdaughters hit residual range",  seltrk_ndau, -nmax, nmaxgdaughters, NMAXHITSPERPLANE);
-}  
+}
 
 //********************************************************************
 void standardPDTree::AddStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters){
@@ -263,22 +263,38 @@ void standardPDTree::AddStandardVariables_BeamParticleGGDaughtersReco(OutputMana
   AddVar3DMI(output, seltrk_ggdau_nhits,     "ggdaughters #hits",               seltrk_ndau, -nmax, nmaxgdaughters, nmaxggdaughters);
 }
 
+//******************************************************************
+void standardPDTree::AddStandardVariables_BeamTruthDaughters(OutputManager& output, UInt_t nmax){
+  // AddVarI(output,    seltrk_truthdau_ndau,        "true daughters number of daughters");
+  AddVarMaxSizeVI(output, seltrk_truthdau_truepdg, "beam particle truth daughters true pdg", seltrk_truthdau_ndau, nmax);
+}
+//******************************************************************
+
+//******************************************************************
+void standardPDTree::FillStandardVariables_BeamTruthDaughters(OutputManager& output, AnaTrueParticle* part){
+  if (!part) return;
+  AnaTrueParticle* truePart = static_cast<AnaTrueParticle*>(part);
+  if (!truePart) return;
+  output.FillVar(seltrk_truthdau_truepdg, truePart->PDG);
+}
+//******************************************************************
+
 //********************************************************************
 void standardPDTree::FillStandardVariables_EventInfo(OutputManager& output, AnaEventInfoPD* info){
 //********************************************************************
 
   if (!info) return;
-  output.FillVar(beam_nominal_mom, info->NominalBeamMom);   
+  output.FillVar(beam_nominal_mom, info->NominalBeamMom);
 }
 
 //********************************************************************
 void standardPDTree::FillStandardVariables_BeamInstrumentationTrue(OutputManager& output, AnaBeamB* beamB){
 //********************************************************************
 
-  if (!beamB) return;  
+  if (!beamB) return;
   AnaBeam* beam = static_cast<AnaBeam*>(beamB);
   if (!beam->BeamParticle) return;
-  AnaTrueParticlePD* beamTruePart= static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);   
+  AnaTrueParticlePD* beamTruePart= static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
   if (!beamTruePart) return;
 
   output.FillVar(beam_truemom,                    beamTruePart->Momentum);
@@ -296,16 +312,16 @@ void standardPDTree::FillStandardVariables_BeamInstrumentationReco(OutputManager
   if (!beamB) return;
   AnaBeamPD* beam         = static_cast<AnaBeamPD*>(beamB);
 
-  AnaParticleMomB* beamPart = beam->BeamParticle;    
+  AnaParticleMomB* beamPart = beam->BeamParticle;
   if (!beamPart) return;
-  
+
   output.FillVectorVarFromArray(beam_endpos, beamPart->PositionEnd,3);
   output.FillVectorVarFromArray(beam_enddir, beamPart->DirectionEnd,3);
-  output.FillVar(               beam_mom   , beamPart->Momentum);   
-  
+  output.FillVar(               beam_mom   , beamPart->Momentum);
+
   if((int)beam->PDGs.size()>0)
     output.FillVar(beam_pdg,beam->PDGs[0]);
-  
+
   output.FillVar(beam_ntracks,(int)beam->nTracks);
 }
 
@@ -317,27 +333,27 @@ void standardPDTree::FillStandardVariables_AllParticlesReco(OutputManager& outpu
   output.FillVectorVar         (trk_generation,       part->Generation       );
   output.FillVectorVar         (trk_ndau,      (Int_t)part->Daughters.size() );
   output.FillMatrixVarFromArray(trk_pos,              part->PositionStart,  4);
-  output.FillMatrixVarFromArray(trk_dir,              part->DirectionStart, 3); 
+  output.FillMatrixVarFromArray(trk_dir,              part->DirectionStart, 3);
   output.FillMatrixVarFromArray(trk_endpos,           part->PositionEnd,    4);
-  output.FillMatrixVarFromArray(trk_enddir,           part->DirectionEnd,   3); 
+  output.FillMatrixVarFromArray(trk_enddir,           part->DirectionEnd,   3);
   output.FillVectorVar         (trk_length,           part->Length           );
   output.FillVectorVar         (trk_mom_prot,         pdAnaUtils::ComputeRangeMomentum(part->Length,2212));
   output.FillVectorVar         (trk_mom_muon,         pdAnaUtils::ComputeRangeMomentum(part->Length,13)  );
   output.FillVectorVar         (trk_type,             part->Type             );
-  output.FillMatrixVarFromArray(trk_CNNscore,         part->CNNscore,       3); 
+  output.FillMatrixVarFromArray(trk_CNNscore,         part->CNNscore,       3);
   output.FillVectorVar         (trk_chi2_prot,        part->Chi2Proton       );
   output.FillVectorVar         (trk_chi2_muon,        part->Chi2Muon         );
   output.FillVectorVar         (trk_chi2_ndf,         part->Chi2ndf          );
   output.FillVectorVar         (trk_nhits,            part->NHits            );
 }
-  
+
 //********************************************************************
 void standardPDTree::FillStandardVariables_AllParticlesTrue(OutputManager& output, AnaParticlePD* part){
 //********************************************************************
 
   if (!part) return;
   if (!part->TrueObject) return;
- 
+
   AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
   if(!truePart) return;
 
@@ -366,9 +382,9 @@ void standardPDTree::FillStandardVariables_BeamParticleTrue(OutputManager& outpu
   output.FillVectorVarFromArray(seltrk_trueendpos,          truePart->PositionEnd, 4);
   output.FillVectorVarFromArray(seltrk_truedir,             truePart->Direction,   3);
   output.FillVar               (seltrk_truemom,             truePart->Momentum);
-  output.FillVar               (seltrk_trueendmom,          truePart->MomentumEnd);    
+  output.FillVar               (seltrk_trueendmom,          truePart->MomentumEnd);
   output.FillVar               (seltrk_trueproc,     (Int_t)truePart->ProcessStart);
-  output.FillVar               (seltrk_trueendproc,  (Int_t)truePart->ProcessEnd);    
+  output.FillVar               (seltrk_trueendproc,  (Int_t)truePart->ProcessEnd);
   output.FillVar               (seltrk_truepur,             part->TruePur);
   output.FillVar               (seltrk_trueeff,             part->TrueEff);
   output.FillVar               (seltrk_truendau,     (Int_t)truePart->Daughters.size());
@@ -433,7 +449,7 @@ void standardPDTree::FillStandardVariables_BeamParticleHitsReco(OutputManager& o
     }
   }
 }
-  
+
 //********************************************************************
 void standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(OutputManager& output, AnaParticlePD* dau){
 //********************************************************************
@@ -442,13 +458,13 @@ void standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(OutputManag
   output.FillVectorVar         (seltrk_dau_mom_prot,         dau->RangeMomentum[0]);
   output.FillVectorVar         (seltrk_dau_mom_muon,         dau->RangeMomentum[1]);
   output.FillMatrixVarFromArray(seltrk_dau_pos,              dau->PositionStart, 4);
-  output.FillMatrixVarFromArray(seltrk_dau_dir,              dau->DirectionStart,3); 
+  output.FillMatrixVarFromArray(seltrk_dau_dir,              dau->DirectionStart,3);
   output.FillMatrixVarFromArray(seltrk_dau_endpos,           dau->PositionEnd,   4);
-  output.FillMatrixVarFromArray(seltrk_dau_enddir,           dau->DirectionEnd,  3); 
+  output.FillMatrixVarFromArray(seltrk_dau_enddir,           dau->DirectionEnd,  3);
   output.FillVectorVar         (seltrk_dau_length,           dau->Length);
   output.FillVectorVar         (seltrk_dau_nhits,            dau->NHits           );
   output.FillVectorVar         (seltrk_dau_ndau,      (Int_t)dau->Daughters.size());
-  output.FillMatrixVarFromArray(seltrk_dau_CNNscore,         dau->CNNscore,      3); 
+  output.FillMatrixVarFromArray(seltrk_dau_CNNscore,         dau->CNNscore,      3);
   output.FillVectorVar         (seltrk_dau_chi2_prot,        dau->Chi2Proton      );
   output.FillVectorVar         (seltrk_dau_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*dau,321).first);
   output.FillVectorVar         (seltrk_dau_chi2_muon,        dau->Chi2Muon        );
@@ -460,7 +476,7 @@ void standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(OutputManag
 void standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(OutputManager& output, AnaParticlePD* dau){
 //********************************************************************
 
-  if (!dau) return;  
+  if (!dau) return;
   AnaTrueParticle* dauTruePart = static_cast<AnaTrueParticle*>(dau->TrueObject);
   if(!dauTruePart) return;
 
@@ -490,7 +506,7 @@ void standardPDTree::FillStandardVariables_BeamParticleDaughtersHitsReco(OutputM
   }
   else{
     int jmin = std::max<int>(0,(int)dau->Hits[2].size()-nmaxhitsperplane);
-    int jmax = (int)dau->Hits[2].size(); 
+    int jmax = (int)dau->Hits[2].size();
 
     for (int j = jmin; j < jmax; j++){
       output.FillMatrixVar(seltrk_dau_hit_x,         (Float_t)dau->Hits[2][j].Position.X(),   -1, j-jmin);
@@ -507,7 +523,7 @@ void standardPDTree::FillStandardVariables_BeamParticleGDaughtersReco(OutputMana
 //********************************************************************
 
   if(!gdau) return;
-  
+
   output.FillMatrixVar           (seltrk_gdau_ndau,     (Int_t)gdau->Daughters.size(), -1, gdau_index   );
   output.Fill3DMatrixVarFromArray(seltrk_gdau_pos,             gdau->PositionStart,    -1, gdau_index, 4);
   output.Fill3DMatrixVarFromArray(seltrk_gdau_dir,             gdau->DirectionStart,   -1, gdau_index, 3);
@@ -519,7 +535,7 @@ void standardPDTree::FillStandardVariables_BeamParticleGDaughtersReco(OutputMana
   output.FillMatrixVar           (seltrk_gdau_chi2_prot,       gdau->Chi2Proton,       -1, gdau_index   );
   output.FillMatrixVar           (seltrk_gdau_chi2_muon,       gdau->Chi2Muon,         -1, gdau_index   );
   output.FillMatrixVar           (seltrk_gdau_chi2_ndf,        gdau->Chi2ndf,          -1, gdau_index   );
-  
+
   output.FillMatrixVar           (seltrk_gdau_mom_prot,      pdAnaUtils::ComputeRangeMomentum(gdau->Length,2212), -1, gdau_index);
   output.FillMatrixVar           (seltrk_gdau_mom_muon,      pdAnaUtils::ComputeRangeMomentum(gdau->Length,13  ), -1, gdau_index);
 
@@ -544,10 +560,10 @@ void standardPDTree::FillStandardVariables_BeamParticleGDaughtersReco(OutputMana
 void standardPDTree::FillStandardVariables_BeamParticleGDaughtersTrue(OutputManager& output, AnaParticlePD* gdau, Int_t gdau_index){
 //********************************************************************
 
-  if(!gdau) return;  
+  if(!gdau) return;
   AnaTrueParticle* gdauTruePart = static_cast<AnaTrueParticle*>(gdau->TrueObject);
   if(!gdauTruePart) return;
-  
+
   output.FillMatrixVar           (seltrk_gdau_truepdg,  (Int_t)gdauTruePart->PDG,              -1, gdau_index   );
   output.FillMatrixVar           (seltrk_gdau_truendau, (Int_t)gdauTruePart->Daughters.size(), -1, gdau_index   );
   output.Fill3DMatrixVarFromArray(seltrk_gdau_truepos,         gdauTruePart->Position,         -1, gdau_index, 4);
@@ -563,7 +579,7 @@ void standardPDTree::FillStandardVariables_BeamParticleGGDaughtersReco(OutputMan
 //********************************************************************
 
   if(!ggdau) return;
-  
+
   output.Fill3DMatrixVar(seltrk_ggdau_ndau,  (Int_t)ggdau->Daughters.size(),  -1, gdau_index, ggdau_index);
   output.Fill3DMatrixVar(seltrk_ggdau_posX,         ggdau->PositionStart[0],  -1, gdau_index, ggdau_index);
   output.Fill3DMatrixVar(seltrk_ggdau_posY,         ggdau->PositionStart[1],  -1, gdau_index, ggdau_index);
@@ -597,10 +613,10 @@ void standardPDTree::FillStandardVariables_BeamParticleGGDaughtersReco(OutputMan
 void standardPDTree::FillStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, AnaParticlePD* ggdau, Int_t gdau_index, Int_t ggdau_index){
 //********************************************************************
 
-  if(!ggdau) return;  
+  if(!ggdau) return;
   AnaTrueParticle* ggdauTruePart = static_cast<AnaTrueParticle*>(ggdau->TrueObject);
   if(!ggdauTruePart) return;
-  
+
   output.Fill3DMatrixVar(seltrk_ggdau_truepdg,  (Int_t)ggdauTruePart->PDG,              -1, gdau_index, ggdau_index);
   output.Fill3DMatrixVar(seltrk_ggdau_truendau, (Int_t)ggdauTruePart->Daughters.size(), -1, gdau_index, ggdau_index);
   output.Fill3DMatrixVar(seltrk_ggdau_trueposX,        ggdauTruePart->Position[0],      -1, gdau_index, ggdau_index);

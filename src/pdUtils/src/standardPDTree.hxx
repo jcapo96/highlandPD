@@ -30,9 +30,11 @@ namespace standardPDTree{
   void AddStandardVariables_BeamParticleGGDaughtersReco(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
   void AddStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, UInt_t nmax, UInt_t nmaxgdaughters, UInt_t nmaxggdaughters);
 
+  void AddStandardVariables_BeamTruthDaughters(OutputManager& output, UInt_t nmax);
+
   // Methods to fill the standard sets of variables in the output tree
   void FillStandardVariables_CountersTrue(OutputManager& output, PDCounters& counters);
-  
+
   void FillStandardVariables_EventInfo(OutputManager& output, AnaEventInfoPD* info);
 
   void FillStandardVariables_BeamInstrumentationTrue(OutputManager& output, AnaBeamB* beamB);
@@ -46,16 +48,18 @@ namespace standardPDTree{
   void FillStandardVariables_BeamParticleHitsReco(OutputManager& output, AnaParticlePD* part);
 
   void FillStandardVariables_BeamParticleDaughtersReco(OutputManager& output, AnaParticlePD* part);
-  void FillStandardVariables_BeamParticleDaughtersTrue(OutputManager& output, AnaParticlePD* part);  
+  void FillStandardVariables_BeamParticleDaughtersTrue(OutputManager& output, AnaParticlePD* part);
   void FillStandardVariables_BeamParticleDaughtersHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxsavedhits);
 
   void FillStandardVariables_BeamParticleGDaughtersReco(OutputManager& output, AnaParticlePD* part, Int_t index);
-  void FillStandardVariables_BeamParticleGDaughtersTrue(OutputManager& output, AnaParticlePD* part, Int_t index);  
+  void FillStandardVariables_BeamParticleGDaughtersTrue(OutputManager& output, AnaParticlePD* part, Int_t index);
 
   void FillStandardVariables_BeamParticleGGDaughtersReco(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
-  void FillStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);  
+  void FillStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
 
-  // Enum with unique indexes for output tree variables  
+  void FillStandardVariables_BeamTruthDaughters(OutputManager& output, AnaTrueParticle* beamTruePart);
+
+  // Enum with unique indexes for output tree variables
   enum enumStandardMicroTrees_standardPDTree{
 
     // selected track (beam particle) true info
@@ -133,6 +137,9 @@ namespace standardPDTree{
     seltrk_dau_truemom,
     seltrk_dau_trueendmom,
 
+    // slected truth daughtes true info
+    seltrk_truthdau_ndau,
+    seltrk_truthdau_truepdg,
     // selected track gdaughters reco info
     seltrk_gdau_ndau,
     seltrk_gdau_pos,
@@ -151,7 +158,7 @@ namespace standardPDTree{
     seltrk_gdau_nhits,
     seltrk_gdau_hit_dedx,
     seltrk_gdau_hit_resrange,
-    
+
     // selected track gdaughters true info
     seltrk_gdau_truendau,
     seltrk_gdau_truepdg,
@@ -189,18 +196,18 @@ namespace standardPDTree{
     seltrk_ggdau_nhits,
 
     // selected track ggdaughters info
-    seltrk_ggdau_truepdg,    
-    seltrk_ggdau_truendau,   
+    seltrk_ggdau_truepdg,
+    seltrk_ggdau_truendau,
     seltrk_ggdau_trueposX,
-    seltrk_ggdau_trueposY,    
-    seltrk_ggdau_trueposZ,    
-    seltrk_ggdau_trueendposX, 
-    seltrk_ggdau_trueendposY, 
-    seltrk_ggdau_trueendposZ, 
-    seltrk_ggdau_trueproc,   
+    seltrk_ggdau_trueposY,
+    seltrk_ggdau_trueposZ,
+    seltrk_ggdau_trueendposX,
+    seltrk_ggdau_trueendposY,
+    seltrk_ggdau_trueendposZ,
+    seltrk_ggdau_trueproc,
     seltrk_ggdau_trueendproc,
-    seltrk_ggdau_truemom,    
-    seltrk_ggdau_trueendmom, 
+    seltrk_ggdau_truemom,
+    seltrk_ggdau_trueendmom,
 
     // all particles in the event, reco info
     ntracks,
@@ -221,7 +228,7 @@ namespace standardPDTree{
     trk_chi2_ndf,
     trk_nhits,
 
-    // all particles in the event, true info    
+    // all particles in the event, true info
     trk_truendau,
     trk_truegeneration,
     trk_truepdg,
@@ -242,14 +249,14 @@ namespace standardPDTree{
     beam_trueendproc,
 
     // beam reco info
-    beam_endpos,          
-    beam_enddir,          
-    beam_mom,                                 
-    beam_nominal_mom,                                 
+    beam_endpos,
+    beam_enddir,
+    beam_mom,
+    beam_nominal_mom,
     beam_tof,
     beam_pdg,
     beam_ntracks,
-    
+
     enumStandardMicroTreesLast_standardPDTree
   };
 }

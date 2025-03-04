@@ -16,7 +16,7 @@ void neutralKaonSelection::DefineSteps(){
   //basic cuts → see pdBaseAnalysis/src/pdBaseSelection
   AddStep(StepBase::kAction, "find Pandora track"    , new FindBeamTrackAction(), true);
   AddStep(StepBase::kCut   , "beam track in TPC"     , new BeamTrackExistsCut() , true);
-  // AddStep(StepBase::kCut   , "beam pdg filter KPos"    , new BeamPDGCut(321)     , true);
+  // ddStep(StepBase::kCut   , "beam pdg filter KPos"    , new BeamPDGCut(321)     , true);
   // AddStep(StepBase::kCut   , "BEAM quality cut"      , new BeamQualityCut()     , true);
 
   SetBranchAlias(0,"trunk");

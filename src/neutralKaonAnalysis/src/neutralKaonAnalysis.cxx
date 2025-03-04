@@ -100,14 +100,15 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   // standardPDTree::AddStandardVariables_AllParticlesTrue(output(), 10);
 
   // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  // standardPDTree::AddStandardVariables_EventInfo(output());
-  // standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
-  // standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
-  // standardPDTree::AddStandardVariables_BeamParticleTrue(output());
-  // standardPDTree::AddStandardVariables_BeamParticleReco(output());
-  // standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
-  // standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),20);
-  // standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),20);
+  standardPDTree::AddStandardVariables_EventInfo(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
+  standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleTrue(output());
+  standardPDTree::AddStandardVariables_BeamParticleReco(output());
+  standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),20);
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),20);
+  standardPDTree::AddStandardVariables_BeamTruthDaughters(output(),20);
 
 
   // Add standard sets of variables for ProtoDUNE analysis (these methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
@@ -127,6 +128,8 @@ void neutralKaonAnalysis::DefineTruthTree(){
 
   // Variables from baseAnalysis (run, event, ...)
   baseAnalysis::DefineTruthTree();
+  // Function in standardPDTree.cxx where the truth tree variables are defined: momentum, pdg, etc.
+  // Function in standardPDTree.cxx -> beamParticleTruthDaughters()
 }
 
 //********************************************************************
@@ -144,6 +147,35 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   if(box().MainTrack){
     AnaBeamPD* beam = static_cast<AnaBeamPD*>(GetSpill().Beam);
     AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+    standardPDTree::FillStandardVariables_EventInfo(        output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
+    standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
+    standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
+    standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack);
+    standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);
+    standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
+    int ndau = std::min(20,(int)box().MainTrack->Daughters.size());
+    for(int i = 0; i < ndau; i++){
+      standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
+      standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
+      output().IncrementCounter(standardPDTree::seltrk_ndau);
+    }
+
+    AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(box().MainTrack->TrueObject);
+    if(trueBeamPart){
+      // std::cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << std::endl;
+      int ndau_truth = std::min(20,(int)trueBeamPart->Daughters.size());
+      for(int i = 0; i < ndau_truth; i++){
+        AnaTrueParticle* truthdau = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, trueBeamPart->Daughters[i]);
+        standardPDTree::FillStandardVariables_BeamTruthDaughters(output(), static_cast<AnaTrueParticle*>(truthdau));
+
+        // seltrk_truth_ndau and seltrk_truth_dau (pdg info)
+
+        //loops over the reco daughters and fills them
+        //need to loop over the true daughters and fill the new function
+
+        output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau); //seltrk_ndau needs to be adjusted to the new ndau_truth variable
+      }
+  }
     // standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack, beamPart);
     // standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);
     //standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
@@ -163,6 +195,8 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
   (void) vtx; // to avoid warning for unused vtx variable
+
+
 
   // fill it allways for the moment
   return true;
