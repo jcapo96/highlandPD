@@ -70,19 +70,19 @@ message("HighLAND include directories: ${HIGHLAND_INCLUDE_DIRS}")
 message("HighLAND libraries:           ${HIGHLAND_LIBRARIES}")
 
 #------ TENSORFLOW------------------
-find_package(TENSORFLOW REQUIRED)
+# find_package(TENSORFLOW REQUIRED)
 
 message("TENSORFLOW include directories: ${TENSORFLOW_INCLUDE_DIRS}")
 message("TENSORFLOW libraries:           ${TENSORFLOW_LIBRARIES}")
 
 #------ PROTOBUF------------------
-find_package(HPROTOBUF REQUIRED)
+# find_package(HPROTOBUF REQUIRED)
 
 message("PROTOBUF include directories: ${PROTOBUF_INCLUDE_DIRS}")
 message("PROTOBUF libraries:           ${PROTOBUF_LIBRARIES}")
 
 #------ EIGEN------------------
-find_package(EIGEN REQUIRED)
+# find_package(EIGEN REQUIRED)
 
 message("EIGEN include directories: ${EIGEN_INCLUDE_DIRS}")
 message("EIGEN libraries:           ${EIGEN_LIBRARIES}")
@@ -110,7 +110,7 @@ foreach(file0 ${dict_src})
   string(FIND ${file0} "/"          pos_ini REVERSE)
   string(SUBSTRING ${file0} 0      ${pos_ini}  dir)
   string(REPLACE "${dir}/"     "" file2 ${file0})
-  string(REPLACE _LinkDef.h    "" file3 ${file2})  
+  string(REPLACE _LinkDef.h    "" file3 ${file2})
 
 # remove dict/ from name, new CMake version does not like '/' in names. To be solved.
 #  root_generate_dictionary(${file3}_Dict NODEPHEADERS ${file3}.hxx LINKDEF ${file0}  MODULE ${file3} DEPENDENCIES ${ROOT_LIBRARIES})
@@ -142,7 +142,7 @@ endforeach(file0)
 file(GLOB highlandPD_src  ${CMAKE_SOURCE_DIR}/src/*/src/*.cxx
                           ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/src/coherentfit/*.cxx)
 #                          ${LARSOFTREADER_DIR}/LArSoft*.cxx
-#                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)    
+#                          ${LARSOFTREADER_DIR}/${LARSOFT_DATAMC_DIR}/LArSoftReaderProjectSource.cxx)
 
 add_library(highlandPD SHARED ${dict_src} ${highlandPD_src} )
 target_include_directories(highlandPD PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc} ${TENSORFLOW_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
@@ -214,6 +214,11 @@ target_include_directories(pdExampleAnalysis.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS
 target_link_libraries(pdExampleAnalysis.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS pdExampleAnalysis.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(neutralKaon.exe ${CMAKE_SOURCE_DIR}/src/neutralKaon/app/RunNeutralKaonAnalysis.cxx)
+target_include_directories(neutralKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(neutralKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS neutralKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 
 #-------------------------------------------------------
 #------- custom targets --------------------------------
@@ -232,6 +237,7 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
+add_dependencies(neutralKaon.exe                   CoherentFit.exe)
 add_dependencies(pdExampleAnalysis.exe             CoherentFit.exe)
 add_dependencies(CoherentFit.exe                   CreateMiniTreeCandidates.exe)
 add_dependencies(CreateMiniTreeCandidates.exe      CreateMiniTreeEventCandidates.exe)

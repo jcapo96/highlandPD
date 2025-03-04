@@ -24,7 +24,7 @@ if [ -d "build" ]; then
 fi
 
 # set environment variables
-source scripts/setup.sh
+# source scripts/setup.sh
 
 # creates the build directory
 mkdir build
@@ -40,4 +40,4 @@ cd ..
 cmake --build build
 
 #install libraries and binaries in the appropriate folders  (equivalent to "make install" in most systems)
-cmake -P build/cmake_install.cmake 
+cmake -P build/cmake_install.cmake
