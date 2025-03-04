@@ -53,7 +53,7 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
     eventWeight *= systUtils::ComputeEffLikeWeight(broken, toy, GetIndex(), index, params);
   }
   else if((part->PositionStart[2]<220 && part->PositionEnd[2]>220) ||
-	  (part->PositionStart[2]<458 && part->PositionEnd[2]>466)){ //not broken, contributes to inefficiency
+	  (part->PositionStart[2]<458 && part->PositionEnd[2]>458)){ //not broken, contributes to inefficiency
     broken = false;
     eventWeight *= systUtils::ComputeEffLikeWeight(broken, toy, GetIndex(), index, params);
   }
