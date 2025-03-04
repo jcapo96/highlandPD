@@ -8,9 +8,8 @@
 HitPositionSCECorrection::HitPositionSCECorrection(){
 //********************************************************************
 
-  sce = new SpaceCharge();
-  sce->Initialize();
-  
+  _sce = new SpaceCharge();
+  _sce->Initialize();
 }
 
 //********************************************************************
@@ -31,12 +30,7 @@ void HitPositionSCECorrection::Apply(AnaSpillC& spillC){
     
     if (!original) continue; //?
 
-    for (UInt_t j = 0; j < part->Hits[2].size(); j++){
-      TVector3 offset = sce->GetCalPosOffsets(part->Hits[2][j].PositionNoSCE, part->Hits[2][j].TPCid);
-      part->Hits[2][j].PositionNoSCE.SetX(part->Hits[2][j].PositionNoSCE.X() - offset.X());
-      part->Hits[2][j].PositionNoSCE.SetY(part->Hits[2][j].PositionNoSCE.Y() + offset.Y());
-      part->Hits[2][j].PositionNoSCE.SetZ(part->Hits[2][j].PositionNoSCE.Z() + offset.Z());
-    }
+    _sce->ApplyPositionCorrection(part);
   }
 }
 

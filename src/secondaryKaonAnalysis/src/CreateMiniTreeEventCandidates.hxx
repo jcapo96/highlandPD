@@ -6,6 +6,11 @@
 #include "InputManager.hxx"
 #include <set>
 
+//Migue:
+//This class generates minitrees only with 
+//events containing a particle passing the
+//secondary kaon selection
+
 class CreateMiniTreeEventCandidates: public CreateMiniTreePD {
  public:
 

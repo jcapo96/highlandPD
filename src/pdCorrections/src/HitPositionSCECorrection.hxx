@@ -6,6 +6,7 @@
 #include "SpaceCharge.hxx"
 
 /// This class defines a correction that affects each hit of a reconstructed track
+/// it modifies hits position
 
 class HitPositionSCECorrection: public CorrectionBase {
 
@@ -21,7 +22,7 @@ public:
 protected:
 
   //this probably needs a reimplementation, it cannot be initialized here. Possibly this should be a singleton.
-  SpaceCharge* sce;
+  SpaceCharge* _sce;
   
 };
 

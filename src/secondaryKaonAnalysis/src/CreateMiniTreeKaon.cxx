@@ -100,10 +100,10 @@ void CreateMiniTreeKaon::DeleteUninterestingTrueParticles(){
   std::set<AnaTrueParticleB*> goodTrueParticles;
   std::vector<AnaTrueParticleB*> badTrueParticles;
 
-  AnaTrueParticle* beampart = pdAnaUtils::FindBeamTrueParticle(*_spill);
+  AnaTrueParticle* beampart = pdAnaUtils::GetBeamTrueParticle(*_spill);
   if(beampart)goodTrueParticles.insert(beampart);
   
-  // Loop over all reconstructed particles in the spill      
+  // Loop over all reconstructed particles in the spill and save associated true particles
   AnaBunchB* bunch = static_cast<AnaBunchB*>(_spill->Bunches[0]);    
   for(std::vector<AnaParticleB*>::iterator it = bunch->Particles.begin(); it != bunch->Particles.end(); it++){      
     AnaParticleB* part = *it;  
@@ -112,7 +112,7 @@ void CreateMiniTreeKaon::DeleteUninterestingTrueParticles(){
         goodTrueParticles.insert(static_cast<AnaTrueParticleB*>(part->TrueObject));
   }
   
-  // Loop over all true particles in the spill
+  // Loop over all true particles in the spill and save true kaons and relatives not saved previously
   for(std::vector<AnaTrueParticleB*>::iterator it = _spill->TrueParticles.begin(); it != _spill->TrueParticles.end(); it++){      
     AnaTrueParticlePD* truepart = static_cast<AnaTrueParticlePD*>(*it);
     if(truepart->PDG==321){

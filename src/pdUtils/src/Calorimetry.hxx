@@ -20,21 +20,38 @@ public:
   virtual ~Calorimetry();
 
   void Initialize();
-
-  void CalibratedQdx(AnaHitPD &hit) const; //think about naming
+  void Initialize(SpaceCharge* sce);
+  void SetSCE(SpaceCharge* sce, bool remove = true);
+  
+  void ApplySCECorrection(AnaParticlePD* part) const;
+  void ApplySCECorrection(AnaHitPD& hit) const;
+  
+  void ApplyLifetimeCorrection(AnaParticlePD* part) const;
+  void ApplyLifetimeCorrection(AnaHitPD& hit) const;
+  void UndoLifetimeCorrection(AnaParticlePD* part) const;
+  void UndoLifetimeCorrection(AnaHitPD& hit) const;
 
   void ApplyNormalization(AnaHitPD &hit) const;
   void ApplyXCalibration(AnaHitPD &hit) const;
   void ApplyYZCalibration(AnaHitPD &hit) const;
-  void ApplyRecombination(AnaHitPD &hit) const;
+  
   void ApplyRecombination(AnaParticlePD* part) const;
+  void ApplyRecombination(AnaHitPD &hit) const;
     
+  void CalibratedQdx(AnaParticlePD* part) const; //think about naming
+  void CalibratedQdx(AnaHitPD &hit) const; //think about naming
+
   double GetNormalization(AnaHitPD &hit) const;
   double GetXCalibration(AnaHitPD &hit) const;
   double GetYZCalibration(AnaHitPD &hit) const;
 
-  double GetModBoxA(){return _ModBoxA;}
-  double GetModBoxB(){return _ModBoxB;}
+  double GetLifetime() const {return _Lifetime;}
+  void SetLifetime(const AnaEventPD &event);
+  void SetLifetime(double Lifetime){_Lifetime = Lifetime;}
+  void ResetLifetime(){_Lifetime = 35000;}
+  
+  double GetModBoxA() const {return _ModBoxA;}
+  double GetModBoxB() const {return _ModBoxB;}
   void SetModBoxA(double ModBoxA){_ModBoxA = ModBoxA;}
   void SetModBoxB(double ModBoxB){_ModBoxB = ModBoxB;}
   void ResetModBoxParameters();
@@ -54,7 +71,11 @@ protected:
   double _Efield;
   double _ModBoxA;
   double _ModBoxB;
-  
+
+  double _Lifetime;
+  double _Vdrift;
+  double _APAx;
+
   double _CalAreaConstants[3];
 
   SpaceCharge* _sce;

@@ -1,0 +1,143 @@
+-----------------------
+--- YZ calibration ----
+-----------------------
+
+--- Cut levels --------
+ < dEdxCalibration.YZ.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+
+ < dEdxCalibration.YZ.MichelRemovingTree = 0 >   
+
+ < dEdxCalibration.YZ.MaxTracks = 8000000 >   
+
+--- Output Tree --------
+ < dEdxCalibration.YZ.SaveAna = 0 >   // Save standard analysis tree
+ < dEdxCalibration.YZ.SaveToy = 0 >   // Save toy variables
+
+--- Corrections --------
+ < dEdxCalibration.YZ.ApplySCEPositionCorrection = 1 >
+ < dEdxCalibration.YZ.ApplySCEPitchCorrection = 1 >
+ < dEdxCalibration.YZ.ApplyLifetimeCorrection = 0 >
+
+--- Systematics --------
+ < dEdxCalibration.YZ.ApplySCESystematic = 0 >
+ < dEdxCalibration.YZ.ApplyLifetimeSystematic = 1 >
+
+-----------------------
+--- X calibration -----
+-----------------------
+
+--- Cut levels --------
+ < dEdxCalibration.X.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+
+ < dEdxCalibration.X.MichelRemovingTree = 0 >
+
+ < dEdxCalibration.X.MaxTracks = 8000000 >      
+
+--- Output Tree --------
+ < dEdxCalibration.X.SaveAna = 0 >   // Save standard analysis tree
+ < dEdxCalibration.X.SaveToy = 0 >   // Save toy variables
+
+--- Corrections --------
+ < dEdxCalibration.X.ApplySCEPositionCorrection = 1 >
+ < dEdxCalibration.X.ApplySCEPitchCorrection = 1 >
+ < dEdxCalibration.X.ApplyLifetimeCorrection = 0 >
+
+--- Systematics --------
+ < dEdxCalibration.X.ApplySCESystematic = 0 >
+ < dEdxCalibration.X.ApplyLifetimeSystematic = 1 >
+
+-----------------------
+--- dEdx calibration --
+-----------------------
+
+--- Cut levels --------
+ < dEdxCalibration.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+
+ < dEdxCalibration.MichelRemovingTree = 0 >   
+
+--- Output Tree ------
+ < dEdxCalibration.SaveAna = 1 >   // Save standard analysis tree
+ < dEdxCalibration.SaveToy = 0 >   // Save toy variables
+
+--- Corrections ------
+ < dEdxCalibration.ApplySCEPositionCorrection = 1 >
+ < dEdxCalibration.ApplySCEPitchCorrection = 1 >
+ < dEdxCalibration.ApplyLifetimeCorrection = 0 >
+
+--- Systematics ------
+ < dEdxCalibration.ApplySCESystematic = 0 >
+ < dEdxCalibration.ApplyLifetimeSystematic = 0 >
+
+-----------------------
+--- MichelMiniTree ----
+-----------------------
+
+ < dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_min = 0 >
+ < dEdxCalibration.MichelRemovingMiniTree.ThetaXZ_max = 60 >
+ < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_min = 0 >
+ < dEdxCalibration.MichelRemovingMiniTree.ThetaYZ_max = 80 >
+
+ < pdIO.MichelRemoving.ThetaXZ_min = 0 >
+ < pdIO.MichelRemoving.ThetaXZ_max = 60 >
+ < pdIO.MichelRemoving.ThetaYZ_min = 0 >
+ < pdIO.MichelRemoving.ThetaYZ_max = 80 >
+
+###############################################################################
+  baseAnalysis parameters
+###############################################################################
+
+This is a copy of the baseAnalysis parameters file in highland, such that we can overwrite them
+
+
+Whether to initialize trees or not at the beginning of each configuration
+
+ < baseAnalysis.InitializeTrees = 1 >	
+
+ --- Corrections ------------
+
+Disables all corrections regardless of the ones enabled below
+
+ < baseAnalysis.Corrections.DisableAllCorrections  = 0 >
+
+Apply all corrections even if they were already applied in the input file
+
+ < baseAnalysis.Corrections.ForceApplyCorrections  = 0 >
+
+Enable/Disable individual corrections
+
+
+--- Event Weights ------------
+
+Enable/disable configurations with a single systematic (when EnableSingleWeightSystConfigurations = 1)
+and enable systematics in the "all_syst" configuration (when EnableAllSystematics = 1)
+
+No weights yet !!!
+
+--- Systematics ------------
+
+Number of toy experiments
+ < baseAnalysis.Systematics.NumberOfToys = 100 >
+
+The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
+
+     0 --> A pure random seed is generated based on time
+ not 0 --> A fix random seed is used 
+
+ < baseAnalysis.Systematics.RandomSeed = 1 >
+
+Use a different random generator for each systematic
+
+ < baseAnalysis.Systematics.IndividualRandomGenerator = 0 >
+
+
+--- Configurations ------------
+
+Create configurations with a single systematic ( a configuration for each systematic selected above)
+
+ < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 0 >
+ < baseAnalysis.Configurations.EnableSingleWeightSystConfigurations    = 0 >
+
+Enable/disable the configuration with all systematics (or the ones selected above)
+
+ < baseAnalysis.Configurations.EnableAllSystematics = 1 >
+ 

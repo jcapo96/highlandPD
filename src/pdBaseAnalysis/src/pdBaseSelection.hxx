@@ -10,7 +10,6 @@
 #include "SubDetId.hxx"
 
 /// This file defines steps that are common to all analyses.
-/// Currently the only cut is one on event quality.
 
 
 class pdBaseSelection: public SelectionBase{
@@ -73,6 +72,13 @@ public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new BeamPDGCut();}
+};
+
+class BeamQualityCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BeamQualityCut();}
 };
 
 #endif

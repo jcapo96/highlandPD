@@ -1,0 +1,3 @@
+--- correction parameters
+ < pdCorrections.BeamMomSmearing.SeedValue = 1   >
+ < pdCorrections.BeamMomSmearing.NominalBeamMom  = 2   >	

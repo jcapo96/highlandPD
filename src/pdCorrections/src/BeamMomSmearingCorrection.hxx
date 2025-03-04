@@ -24,6 +24,7 @@ public:
 protected:
   
   Int_t _seedValue;
+  Double_t _NominalBeamMom;
 
   TRandom3 _random;  
 };

@@ -5,5 +5,104 @@
  < pdUtils.SCE.EnableCalEfieldSCE  = 1   >
  < pdUtils.SCE.Efield              = 500 >
 
+--- Calorimetry --------
+ < pdUtils.Calorimetry.ElectronLifetime.MC = 35000 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5758 = 13210 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5759 = 13430 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5760 = 13430 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5762 = 15390 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5765 = 13060 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5766 = 15820 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5768 = 15820 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5769 = 15820 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5770 = 19730 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5771 = 19730 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5772 = 19490 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5773 = 19490 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5774 = 21450 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5775 = 21450 >
+ < pdUtils.Calorimetry.ElectronLifetime.Run5776 = 21450 >
+
+--- BeamQualityCuts --------
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.1.meanx  = -30.8 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.1.meany  = 422.4 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.1.meanz  = 0.0   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.1.sigmax = 4.9   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.1.sigmay = 4.3   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.1.sigmaz = 1.20  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.1.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.1.meanx  = -28.8 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.1.meany  = 424.4 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.1.meanz  = 2.9   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.1.sigmax = 4.45  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.1.sigmay = 5.29  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.1.sigmaz = 1.37  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.1.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.2.meanx  = -30.8 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.2.meany  = 422.4 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.2.meanz  = 0.0   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.2.sigmax = 4.15  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.2.sigmay = 4.22  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.2.sigmaz = 0.21  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.2.cos    = 0.95  >		
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.2.meanx  = -28.5 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.2.meany  = 425.1 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.2.meanz  = 3.79  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.2.sigmax = 4.22  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.2.sigmay = 4.99  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.2.sigmaz = 1.14  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.2.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.3.meanx  = -30.7 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.3.meany  = 422.4 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.3.meanz  = 0.0   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.3.sigmax = 3.76  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.3.sigmay = 3.49  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.3.sigmaz = 0.20  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.3.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.3.meanx  = -28.7 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.3.meany  = 425.2 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.3.meanz  = 2.81  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.3.sigmax = 4.50  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.3.sigmay = 4.99  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.3.sigmaz = 1.33  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.3.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.6.meanx  = -30.1 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.6.meany  = 423.0 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.6.meanz  = 0.0   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.6.sigmax = 4.06  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.6.sigmay = 3.92  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.6.sigmaz = 0.20  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.6.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.6.meanx  = -28.6 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.6.meany  = 424.6 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.6.meanz  = 0.96  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.6.sigmax = 4.83  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.6.sigmay = 4.88  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.6.sigmaz = 1.19  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.6.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.7.meanx  = -30.9 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.7.meany  = 422.6 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.7.meanz  = 0.0   >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.7.sigmax = 3.23  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.7.sigmay = 3.54  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.7.sigmaz = 0.20  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.MC.7.cos    = 0.95  >	
+
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.7.meanx  = -26.7 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.7.meany  = 424.6 >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.7.meanz  = 1.68  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.7.sigmax = 4.29  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.7.sigmay = 4.35  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.7.sigmaz = 1.57  >
+ < pdUtils.AnalysisUtils.BeamQualityCuts.Data.7.cos    = 0.95  >	
+
 --- CNN --------------
  < pdUtils.CNN.PBfile              = cnn_emtrkmichl_pitch_5_wire_48_drift_48_down_6_mean_notes_protoduneBeamAndCosmicsMCC11.pb >

@@ -37,11 +37,11 @@ protected:
 };
 
 
-class CSDARangeCut: public StepBase{
+class pdExampleCSDARangeCut: public StepBase{
  public:
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
-  StepBase* MakeClone(){return new CSDARangeCut();}
+  StepBase* MakeClone(){return new pdExampleCSDARangeCut();}
 };
 
 

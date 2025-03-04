@@ -1,3 +1,4 @@
+#include "Parameters.hxx"
 #include "pdBaseConverter.hxx"
 
 //********************************************************************
@@ -14,6 +15,12 @@ pdBaseConverter::pdBaseConverter(const std::string& name):InputConverter(name){
   _previousRunID = -1;
   _previousSubrunID = -1;
   _previousRefEventID = -1;
+
+  _FillEventInfo = true;
+  _FillDQInfo    = true;
+  _FillBeamInfo  = true;
+  _FillBunchInfo = true;
+  _FillTrueInfo  = true;
 }
 
 //********************************************************************
@@ -25,6 +32,13 @@ bool pdBaseConverter::Initialize(){
   
   // Set object pointer
   InitializeVariables();
+
+  // Read parameters file
+  _FillEventInfo = ND::params().GetParameterI("pdIO.pdBaseConverter.FillEventInfo");
+  _FillDQInfo    = ND::params().GetParameterI("pdIO.pdBaseConverter.FillDQInfo");
+  _FillBeamInfo  = ND::params().GetParameterI("pdIO.pdBaseConverter.FillBeamInfo");
+  _FillBunchInfo = ND::params().GetParameterI("pdIO.pdBaseConverter.FillBunchInfo");
+  _FillTrueInfo  = ND::params().GetParameterI("pdIO.pdBaseConverter.FillTrueInfo");
 
   // Set branch addresses and branch pointers
   if (!fChain) return false;
@@ -54,23 +68,23 @@ bool pdBaseConverter::AddFileToTChain(const std::string& inputString){
   fChain->GetEntry(1);
 
   // Make temporary object
-  AnaEventInfo* evtInfo = MakeEventInfo();
+  AnaEventInfoPD* evtInfo = MakeEventInfo();
 
   // general event info
   FillEventInfo(evtInfo);
 
   
-  // Make sure the current file has not the same run and subrun number as the previous
-  if (_previousRunID==evtInfo->Run &&  _previousSubrunID==evtInfo->SubRun && _previousRefEventID>= evtInfo->Event){
-    std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "pdBaseConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
-    std::cout << "                                           and no higher event number !!!" << std::endl;
-    std::cout << "   - this file:     " << inputString << std::endl;
-    std::cout << "   - previous file: " << _previousFile << std::endl;
-    std::cout << "Please verify the input file list !!!" << std::endl;
-    std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
-    exit(1);
-  }
+  // // Make sure the current file has not the same run and subrun number as the previous
+  // if (_previousRunID==evtInfo->Run &&  _previousSubrunID==evtInfo->SubRun && _previousRefEventID>= evtInfo->Event){
+  //   std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
+  //   std::cout << "pdBaseConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
+  //   std::cout << "                                           and no higher event number !!!" << std::endl;
+  //   std::cout << "   - this file:     " << inputString << std::endl;
+  //   std::cout << "   - previous file: " << _previousFile << std::endl;
+  //   std::cout << "Please verify the input file list !!!" << std::endl;
+  //   std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
+  //   exit(1);
+  // }
   
   // The previous attributes
   _previousFile         = inputString;
@@ -135,21 +149,26 @@ void pdBaseConverter::FillInfo(AnaSpill* spill){
   spill->Beam        = MakeBeam();
 
   // general event info
-  FillEventInfo(static_cast<AnaEventInfo*>(spill->EventInfo));
+  if(_FillEventInfo)
+    FillEventInfo(static_cast<AnaEventInfoPD*>(spill->EventInfo));
   
   // data quality info
-  FillDQInfo(static_cast<AnaDataQuality*>(spill->DataQuality));
+  if(_FillDQInfo)
+    FillDQInfo(static_cast<AnaDataQuality*>(spill->DataQuality));
 
   // True information
-  FillTrueInfo(spill);
+  if(_FillTrueInfo)
+    FillTrueInfo(spill);
 
   // beam related information (must be after true info)
-  FillBeamInfo(spill->TrueParticles, static_cast<AnaBeamPD*>(spill->Beam));
+  if(_FillBeamInfo)
+    FillBeamInfo(spill->TrueParticles, static_cast<AnaBeamPD*>(spill->Beam));
   
   // All information about each bunch (only one in pd) (reco info)
   AnaBunch* bunch = MakeBunch();
   spill->Bunches.push_back(bunch);
-  FillBunchInfo(spill->TrueParticles, bunch, static_cast<AnaBeamPD*>(spill->Beam));
+  if(_FillBunchInfo)
+    FillBunchInfo(spill->TrueParticles, bunch, static_cast<AnaBeamPD*>(spill->Beam));
 }
 
 //*****************************************************************************

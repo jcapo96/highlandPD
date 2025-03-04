@@ -16,13 +16,15 @@ PDSPAnalyzerTreeConverter::PDSPAnalyzerTreeConverter():pdBaseConverter("pduneana
 }
 
 //*****************************************************************************
-void PDSPAnalyzerTreeConverter::FillEventInfo(AnaEventInfo* info){
+void PDSPAnalyzerTreeConverter::FillEventInfo(AnaEventInfoPD* info){
 //*****************************************************************************
 
   info->Run    = run;
   info->SubRun = subrun;
   info->Event  = event;
   info->IsMC   = MC;
+  info->EmptyEvent = !reco_reconstructable_beam_event; 
+  info->HasPandora = (n_beam_slices>0);
 }
 
 //*****************************************************************************
@@ -141,6 +143,7 @@ void PDSPAnalyzerTreeConverter::FillBeamInfo(std::vector<AnaTrueParticleB*>& tru
   
   //Fill beam info
   beam->nMomenta = beam_inst_nMomenta;
+  beam->nTracks = beam_inst_nTracks;
   beam->nFibers[0] = beam_inst_nFibersP1;
   beam->nFibers[1] = beam_inst_nFibersP2;
   beam->nFibers[2] = beam_inst_nFibersP3;    
@@ -196,16 +199,17 @@ void PDSPAnalyzerTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& tr
     FillDaughterParticleTrackInfo(trueParticles, i, dautrk);
     bunch->Particles.push_back(dautrk);
     part->Daughters.push_back(dautrk);
+    part->DaughtersIDs.push_back(dautrk->UniqueID);
   }
 
-  // The daughter showers
-  for(size_t i = 0; i < reco_daughter_allShower_ID->size(); i++){
-    AnaParticlePD* dausho = MakeParticle();
-    FillDaughterPFPInfo(i, dausho);
-    FillDaughterParticleShowerInfo(trueParticles, i, dausho);
-    bunch->Particles.push_back(dausho);
-    part->Daughters.push_back(dausho);
-  }
+  // // The daughter showers
+  // for(size_t i = 0; i < reco_daughter_allShower_ID->size(); i++){
+  //   AnaParticlePD* dausho = MakeParticle();
+  //   FillDaughterPFPInfo(i, dausho);
+  //   FillDaughterParticleShowerInfo(trueParticles, i, dausho);
+  //   bunch->Particles.push_back(dausho);
+  //   part->Daughters.push_back(dausho);
+  // }
 }
 
 
@@ -261,10 +265,11 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
       // Add hits
       AnaHitPD hit;//(plane,0,0,0, point);
 
-      hit.dEdx          = (*reco_beam_dEdX_SCE)[j];
+      //hit.dEdx          = (*reco_beam_dEdX_SCE)[j];
       hit.dQdx          = (*reco_beam_dQdX_SCE)[j];
-      hit.dEdx_calib    = (*reco_beam_calibrated_dEdX_SCE)[j];      
+      hit.dEdx          = (*reco_beam_calibrated_dEdX_SCE)[j];      
       hit.ResidualRange = (*reco_beam_resRange_SCE)[j];
+      hit.Pitch         = (*reco_beam_TrkPitch_SCE)[j];
            
       part->Hits[plane].push_back(hit);
     }
@@ -322,6 +327,13 @@ void PDSPAnalyzerTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* true
       truePart->DirectionEnd[2] = reco_beam_true_byHits_endPz/reco_beam_true_byHits_endP;
     }
     
+    truePart->Position[0] = true_beam_startX;
+    truePart->Position[1] = true_beam_startY;
+    truePart->Position[2] = true_beam_startZ;
+    
+    truePart->PositionEnd[0] = true_beam_endX;
+    truePart->PositionEnd[1] = true_beam_endY;
+    truePart->PositionEnd[2] = true_beam_endZ;
   }
   else{
     truePart->ID  = reco_beam_true_byE_ID;
@@ -366,6 +378,8 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
 //*****************************************************************************
 
   //fill forced track info
+  part->Type = AnaParticlePD::kTrack; //obvious reasons xd
+
   part->TrackID  = (*reco_daughter_allTrack_ID)[itrk];
   
   part->PositionEnd[0]  = (*reco_daughter_allTrack_endX)[itrk];
@@ -386,6 +400,12 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
   part->DirectionStart[2] = (*reco_daughter_allTrack_trackDirZ)[itrk];
   */
 
+  TVector3 dir(part->PositionEnd[0]-part->PositionStart[0],part->PositionEnd[1]-part->PositionStart[1],part->PositionEnd[2]-part->PositionStart[2]);
+  dir.SetMag(1);
+  part->DirectionStart[0] = dir.X();
+  part->DirectionStart[1] = dir.Y();
+  part->DirectionStart[2] = dir.Z();
+
   part->Length     = (*reco_daughter_allTrack_len)[itrk];
   part->Length_alt = (*reco_daughter_allTrack_alt_len)[itrk];
 
@@ -402,41 +422,26 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
   part->vtx_CNN_NHits       = (*reco_daughter_allTrack_vertex_nHits)[itrk];
 
   //fill hits info
-  Float_t dedx, dqdx, dedx_cal, resRange;
-  part->AveragedEdx = 0;
-  part->AveragedQdx = 0;
-  Int_t ncontrib=0;
   for(size_t plane = 2; plane < 3; plane++){   // only the last slice 
     UInt_t nHits = std::min((int)NMAXHITSPERPLANE,(int)(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk].size());
     for(size_t j = 0; j < nHits; j++){   
-      dedx = (*reco_daughter_allTrack_dEdX_SCE)[itrk][j];
-      dqdx = (*reco_daughter_allTrack_dQdX_SCE)[itrk][j];
-      dedx_cal = (*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk][j];
-      resRange = (*reco_daughter_allTrack_resRange_SCE)[itrk][j];  
 
-      part->AveragedEdx += dedx;
-      part->AveragedQdx += dqdx;
-      
       // Add hits
       //no spatial information on the input tree
       AnaHitPD hit;//(plane,0,0,0,point);
       
-      hit.dEdx         = dedx;
-      hit.dQdx         = dqdx;
-      hit.dEdx_calib   = dedx_cal;
-      hit.ResidualRange= resRange;
+      hit.dEdx         = (*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk][j];
+      hit.dQdx         = (*reco_daughter_allTrack_dQdX_SCE)[itrk][j];
+      hit.ResidualRange= (*reco_daughter_allTrack_resRange_SCE)[itrk][j];  
       
       part->Hits[plane].push_back(hit);
-      
-      ncontrib++;
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk]);
   }
 
-  if (ncontrib!=0){
-    part->AveragedEdx /= 1.*ncontrib;
-    part->AveragedQdx /= 1.*ncontrib;
-  }
+  std::pair<double,int> result = pdAnaUtils::Chi2PID(*part,13);
+  part->Chi2Muon = result.first;
+  part->Chi2ndf = result.second;
 
   //------ Truth association ------- //TODO
   if(_isMC){
@@ -845,6 +850,8 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("subrun",&subrun,&b_subrun);
   fChain->SetBranchAddress("event",&event,&b_event);
   fChain->SetBranchAddress("MC",&MC,&b_MC);
+  fChain->SetBranchAddress("reco_reconstructable_beam_event",&reco_reconstructable_beam_event,&b_reco_reconstructable_beam_event);
+  fChain->SetBranchAddress("n_beam_slices",&n_beam_slices,&b_n_beam_slices);
   fChain->SetBranchAddress("true_beam_PDG",&true_beam_PDG,&b_true_beam_PDG);
   fChain->SetBranchAddress("true_beam_mass",&true_beam_mass,&b_true_beam_mass);
   fChain->SetBranchAddress("true_beam_ID",&true_beam_ID,&b_true_beam_ID);
@@ -1136,5 +1143,6 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("beam_inst_nFibersP2",&beam_inst_nFibersP2,&b_beam_inst_nFibersP2);
   fChain->SetBranchAddress("beam_inst_nFibersP3",&beam_inst_nFibersP3,&b_beam_inst_nFibersP3);
   fChain->SetBranchAddress("beam_inst_nMomenta",&beam_inst_nMomenta,&b_beam_inst_nMomenta);
+  fChain->SetBranchAddress("beam_inst_nTracks",&beam_inst_nTracks,&b_beam_inst_nTracks);
   fChain->SetBranchAddress("beam_inst_valid",&beam_inst_valid,&b_beam_inst_valid);
 }

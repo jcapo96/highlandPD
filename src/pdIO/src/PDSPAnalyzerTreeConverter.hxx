@@ -21,7 +21,7 @@ class PDSPAnalyzerTreeConverter: public pdBaseConverter{
 
   // ----------------------------
 
-  virtual void FillEventInfo(AnaEventInfo* info);
+  virtual void FillEventInfo(AnaEventInfoPD* info);
 
   virtual void FillTrueInfo(AnaSpill* spill);
   virtual void FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* truePart);
@@ -53,6 +53,8 @@ protected:
   Int_t           subrun;
   Int_t           event;
   Int_t           MC;
+  Bool_t          reco_reconstructable_beam_event;
+  Int_t           n_beam_slices;
   // True beam info
   Int_t           true_beam_PDG;
   Double_t        true_beam_mass;
@@ -350,6 +352,7 @@ protected:
   Int_t           beam_inst_nFibersP2;
   Int_t           beam_inst_nFibersP3;
   Int_t           beam_inst_nMomenta;
+  Int_t           beam_inst_nTracks;
   Int_t           beam_inst_valid;
  
   // List of branches
@@ -357,6 +360,8 @@ protected:
   TBranch *b_subrun; //!
   TBranch *b_event; //!
   TBranch *b_MC; //!
+  TBranch *b_reco_reconstructable_beam_event; //!
+  TBranch *b_n_beam_slices; //!
   TBranch *b_true_beam_PDG; //!
   TBranch *b_true_beam_mass; //!
   TBranch *b_true_beam_ID; //!
@@ -648,7 +653,8 @@ protected:
   TBranch *b_beam_inst_nFibersP2; //!
   TBranch *b_beam_inst_nFibersP3; //!
   TBranch *b_beam_inst_nMomenta; //!
-  TBranch *b_beam_inst_valid; //!                                                                             
+  TBranch *b_beam_inst_nTracks; //!
+  TBranch *b_beam_inst_valid; //!  
 }; 
 
 

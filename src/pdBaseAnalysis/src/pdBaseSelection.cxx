@@ -1,5 +1,6 @@
 #include "pdBaseSelection.hxx"
 #include "BasicUtils.hxx"
+#include "pdAnalysisUtils.hxx"
 
 //********************************************************************
 pdBaseSelection::pdBaseSelection(bool forceBreak):SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -101,6 +102,43 @@ bool BeamPDGCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   return PDG;
 }
 
+//**************************************************
+bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+
+  //get BeamQualityCuts depending on MC/data and nominal momentum
+  double mean_x, mean_y, mean_z, sigma_x, sigma_y, sigma_z, min_cos;
+  pdAnaUtils::GetBeamQualityCuts(static_cast<AnaEventPD*>(&event),
+				 mean_x,mean_y,mean_z,
+				 sigma_x,sigma_y,sigma_z,
+				 min_cos);
+
+  //cast the box
+  ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
+  
+  // Main track must exist
+  if(!box.MainTrack) return false;
+  
+  // get beam particle
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+  AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+  if(!beamPart)return false;
+
+  //computations
+  double normalized_x = 0;
+  double normalized_y = 0;
+  double normalized_z = 0;
+  double cos = 0;
+
+  normalized_x = abs(box.MainTrack->PositionStart[0]-mean_x)/sigma_x;
+  normalized_y = abs(box.MainTrack->PositionStart[1]-mean_y)/sigma_y;
+  normalized_z = abs(box.MainTrack->PositionStart[2]-mean_z)/sigma_z;
+  for(int i = 0; i < 3; i++)cos = cos + box.MainTrack->DirectionStart[i]*beamPart->DirectionEnd[i];
+
+  //check cut
+  if(normalized_x < 3 && normalized_y < 3 && normalized_z < 3 && cos > min_cos)return true;
+  else return false;
+}
 
 //**************************************************
 void pdBaseSelection::InitializeEvent(AnaEventC& eventC){
@@ -114,5 +152,3 @@ void pdBaseSelection::InitializeEvent(AnaEventC& eventC){
   
   boxUtils::FillCandidateAndDaughters(event);
 }
-
-

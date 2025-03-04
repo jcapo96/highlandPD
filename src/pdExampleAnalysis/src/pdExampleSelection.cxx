@@ -20,13 +20,13 @@ void pdExampleSelection::DefineSteps(){
   AddStep(StepBase::kCut,    "beam track in TPC",            new BeamTrackExistsCut());
   //AddStep(StepBase::kCut,    "beam particle is proton-like", new BeamPDGCut(2212);
   //AddStep(StepBase::kCut,    "pandora reco worked",          new BeamQualityCut());
-  AddStep(StepBase::kCut,    "proton CSDA range",            new CSDARangeCut());
+  AddStep(StepBase::kCut,    "proton CSDA range",            new pdExampleCSDARangeCut());
   
   SetBranchAlias(0,"trunk");
 }
 
 //**************************************************
-bool CSDARangeCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+bool pdExampleCSDARangeCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
   (void)event;

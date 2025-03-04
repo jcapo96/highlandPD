@@ -54,7 +54,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 #------ ROOT -------------------
 # Add Minuit for CoherentFit Algorithm
-find_package(ROOT REQUIRED COMPONENTS Geom EG Minuit)
+find_package(ROOT REQUIRED COMPONENTS Geom EG Minuit MathMore)
 #find_package(ROOT REQUIRED COMPONENTS Geom EG TMVA)
 include(${ROOT_USE_FILE})
 
@@ -68,6 +68,8 @@ find_package(HIGHLAND REQUIRED)
 message("HighLAND_USE_FILE:            ${HIGHLAND_USE_FILE}")
 message("HighLAND include directories: ${HIGHLAND_INCLUDE_DIRS}")
 message("HighLAND libraries:           ${HIGHLAND_LIBRARIES}")
+include_directories(${HIGHLAND_INCLUDE_DIRS})
+link_directories(${HIGHLAND_LIBRARY_DIR})
 
 #------ TENSORFLOW------------------
 # find_package(TENSORFLOW REQUIRED)
@@ -184,6 +186,16 @@ target_include_directories(secondaryKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${
 target_link_libraries(secondaryKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS secondaryKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+add_executable(secondaryProton.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunSecondaryProtonAnalysis.cxx)
+target_include_directories(secondaryProton.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(secondaryProton.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS secondaryProton.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+add_executable(secondaryKaonXS.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunSecondaryKaonXSAnalysis.cxx)
+target_include_directories(secondaryKaonXS.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+target_link_libraries(secondaryKaonXS.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+INSTALL(TARGETS secondaryKaonXS.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 add_executable(CreateMiniTreeKaon.exe ${CMAKE_SOURCE_DIR}/src/secondaryKaonAnalysis/app/RunCreateMiniTreeKaon.cxx)
 target_include_directories(CreateMiniTreeKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
 target_link_libraries(CreateMiniTreeKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
@@ -236,6 +248,14 @@ add_custom_target(include ALL SOURCES ${highlandPD_inc2} ${CMAKE_SOURCE_DIR})
 #------- dependencies ----------------------------------
 #-------------------------------------------------------
 
+add_dependencies(QPIX.exe                          StoppingProton.exe)
+add_dependencies(StoppingProton.exe                BeamWeights.exe)
+add_dependencies(BeamWeights.exe                   BrokenTracks.exe)
+add_dependencies(BrokenTracks.exe                  CreateMichelRemovingMiniTree.exe)
+add_dependencies(CreateMichelRemovingMiniTree.exe  dEdxCalibration.exe)
+add_dependencies(dEdxCalibration.exe               dQdxXCalibration.exe)
+add_dependencies(dQdxXCalibration.exe              dQdxYZCalibration.exe)
+add_dependencies(dQdxYZCalibration.exe             pdExampleAnalysis.exe)
 add_dependencies(pdExampleAnalysis.exe             CoherentFit.exe)
 add_dependencies(CoherentFit.exe                   CreateMiniTreeCandidates.exe)
 add_dependencies(CreateMiniTreeCandidates.exe      CreateMiniTreeEventCandidates.exe)

@@ -2,11 +2,10 @@
 #include "TSpline.h"
 #include "CategoryManager.hxx"
 #include "standardPDTree.hxx"
-#include "CNNUtils.hxx"
 #include <TH3F.h>
 #include <TH2F.h>
-
-bool debug = false;
+#include <TF1.h>
+#include <Math/VavilovAccurate.h>
 
 //data for range-momentum conversion, muons
 //http://pdg.lbl.gov/2012/AtomicNuclearProperties/MUON_ELOSS_TABLES/muonloss_289.pdf divided by LAr density for cm
@@ -58,36 +57,6 @@ templates[ 321 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_ka"  );
 templates[ 13 ]   = (TProfile*)dEdX_template_file->Get( "dedx_range_mu"  );
 templates[ 2212 ] = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 */
-
-TFile* kaon_PID_file = new TFile( (std::string(getenv("PDUTILSROOT"))+"/data/kaon_PID.root").c_str(), "OPEN" );
-TH1F* kaon_PID = (TH1F*)kaon_PID_file->Get("kaon_PID");
-
-TFile* E_field_file = new TFile( (std::string(getenv("PDUTILSROOT"))+"/data/SCE_DataDriven_180kV_v3.root").c_str(), "OPEN" );
-
-TH3F* ex_neg = (TH3F*)E_field_file->Get("Reco_ElecField_X_Neg");
-TH3F* ey_neg = (TH3F*)E_field_file->Get("Reco_ElecField_Y_Neg");
-TH3F* ez_neg = (TH3F*)E_field_file->Get("Reco_ElecField_Z_Neg");
-TH3F* ex_pos = (TH3F*)E_field_file->Get("Reco_ElecField_X_Pos");
-TH3F* ey_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Y_Pos");
-TH3F* ez_pos = (TH3F*)E_field_file->Get("Reco_ElecField_Z_Pos");
-
-
-std::string X_correction_name = std::string(getenv("PDUTILSROOT"))+"/data/Xcalo_r5387.root";
-std::string YZ_correction_name = std::string(getenv("PDUTILSROOT"))+"/data/YZcalo_r5387.root";
-
-
-TFile* X_correction_file  = new TFile( X_correction_name.c_str(), "OPEN" );
-TFile* YZ_correction_file = new TFile( YZ_correction_name.c_str(), "OPEN" );
-
-UInt_t planeID=2;
-std::string hist_name = "dqdx_X_correction_hist_" + std::to_string(planeID);
-TH1F* X_correction_hist = (TH1F*)X_correction_file->Get( hist_name.c_str() );
-
-TH2F* YZ_neg = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_negativeX_hist_2");
-TH2F* YZ_pos = (TH2F*)YZ_correction_file->Get("correction_dqdx_ZvsY_positiveX_hist_2");
-
-
-CNNUtils* _cnn = NULL;
 
 //*****************************************************************************
 Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
@@ -218,28 +187,6 @@ Float_t pdAnaUtils::ComputeCSDARange(double beammom, int pdg){
   return CSDARange;
 }
 
-
-//********************************************************************
-Float_t pdAnaUtils::ComputePIDA(const AnaParticlePD &track) {
-//********************************************************************
-
-  Float_t cut=30;
-
-  Float_t PIDA=0;
-  Int_t ncontrib=0;
-  for (Int_t i=0;i<3;i++){
-    for (UInt_t j=0;j<track.Hits[i].size();j++){
-      if (track.Hits[i][j].ResidualRange<cut && track.Hits[i][j].ResidualRange>0){
-        ncontrib++;
-        PIDA += track.Hits[i][j].dEdx*pow(track.Hits[i][j].ResidualRange,0.42);
-      }
-    }
-  }
-  if (ncontrib>0) PIDA /= ncontrib*1.;
-
-  return PIDA;
-}
-
 //********************************************************************
 Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 //********************************************************************
@@ -264,276 +211,6 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 }
 
 //********************************************************************
-Float_t pdAnaUtils::ComputeDeDxFromDqDx(Float_t dqdx_adc, Int_t plane, Float_t x, Float_t y, Float_t z) {
-//********************************************************************
-
-  // Formula found for example at https://arxiv.org/abs/1306.1712v1
-  
-  
-  // Paremeters from /cvmfs/dune.opensciencegrid.org/products/dune/protoduneana/v09_01_00/job/ProtoDUNECalibration.fcl
-  
-  /***************modified box model parameters and function*****************/
-  double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia) 
-  double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
-  double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
-  double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm. In MeV/e
-  //  double Efield1=0.50;//kV/cm protoDUNE electric filed
-
-  // TODO: hit position not available
-  double Efield1 = ComputeTotalEField(0,0,0);//kV/cm protoDUNE electric filed
-  //  std::cout << x << " " << y << " " << z << " " << Efield1 << std::endl;
-  //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
-  //  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.86e-3}; //right cali constant for the run 5387. This converts from ADC to e
-  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.57e-3}; //
-  //  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
-    double norm_factor[3] = {1.0078, 1.0082, 0.9946};
-
-   
-  // dq/dx should be in e/cm
-  // dE/dx is returned in MeV/cm
-
-  double dqdx = dqdx_adc/calib_factor[plane]*norm_factor[plane];
-  double beta = betap/(Rho*Efield1); // cm/MeV
-
-  if (debug){
-    std::cout << "  --> dqdx_adc, dqdx_e (pdAnaUtils)= " << dqdx_adc << ", " << dqdx << std::endl;
-    
-    std::cout << beta << " " << Wion << " " << alpha << std::endl;
-    std::cout << "  --> dedx (pdAnaUtils)= " << (exp(dqdx*beta*Wion)-alpha)/beta << std::endl;
-  }
-  return (exp(dqdx*beta*Wion)-alpha)/beta;
-}
-
-//********************************************************************
-Float_t pdAnaUtils::ComputeDqDxFromDeDx(Float_t dedx, Int_t plane) {
-//********************************************************************
-
-  // Paremeters from /cvmfs/dune.opensciencegrid.org/products/dune/protoduneana/v09_01_00/job/ProtoDUNECalibration.fcl
-  
-  /***************modified box model parameters and function*****************/
-  double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia) 
-  double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
-  double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
-  double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm. In MeV/e
-  //  double Efield1=0.50;//kV/cm protoDUNE electric filed
-
-  // TODO: hit position not available
-  double Efield1 = ComputeTotalEField(-50,450,40);//kV/cm protoDUNE electric filed
-
-  if (debug)
-    std::cout << Efield1 << std::endl;
-  //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
-  double calib_factor[3] = {4.81e-3, 4.81e-3, 4.86e-3}; //right cali constant for the run 5387. This converts from ADC to e
-  double norm_factor[3] = {1.0078, 1.0082, 0.9947};
-
-   
-  // dq/dx should be in e/cm
-  // dE/dx is returned in MeV/cm
-
-  double beta = betap/(Rho*Efield1); // cm/MeV
-  
-  return  log(dedx*beta + alpha)/(beta*Wion)*calib_factor[plane]/norm_factor[plane];
-}
-
-//********************************************************************
-Float_t pdAnaUtils::ComputeTotalEField( Float_t x, Float_t y, Float_t z ){
-//********************************************************************
-
-  if( x >= 0 ){
-    Float_t ex = 0.5 + 0.5 * ex_pos->GetBinContent( ex_pos->FindBin( x, y, z ) );
-    Float_t ey =       0.5 * ey_pos->GetBinContent( ey_pos->FindBin( x, y, z ) );
-    Float_t ez =       0.5 * ez_pos->GetBinContent( ez_pos->FindBin( x, y, z ) );
-    return sqrt( (ex*ex) + (ey*ey) + (ez*ez) );
-  }
-  else if( x < 0 ){
-    Float_t ex = 0.5 + 0.5 * ex_neg->GetBinContent( ex_neg->FindBin( x, y, z ) );
-    Float_t ey =       0.5 * ey_neg->GetBinContent( ey_neg->FindBin( x, y, z ) );
-    Float_t ez =       0.5 * ez_neg->GetBinContent( ez_neg->FindBin( x, y, z ) );
-    return sqrt( (ex*ex) + (ey*ey) + (ez*ez) );
-  }
-  else return 0.5;
-}
-
-//********************************************************************
-Float_t* pdAnaUtils::ExtrapolateToZ(const AnaParticlePD* part, Float_t z, Float_t* posz) {
-//********************************************************************
-
-  // Get track starting point
-  double xi,yi,zi;
-  xi = part->PositionStart[0];
-  yi = part->PositionStart[1];
-  zi = part->PositionStart[2];
-
-  // Get track direction
-  double ux, uy, uz;
-  ux = part->DirectionStart[0];
-  uy = part->DirectionStart[1];
-  uz = part->DirectionStart[2];
-
-  // zi = z + n * uz; get n
-  double n = (zi-z)/uz;
-
-  // Get position at z plane
-  posz[0] = xi-n*ux;
-  posz[1] = yi-n*uy;
-  posz[2] = zi-n*uz;
-  
-  //std::cout << posz[0] << " " << posz[1] << " " << posz[2] << std::endl;
-
-  return posz;
-}
-
-
-
-//********************************************************************
-void pdAnaUtils::ComputeBinnedDeDx(const AnaParticlePD* part, Float_t max_resrange, Int_t nbins, Float_t** avg_dedx){  
-//********************************************************************
-
-  for (Int_t i=0;i<3;i++){
-    for (Int_t j=0;j<nbins;j++){
-      avg_dedx[i][j]=0;
-    }
-  }
-    
-  
-  Float_t bin_width = max_resrange/nbins;
-  
-  for (Int_t i=0;i<3;i++){
-    for (Int_t k=0;k<nbins;k++){
-      Float_t cut_min = k*bin_width;
-      Float_t cut_max = (k+1)*bin_width;      
-      Float_t ncontrib=0;
-      //      std::cout << "k = " << k << std::endl;
-      for (Int_t j=0;j<std::min((Int_t)part->NHitsPerPlane[i],(Int_t)NMAXHITSPERPLANE);j++){
-        // a protection against crazy values
-        if (part->Hits[i][j].ResidualRange<0.01 || part->Hits[i][j].dEdx<0.01 || part->Hits[i][j].dEdx>100) continue;
-        if (part->Hits[i][j].ResidualRange<cut_max && part->Hits[i][j].ResidualRange>cut_min){
-          ncontrib++;
-          avg_dedx[i][k] +=part->Hits[i][j].dEdx;
-        }
-      }      
-      if (ncontrib>0)
-        avg_dedx[i][k] /=ncontrib;
-
-    }
-  }
-  
-}
-
-//********************************************************************
-AnaTrueParticle* pdAnaUtils::FindBeamTrueParticle(const AnaSpillB& spill){  
-//********************************************************************
-
-
-  AnaTrueParticle* beampart=NULL;
-  
-  AnaBeamPD* beam         = static_cast<AnaBeamPD*>(spill.Beam);
-  AnaParticleMomB* beamPart = beam->BeamParticle;
-
-  Float_t beammom=0;
-  if (beamPart){
-    if (beamPart->TrueObject){
-      beammom = static_cast<AnaTrueParticleB*>(beamPart->TrueObject)->Momentum;
-    }
-  }
-  
-  if (spill.TrueParticles.size() > 0){
-    for (UInt_t i =0; i< spill.TrueParticles.size();i++){
-      if (beammom == spill.TrueParticles[i]->Momentum){
-        beampart = static_cast<AnaTrueParticle*> (spill.TrueParticles[i]);
-        break;
-      }
-    }
-  }
-
-  return beampart;
-
-}
-
-
-//********************************************************************
-void pdAnaUtils::AddParticles(AnaParticlePD* part1, AnaParticlePD* part2){  
-//********************************************************************
-
-  part1->Length     += part2->Length;
-  part1->NHits      += part2->NHits;
-  
-  anaUtils::CopyArray(part2->DirectionEnd,    part1->DirectionEnd,   3);
-  anaUtils::CopyArray(part2->PositionEnd,     part1->PositionEnd,    4);
-  
-  AnaParticlePD* part1c = part1->Clone();
-    
-    
-  for (Int_t i=0;i<3;i++){
-    part1->NHitsPerPlane[i] += part2->NHitsPerPlane[i];
-
-    Int_t last_hit=0;
-    for (Int_t j=0;j<std::min((Int_t)NMAXHITSPERPLANE,part2->NHitsPerPlane[i]);j++){
-      Int_t offset = 0;
-      part1->Hits[i][j+offset].dEdx           = part2->Hits[i][j].dEdx;          
-      part1->Hits[i][j+offset].dQdx           = part2->Hits[i][j].dQdx;          
-      part1->Hits[i][j+offset].dEdx_calib     = part2->Hits[i][j].dEdx_calib;     
-      part1->Hits[i][j+offset].dQdx_NoSCE     = part2->Hits[i][j].dQdx_NoSCE;     
-      part1->Hits[i][j+offset].ResidualRange  = part2->Hits[i][j].ResidualRange; 
-      part1->Hits[i][j+offset].Position.SetX(   part2->Hits[i][j].Position.X());
-      last_hit=j;
-    }
-
-    for (Int_t j=0;j<std::min((Int_t)part1->NHitsPerPlane[i],(Int_t)NMAXHITSPERPLANE-part2->NHitsPerPlane[i]);j++){
-      Int_t offset = part1->NHitsPerPlane[i];
-      part1->Hits[i][j+offset].dEdx           = part1c->Hits[i][j].dEdx;          
-      part1->Hits[i][j+offset].dQdx           = part1c->Hits[i][j].dQdx;          
-      part1->Hits[i][j+offset].dEdx_calib     = part1c->Hits[i][j].dEdx_calib;     
-      part1->Hits[i][j+offset].dQdx_NoSCE     = part1c->Hits[i][j].dQdx_NoSCE;     
-      part1->Hits[i][j+offset].Position.SetX(   part1c->Hits[i][j].Position.X());   
-      part1->Hits[i][j+offset].ResidualRange  = part1c->Hits[i][j].ResidualRange+part2->Hits[i][last_hit].ResidualRange;
-    }    
-  }
-
-  delete part1c;
-  
-  for (int i=0; i<3; i++) {
-    part1->PIDA[i]     = part2->PIDA[i];
-    part1->ReconPDG[i] = part2->ReconPDG[i];
-
-    for (int j=0; j<10; j++) {
-      part1->PID[i][j]   = part2->PID[i][j];
-      part1->CALO[i][j] += part2->CALO[i][j];
-    }
-  }
-
-  part1->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(part1->Length, 13);
-  part1->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(part1->Length, 2212);
-
-  // A pointer to the original particle
-  //    Original = &part;
-  
-  
-  
-  //  part1->TrueEff       = part->TrueEff;
-  //  part1->TruePur       = part->TruePur;
-  
-  
-  //  AveragedQdx   = part->AveragedQdx;
-  //  AveragedEdx   = part->AveragedEdx;
-  //  MomentumError = part->MomentumError;
-
-  // TODO: just to mark it as a broken track
-  part1->NDOF       = 8888;
-  //  Chi2          = part->Chi2;
-  //  FitPDG        = part->FitPDG;
-  //  Bunch         = part->Bunch;
-
-  
-  // TODO
-  //  Daughters.clear();
-  //  for (UInt_t i=0;i<part.Daughters.size();i++){
-  //    Daughters.push_back(part.Daughters[i]->Clone());
-  //  }
-
-}
-
-//********************************************************************
 void pdAnaUtils::ComputeDistanceToVertex(AnaParticlePD* part, std::vector<Float_t>& distance){
 //********************************************************************
 
@@ -554,6 +231,32 @@ void pdAnaUtils::ComputeDistanceToVertex(AnaParticlePD* part, std::vector<Float_
   }
 }
 
+//********************************************************************
+AnaTrueParticle* pdAnaUtils::GetBeamTrueParticle(const AnaSpillB& spill){  
+//********************************************************************
+
+  AnaTrueParticle* beampart = NULL;
+  
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(spill.Beam);
+  AnaParticleMomB* beamPart = beam->BeamParticle;
+
+  int true_id = 0;
+  if(beamPart)
+    if(beamPart->TrueObject)
+      true_id = static_cast<AnaTrueParticleB*>(beamPart->TrueObject)->ID;
+  
+  if(spill.TrueParticles.size() > 0){
+    for(int i = 0; i < (int)spill.TrueParticles.size(); i++){
+      if(true_id == spill.TrueParticles[i]->ID){
+        beampart = static_cast<AnaTrueParticle*>(spill.TrueParticles[i]);
+        break;
+      }
+    }
+  }
+
+  return beampart;
+}
+
 //*****************************************************************************
 AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
 //*****************************************************************************
@@ -572,7 +275,7 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
 
 //*****************************************************************************
 AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID){
- //*****************************************************************************
+//*****************************************************************************
  
   // Get all reconstructed tracks in the event
   for (UInt_t i=0;i<trueParticles.size();i++){
@@ -584,36 +287,20 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(const std::vector<AnaTrueParticle
   return NULL;
 }
 
-
-//********************************************************************
-void pdAnaUtils::FillBeamDaughterCounters(AnaEventB& event, PDCounters& counters){
-//********************************************************************
-
-  AnaBeamPD* beam  = static_cast<AnaBeamPD*>(event.Beam); 
-  AnaParticleB* beamPart = beam->BeamParticle;
-  if (!beamPart) return;
-  AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(beamPart->TrueObject);  
-  if (!trueBeamPart) return;
-  
-  counters.ntrue_beamdaughter_piplus=0;
-  counters.ntrue_beamdaughter_piminus=0;
-  counters.ntrue_beamdaughter_pi0=0;
-  counters.ntrue_beamdaughter_proton=0;
-  counters.ntrue_beamdaughter_neutron=0;
-  counters.ntrue_beamdaughter_nucleus=0;
-
-  for(size_t i = 0; i < trueBeamPart->Daughters.size(); i++){
-    AnaTrueParticlePD* trueBeamDaughter = pdAnaUtils::GetTrueParticle(&event, trueBeamPart->Daughters[i]);
-    if (!trueBeamDaughter) continue;
-    if      (trueBeamDaughter->PDG==211)  counters.ntrue_beamdaughter_piplus++;
-    else if (trueBeamDaughter->PDG==-211) counters.ntrue_beamdaughter_piminus++;
-    else if (trueBeamDaughter->PDG==111)  counters.ntrue_beamdaughter_pi0++;
-    else if (trueBeamDaughter->PDG==2212) counters.ntrue_beamdaughter_proton++;
-    else if (trueBeamDaughter->PDG==2112) counters.ntrue_beamdaughter_neutron++;
-    else if (trueBeamDaughter->PDG>2212)  counters.ntrue_beamdaughter_nucleus++;
+//*****************************************************************************
+AnaParticlePD* pdAnaUtils::GetRecoParticleWithAssociatedTrueID(const std::vector<AnaParticleB*> particles, Int_t true_ID){
+//*****************************************************************************
+ 
+  // loop over reconstructed tracks
+  for(UInt_t i = 0; i < particles.size(); i++){
+    AnaTrueParticlePD* truepart = static_cast<AnaTrueParticlePD*>(particles[i]->TrueObject);
+    if(!truepart)continue;
+    if(truepart->ID == true_ID)
+      return static_cast<AnaParticlePD*>(particles[i]);
   }
-}
 
+  return NULL;
+}
 
 //*****************************************************************************
 std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const int pdg ){
@@ -676,41 +363,69 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
 }
 
 //*****************************************************************************
-std::pair<double,int> pdAnaUtils::kaonPID(const AnaParticlePD& part){
+std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, const int pdg, const double RR){
 //*****************************************************************************	
 
-  const Int_t max_bin = 11; // res range = 25;
+  double pid_chi2 = 0.; 
+  int npt = 0;
 
-  Int_t plane = 2;
+  Int_t plane=2;
 
-  if(part.Hits[plane].size() < 1)
-    return std::make_pair(-999.,-999);
+  TProfile* profile;
   
-  //loop over histogram bins
-  double chi2 = 0;
-  int nbins = 0;
-  for(int ibin = 1; ibin < std::min((int)kaon_PID->GetNbinsX(),max_bin); ibin++){
-    double min_rr = kaon_PID->GetBinCenter(ibin)-kaon_PID->GetXaxis()->GetBinWidth(ibin)/2;
-    double max_rr = kaon_PID->GetBinCenter(ibin)+kaon_PID->GetXaxis()->GetBinWidth(ibin)/2;
-    //loop over hits
-    std::vector<double> dEdx_vector;
-    dEdx_vector.clear();
-    for(int ihit = 0; ihit < (int)part.Hits[plane].size(); ihit++){
-      if(part.Hits[plane][ihit].ResidualRange>min_rr && part.Hits[plane][ihit].ResidualRange<max_rr){
-	if(part.Hits[plane][ihit].dEdx_calib!=-999 && part.Hits[plane][ihit].dEdx_calib<1000){
-	  dEdx_vector.push_back(part.Hits[plane][ihit].dEdx_calib);
-	}
+  if(pdg == 2212)profile = ProtonTemplate;
+  else if(pdg == 13)profile = MuonTemplate;
+  else if(pdg == 321)profile = KaonTemplate;
+  else{
+    std::cout << "no profile for pdg " << pdg << std::endl;
+    return std::make_pair(9999., -1);
+  }
+  
+  if( part.Hits[plane].size() < 1 )
+    return std::make_pair(9999., -1);
+  
+  //check particles' length is at least as long as maximum RR
+  // if(part.Length<RR) 
+  //   return std::make_pair(9999., -1);
+  //Ignore first and last point
+  for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
+    //Skip large pulse heights
+    if( part.Hits[plane][i].dEdx > 1000. || part.Hits[plane][i].dEdx==-999)
+      continue;
+
+    //break whenever above RR upper limit, 26 cm is maximum
+    if(part.Hits[plane][i].ResidualRange > RR)continue;
+    
+    int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
+
+    if( bin >= 1 && bin <= profile->GetNbinsX() ){
+      
+      double template_dedx = profile->GetBinContent( bin );
+      if( template_dedx < 1.e-6 ){
+        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;        
       }
-    }
-    if(dEdx_vector.empty())break;
-    double dEdx       = TMath::Mean(dEdx_vector.begin(),dEdx_vector.end());
-    double dEdx_error = 0;//TMath::RMS(dEdx_vector.begin(),dEdx_vector.end());
-    chi2 = chi2 + pow(dEdx-kaon_PID->GetBinContent(ibin),2)/(pow(kaon_PID->GetBinError(ibin),2)+pow(dEdx_error,2));
-    nbins++;
+      
+      
+      double template_dedx_err = profile->GetBinError( bin );
+      if( template_dedx_err < 1.e-6 ){
+        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
+      }
+
+      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx * part.Hits[plane][i].dEdx;      
+      dedx_res *= part.Hits[plane][i].dEdx; 
+      
+      
+      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
+      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
+            
+      ++npt;      
+    }	
   }
 
-  if(nbins==0)return std::make_pair(-999.,-999);
-  else return std::make_pair(chi2,nbins);
+  if( npt == 0 )	
+    return std::make_pair(9999., -1);
+	  	
+  return std::make_pair(pid_chi2, npt); 	
 }
 
 //*****************************************************************************
@@ -769,148 +484,6 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
   else return true;
 }
 
-
-//***************************************************************
-std::vector< int > pdAnaUtils::GetPID( const AnaBeamPD& beam, double nominal_momentum ){
-//***************************************************************
-  const auto& thePIDCands = GetPIDCandidates(beam, nominal_momentum);
-  std::vector< int > thePIDs = thePIDCands.getPDGCodes();
-  return thePIDs;        
-}
-
-//***************************************************************
-PossibleParticleCands2 pdAnaUtils::GetPIDCandidates( const AnaBeamPD& beam, double nominal_momentum ){
-//***************************************************************
-  return GetPIDCandidates_CERNCalib(beam,nominal_momentum);
-}
-//***************************************************************
-PossibleParticleCands2 pdAnaUtils::GetPIDCandidates_CERNCalib( const AnaBeamPD& beam, double nominal_momentum ){
-//***************************************************************
-  PossibleParticleCands2 candidates;
-
-
-  bool fUseCERNCalibSelection=true;
-  
-  //Check if momentum is in valid set
-  std::vector< double > valid_momenta = {1., 2., 3., 6., 7.};
-  if( std::find(valid_momenta.begin(), valid_momenta.end(), nominal_momentum) == valid_momenta.end() ){
-    std::cout << "Reference momentum " << nominal_momentum << " not valid" << std::endl;
-    return candidates;
-  }
-  //Get the high/low pressure Cerenkov info
-  //int high_pressure_status, low_pressure_status; 
-  int high_pressure_status = beam.CerenkovStatus[0];
-  int low_pressure_status  = beam.CerenkovStatus[1];
-  //std::cout << "Pressures: " << beam.GetCKov0Pressure() << " " << beam.GetCKov1Pressure() << std::endl;
-
-  //if( beam.GetCKov0Pressure() < beam.GetCKov1Pressure() ){
-  //  high_pressure_status = beam.GetCKov1Status();
-  //  low_pressure_status = beam.GetCKov0Status();
-  //}
-  //else{
-  //  high_pressure_status = beam.GetCKov0Status();
-  //  low_pressure_status = beam.GetCKov1Status();
-  //}
-
-  if( nominal_momentum == 1. ){
-    if( beam.TOF < 0 ){
-      std::cout << "TOF invalid" << std::endl;
-      return candidates;
-    }
-    if( low_pressure_status == -1 ){
-      std::cout << "High pressure status invalid" << std::endl;
-      return candidates;
-    }
-    const double & tof = beam.TOF;
-    if ( 
-        ((fUseCERNCalibSelection && tof < 105.) 
-            || (!fUseCERNCalibSelection && tof < 170.))
-        && low_pressure_status == 1 
-       ) {
-      candidates.electron = true;
-    }
-    else if ( 
-        ((fUseCERNCalibSelection && tof < 110.) 
-            || (!fUseCERNCalibSelection && tof < 170.))
-        && low_pressure_status == 0 ){
-      candidates.muon = true;
-      candidates.pion = true;
-    }
-    else if ( 
-        ((fUseCERNCalibSelection && tof > 110. && tof < 160.) 
-            || (!fUseCERNCalibSelection && tof > 170.))
-        && low_pressure_status == 0 ) {
-      candidates.proton = true;
-    }
-  }
-  else if( nominal_momentum == 2. ){
-    if( beam.TOF < 0 ){
-      std::cout << "TOF invalid" << std::endl;
-      return candidates;
-    }
-    if( low_pressure_status == -1 ){
-      std::cout << "High pressure Cerenkov status invalid" << std::endl;
-      return candidates;
-    }
-    const double & tof = beam.TOF;
-    if ( 
-        ((fUseCERNCalibSelection && tof < 105.) 
-            || (!fUseCERNCalibSelection && tof < 160.))
-        && low_pressure_status == 1 
-       ) {
-      candidates.electron = true;
-    }
-    else if ( 
-        ((fUseCERNCalibSelection && tof < 103.) 
-            || (!fUseCERNCalibSelection && tof < 160.))
-        && low_pressure_status == 0 ){
-      candidates.muon = true;
-      candidates.pion = true;
-    }
-    else if ( 
-        ((fUseCERNCalibSelection && tof > 103. && tof < 160.) 
-            || (!fUseCERNCalibSelection && tof > 160.))
-        && low_pressure_status == 0 ) {
-      candidates.proton = true;
-    }
-  }
-  else if( nominal_momentum == 3. ){
-    if( high_pressure_status == -1 || low_pressure_status == -1 ){
-      std::cout << "At least one Cerenkov status invalid " << std::endl;
-      std::cout << "High: " << high_pressure_status << " Low: " << low_pressure_status << std::endl;
-      return candidates;
-    }
-    else if ( low_pressure_status == 1 && high_pressure_status == 1 ) 
-      candidates.electron = true;
-    else if ( low_pressure_status == 0 && high_pressure_status == 1 ){
-      candidates.muon = true;
-      candidates.pion = true;
-    }
-    else{ // low, high = 0, 0
-      candidates.proton = true;
-      candidates.kaon = true; 
-    }
-  }
-  else if( nominal_momentum == 6. || nominal_momentum == 7. ){
-    if( high_pressure_status == -1 || low_pressure_status == -1 ){
-      std::cout << "At least one Cerenkov status invalid " << std::endl;
-      std::cout << "High: " << high_pressure_status << " Low: " << low_pressure_status << std::endl;
-      return candidates;
-    }
-    else if ( low_pressure_status == 1 && high_pressure_status == 1 ){
-      candidates.electron = true;
-      candidates.muon = true;
-      candidates.pion = true;
-    }
-    else if ( low_pressure_status == 0 && high_pressure_status == 1 ) 
-      candidates.kaon = true; 
-    else  // low, high = 0, 0
-      candidates.proton = true;
-  }
-  return candidates;
-
-}
-
 //***************************************************************
 AnaParticlePD* pdAnaUtils::GetBeamParticle(const AnaEventC& event){
 //***************************************************************
@@ -963,6 +536,85 @@ Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part)
 }
 
 //***************************************************************
+Float_t pdAnaUtils::ComputeTrackLengthFromTrajectoryPoints(AnaParticlePD* part){
+//***************************************************************
+  
+  if(!part)return -999;
+  
+  Float_t length = 0.;
+  
+  int ntps = part->TrjPoints.size();
+  int i0 = 0;
+  double x0 = 0,y0 = 0,z0 = 0,dx = 0,dy = 0,dz = 0;
+  for(int itp = 0; itp < ntps; itp++){
+    if(part->TrjPoints[itp].IsValid()){
+      x0 = part->TrjPoints[itp].Position.X();
+      y0 = part->TrjPoints[itp].Position.Y();
+      z0 = part->TrjPoints[itp].Position.Z();
+      i0 = itp;
+      break;
+    }
+  }
+
+  for(int itp = i0; itp < ntps; itp++){
+    if(!part->TrjPoints[itp].IsValid())continue;
+    dx = part->TrjPoints[itp].Position.X()-x0;
+    dy = part->TrjPoints[itp].Position.Y()-y0;
+    dz = part->TrjPoints[itp].Position.Z()-z0;
+    
+    length += sqrt(dx*dx+dy*dy+dz*dz);
+    
+    x0 = part->TrjPoints[itp].Position.X();
+    y0 = part->TrjPoints[itp].Position.Y();
+    z0 = part->TrjPoints[itp].Position.Z();
+  }
+  
+  return length;
+}
+
+//***************************************************************
+void pdAnaUtils::ComputeParticlePositionAndDirection(AnaParticlePD* part){
+//***************************************************************
+  
+  if(!part)return;
+
+  int ntps = part->TrjPoints.size();
+  if(ntps<1)return;
+
+  int ifirst = -1;
+  for(int itp = 0; itp < ntps; itp++){
+    if(part->TrjPoints[itp].IsValid()){
+      ifirst = itp;
+      break;
+    }
+  }
+  if(ifirst != -1){
+    part->PositionStart[0] = part->TrjPoints[ifirst].Position.X();
+    part->PositionStart[1] = part->TrjPoints[ifirst].Position.Y();
+    part->PositionStart[2] = part->TrjPoints[ifirst].Position.Z();
+    part->DirectionStart[0] = part->TrjPoints[ifirst].Direction.X();
+    part->DirectionStart[1] = part->TrjPoints[ifirst].Direction.Y();
+    part->DirectionStart[2] = part->TrjPoints[ifirst].Direction.Z();
+  }
+  
+  int ilast  = -1;
+  for(int itp = 1; itp < ntps; itp++){
+    if(part->TrjPoints[ntps-itp].IsValid()){
+      ilast = ntps-itp;
+      break;
+    }
+  }
+  if(ilast != -1){
+    part->PositionEnd[0] = part->TrjPoints[ilast].Position.X();
+    part->PositionEnd[1] = part->TrjPoints[ilast].Position.Y();
+    part->PositionEnd[2] = part->TrjPoints[ilast].Position.Z();
+    part->DirectionEnd[0] = part->TrjPoints[ilast].Direction.X();
+    part->DirectionEnd[1] = part->TrjPoints[ilast].Direction.Y();
+    part->DirectionEnd[2] = part->TrjPoints[ilast].Direction.Z();
+  } 
+}
+
+//***************************************************************
 Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> dEdx){
 //***************************************************************
 
@@ -996,7 +648,6 @@ Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high
   return accumulated/counter;
 }
 
-
 //***************************************************************
 Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<AnaHitPD> hits){
 //***************************************************************
@@ -1029,50 +680,6 @@ Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high
   }
   
   return accumulated/counter;
-}
-
-
-
-//***************************************************************
-Float_t pdAnaUtils::ComputeCalibrateddQdX(Float_t prim_dqdx, const TVector3& pos){
-//***************************************************************
-
-  Float_t hit_x = pos.X();
-  Float_t hit_y = pos.Y();
-  Float_t hit_z = pos.Z();
-	
-  if( hit_y < 0. || hit_y > 600. ) return prim_dqdx;
-  if( hit_z < 0. || hit_z > 695. ) return prim_dqdx;
-	
-  Int_t X_bin = X_correction_hist->FindBin( hit_x );
-  if (X_bin<1) X_bin = 1;
-  if (X_bin>148) X_bin = 148;
-
-
-  Float_t X_correction = X_correction_hist->GetBinContent(X_bin);
-	
-  double YZ_correction = (
-                          ( hit_x < 0 )
-                          ? YZ_neg->GetBinContent( YZ_neg->FindBin( hit_z, hit_y ) ) 
-                          : YZ_pos->GetBinContent( YZ_pos->FindBin( hit_z, hit_y ) )  
-                          );
-
-  //  Float_t norm_factor = 0.983; // for plane 2
-  Float_t norm_factor = 0.9947; // for plane 2
-  //  double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
-  double calib_factor =4.57e-3; //right cali constant for the run 5387. This converts from ADC to e
-  
-  if (debug){
-    std::cout << " hit position: " << hit_x << " " << hit_y << " " << hit_z << std::endl;
-    std::cout << " prim_dqdx,  X_correction , YZ_correction , norm_factor = "
-              << prim_dqdx << " " <<  X_correction << " " <<  YZ_correction << " " <<  norm_factor << std::endl;	
-  }
-  
-  Float_t corrected_dq_dx = prim_dqdx * X_correction * YZ_correction * norm_factor;	
-  Float_t scaled_corrected_dq_dx = corrected_dq_dx / calib_factor;		
-
-  
-  return scaled_corrected_dq_dx;
 }
 
 //***************************************************************
@@ -1137,121 +744,576 @@ Float_t pdAnaUtils::ComputeAveragedEdxOverResRange(AnaParticlePD* part, double m
 }
 
 //***************************************************************
-Float_t pdAnaUtils::Compute3DWirePitch(Int_t planeKey, const TVector3& dir){
+bool pdAnaUtils::IsStoppingInFV(AnaParticlePD *part){
 //***************************************************************
 
-  std::map<int, double> fNormToWiresY;
-  std::map<int, double> fNormToWiresZ;
+  if(!part)return false;
 
-  fNormToWiresY.clear();
-  fNormToWiresZ.clear();
+  bool ItIs = true;
+  
+  if((TMath::Abs(part->PositionStart[0])>350 || 
+      part->PositionStart[1]<50 || part->PositionStart[1]>550 || 
+      part->PositionStart[2]<50 || part->PositionStart[2]>645)
+      &&
+      (TMath::Abs(part->PositionEnd[0])>350 || 
+       part->PositionEnd[1]<50 || part->PositionEnd[1]>550 || 
+       part->PositionEnd[2]<50 || part->PositionEnd[2]>645))
+    ItIs = false;
 
-  int plane;
+  return ItIs;
+}
 
-  // Numbers from PionAnalyzer_module output
-  double dirY_0 = 0.812012;
-  double dirZ_0 = 0.58364;
+//***************************************************************
+int pdAnaUtils::GetHitTPCid(AnaHitPD& hit){
+//***************************************************************
 
-  int NTPC=12;
-  plane=0;
-  for (int t=0;t<NTPC;t++){
-    for (int p=0;p<3;p++){
+  return GetPosTPCid(hit.Position);
+}
 
-      double dirY=0;
-      double dirZ=0;
+//***************************************************************
+int pdAnaUtils::GetPosTPCid(TVector3 pos){
+//***************************************************************
 
-      if (p==0){
-        if (t%2 == 0) dirZ = -dirZ_0;
-        else          dirZ =  dirZ_0;
-        dirY = dirY_0;
-      }
-      else if (p==1){
-        if (t%2 == 0) dirZ = -dirZ_0;
-        else          dirZ =  dirZ_0;
-        dirY = -dirY_0;
-      }
-      else if (p==2){
-        if (t%2 == 0) dirY =  -1;
-        else          dirY =   1;
-        dirZ = 0;
-      }
-       
-      fNormToWiresY.insert(std::make_pair(plane, -dirZ)); //y component of normal
-      fNormToWiresZ.insert(std::make_pair(plane,  dirY)); //z component of normal
+  int TPCid = -1;
+  
+  if(pos.X() < 0){
+    if(pos.Z() > 0 && pos.Z() < 230)       TPCid = 1;
+    else if(pos.Z() > 230 && pos.Z() < 460)TPCid = 5;
+    else if(pos.Z() > 460 && pos.Z() < 690)TPCid = 9;
+  }
+  else{
+    if(pos.Z() > 0 && pos.Z() < 230)       TPCid = 2;
+    else if(pos.Z() > 230 && pos.Z() < 460)TPCid = 6;
+    else if(pos.Z() > 460 && pos.Z() < 690)TPCid = 10;
+  }
+  
+  return TPCid;
+}
 
-
-      //      std::cout << plane << " --> " << fNormToWiresY[plane] << " " << fNormToWiresZ[plane]  << std::endl;
-      
-      plane++;
+//***************************************************************
+void pdAnaUtils::EstimateHitsDirection(AnaParticlePD* part){
+//***************************************************************
+  
+  if(!part)return;
+  
+  //loop over hits
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
+    if(ihit < (int)part->Hits[2].size()-1){
+      TVector3 dir = part->Hits[2][ihit+1].Position-part->Hits[2][ihit].Position;
+      if(dir.Mag()!=0)dir.SetMag(1);
+      part->Hits[2][ihit].Direction.SetXYZ(dir.X(),dir.Y(),dir.Z());
+      part->Hits[2][ihit].Direction_NoSCE.SetXYZ(dir.X(),dir.Y(),dir.Z());
     }
-  }
-
-
-  
-  Float_t wirePitch = 0.4792;
-      
-  //Pitch to use in dEdx calculation
-  Float_t yzPitch = wirePitch;   // TODO
-  //      geom->WirePitch(hit->WireID().Plane,
-  //                      hit->WireID().TPC); //pitch not taking into account angle of track or shower
-  Float_t xComponent, pitch3D;
-          
-  //This assumes equal numbers of TPCs in each cryostat and equal numbers of planes in each TPC
-  
-  if (fNormToWiresY.count(planeKey) && fNormToWiresZ.count(planeKey)) {
-    TVector3 normToWires(0.0, fNormToWiresY.at(planeKey), fNormToWiresZ.at(planeKey));
-    yzPitch = wirePitch/fabs(dir.Dot(normToWires));
-    //        geom->WirePitch(hit->WireID().Plane, hit->WireID().TPC) / fabs(dir.Dot(normToWires));
-  }
-  
-  xComponent = yzPitch * dir[0] / sqrt(dir[1] * dir[1] + dir[2] * dir[2]);
-  pitch3D = sqrt(xComponent * xComponent + yzPitch * yzPitch);///2254.*2742.;
-
-  //  std::cout << yzPitch << " " << xComponent << " " << pitch3D << " " << dir.X() << " " << dir.Y() << " " << dir.Z() << std::endl;
-  
-  return pitch3D;
+    else{
+      part->Hits[2][ihit].Direction.SetXYZ(part->Hits[2][ihit-1].Direction.X(),part->Hits[2][ihit-1].Direction.Y(),part->Hits[2][ihit-1].Direction.Z());
+      part->Hits[2][ihit].Direction_NoSCE.SetXYZ(part->Hits[2][ihit-1].Direction.X(),part->Hits[2][ihit-1].Direction.Y(),part->Hits[2][ihit-1].Direction.Z());
+    }
+  } 
 }
 
 //***************************************************************
-void pdAnaUtils::ComputeParticleCNN(AnaParticlePD& part){
+void pdAnaUtils::ComputeResidualRange(AnaParticlePD* part){
 //***************************************************************
-
-  if (!_cnn){
-    _cnn= new CNNUtils();
-  }
-
-  std::vector<AnaWireCNN> wires;
   
-  for (auto & hit: part.Hits[2]){
-    std::vector<AnaHitPD*> hits;
-    hits.push_back(&hit);
-    _cnn->produce(hits,wires);
+  if(!part)return;
+
+  std::vector<double> delta; delta.clear();
+  //loop over hits
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
+    TVector3 diff = part->Hits[2][ihit+1].Position-part->Hits[2][ihit].Position;
+    delta.push_back(diff.Mag());
   }
-  //  _cnn->ComputeParticleCNN(part);
+
+  //compute residual range
+  std::vector<double> new_rr; new_rr.clear();
+  new_rr.push_back(delta[0]/2);
+  for(int i = 1; i < (int)delta.size(); i++)
+    new_rr.push_back(new_rr[i-1]+delta[i-1]);
+
+  //associate new rr to each hit
+  for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++)
+    part->Hits[2][ihit].ResidualRange = new_rr[ihit];
 }
 
 //***************************************************************
-void pdAnaUtils::ComputeParticleCNN(std::vector<AnaWireCNN>& wires, AnaParticlePD& part){
+Double_t pdAnaUtils::ComputeDepositedEnergy(AnaParticlePD* part){
+//***************************************************************
+  
+  Double_t E = -999;
+  if(!part)return E;
+  
+  int nhits = part->Hits[2].size();
+  if(nhits <= 0)return E;
+
+  E = 0;
+  for(int ihit = 1; ihit < nhits-1; ihit++){
+    if(part->Hits[2][ihit].dEdx > 1000. || part->Hits[2][ihit].dEdx==-999 || part->Hits[2][ihit].Pitch < 0)
+      continue;
+    E += part->Hits[2][ihit].dEdx * part->Hits[2][ihit].Pitch;
+  }
+  
+  return E;
+}
+
+//***************************************************************
+Double_t pdAnaUtils::EstimateTrueMomAtAPABorder(AnaParticlePD* part){
 //***************************************************************
 
-  if (!_cnn){
-    _cnn= new CNNUtils();
+  Double_t momf = -999;
+  if(!part)return momf;
+
+  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+  if(!truePart)return momf;
+  
+  if(part->PositionStart[2]>220)return momf;
+
+  int nhits = part->Hits[2].size();
+  if(nhits <= 0)return momf;
+
+  double depE = 0;
+  for(int ihit = 0; ihit < nhits; ihit++){
+    if(part->Hits[2][ihit].Position.Z()>220)break;
+    depE += part->Hits[2][ihit].dEdx * part->Hits[2][ihit].Pitch;
   }
 
-  for (auto & hit: part.Hits[2]){
-    std::vector<AnaHitPD*> hits;
-    hits.push_back(&hit);
-    _cnn->produce(hits, wires);
+  double mass;
+  if(abs(truePart->PDG) == 211)mass       = 139.57;
+  else if(abs(truePart->PDG) == 321)mass  = 493.7;
+  else if(abs(truePart->PDG) == 2212)mass = 938.27;
+  else return momf;
+
+  double momi = truePart->Momentum*1000;
+  momf = sqrt(pow(sqrt(momi*momi+mass*mass)-depE,2)-mass*mass);
+
+  return momf;
+}
+
+//***************************************************************
+Double_t pdAnaUtils::ComputeDistanceToClosestParticle(AnaParticlePD* part, AnaParticleB** parts, const int nparts){
+//***************************************************************
+
+  double distance = 9999;
+  for(int ipart = 0; ipart < nparts; ipart++){
+    AnaParticlePD* other = static_cast<AnaParticlePD*>(parts[ipart]);
+    if(part->UniqueID == other->UniqueID)continue;
+    double dis1 = 0;
+    double dis2 = 0;
+    for(int idis = 0; idis < 3; idis++){
+      dis1 += pow(part->PositionEnd[idis]-other->PositionStart[idis],2);
+      dis2 += pow(part->PositionEnd[idis]-other->PositionEnd[idis],2);
+    }
+    dis1 = sqrt(dis1);
+    dis2 = sqrt(dis2);
+    if(dis1 < distance)distance = dis1;
+    if(dis2 < distance)distance = dis2;
   }
-  //  _cnn->ComputeParticleCNN(part);
+
+  return distance;
 }
 
 
 //***************************************************************
-void pdAnaUtils::DumpCNNTimes(){
+void pdAnaUtils::GetBeamQualityCuts(AnaEventPD* event, 
+				    double &mean_x, double &mean_y, double &mean_z,
+				    double &sigma_x, double &sigma_y, double &sigma_z,
+				    double &cos){
 //***************************************************************
 
-  if (_cnn)
-    _cnn->_tutils->dumpTimes();
+  //get nominal beam momentum. If none, set it to 1.
+  AnaEventInfoPD* EventInfo = static_cast<AnaEventInfoPD*>(event->EventInfo);
+  int NomBeamMom = (int)EventInfo->NominalBeamMom;
+  if(NomBeamMom < 0 || NomBeamMom > 3)NomBeamMom = 1; //we still have no values for 6 and 7 GeV
 
+  //get BQC parameters depending on beam mom and MC/data
+  std::stringstream ssmom;
+  ssmom << NomBeamMom;
+  if(event->GetIsMC()){
+    std::string parameter = "pdUtils.AnalysisUtils.BeamQualityCuts.MC."+ssmom.str()+".";
+    mean_x = ND::params().GetParameterD((parameter+"meanx").c_str());
+    mean_y = ND::params().GetParameterD((parameter+"meany").c_str());
+    mean_z = ND::params().GetParameterD((parameter+"meanz").c_str());
+    sigma_x = ND::params().GetParameterD((parameter+"sigmax").c_str());
+    sigma_y = ND::params().GetParameterD((parameter+"sigmay").c_str());
+    sigma_z = ND::params().GetParameterD((parameter+"sigmaz").c_str());
+    cos = ND::params().GetParameterD((parameter+"cos").c_str());
+  }
+  else{
+    std::string parameter = "pdUtils.AnalysisUtils.BeamQualityCuts.Data."+ssmom.str()+".";
+    mean_x = ND::params().GetParameterD((parameter+"meanx").c_str());
+    mean_y = ND::params().GetParameterD((parameter+"meany").c_str());
+    mean_z = ND::params().GetParameterD((parameter+"meanz").c_str());
+    sigma_x = ND::params().GetParameterD((parameter+"sigmax").c_str());
+    sigma_y = ND::params().GetParameterD((parameter+"sigmay").c_str());
+    sigma_z = ND::params().GetParameterD((parameter+"sigmaz").c_str());
+    cos = ND::params().GetParameterD((parameter+"cos").c_str());
+  }
+}
+
+//***************************************************************
+double pdAnaUtils::GetDensityCorrection(double beta, double gamma){
+//***************************************************************
+
+  //Parameters for the density correction
+  const double density_C  = 5.2146; 
+  const double density_y0 = 0.2; 
+  const double density_y1 = 3.0; 
+  const double density_a  = 0.19559;
+  const double density_k  = 3.0; 
+  
+  //Estimate the density correction
+  double density_y = TMath::Log10(beta * gamma); 
+  double ln10 = TMath::Log(10);
+  double this_delta = 0.;
+  if(density_y > density_y1){
+    this_delta = 2.0 * ln10 * density_y - density_C; 
+  }
+  else if (density_y < density_y0){
+    this_delta = 0.; 
+  }
+  else{
+    this_delta = 2.0 * ln10 * density_y - density_C + density_a * pow(density_y1 - density_y, density_k);
+  }
+  
+  return this_delta; 
+} 
+
+//***************************************************************
+double pdAnaUtils::GetdEdxBetheBloch(double KE, double mass){ 
+//***************************************************************
+
+  //Bethe-Bloch parameters, https://indico.fnal.gov/event/14933/contributions/28526/attachments/17961/22583/Final_SIST_Paper.pdf 
+  const double rho = 1.39; // [g/cm3], density of LAr
+  const double K   = 0.307075; // [MeV cm2 / mol]
+  const double A   = 39.948; // [g / mol], atomic mass of Ar 
+  const double I   = 188.0e-6; // [MeV], mean excitation energy
+  const double Me  = 0.511; // [Mev], mass of electron
+
+  double gamma = (KE/mass)+1.0;
+  double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+  double Wmax = (2.0 * Me * pow(beta * gamma, 2)) / (1.0 + 2.0 * Me * (gamma / mass) + pow((Me / mass),2));
+  double delta = GetDensityCorrection(beta, gamma);
+  
+  // == dE/dx with the density correction
+  double f = rho * K * (18.0 / A) * pow(1. / beta, 2); 
+  double a0 = 0.5 * TMath::Log(2.0 * Me * pow(beta * gamma, 2) * Wmax / (I * I));
+  double this_dEdx = f * ( a0 - pow(beta, 2) - delta / 2.0); // [MeV/cm] 
+  
+  return this_dEdx;
+}
+
+//***************************************************************
+double pdAnaUtils::GetWmax(double KE, double mass){ 
+//***************************************************************
+
+  const double Me  = 0.511; // [Mev], mass of electron
+  
+  double gamma = (KE/mass)+1.0;
+  double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+  double Wmax = (2.0 * Me * pow(beta * gamma, 2)) / (1.0 + 2.0 * Me * (gamma / mass) + pow((Me / mass),2));
+  
+  return Wmax; 
+} 
+
+//***************************************************************
+double pdAnaUtils::GetLandauXi(double KE, double dx, double mass){
+//***************************************************************
+ 
+  const double rho = 1.39; // [g/cm3], density of LAr
+  const double K   = 0.307075; // [MeV cm2 / mol]
+  const double A   = 39.948; // [g / mol], atomic mass of Ar 
+  
+  double gamma = (KE/mass)+1.0;
+  double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+  double xi = rho * dx * 0.5 * K * (18.0 / A) * pow(1. / beta, 2); 
+  return xi; 
+}    
+
+//***************************************************************
+double pdAnaUtils::dEdxPDF(double *x, double *par){ 
+//***************************************************************  
+
+  ROOT::Math::VavilovAccurate vav;
+
+  double a = par[2] / par[4];
+  double b = (0.422784 + par[1] + log(par[0])) * par[2] / par[4] + par[3]; 
+  double y = (x[0] - b) / a; 
+  
+  double this_vav = 0.;
+  
+  if(par[0] < 0.01){ // == Landau
+    this_vav = TMath::Landau(y); 
+    this_vav =this_vav / a;
+  }
+  else if(par[0] > 10.){ // == Gaussian
+    double mu = vav.Mean(par[0], par[1]);
+    double sigma = sqrt(vav.Variance(par[0], par[1])); 
+    this_vav =TMath::Gaus(y, mu, sigma); 
+  }
+  else{ // == Vavilov
+    this_vav = vav.Pdf(y, par[0], par[1]);
+    this_vav = this_vav / a;
+  }
+  
+  return this_vav;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::dEdxLikelihood(TGraph* tg, TGraph* tg_ke, 
+				   Float_t mass){
+//***************************************************************
+
+  double width = 0.65;
+  TF1* pdf = new TF1("pdf", dEdxPDF, -10., 20., 5);
+  double likelihood = 0;
+  for(int i = 0; i < tg->GetN(); i++){
+    double range = tg->GetPointX(i);//+L;
+    double dEdx = tg->GetPointY(i);
+    double ke = tg_ke->Eval(range);
+    double gamma = (ke/mass)+1.0;
+    double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+    double xi = GetLandauXi(ke, width, mass);
+    double Wmax = GetWmax(ke, mass);
+    double kappa = xi / Wmax;
+    double dEdx_BB = GetdEdxBetheBloch(ke, mass);
+    double par[5] = {kappa, beta * beta, xi, dEdx_BB, width};
+    pdf->SetParameters(par);
+    if(pdf->Eval(dEdx) == 0)continue;
+    else
+      likelihood += log(pdf->Eval(dEdx));
+  }
+  delete pdf;
+  return likelihood;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return -999.;
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return -999.;
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  Float_t result = dEdxLikelihood(tg,tg_ke,mass);
+
+  delete tg;
+  file_ke->Close("R");
+
+  return result;
+}
+
+//***************************************************************
+Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, const double maxRR){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return -999.;
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return -999.;
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    if(part->Hits[2][ihit].ResidualRange > maxRR)continue;
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  Float_t result = dEdxLikelihood(tg,tg_ke,mass);
+
+  delete tg;
+  file_ke->Close("R");
+
+  return result;
+}
+
+//***************************************************************
+std::pair<Float_t,Float_t> pdAnaUtils::dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke, 
+					    Float_t mass){
+//***************************************************************
+
+  double width = 0.65;
+  TF1* pdf = new TF1("pdf", dEdxPDF, -10., 20., 5);
+  double L  = 0;
+  double Lf = 10;
+  double step = 0.1;
+  std::vector<double> L_v,Likelihood_v;
+  L_v.clear();
+  Likelihood_v.clear();
+  while(L<Lf){
+    double likelihood = 0;
+    for(int i = 0; i < tg->GetN(); i++){
+      double range = tg->GetPointX(i)+L;
+      double dEdx = tg->GetPointY(i);
+      double ke = tg_ke->Eval(range);
+      double gamma = (ke/mass)+1.0;
+      double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
+      double xi = GetLandauXi(ke, width, mass);
+      double Wmax = GetWmax(ke, mass);
+      double kappa = xi / Wmax;
+      double dEdx_BB = GetdEdxBetheBloch(ke, mass);
+      double par[5] = {kappa, beta * beta, xi, dEdx_BB, width};
+      pdf->SetParameters(par);
+      if(pdf->Eval(dEdx) == 0)continue;
+      else
+	likelihood += log(pdf->Eval(dEdx));
+    }
+    L_v.push_back(L);
+    Likelihood_v.push_back(likelihood);
+    L += step;
+  }
+  auto it = std::max_element(Likelihood_v.begin(), Likelihood_v.end());
+  int index = std::distance(Likelihood_v.begin(), it);
+  delete pdf;
+  return std::make_pair(Likelihood_v[index],L_v[index]);
+}
+
+//***************************************************************
+std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange(AnaParticlePD* part, Int_t PDG){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return std::make_pair(-999.,-999.);
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return std::make_pair(-999.,-999.);
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
+  delete tg;
+  file_ke->Close("R");
+  
+  return result;
+}
+
+//***************************************************************
+std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaParticlePD* part, Int_t PDG, const double maxRR){
+//***************************************************************
+
+  //basic checks
+  if(part->Hits[2].empty())return std::make_pair(-999.,-999.);
+  if(PDG != 13 && PDG != 211 && PDG != 321 && PDG != 2212)return std::make_pair(-999.,-999.);
+
+  //get necessary information
+  std::string ssparticle;
+  Float_t mass;
+  if(PDG == 13){
+    ssparticle = "muon";
+    mass = 105.66;
+  }
+  else if(PDG == 211){
+    ssparticle = "pion";
+    mass = 139.57;
+  }
+  else if(PDG == 321){
+    ssparticle = "kaon";
+    mass = 493.677;
+  }
+  else{
+    ssparticle = "proton";
+    mass = 938.272;
+  }
+  TFile* file_ke = TFile::Open((std::string(getenv("PDUTILSROOT"))+"/data/ke_vs_range.root").c_str(),"OPEN");
+  TGraph* tg_ke  = (TGraph*)file_ke->Get(ssparticle.c_str());
+
+  //get dedx vs rr graph for particle
+  std::vector<double> dedx,rr;
+  dedx.clear();
+  rr.clear();
+  for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){ //ignore first and last hit
+    if(part->Hits[2][ihit].ResidualRange > maxRR)continue;
+    dedx.push_back(part->Hits[2][ihit].dEdx);
+    rr.push_back(part->Hits[2][ihit].ResidualRange);
+  }
+  TGraph* tg = new TGraph(dedx.size(),&rr[0],&dedx[0]);
+
+  std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
+  delete tg;
+  file_ke->Close("R");
+  
+  return result;
 }

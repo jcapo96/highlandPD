@@ -1,5 +1,19 @@
+--- pdBaseConverter ----------
+
+< pdIO.pdBaseConverter.FillEventInfo = 1 >
+< pdIO.pdBaseConverter.FillDQInfo    = 1 >
+< pdIO.pdBaseConverter.FillBeamInfo  = 1 >	
+< pdIO.pdBaseConverter.FillBunchInfo = 1 >	
+< pdIO.pdBaseConverter.FillTrueInfo  = 1 >
+
+--- MichelRemoving Minitree Converter -----
+
+< pdIO.MichelRemoving.ThetaXZ_min = 0 >
+< pdIO.MichelRemoving.ThetaXZ_max = 60 >
+< pdIO.MichelRemoving.ThetaYZ_min = 0 >
+< pdIO.MichelRemoving.ThetaYZ_max = 80 >
 
 
+--- anselmo stuff ------------
 If 0 --> clear the vector of hits in all particles
-
 < pdIO.MiniTree.SaveHits   = 0 >   

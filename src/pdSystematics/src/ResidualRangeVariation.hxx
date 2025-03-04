@@ -3,7 +3,6 @@
 
 #include "EventVariationBase.hxx"
 #include "BinnedParams.hxx"
-#include "pdCalorimetryUtils.hxx"
 
 class ResidualRangeVariation: public EventVariationBase, public BinnedParams{
 public:

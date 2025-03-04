@@ -11,10 +11,12 @@ namespace kaonTree{
   void AddKaonVariables_TrueKaonCandidates(OutputManager& output);
 
   void AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t nmax);
+  void AddKaonVariables_KaonCandidatesRecoPID(OutputManager& output, UInt_t nmax);
   void AddKaonVariables_KaonCandidatesHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void AddKaonVariables_KaonCandidatesTrue(OutputManager& output, UInt_t nmax);
 
   void AddKaonVariables_KaonBestCandidateReco(OutputManager& output);
+  void AddKaonVariables_KaonBestCandidateRecoPID(OutputManager& output);
   void AddKaonVariables_KaonBestCandidateHitsReco(OutputManager& output, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void AddKaonVariables_KaonBestCandidateTrue(OutputManager& output);
 
@@ -22,12 +24,14 @@ namespace kaonTree{
   void FillKaonVariables_TrueKaonCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
 
   void FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
+  void FillKaonVariables_KaonCandidatesRecoPID(OutputManager& output, AnaParticlePD* part);
   void FillKaonVariables_KaonCandidatesHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void FillKaonVariables_KaonCandidatesTrue(OutputManager& output, AnaParticlePD* part);
 
   void FillKaonVariables_KaonBestCandidateReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
+  void FillKaonVariables_KaonBestCandidateRecoPID(OutputManager& output, AnaParticlePD* part);
   void FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
-  void FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part);
+  void FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
 
   // Enum with unique indexes for output tree variables  
   enum enumKaonMicroTrees{
@@ -80,6 +84,8 @@ namespace kaonTree{
     candidates_length,
     candidates_mom_muon,
     candidates_mom_prot,
+    candidates_calE,
+    candidates_csdarange_prot_from_calE,
     candidates_type,
     candidates_CNNscore,
     candidates_chi2_prot,
@@ -91,9 +97,15 @@ namespace kaonTree{
     candidates_distance_mother,
     candidates_distance_dau,
     candidates_cos_dau,
-    candidates_averagedEdx,
+    candidates_average_dedx,
+    candidates_truncated_dedx,
     candidates_vtx_michelscore,
     candidates_vtx_nhits,
+    candidates_distance_tcp,
+    candidates_lkl_prot,
+    candidates_lkl_kaon,
+    candidates_freelkl_prot,
+    candidates_freelkl_prot_range,
 
     candidates_nhits,
     candidates_hit_x,
@@ -133,9 +145,15 @@ namespace kaonTree{
     candidates_dau_kaon_PID,
     candidates_dau_kaon_PID_ndf,
     candidates_dau_calE,
-    candidates_dau_averagedEdx,
+    candidates_dau_csdarange_muon_from_calE,
+    candidates_dau_average_dedx,
+    candidates_dau_truncated_dedx,
     candidates_dau_vtx_michelscore,
     candidates_dau_vtx_nhits,
+    candidates_dau_forced,
+    candidates_dau_forced_matched,
+    candidates_dau_lkl_prot,
+    candidates_dau_lkl_muon,
 
     candidates_dau_nhits,
     candidates_dau_hit_x,
@@ -171,7 +189,7 @@ namespace kaonTree{
     candidates_gdau_chi2_muon,
     candidates_gdau_chi2_ndf,
     candidates_gdau_calE,
-    candidates_gdau_averagedEdx,
+    candidates_gdau_average_dedx,
     candidates_gdau_vtx_michelscore,
     candidates_gdau_vtx_nhits,
 
@@ -201,13 +219,67 @@ namespace kaonTree{
     bestcandidate_CNNscore,
     bestcandidate_chi2_prot,
     bestcandidate_chi2_muon,
+    bestcandidate_chi2_kaon,
     bestcandidate_chi2_ndf,
     bestcandidate_distance_mother,
     bestcandidate_distance_dau,
     bestcandidate_cos_dau,
-    bestcandidate_averagedEdx,
+    bestcandidate_average_dedx,
     bestcandidate_vtx_michelscore,
     bestcandidate_vtx_nhits,
+    bestcandidate_calE,
+    bestcandidate_truncated_dedx,
+
+    bestcandidate_chi2_prot_perndf_5,
+    bestcandidate_chi2_muon_perndf_5,
+    bestcandidate_chi2_kaon_perndf_5,
+    bestcandidate_chi2_prot_perndf_10,
+    bestcandidate_chi2_muon_perndf_10,
+    bestcandidate_chi2_kaon_perndf_10,
+    bestcandidate_chi2_prot_perndf_15,
+    bestcandidate_chi2_muon_perndf_15,
+    bestcandidate_chi2_kaon_perndf_15,
+    bestcandidate_chi2_prot_perndf_20,
+    bestcandidate_chi2_muon_perndf_20,
+    bestcandidate_chi2_kaon_perndf_20,
+    bestcandidate_chi2_prot_perndf_25,
+    bestcandidate_chi2_muon_perndf_25,
+    bestcandidate_chi2_kaon_perndf_25,
+
+    bestcandidate_lkl_prot,
+    bestcandidate_freelkl_prot,
+    bestcandidate_freelkl_prot_range,
+    bestcandidate_lkl_kaon,
+    bestcandidate_freelkl_kaon,
+    bestcandidate_freelkl_kaon_range,
+    bestcandidate_lkl_muon,
+    bestcandidate_freelkl_muon,
+    bestcandidate_freelkl_muon_range,
+    bestcandidate_lkl_prot_5,
+    bestcandidate_lkl_kaon_5,
+    bestcandidate_lkl_muon_5,
+    bestcandidate_lkl_prot_10,
+    bestcandidate_lkl_kaon_10,
+    bestcandidate_lkl_muon_10,
+    bestcandidate_lkl_prot_15,
+    bestcandidate_lkl_kaon_15,
+    bestcandidate_lkl_muon_15,
+    bestcandidate_lkl_prot_20,
+    bestcandidate_lkl_kaon_20,
+    bestcandidate_lkl_muon_20,
+    bestcandidate_lkl_prot_25,
+    bestcandidate_lkl_kaon_25,
+    bestcandidate_lkl_muon_25,
+    bestcandidate_freelkl_prot_5,
+    bestcandidate_freelkl_kaon_5,
+    bestcandidate_freelkl_prot_10,
+    bestcandidate_freelkl_kaon_10,
+    bestcandidate_freelkl_prot_15,
+    bestcandidate_freelkl_kaon_15,
+    bestcandidate_freelkl_prot_20,
+    bestcandidate_freelkl_kaon_20,
+    bestcandidate_freelkl_prot_25,
+    bestcandidate_freelkl_kaon_25,
 
     bestcandidate_nhits,
     bestcandidate_hit_x,
@@ -228,6 +300,8 @@ namespace kaonTree{
     bestcandidate_trueendproc,
     bestcandidate_truemom,
     bestcandidate_trueendmom,
+    bestcandidate_trueId,
+    bestcandidate_trueendmom_atAPA,
 
     //kaon bestcandidate dau info
     bestcandidate_dau_ndau,
@@ -266,6 +340,22 @@ namespace kaonTree{
     bestcandidate_dau_truemom,
     bestcandidate_dau_trueendmom,
 
+
+    //kaon bestcandidate parent info
+    bestcandidate_parent_ndau,
+    bestcandidate_parent_pos,
+    bestcandidate_parent_dir,
+    bestcandidate_parent_endpos,
+    bestcandidate_parent_enddir,
+
+    //kaon bestcandidate parent true info
+    bestcandidate_parent_trueId,
+    bestcandidate_parent_truepos,
+    bestcandidate_parent_truedir,
+    bestcandidate_parent_trueendpos,
+    bestcandidate_parent_trueenddir,
+    bestcandidate_parent_trueendmom_atAPA,
+    
     enumKaonMicroTreesLast
   };
 }

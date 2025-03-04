@@ -25,6 +25,7 @@ public:
   AnaHitPD();
   virtual ~AnaHitPD(){}
 
+  //Anselmo stuff for CNN calculation, not really used, to be removed at some point
   AnaHitPD(Int_t wire, Float_t integ, Float_t peakT, Float_t peakAmp, TVector3 pos){
     WireID.Plane =wire;
     Integral = integ;
@@ -41,14 +42,12 @@ public:
   
 public:
 
-  // ---- Most of this information is needed to recompute the CNN. This is work in progress 
+  // ---- Most of this information is needed to recompute the CNN. This is work in progress (is ABANDONED work)
   AnaWireID WireID;    
 
   Float_t Integral;
   Float_t PeakTime;
   Float_t PeakAmplitude;
-  TVector3 Position;
-  TVector3 PositionNoSCE;
   int TPCid;
   int PlaneID;
 
@@ -66,13 +65,15 @@ public:
 
   //------------------------------------------------------------
 
-  Float_t Pitch;
-
   /// Calorimetric information
   /// No SCE correction
   Float_t dQdx_NoSCE;
   Float_t dEdx_NoSCE;
   Float_t ResidualRange_NoSCE;
+  Float_t Pitch_NoSCE;
+  TVector3 Position_NoSCE;
+  TVector3 Direction_NoSCE;
+
 
   /// SCE correction
   Float_t dQdx_SCE;
@@ -88,10 +89,40 @@ public:
   Float_t dQdx;
   Float_t dEdx;
   Float_t ResidualRange;
+  Float_t Pitch;
+  TVector3 Position;
+  TVector3 Direction;
 
   /// deprecated but keep it for the moment to avoid errors
   Float_t dEdx_calib;
 
+};
+
+//trajectory point representation. Has position and direction information.
+//this information is somehow redundant since each hit has a tjp associated 
+//from which position and direction are obtained. This should be solved at
+//some point. However, all tjp are needed to compute track lenght and sce
+//systematics
+class AnaTrajectoryPointPD{
+public:
+  AnaTrajectoryPointPD();
+  virtual ~AnaTrajectoryPointPD(){}
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+  /// Copy constructor
+  AnaTrajectoryPointPD(const AnaTrajectoryPointPD& tjp);
+  
+public:
+
+  TVector3 Position;
+  TVector3 Direction;
+
+  TVector3 Position_NoSCE;
+  TVector3 Direction_NoSCE;
+
+  bool IsValid() {return (Position_NoSCE.X() != -999 && Position_NoSCE.Y() != -999 && Position_NoSCE.Z() != -999);}
 };
 
 /// AnaParticle
@@ -152,11 +183,17 @@ public:
   double DirectionStartSCE[3];
   double DirectionEndSCE[3];
 
+  double ThetaXZ;
+  double ThetaYZ;
+
   /// Vector of hits for each plane
   std::vector<AnaHitPD> Hits[3];
 
   /// Total Number of hits in each wire plane (The vector of Hits above might be a subsample)
   Int_t NHitsPerPlane[3];
+
+  // Vector of trajectory points
+  std::vector<AnaTrajectoryPointPD> TrjPoints;
 
   /// Libo truncated mean
   Float_t truncLibo_dEdx;
@@ -183,6 +220,9 @@ public:
   /// Generation of the particle (primary particle, daughter, granddaughter, etc.)
   Int_t Generation;
 
+  /// test
+  Double_t Distance_to_closest_particle;
+
   // ---- OBSOLETE PID VARIABLES ----------
   
   /// Particle ID hypothesis used in the fit (if any)
@@ -196,6 +236,10 @@ public:
 
   /// PIDA
   Float_t PIDA[3]; 
+
+  /// Migue test
+  bool forced_daughter;
+  bool forced_daughter_matched;
 };
 
 /// AnaTrueParticle
@@ -414,6 +458,9 @@ protected:
 public:
 
   Float_t NominalBeamMom;
+
+  Bool_t EmptyEvent; //this should probably go in DataQuality
+  Bool_t HasPandora; //this should probably go in DataQuality
 };
 
 
