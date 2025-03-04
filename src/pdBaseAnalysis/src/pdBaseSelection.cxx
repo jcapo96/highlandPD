@@ -102,20 +102,6 @@ bool BeamPDGCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   return PDG;
 }
 
-
-//**************************************************
-void pdBaseSelection::InitializeEvent(AnaEventC& eventC){
-//**************************************************
-
-  AnaEventB& event = *static_cast<AnaEventB*>(&eventC); 
-
-  // Create the appropriate EventBox if it does not exist yet
-  if (!event.EventBoxes[EventBoxId::kEventBoxPD])
-    event.EventBoxes[EventBoxId::kEventBoxPD] = new EventBoxPD();
-  
-  boxUtils::FillCandidateAndDaughters(event);
-}
-
 //**************************************************
 bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
@@ -152,4 +138,17 @@ bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //check cut
   if(normalized_x < 3 && normalized_y < 3 && normalized_z < 3 && cos > min_cos)return true;
   else return false;
+}
+
+//**************************************************
+void pdBaseSelection::InitializeEvent(AnaEventC& eventC){
+//**************************************************
+
+  AnaEventB& event = *static_cast<AnaEventB*>(&eventC); 
+
+  // Create the appropriate EventBox if it does not exist yet
+  if (!event.EventBoxes[EventBoxId::kEventBoxPD])
+    event.EventBoxes[EventBoxId::kEventBoxPD] = new EventBoxPD();
+  
+  boxUtils::FillCandidateAndDaughters(event);
 }

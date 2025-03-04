@@ -10,7 +10,6 @@
 #include "SubDetId.hxx"
 
 /// This file defines steps that are common to all analyses.
-/// Currently the only cut is one on event quality.
 
 
 class pdBaseSelection: public SelectionBase{
