@@ -97,6 +97,8 @@ namespace pdAnaUtils{
   double GetWmax(double KE, double mass);
   double GetLandauXi(double KE, double dx, double mass);
   double dEdxPDF(double *x, double *par);
+
+  //  Float_t ComputeVertexPolarity(AnaParticlePD* part1, AnaParticlePD* part2);
 }
 
 #endif

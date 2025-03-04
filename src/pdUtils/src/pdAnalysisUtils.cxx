@@ -846,8 +846,11 @@ Double_t pdAnaUtils::ComputeDepositedEnergy(AnaParticlePD* part){
   if(nhits <= 0)return E;
 
   E = 0;
-  for(int ihit = 0; ihit < nhits; ihit++)
+  for(int ihit = 1; ihit < nhits-1; ihit++){
+    if(part->Hits[2][ihit].dEdx > 1000. || part->Hits[2][ihit].dEdx==-999 || part->Hits[2][ihit].Pitch < 0)
+      continue;
     E += part->Hits[2][ihit].dEdx * part->Hits[2][ihit].Pitch;
+  }
   
   return E;
 }
@@ -893,10 +896,16 @@ Double_t pdAnaUtils::ComputeDistanceToClosestParticle(AnaParticlePD* part, AnaPa
   for(int ipart = 0; ipart < nparts; ipart++){
     AnaParticlePD* other = static_cast<AnaParticlePD*>(parts[ipart]);
     if(part->UniqueID == other->UniqueID)continue;
-    double dis;
-    for(int idis = 0; idis < 3; idis++)dis += pow(part->PositionEnd[idis]-part->PositionStart[idis],2);
-    dis = sqrt(dis);
-    if(dis < distance)distance = dis;
+    double dis1 = 0;
+    double dis2 = 0;
+    for(int idis = 0; idis < 3; idis++){
+      dis1 += pow(part->PositionEnd[idis]-other->PositionStart[idis],2);
+      dis2 += pow(part->PositionEnd[idis]-other->PositionEnd[idis],2);
+    }
+    dis1 = sqrt(dis1);
+    dis2 = sqrt(dis2);
+    if(dis1 < distance)distance = dis1;
+    if(dis2 < distance)distance = dis2;
   }
 
   return distance;
@@ -1072,6 +1081,7 @@ Float_t pdAnaUtils::dEdxLikelihood(TGraph* tg, TGraph* tg_ke,
     else
       likelihood += log(pdf->Eval(dEdx));
   }
+  delete pdf;
   return likelihood;
 }
 
@@ -1118,7 +1128,7 @@ Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG){
   Float_t result = dEdxLikelihood(tg,tg_ke,mass);
 
   delete tg;
-  file_ke->Close();
+  file_ke->Close("R");
 
   return result;
 }
@@ -1167,7 +1177,7 @@ Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, con
   Float_t result = dEdxLikelihood(tg,tg_ke,mass);
 
   delete tg;
-  file_ke->Close();
+  file_ke->Close("R");
 
   return result;
 }
@@ -1209,6 +1219,7 @@ std::pair<Float_t,Float_t> pdAnaUtils::dEdxLikelihoodFreeRange(TGraph* tg, TGrap
   }
   auto it = std::max_element(Likelihood_v.begin(), Likelihood_v.end());
   int index = std::distance(Likelihood_v.begin(), it);
+  delete pdf;
   return std::make_pair(Likelihood_v[index],L_v[index]);
 }
 
@@ -1254,7 +1265,7 @@ std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange(AnaParticlePD*
 
   std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
   delete tg;
-  file_ke->Close();
+  file_ke->Close("R");
   
   return result;
 }
@@ -1302,7 +1313,7 @@ std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaPart
 
   std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
   delete tg;
-  file_ke->Close();
+  file_ke->Close("R");
   
   return result;
 }
