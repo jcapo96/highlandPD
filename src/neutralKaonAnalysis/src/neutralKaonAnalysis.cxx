@@ -3,6 +3,7 @@
 #include "neutralKaonSelection.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
+#include "standardPDTree.hxx"
 
 #include "pdAnalysisUtils.hxx"
 
@@ -94,6 +95,20 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
 
   // Variables from baseAnalysis (run, event, ...)
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
+
+  // standardPDTree::AddStandardVariables_AllParticlesReco(output(), 10);
+  // standardPDTree::AddStandardVariables_AllParticlesTrue(output(), 10);
+
+  // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  // standardPDTree::AddStandardVariables_EventInfo(output());
+  // standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
+  // standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
+  // standardPDTree::AddStandardVariables_BeamParticleTrue(output());
+  // standardPDTree::AddStandardVariables_BeamParticleReco(output());
+  // standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
+  // standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),20);
+  // standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),20);
+
 
   // Add standard sets of variables for ProtoDUNE analysis (these methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   // beam instrumentation info
