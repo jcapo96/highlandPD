@@ -11,6 +11,8 @@
 #include "kaonTree.hxx"
 
 #include "ParticlePositionSCECorrection.hxx"
+#include "dEdxMCCorrection.hxx"
+#include "RecombinationDataCorrection.hxx"
 
 #include "baseToyMaker.hxx"
 
@@ -72,6 +74,8 @@ void StoppingProtonAnalysis::DefineCorrections(){
   // Some corrections are defined in baseAnalysis
   baseAnalysis::DefineCorrections();
   corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
+  //corr().AddCorrection(1, "dEdx MC correction"      , new dEdxMCCorrection());
+  corr().AddCorrection(1, "Recombination data correction"      , new RecombinationDataCorrection());
 }
 
 //********************************************************************

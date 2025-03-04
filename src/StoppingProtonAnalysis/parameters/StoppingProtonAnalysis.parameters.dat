@@ -1,5 +1,5 @@
 --- Cut levels --------
- < StoppingProtonAnalysis.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+ < StoppingProtonAnalysis.MinAccumLevelToSave = 4 >   // minimum accum level to save the event
 
 --- Systematics ------------
 
@@ -47,7 +47,7 @@ No weights yet !!!
 --- Systematics ------------
 
 Number of toy experiments
- < baseAnalysis.Systematics.NumberOfToys = 100 >
+ < baseAnalysis.Systematics.NumberOfToys = 1 >
 
 The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
 
