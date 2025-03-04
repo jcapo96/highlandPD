@@ -9,8 +9,12 @@ namespace QPIXUtils{
 
   // Add custom categories
   void AddCustomCategories();
+  void AddSingleRadiogenicCategory();
+  void AddChainRadiogenicCategory();
   // Fill Custom categories
   void FillCustomCategories(AnaEventPD* event);
+  void FillSingleRadiogenicCategory(AnaEventPD* event);
+  void FillChainRadiogenicCategory(AnaEventPD* event);
 
   //Add QPIX variables
   void AddQPIXVariables(OutputManager& output);
@@ -28,6 +32,7 @@ namespace QPIXUtils{
     nu_E, 
     nu_pos,
     e_E,
+    gamma_pos,
     nphotons,
     wf_total,
     wf_plane_0,
