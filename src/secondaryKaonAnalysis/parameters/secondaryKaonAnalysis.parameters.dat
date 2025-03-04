@@ -1,3 +1,7 @@
+###############################################################################
+--- SECONDARY KAON ANALYSIS ---
+###############################################################################
+
 --- Cut levels --------
  < secondaryKaonAnalysis.MinAccumLevelToSave = 3 >   // minimum accum level to save the event
 
@@ -8,12 +12,17 @@
 
 --- Output tree ------------
  < secondaryKaonAnalysis.FillBeamInstrumentationInfo           = 1 >
- < secondaryKaonAnalysis.FillBeamParticleInfo                  = 0 >
+ < secondaryKaonAnalysis.FillBeamParticleInfo                  = 1 >
  < secondaryKaonAnalysis.FillBeamParticleHitsInfo              = 0 >
  < secondaryKaonAnalysis.FillBeamParticleDaughtersInfo         = 0 >
- < secondaryKaonAnalysis.FillKaonCandidatesInfo                = 1 >
+ < secondaryKaonAnalysis.FillKaonCandidatesInfo                = 0 >
  < secondaryKaonAnalysis.FillBestKaonCandidateInfo             = 1 >
- < secondaryKaonAnalysis.FillToyVariablesInfo                  = 0 >
+ < secondaryKaonAnalysis.FillToyVariablesInfo                  = 1 >
+
+--- Corrections ------------
+ < secondaryKaonAnalysis.ApplySCECorrection                    = 1 >
+ < secondaryKaonAnalysis.ApplydEdxCorrection                   = 0 >
+ < secondaryKaonAnalysis.ApplyRecombinationCorrection          = 1 >
 
 --- Systematics ------------
  < secondaryKaonAnalysis.ApplydQdxSystematic                   = 0 >
@@ -24,6 +33,44 @@
  < secondaryKaonAnalysis.ApplyBeamPartWeightSystematic         = 0 >
  < secondaryKaonAnalysis.ApplyBeamMomWeightSystematic          = 0 >
  < secondaryKaonAnalysis.ApplyProtonBackgroundWeightSystematic = 0 >
+
+###############################################################################
+--- SECONDARY KAON XS ANALYSIS ---
+###############################################################################
+
+--- Cut levels --------
+ < secondaryKaonAnalysis.xsAnalysis.MinAccumLevelToSave = 3 >   // minimum accum level to save the event
+
+--- Output tree ------------
+ < secondaryKaonAnalysis.xsAnalysis.FillBeamInstrumentationInfo           = 1 >
+ < secondaryKaonAnalysis.xsAnalysis.FillBeamParticleInfo                  = 1 >
+ < secondaryKaonAnalysis.xsAnalysis.FillBeamParticleHitsInfo              = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.FillBeamParticleDaughtersInfo         = 1 >
+ < secondaryKaonAnalysis.xsAnalysis.FillKaonCandidatesInfo                = 1 >
+ < secondaryKaonAnalysis.xsAnalysis.FillKaonCandidatePIDInfo              = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.FillBestKaonCandidateInfo             = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.FillToyVariablesInfo                  = 0 >
+
+--- Corrections ------------
+ < secondaryKaonAnalysis.xsAnalysis.ApplySCECorrection                    = 1 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplydEdxCorrection                   = 0 >
+
+--- Systematics ------------
+ < secondaryKaonAnalysis.xsAnalysis.ApplydQdxSystematic                   = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplyRecombinationSystematic          = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplySCESystematic                    = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplyBrokenTracksSystematic           = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplyBeamPIDEfficiencySystematic      = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplyBeamPartWeightSystematic         = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplyBeamMomWeightSystematic          = 0 >
+ < secondaryKaonAnalysis.xsAnalysis.ApplyProtonBackgroundWeightSystematic = 0 >
+
+###############################################################################
+--- SECONDARY PROTON ANALYSIS ---
+###############################################################################
+
+--- Cut levels --------
+ < secondaryKaonAnalysis.SecondaryProtonAnalysis.MinAccumLevelToSave = 3 >   // minimum accum level to save the event
 
 ###############################################################################
   baseAnalysis parameters
@@ -59,14 +106,14 @@ No weights yet !!!
 --- Systematics ------------
 
 Number of toy experiments
- < baseAnalysis.Systematics.NumberOfToys = 100 >
+ < baseAnalysis.Systematics.NumberOfToys = 0 >
 
 The Random Seed. When throwing toys we want the same random numbers for all jobs. Thus, the random seed should be the same in all cases (and different from 0 !!!!)
 
      0 --> A pure random seed is generated based on time
  not 0 --> A fix random seed is used 
 
- < baseAnalysis.Systematics.RandomSeed = 1 >
+ < baseAnalysis.Systematics.RandomSeed = 0 >
 
 Use a different random generator for each systematic
 

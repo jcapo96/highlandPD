@@ -10,6 +10,9 @@
 #include "SystId.hxx"
 #include "SubDetId.hxx"
 
+//same as the secondary kaon selection but 
+//avoiding branches. Useful for dEdx analysis
+
 class secondaryKaonSelectionNoBranches: public SelectionBase{
  public:
   secondaryKaonSelectionNoBranches(bool forceBreak=true);

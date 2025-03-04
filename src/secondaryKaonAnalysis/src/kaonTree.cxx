@@ -43,81 +43,83 @@ void kaonTree::AddKaonVariables_TrueKaonCandidates(OutputManager& output){
 void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t nmax){
 //********************************************************************
 
-  AddVarMaxSizeVI (output, candidates_generation,   "candidates generation",        ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_parentID,     "candidates parent ID",         ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_ndau,         "candidates' daughters",        ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_nsisters,     "candidates' sistets",          ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_pos,          "candidates position",          ncandidates, nmax); 
-  AddVarMaxSize3MF(output, candidates_dir,          "candidates direction",         ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_endpos,       "candidates position",          ncandidates, nmax); 
-  AddVarMaxSize3MF(output, candidates_enddir,       "candidates direction",         ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_length,       "candidates length",            ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_mom_muon,     "candidates momentum (muon)",   ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_mom_prot,     "candidates momentum (proton)", ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_type,         "candidates object type",       ncandidates, nmax);
-  AddVarMaxSize3MF(output, candidates_CNNscore,     "candidates CNN score",         ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_chi2_prot,    "candidates chi2 proton",       ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_chi2_kaon,    "candidates chi2 kaon",         ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_chi2_muon,    "candidates chi2 proton",       ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_chi2_ndf,     "candidates chi2 ndf",          ncandidates, nmax);
-  // AddVarMaxSizeVF (output, candidates_kaon_PID,     "candidates kaon chi2",         ncandidates, nmax);
-  // AddVarMaxSizeVI (output, candidates_kaon_PID_ndf, "candidates kaon ndf",          ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_distance_mother, "candidates-mother distance",   ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_distance_dau,    "candidates-daughter distance", ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_cos_dau,         "candidates-daughter cos",      ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_nhits,           "candidates #hits",             ncandidates, nmax);
- 
-  AddVarMaxSizeVF (output, candidates_averagedEdx,     "candidates average dEdx/hit",          ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_truncated_dedx,     "candidates truncated dEdx/hit",          ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_generation,      "candidates generation",                ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_parentID,        "candidates parent ID",                 ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_ndau,            "candidates' daughters",                ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_nsisters,        "candidates' sistets",                  ncandidates, nmax);
+  AddVarMaxSize4MF(output, candidates_pos,             "candidates position",                  ncandidates, nmax); 
+  AddVarMaxSize3MF(output, candidates_dir,             "candidates direction",                 ncandidates, nmax);
+  AddVarMaxSize4MF(output, candidates_endpos,          "candidates position",                  ncandidates, nmax); 
+  AddVarMaxSize3MF(output, candidates_enddir,          "candidates direction",                 ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_length,          "candidates length",                    ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_mom_muon,        "candidates momentum (muon)",           ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_mom_prot,        "candidates momentum (proton)",         ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_calE,            "candidates calorimetric energy",       ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_type,            "candidates object type",               ncandidates, nmax);
+  AddVarMaxSize3MF(output, candidates_CNNscore,        "candidates CNN score",                 ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_chi2_prot,       "candidates chi2 proton",               ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_chi2_kaon,       "candidates chi2 kaon",                 ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_chi2_muon,       "candidates chi2 proton",               ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_chi2_ndf,        "candidates chi2 ndf",                  ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_distance_mother, "candidates-mother distance",           ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_distance_dau,    "candidates-daughter distance",         ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_distance_tcp,    "candidates dist to closest part",      ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_cos_dau,         "candidates-daughter cos",              ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_nhits,           "candidates #hits",                     ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_average_dedx,    "candidates average dEdx/hit",          ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_truncated_dedx,  "candidates truncated dEdx/hit",        ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_vtx_michelscore, "candidates michelscore in the vertex", ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_vtx_nhits,       "candidates points in the vertex",      ncandidates, nmax);
 
-  AddVarMaxSizeVF (output, candidates_lkl_prot          ,       "candidates distance to closest particle",      ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_freelkl_prot      ,       "candidates distance to closest particle",      ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_freelkl_prot_range,       "candidates distance to closest particle",      ncandidates, nmax);
-
-  AddVarMaxSizeVI (output, candidates_dau_ndau,       "candidates daughter' daughters",        ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_dau_pos,        "candidates daughter position",          ncandidates, nmax); 
-  AddVarMaxSize3MF(output, candidates_dau_dir,        "candidates daughter direction",         ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_dau_endpos,     "candidates daughter position",          ncandidates, nmax); 
-  AddVarMaxSize3MF(output, candidates_dau_enddir,     "candidates daughter direction",         ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_length,     "candidates daughter length",            ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_mom_muon,   "candidates daughter momentum (muon)",   ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_mom_prot,   "candidates daughter momentum (proton)", ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_dau_type,       "candidates daughter object type",       ncandidates, nmax);
-  AddVarMaxSize3MF(output, candidates_dau_CNNscore,   "candidates daughter CNN score",         ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_chi2_prot,  "candidates daughter chi2 proton",       ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_chi2_muon,  "candidates daughter chi2 proton",       ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_chi2_ndf,   "candidates daughter chi2 ndf",          ncandidates, nmax);
-  // AddVarMaxSizeVF (output, candidates_dau_kaon_PID,   "candidates daughter chi2 ndf",          ncandidates, nmax);
-  // AddVarMaxSizeVI (output, candidates_dau_kaon_PID_ndf, "candidates daughter chi2 ndf",          ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_dau_nhits,      "candidates daughter #hits",             ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_dau_forced,      "candidates forced daughter",             ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_dau_forced_matched,      "candidates forced daughter matched",             ncandidates, nmax);
-
-  AddVarMaxSizeVF (output, candidates_dau_averagedEdx,     "candidates dau average dEdx",                  ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_calE,            "candidates dau calorimetry energy deposition", ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_dau_vtx_michelscore, "candidates dau michelscore in the vertex",     ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_dau_vtx_nhits,       "candidates dau points in the vertex",          ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_dau_ndau,           "candidates daughter' daughters",            ncandidates, nmax);
+  AddVarMaxSize4MF(output, candidates_dau_pos,            "candidates daughter position",              ncandidates, nmax); 
+  AddVarMaxSize3MF(output, candidates_dau_dir,            "candidates daughter direction",             ncandidates, nmax);
+  AddVarMaxSize4MF(output, candidates_dau_endpos,         "candidates daughter position",              ncandidates, nmax); 
+  AddVarMaxSize3MF(output, candidates_dau_enddir,         "candidates daughter direction",             ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_length,         "candidates daughter length",                ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_mom_muon,       "candidates daughter momentum (muon)",       ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_mom_prot,       "candidates daughter momentum (proton)",     ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_dau_type,           "candidates daughter object type",           ncandidates, nmax);
+  AddVarMaxSize3MF(output, candidates_dau_CNNscore,       "candidates daughter CNN score",             ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_chi2_prot,      "candidates daughter chi2 proton",           ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_chi2_muon,      "candidates daughter chi2 proton",           ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_chi2_ndf,       "candidates daughter chi2 ndf",              ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_dau_nhits,          "candidates daughter #hits",                 ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_dau_forced,         "candidates forced daughter",                ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_dau_forced_matched, "candidates forced daughter matched",        ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_average_dedx,    "candidates dau average dEdx",              ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_truncated_dedx,  "candidates dau truncated dEdx",            ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_calE,            "candidates dau calorimetric energy",       ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_vtx_michelscore, "candidates dau michelscore in the vertex", ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_dau_vtx_nhits,       "candidates dau points in the vertex",      ncandidates, nmax);
   
-  AddVarMaxSizeVI (output, candidates_gdau_ndau,       "candidates gdaughter' gdaughters",        ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_gdau_pos,        "candidates gdaughter position",          ncandidates, nmax); 
-  AddVarMaxSize3MF(output, candidates_gdau_dir,        "candidates gdaughter direction",         ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_gdau_endpos,     "candidates gdaughter position",          ncandidates, nmax); 
-  AddVarMaxSize3MF(output, candidates_gdau_enddir,     "candidates gdaughter direction",         ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_gdau_length,     "candidates gdaughter length",            ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_gdau_mom_muon,   "candidates gdaughter momentum (muon)",   ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_gdau_mom_prot,   "candidates gdaughter momentum (proton)", ncandidates, nmax);
-  AddVarMaxSizeVI (output, candidates_gdau_type,       "candidates gdaughter object type",       ncandidates, nmax);
-  AddVarMaxSize3MF(output, candidates_gdau_CNNscore,   "candidates gdaughter CNN score",         ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_gdau_chi2_prot,  "candidates gdaughter chi2 proton",       ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_gdau_chi2_muon,  "candidates gdaughter chi2 proton",       ncandidates, nmax);
-  AddVarMaxSizeVF (output, candidates_gdau_chi2_ndf,   "candidates gdaughter chi2 ndf",          ncandidates, nmax);
-
-  AddVarMaxSizeVF (output, candidates_gdau_averagedEdx,     "candidates gdau average dEdx",                  ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_gdau_ndau,            "candidates gdaughter' gdaughters",              ncandidates, nmax);
+  AddVarMaxSize4MF(output, candidates_gdau_pos,             "candidates gdaughter position",                 ncandidates, nmax); 
+  AddVarMaxSize3MF(output, candidates_gdau_dir,             "candidates gdaughter direction",                ncandidates, nmax);
+  AddVarMaxSize4MF(output, candidates_gdau_endpos,          "candidates gdaughter position",                 ncandidates, nmax); 
+  AddVarMaxSize3MF(output, candidates_gdau_enddir,          "candidates gdaughter direction",                ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_gdau_length,          "candidates gdaughter length",                   ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_gdau_mom_muon,        "candidates gdaughter momentum (muon)",          ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_gdau_mom_prot,        "candidates gdaughter momentum (proton)",        ncandidates, nmax);
+  AddVarMaxSizeVI (output, candidates_gdau_type,            "candidates gdaughter object type",              ncandidates, nmax);
+  AddVarMaxSize3MF(output, candidates_gdau_CNNscore,        "candidates gdaughter CNN score",                ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_gdau_chi2_prot,       "candidates gdaughter chi2 proton",              ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_gdau_chi2_muon,       "candidates gdaughter chi2 proton",              ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_gdau_chi2_ndf,        "candidates gdaughter chi2 ndf",                 ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_gdau_average_dedx,    "candidates gdau average dEdx",                  ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_gdau_calE,            "candidates gdau calorimetry energy deposition", ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_gdau_vtx_michelscore, "candidates gdau michelscore in the vertex",     ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_gdau_vtx_nhits,       "candidates gdau points in the vertex",          ncandidates, nmax);
+}
+
+//********************************************************************
+void kaonTree::AddKaonVariables_KaonCandidatesRecoPID(OutputManager& output, UInt_t nmax){
+//********************************************************************
+
+  AddVarMaxSizeVF (output, candidates_lkl_prot,     "candidates proton likelihood",     ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_lkl_kaon,     "candidates kaon likelihood",       ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_lkl_prot, "candidates dau proton likelihood", ncandidates, nmax);
+  AddVarMaxSizeVF (output, candidates_dau_lkl_muon, "candidates dau muon likelihood",   ncandidates, nmax);
 }
 
 //********************************************************************
@@ -177,25 +179,60 @@ void kaonTree::AddKaonVariables_KaonCandidatesTrue(OutputManager& output, UInt_t
 void kaonTree::AddKaonVariables_KaonBestCandidateReco(OutputManager& output){
 //********************************************************************
 
-  AddVarI  (output, bestcandidate_generation,   "bestcandidate generation"       );
-  AddVarI  (output, bestcandidate_ndau,         "bestcandidate' daughters"       );
-  AddVar4VF(output, bestcandidate_pos,          "bestcandidate position"         ); 
-  AddVar3VF(output, bestcandidate_dir,          "bestcandidate direction"        );
-  AddVar4VF(output, bestcandidate_endpos,       "bestcandidate position"         ); 
-  AddVar3VF(output, bestcandidate_enddir,       "bestcandidate direction"        );
-  AddVarF  (output, bestcandidate_length,       "bestcandidate length"           );
-  AddVarF  (output, bestcandidate_mom_muon,     "bestcandidate momentum (muon)"  );
-  AddVarF  (output, bestcandidate_mom_prot,     "bestcandidate momentum (proton)");
-  AddVarI  (output, bestcandidate_type,         "bestcandidate object type"      );
-  AddVar3VF(output, bestcandidate_CNNscore,     "bestcandidate CNN score"        );
-  AddVarF  (output, bestcandidate_chi2_prot,    "bestcandidate chi2 proton"      );
-  AddVarF  (output, bestcandidate_chi2_muon,    "bestcandidate chi2 proton"      );
-  AddVarF  (output, bestcandidate_chi2_kaon,    "bestcandidate chi2 kaon"      );
-  AddVarF  (output, bestcandidate_chi2_ndf,     "bestcandidate chi2 ndf"         );
+  AddVarI  (output, bestcandidate_generation,      "bestcandidate generation"       );
+  AddVarI  (output, bestcandidate_ndau,            "bestcandidate' daughters"       );
+  AddVar4VF(output, bestcandidate_pos,             "bestcandidate position"         ); 
+  AddVar3VF(output, bestcandidate_dir,             "bestcandidate direction"        );
+  AddVar4VF(output, bestcandidate_endpos,          "bestcandidate position"         ); 
+  AddVar3VF(output, bestcandidate_enddir,          "bestcandidate direction"        );
+  AddVarF  (output, bestcandidate_length,          "bestcandidate length"           );
+  AddVarF  (output, bestcandidate_mom_muon,        "bestcandidate momentum (muon)"  );
+  AddVarF  (output, bestcandidate_mom_prot,        "bestcandidate momentum (proton)");
+  AddVarI  (output, bestcandidate_type,            "bestcandidate object type"      );
+  AddVar3VF(output, bestcandidate_CNNscore,        "bestcandidate CNN score"        );
+  AddVarF  (output, bestcandidate_chi2_prot,       "bestcandidate chi2 proton"      );
+  AddVarF  (output, bestcandidate_chi2_muon,       "bestcandidate chi2 proton"      );
+  AddVarF  (output, bestcandidate_chi2_kaon,       "bestcandidate chi2 kaon"      );
+  AddVarF  (output, bestcandidate_chi2_ndf,        "bestcandidate chi2 ndf"         );
   AddVarF  (output, bestcandidate_distance_mother, "bestcandidate-mother distance");
-  AddVarF  (output, bestcandidate_distance_dau, "bestcandidate-daughter distance");
-  AddVarF  (output, bestcandidate_cos_dau,      "bestcandidate-daughter cos"     );
-  AddVarI  (output, bestcandidate_nhits,        "bestcandidate #hits"            );
+  AddVarF  (output, bestcandidate_distance_dau,    "bestcandidate-daughter distance");
+  AddVarF  (output, bestcandidate_cos_dau,         "bestcandidate-daughter cos"     );
+  AddVarI  (output, bestcandidate_nhits,           "bestcandidate #hits"            );
+  AddVarF  (output, bestcandidate_average_dedx,    "bestcandidate average dEdx/hit"         );
+  AddVarF  (output, bestcandidate_vtx_michelscore, "bestcandidate michelscore in the vertex");
+  AddVarI  (output, bestcandidate_vtx_nhits,       "bestcandidate points in the vertex"     );
+  AddVarF  (output, bestcandidate_calE,            "bestcandidate calorimetry energy deposition"     );
+  AddVarF  (output, bestcandidate_truncated_dedx,            "bestcandidate calorimetry energy deposition"     );
+
+  AddVarI  (output, bestcandidate_dau_ndau,            "bestcandidate daughter' daughters"       );
+  AddVar4VF(output, bestcandidate_dau_pos,             "bestcandidate daughter position"         ); 
+  AddVar3VF(output, bestcandidate_dau_dir,             "bestcandidate daughter direction"        );
+  AddVar4VF(output, bestcandidate_dau_endpos,          "bestcandidate daughter position"         ); 
+  AddVar3VF(output, bestcandidate_dau_enddir,          "bestcandidate daughter direction"        );
+  AddVarF  (output, bestcandidate_dau_length,          "bestcandidate daughter length"           );
+  AddVarF  (output, bestcandidate_dau_mom_muon,        "bestcandidate daughter momentum (muon)"  );
+  AddVarF  (output, bestcandidate_dau_mom_prot,        "bestcandidate daughter momentum (proton)");
+  AddVarI  (output, bestcandidate_dau_type,            "bestcandidate daughter object type"      );
+  AddVar3VF(output, bestcandidate_dau_CNNscore,        "bestcandidate daughter CNN score"        );
+  AddVarF  (output, bestcandidate_dau_chi2_prot,       "bestcandidate daughter chi2 proton"      );
+  AddVarF  (output, bestcandidate_dau_chi2_muon,       "bestcandidate daughter chi2 proton"      );
+  AddVarF  (output, bestcandidate_dau_chi2_ndf,        "bestcandidate daughter chi2 ndf"         );
+  AddVarI  (output, bestcandidate_dau_nhits,           "bestcandidate daughter #hits"            );
+  AddVarF  (output, bestcandidate_dau_calE,            "bestcandidate dau calorimetry energy deposition");
+  AddVarF  (output, bestcandidate_dau_vtx_michelscore, "bestcandidate dau michelscore in the vertex"    );
+  AddVarI  (output, bestcandidate_dau_vtx_nhits,       "bestcandidate dau points in the vertex"         );
+
+  AddVarI  (output, bestcandidate_parent_ndau,       "bestcandidate parent' daughters"       );
+  AddVar4VF(output, bestcandidate_parent_pos,        "bestcandidate parent position"         ); 
+  AddVar3VF(output, bestcandidate_parent_dir,        "bestcandidate parent direction"        );
+  AddVar4VF(output, bestcandidate_parent_endpos,     "bestcandidate parent position"         ); 
+  AddVar3VF(output, bestcandidate_parent_enddir,     "bestcandidate parent direction"        );
+}
+
+//********************************************************************
+void kaonTree::AddKaonVariables_KaonBestCandidateRecoPID(OutputManager& output){
+//********************************************************************
+
   AddVarF  (output, bestcandidate_chi2_prot_perndf_5,  "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_chi2_muon_perndf_5,  "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_chi2_kaon_perndf_5,  "bestcandidate chi2 proton");
@@ -245,36 +282,6 @@ void kaonTree::AddKaonVariables_KaonBestCandidateReco(OutputManager& output){
   AddVarF  (output, bestcandidate_freelkl_kaon_20, "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_freelkl_prot_25, "bestcandidate chi2 proton");
   AddVarF  (output, bestcandidate_freelkl_kaon_25, "bestcandidate chi2 proton");
-
-  AddVarF  (output, bestcandidate_averagedEdx,     "bestcandidate average dEdx/hit"         );
-  AddVarF  (output, bestcandidate_vtx_michelscore, "bestcandidate michelscore in the vertex");
-  AddVarI  (output, bestcandidate_vtx_nhits,       "bestcandidate points in the vertex"     );
-  AddVarF  (output, bestcandidate_calE,            "bestcandidate calorimetry energy deposition"     );
-
-  AddVarI  (output, bestcandidate_dau_ndau,       "bestcandidate daughter' daughters"       );
-  AddVar4VF(output, bestcandidate_dau_pos,        "bestcandidate daughter position"         ); 
-  AddVar3VF(output, bestcandidate_dau_dir,        "bestcandidate daughter direction"        );
-  AddVar4VF(output, bestcandidate_dau_endpos,     "bestcandidate daughter position"         ); 
-  AddVar3VF(output, bestcandidate_dau_enddir,     "bestcandidate daughter direction"        );
-  AddVarF  (output, bestcandidate_dau_length,     "bestcandidate daughter length"           );
-  AddVarF  (output, bestcandidate_dau_mom_muon,   "bestcandidate daughter momentum (muon)"  );
-  AddVarF  (output, bestcandidate_dau_mom_prot,   "bestcandidate daughter momentum (proton)");
-  AddVarI  (output, bestcandidate_dau_type,       "bestcandidate daughter object type"      );
-  AddVar3VF(output, bestcandidate_dau_CNNscore,   "bestcandidate daughter CNN score"        );
-  AddVarF  (output, bestcandidate_dau_chi2_prot,  "bestcandidate daughter chi2 proton"      );
-  AddVarF  (output, bestcandidate_dau_chi2_muon,  "bestcandidate daughter chi2 proton"      );
-  AddVarF  (output, bestcandidate_dau_chi2_ndf,   "bestcandidate daughter chi2 ndf"         );
-  AddVarI  (output, bestcandidate_dau_nhits,      "bestcandidate daughter #hits"            );
-
-  AddVarF  (output, bestcandidate_dau_calE,            "bestcandidate dau calorimetry energy deposition");
-  AddVarF  (output, bestcandidate_dau_vtx_michelscore, "bestcandidate dau michelscore in the vertex"    );
-  AddVarI  (output, bestcandidate_dau_vtx_nhits,       "bestcandidate dau points in the vertex"         );
-
-  AddVarI  (output, bestcandidate_parent_ndau,       "bestcandidate parent' daughters"       );
-  AddVar4VF(output, bestcandidate_parent_pos,        "bestcandidate parent position"         ); 
-  AddVar3VF(output, bestcandidate_parent_dir,        "bestcandidate parent direction"        );
-  AddVar4VF(output, bestcandidate_parent_endpos,     "bestcandidate parent position"         ); 
-  AddVar3VF(output, bestcandidate_parent_enddir,     "bestcandidate parent direction"        );
 }
 
 //********************************************************************
@@ -386,26 +393,23 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_length,           part->Length           );
   output.FillVectorVar         (candidates_mom_prot,         pdAnaUtils::ComputeRangeMomentum(part->Length,2212));
   output.FillVectorVar         (candidates_mom_muon,         pdAnaUtils::ComputeRangeMomentum(part->Length,13)  );
+  Float_t calE = (Float_t)pdAnaUtils::ComputeDepositedEnergy(part);
+  Float_t mom  = sqrt(pow(calE,2)+2*calE*938.27);
+  Float_t csda = pdAnaUtils::ComputeCSDARange(mom, 2212);
+  output.FillVectorVar         (candidates_calE,             calE           );
   output.FillVectorVar         (candidates_type,             part->Type             );
   output.FillMatrixVarFromArray(candidates_CNNscore,         part->CNNscore,       3); 
   output.FillVectorVar         (candidates_chi2_prot,        part->Chi2Proton       );
   output.FillVectorVar         (candidates_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*part,321).first);
   output.FillVectorVar         (candidates_chi2_muon,        part->Chi2Muon         );
   output.FillVectorVar         (candidates_chi2_ndf,         part->Chi2ndf          );
-  // std::pair<double,int>kaon_PID = pdAnaUtils::kaonPID(*part);
-  // output.FillVectorVar         (candidates_kaon_PID,         (Float_t)kaon_PID.first);
-  // output.FillVectorVar         (candidates_kaon_PID_ndf,     kaon_PID.second        );
   output.FillVectorVar         (candidates_nhits,            part->NHits            );
 
-  output.FillVectorVar         (candidates_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
+  output.FillVectorVar         (candidates_average_dedx,      pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
   output.FillVectorVar         (candidates_truncated_dedx,   (Float_t)pdAnaUtils::ComputeTruncatedMean(0.16,0.16,part->Hits[2]));
   output.FillVectorVar         (candidates_vtx_michelscore,  part->vtx_CNN_michelscore);
   output.FillVectorVar         (candidates_vtx_nhits,        part->vtx_CNN_NHits);
-  //output.FillVectorVar         (candidates_distance_tcp,        (Float_t)part->Distance_to_closest_particle);
-  // output.FillVectorVar         (candidates_lkl_prot,        (Float_t)pdAnaUtils::GetdEdxLikelihood(part,2212));
-  // std::pair<Float_t,Float_t>lkl_result = pdAnaUtils::GetdEdxLikelihoodFreeRange(part,2212);
-  // output.FillVectorVar         (candidates_freelkl_prot,    lkl_result.first);
-  // output.FillVectorVar         (candidates_freelkl_prot_range,    lkl_result.second);
+  output.FillVectorVar         (candidates_distance_tcp,        (Float_t)part->Distance_to_closest_particle);
 
   if(parent)output.FillVectorVar(candidates_distance_mother, pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));
 
@@ -428,15 +432,16 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_dau_chi2_prot,        dau->Chi2Proton       );
   output.FillVectorVar         (candidates_dau_chi2_muon,        dau->Chi2Muon         );
   output.FillVectorVar         (candidates_dau_chi2_ndf,         dau->Chi2ndf          );
-  // std::pair<double,int>kaon_PID_dau = pdAnaUtils::kaonPID(*dau);
-  // output.FillVectorVar         (candidates_dau_kaon_PID,         (Float_t)kaon_PID_dau.first);
-  // output.FillVectorVar         (candidates_dau_kaon_PID_ndf,     kaon_PID_dau.second        );
   output.FillVectorVar         (candidates_dau_nhits,            dau->NHits            );
   output.FillVectorVar         (candidates_dau_forced,            (int)part->forced_daughter            );
   output.FillVectorVar         (candidates_dau_forced_matched,            (int)part->forced_daughter_matched            );
 
-  output.FillVectorVar         (candidates_dau_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(dau,5));
-  output.FillVectorVar         (candidates_dau_calE,             (Float_t)pdAnaUtils::ComputeDepositedEnergy(dau));
+  output.FillVectorVar         (candidates_dau_average_dedx,      pdAnaUtils::ComputeAveragedEdxOverResRange(dau,5));
+  output.FillVectorVar         (candidates_dau_truncated_dedx,   (Float_t)pdAnaUtils::ComputeTruncatedMean(0.16,0.16,dau->Hits[2]));
+  Float_t dau_calE = (Float_t)pdAnaUtils::ComputeDepositedEnergy(dau);
+  Float_t dau_mom  = sqrt(pow(calE,2)+2*calE*105.07);
+  Float_t dau_csda = pdAnaUtils::ComputeCSDARange(dau_mom, 13);
+  output.FillVectorVar         (candidates_dau_calE,            dau_calE           );
   output.FillVectorVar         (candidates_dau_vtx_michelscore,  dau->vtx_CNN_michelscore);
   output.FillVectorVar         (candidates_dau_vtx_nhits,        dau->vtx_CNN_NHits);
 
@@ -457,11 +462,25 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   output.FillVectorVar         (candidates_gdau_chi2_muon,        gdau->Chi2Muon         );
   output.FillVectorVar         (candidates_gdau_chi2_ndf,         gdau->Chi2ndf          );
 
-  output.FillVectorVar         (candidates_gdau_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(gdau,5));
+  output.FillVectorVar         (candidates_gdau_average_dedx,      pdAnaUtils::ComputeAveragedEdxOverResRange(gdau,5));
   output.FillVectorVar         (candidates_gdau_calE,             (Float_t)pdAnaUtils::ComputeDepositedEnergy(gdau));
   output.FillVectorVar         (candidates_gdau_vtx_michelscore,  gdau->vtx_CNN_michelscore);
   output.FillVectorVar         (candidates_gdau_vtx_nhits,        gdau->vtx_CNN_NHits);
+}
 
+//********************************************************************
+void kaonTree::FillKaonVariables_KaonCandidatesRecoPID(OutputManager& output, AnaParticlePD* part){
+//********************************************************************
+
+  if (!part) return;
+  output.FillVectorVar(candidates_lkl_prot, (Float_t)pdAnaUtils::GetdEdxLikelihood(part,2212));
+  output.FillVectorVar(candidates_lkl_kaon, (Float_t)pdAnaUtils::GetdEdxLikelihood(part,321));
+
+  if(part->Daughters.empty())return;
+  AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[0]);
+  if (!dau) return;
+  output.FillVectorVar(candidates_dau_lkl_prot, (Float_t)pdAnaUtils::GetdEdxLikelihood(dau,2212));
+  output.FillVectorVar(candidates_dau_lkl_muon, (Float_t)pdAnaUtils::GetdEdxLikelihood(dau,13));
 }
 
 //********************************************************************
@@ -586,12 +605,52 @@ void kaonTree::FillKaonVariables_KaonBestCandidateReco(OutputManager& output, An
   output.FillVar               (bestcandidate_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*part,321).first);
   output.FillVar               (bestcandidate_chi2_ndf,         part->Chi2ndf          );
   output.FillVar               (bestcandidate_nhits,            part->NHits            );
-
-  output.FillVar               (bestcandidate_averagedEdx,      pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
+  output.FillVar               (bestcandidate_average_dedx,     pdAnaUtils::ComputeAveragedEdxOverResRange(part)   );
   output.FillVar               (bestcandidate_vtx_michelscore,  part->vtx_CNN_michelscore);
   output.FillVar               (bestcandidate_vtx_nhits,        part->vtx_CNN_NHits);
   output.FillVar               (bestcandidate_calE,             (Float_t)pdAnaUtils::ComputeDepositedEnergy(part));
+  output.FillVar               (bestcandidate_truncated_dedx,   (Float_t)pdAnaUtils::ComputeTruncatedMean(0.16,0.16,part->Hits[2]));
 
+  if(parent){
+    output.FillVar(bestcandidate_distance_mother,         pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));
+    output.FillVar               (bestcandidate_parent_ndau,      (Int_t)parent->Daughters.size() );
+    output.FillVectorVarFromArray(bestcandidate_parent_pos,              parent->PositionStart,  4);
+    output.FillVectorVarFromArray(bestcandidate_parent_dir,              parent->DirectionStart, 3); 
+    output.FillVectorVarFromArray(bestcandidate_parent_endpos,           parent->PositionEnd,    4);
+    output.FillVectorVarFromArray(bestcandidate_parent_enddir,           parent->DirectionEnd,   3); 
+  }
+
+  if(part->Daughters.empty())return;
+  AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[0]);
+  if (!dau) return;
+  output.FillVar               (bestcandidate_distance_dau,         pdAnaUtils::ComputeDistanceMotherDaughter(part,dau));
+  output.FillVar               (bestcandidate_cos_dau,              pdAnaUtils::ComputeCosMotherDaughter(part,dau)     );
+
+  output.FillVar               (bestcandidate_dau_ndau,      (Int_t)dau->Daughters.size() );
+  output.FillVectorVarFromArray(bestcandidate_dau_pos,              dau->PositionStart,  4);
+  output.FillVectorVarFromArray(bestcandidate_dau_dir,              dau->DirectionStart, 3); 
+  output.FillVectorVarFromArray(bestcandidate_dau_endpos,           dau->PositionEnd,    4);
+  output.FillVectorVarFromArray(bestcandidate_dau_enddir,           dau->DirectionEnd,   3); 
+  output.FillVar               (bestcandidate_dau_length,           dau->Length           );
+  output.FillVar               (bestcandidate_dau_mom_prot,         pdAnaUtils::ComputeRangeMomentum(dau->Length,2212));
+  output.FillVar               (bestcandidate_dau_mom_muon,         pdAnaUtils::ComputeRangeMomentum(dau->Length,13)  );
+  output.FillVar               (bestcandidate_dau_type,             dau->Type             );
+  output.FillVectorVarFromArray(bestcandidate_dau_CNNscore,         dau->CNNscore,       3); 
+  output.FillVar               (bestcandidate_dau_chi2_prot,        dau->Chi2Proton       );
+  output.FillVar               (bestcandidate_dau_chi2_muon,        dau->Chi2Muon         );
+  output.FillVar               (bestcandidate_dau_chi2_ndf,         dau->Chi2ndf          );
+  output.FillVar               (bestcandidate_dau_nhits,            dau->NHits            );
+
+  output.FillVar               (bestcandidate_dau_calE,             (Float_t)pdAnaUtils::ComputeDepositedEnergy(dau));
+  output.FillVar               (bestcandidate_dau_vtx_michelscore,  dau->vtx_CNN_michelscore);
+  output.FillVar               (bestcandidate_dau_vtx_nhits,        dau->vtx_CNN_NHits);
+}
+
+//********************************************************************
+void kaonTree::FillKaonVariables_KaonBestCandidateRecoPID(OutputManager& output, AnaParticlePD* part){
+//********************************************************************
+
+  if (!part) return;
   std::pair<double,int> result = pdAnaUtils::Chi2PID_UpToRR(*part,2212,5);
   output.FillVar(bestcandidate_chi2_prot_perndf_5,(Float_t)result.first/result.second);
   result = pdAnaUtils::Chi2PID_UpToRR(*part,13,5);
@@ -660,42 +719,6 @@ void kaonTree::FillKaonVariables_KaonBestCandidateReco(OutputManager& output, An
   output.FillVar(bestcandidate_freelkl_kaon_20,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,321,20).first);
   output.FillVar(bestcandidate_freelkl_prot_25,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,2212,25).first);
   output.FillVar(bestcandidate_freelkl_kaon_25,pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(part,321,25).first);
-  
-
-  if(parent){
-    output.FillVar(bestcandidate_distance_mother,         pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));
-    output.FillVar               (bestcandidate_parent_ndau,      (Int_t)parent->Daughters.size() );
-    output.FillVectorVarFromArray(bestcandidate_parent_pos,              parent->PositionStart,  4);
-    output.FillVectorVarFromArray(bestcandidate_parent_dir,              parent->DirectionStart, 3); 
-    output.FillVectorVarFromArray(bestcandidate_parent_endpos,           parent->PositionEnd,    4);
-    output.FillVectorVarFromArray(bestcandidate_parent_enddir,           parent->DirectionEnd,   3); 
-  }
-
-  if(part->Daughters.empty())return;
-  AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[0]);
-  if (!dau) return;
-  output.FillVar               (bestcandidate_distance_dau,         pdAnaUtils::ComputeDistanceMotherDaughter(part,dau));
-  output.FillVar               (bestcandidate_cos_dau,              pdAnaUtils::ComputeCosMotherDaughter(part,dau)     );
-
-  output.FillVar               (bestcandidate_dau_ndau,      (Int_t)dau->Daughters.size() );
-  output.FillVectorVarFromArray(bestcandidate_dau_pos,              dau->PositionStart,  4);
-  output.FillVectorVarFromArray(bestcandidate_dau_dir,              dau->DirectionStart, 3); 
-  output.FillVectorVarFromArray(bestcandidate_dau_endpos,           dau->PositionEnd,    4);
-  output.FillVectorVarFromArray(bestcandidate_dau_enddir,           dau->DirectionEnd,   3); 
-  output.FillVar               (bestcandidate_dau_length,           dau->Length           );
-  output.FillVar               (bestcandidate_dau_mom_prot,         pdAnaUtils::ComputeRangeMomentum(dau->Length,2212));
-  output.FillVar               (bestcandidate_dau_mom_muon,         pdAnaUtils::ComputeRangeMomentum(dau->Length,13)  );
-  output.FillVar               (bestcandidate_dau_type,             dau->Type             );
-  output.FillVectorVarFromArray(bestcandidate_dau_CNNscore,         dau->CNNscore,       3); 
-  output.FillVar               (bestcandidate_dau_chi2_prot,        dau->Chi2Proton       );
-  output.FillVar               (bestcandidate_dau_chi2_muon,        dau->Chi2Muon         );
-  output.FillVar               (bestcandidate_dau_chi2_ndf,         dau->Chi2ndf          );
-  output.FillVar               (bestcandidate_dau_nhits,            dau->NHits            );
-
-  output.FillVar               (bestcandidate_dau_calE,             (Float_t)pdAnaUtils::ComputeDepositedEnergy(dau));
-  output.FillVar               (bestcandidate_dau_vtx_michelscore,  dau->vtx_CNN_michelscore);
-  output.FillVar               (bestcandidate_dau_vtx_nhits,        dau->vtx_CNN_NHits);
-
 }
 
 //********************************************************************

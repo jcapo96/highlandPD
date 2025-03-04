@@ -10,6 +10,10 @@
 #include "SystId.hxx"
 #include "SubDetId.hxx"
 
+//selection class to study the proton background 
+//in the secondary kaon analysis. The Secondary
+//kaon selection is applied to primary protons
+
 class PrimaryProtonKaonSelection: public SelectionBase{
  public:
   PrimaryProtonKaonSelection(bool forceBreak=true);

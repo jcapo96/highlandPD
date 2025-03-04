@@ -1,3 +1,5 @@
+#include "TPad.h"
+#include "TMultiGraph.h"
 #include "secondaryKaonXSSelection.hxx"
 #include "secondaryKaonSelection.hxx"
 #include "EventBoxKaon.hxx"
@@ -16,21 +18,40 @@ void secondaryKaonXSSelection::DefineSteps(){
 //********************************************************************
 
   //copy steps from pdBaseSelection
-  AddStep(StepBase::kAction,   "find beam track",            new FindBeamTrackAction()   );// in pdBaseAnalysis/src/pandoraPreselection  
-  AddStep(StepBase::kCut,      "Pandora track exists",       new BeamTrackExistsCut()    );// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kAction,   "find beam track",            new FindBeamTrackAction(), true   );// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kCut,      "Pandora track exists",       new BeamTrackExistsCut(), true    );// in pdBaseAnalysis/src/pandoraPreselection  
 
   //select events using beam instrumentation
-  //AddStep(StepBase::kCut,      "beam quality cut"    ,       new BeamQualityCut()    );
-  AddStep(StepBase::kCut, "beam pdg filter", new BeamFilterForXSCut());
+  AddStep(StepBase::kCut,      "beam quality cut"    ,       new BeamQualityCut()    );
+  //AddStep(StepBase::kCut,      "beam quality cut"    ,       new BQCForXS()    );
+  //AddStep(StepBase::kCut, "beam pdg filter", new BeamFilterForXSCut(), true);
 
-  //kaon selection
-  AddStep(StepBase::kAction,   "get a vector of kaons",      new GetKaonsForXSAction()   );
-  AddStep(StepBase::kCut,      "we have a kaon",             new EventHasKaonCut(),  true);
-  AddStep(StepBase::kAction,   "get forced daughter",        new GetForcedDaughterAction()   );
+  //split the selection in branches, pions/protons/kaonsfor each possible candidate
+  AddSplit(3);
+
+  //pions, protons and kaons cuts
+  AddStep(0,StepBase::kCut, "beam pdg filter", new BeamFilterForXSCut(), true);
+  AddStep(1,StepBase::kCut, "beam pdg filter", new BeamPDGCut(2212), true);
+  AddStep(2,StepBase::kCut, "beam pdg filter", new BeamPDGCut(321), true);
+
+  //add cuts to branches
+  for(int i = 0; i < 3; i++){
+    AddStep(i,StepBase::kAction,   "get a vector of kaon candidates",      new GetKaonsForXSAction(),true   );
+    AddStep(i,StepBase::kCut,      "we have a kaon",             new EventHasKaonCut(),  true);
+    AddStep(i,StepBase::kAction,   "get forced daughter",        new GetForcedDaughterAction()   );
+    //AddStep(i,StepBase::kCut,      "dau mom muon cut",           new DauMomMuonCut(), true);
+    AddStep(i,StepBase::kCut,      "all cut",           new AllCut(), true);
+    //AddStep(i,StepBase::kAction,   "test",           new DrawingTestAction(), true);
+  }
+
+  //set alias for branches
+  SetBranchAlias(0,"beam pions"  ,0);
+  SetBranchAlias(1,"beam protons",1);
+  SetBranchAlias(2,"beam kaons"  ,2);
 
   SetPreSelectionAccumLevel(-1);
 
-  SetBranchAlias(0,"NO BRANCH :)");
+  //  SetBranchAlias(0,"NO BRANCH :)");
 }
 
 //**************************************************
@@ -45,60 +66,94 @@ bool BeamFilterForXSCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   else return false;
 }
 
-// //**************************************************
-// bool BeamQualityCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
-// //**************************************************
+//**************************************************
+bool BQCForXS::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
   
-//   (void)event;
-  
-//   //cast the box
-//   ToyBoxPD& box = *static_cast<ToyBoxPD*>(&boxB);   
-  
-//   // Main track must exist
-//   if(!box.MainTrack) return false;
-  
-//   // get beam particle
-//   AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
-//   AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
-//   if(!beamPart)return false;
-  
-//   double data_mean_x  = -27.3;
-//   double data_sigma_x = 4.76;
-//   double data_mean_y  = 424.2;
-//   double data_sigma_y = 4.75;
-//   double data_mean_z  = 30.6;
-//   double data_sigma_z = 1.20;
+  // Cast the ToyBox to the appropriate type
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-//   double mc_mean_x  = -28.6;
-//   double mc_sigma_x = 4.15;
-//   double mc_mean_y  = 422.6;
-//   double mc_sigma_y = 3.94;
-//   double mc_mean_z  = 29.7;
-//   double mc_sigma_z = 0.54;
+  // get particles
+  AnaParticlePD* part = box.MainTrack;
+  AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<AnaEventB*>(&event)->Beam);
+  AnaParticlePD* beampart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+  if(!part || !beampart)return false;
 
-//   double mincos = 0.93;
+  //get anaeventinfo
+  AnaEventInfoPD* info = static_cast<AnaEventInfoPD*>(static_cast<AnaEventB*>(&event)->EventInfo);
+  double mom = info->NominalBeamMom;
 
-//   double normalized_x = 0;
-//   double normalized_y = 0;
-//   double normalized_z = 0;
-//   double cos = 0;
+  double data_6_mean_x = 2.51;
+  double data_6_mean_y = 1.90;
+  double data_6_mean_z = 1.02;
+  double data_7_mean_x = 3.55;   
+  double data_7_mean_y = 1.68;   
+  double data_7_mean_z = 1.76;   
+  double data_6_sigma_x = 0.26;  
+  double data_6_sigma_y = 1.1;   
+  double data_6_sigma_z = 1.08; 
+  double data_7_sigma_x = 0.29;  
+  double data_7_sigma_y = 0.91;  
+  double data_7_sigma_z = 1.51;                        
+  double mc_6_mean_x = 0.99;    
+  double mc_6_mean_y = 0.;       
+  double mc_6_mean_z = -0.01;
+  double mc_7_mean_x = -1.50; 
+  double mc_7_mean_y = 0.71;     
+  double mc_7_mean_z = 0.;    
+  double mc_6_sigma_x = 0.086;   
+  double mc_6_sigma_y = 0.11;    
+  double mc_6_sigma_z = 0.20;  
+  double mc_7_sigma_x = 0.20; 
+  double mc_7_sigma_y = 0.22;    
+  double mc_7_sigma_z = 0.19;
 
-//   if(event.GetIsMC()){
-//     normalized_x = (box.MainTrack->PositionStart[0]-mc_mean_x)/mc_sigma_x;
-//     normalized_y = (box.MainTrack->PositionStart[1]-mc_mean_y)/mc_sigma_y;
-//     normalized_z = (box.MainTrack->PositionStart[2]-mc_mean_z)/mc_sigma_z;
-//   }
-//   else{
-//     normalized_x = (box.MainTrack->PositionStart[0]-data_mean_x)/data_sigma_x;
-//     normalized_y = (box.MainTrack->PositionStart[1]-data_mean_y)/data_sigma_y;
-//     normalized_z = (box.MainTrack->PositionStart[2]-data_mean_z)/data_sigma_z;
-//   }
+  double meanx,sigmax,meany,sigmay,meanz,sigmaz;
+  if(event.GetIsMC()){
+    if(mom == 6){
+      meanx = mc_6_mean_x;
+      meany = mc_6_mean_y;
+      meanz = mc_6_mean_z;
+      sigmax = mc_6_sigma_x;
+      sigmay = mc_6_sigma_y;
+      sigmaz = mc_6_sigma_z;
+    }
+    else if(mom == 7){
+      meanx = mc_7_mean_x;
+      meany = mc_7_mean_y;
+      meanz = mc_7_mean_z;
+      sigmax = mc_7_sigma_x;
+      sigmay = mc_7_sigma_y;
+      sigmaz = mc_7_sigma_z;
+    }
+  }
+  else{
+    if(mom == 6){
+      meanx = data_6_mean_x;
+      meany = data_6_mean_y;
+      meanz = data_6_mean_z;
+      sigmax = data_6_sigma_x;
+      sigmay = data_6_sigma_y;
+      sigmaz = data_6_sigma_z;
+    }
+    else if(mom == 7){
+      meanx = data_7_mean_x;
+      meany = data_7_mean_y;
+      meanz = data_7_mean_z;
+      sigmax = data_7_sigma_x;
+      sigmay = data_7_sigma_y;
+      sigmaz = data_7_sigma_z;
+    }
+  }
 
-//   for(int i = 0; i < 3; i++)cos = cos + box.MainTrack->DirectionStart[i]*beamPart->DirectionEnd[i];
+  double deltaX = abs(part->PositionStart[0]-beampart->PositionEnd[0]-meanx)/sigmax;
+  double deltaY = abs(part->PositionStart[1]-beampart->PositionEnd[1]-meany)/sigmay;
+  double deltaZ = abs(part->PositionStart[2]-beampart->PositionEnd[2]-meanz)/sigmaz;
+  double coss = part->DirectionStart[0]*beampart->DirectionEnd[0]+part->DirectionStart[1]*beampart->DirectionEnd[1]+part->DirectionStart[2]*beampart->DirectionEnd[2];
 
-//   if(normalized_x < 3 && normalized_y < 3 && normalized_z < 3 && cos > mincos)return true;
-//   else return false;
-// }
+  if(deltaX<3 && deltaY<3 && deltaZ<3 && coss>0.93)return true;
+  else return false;
+}
 
 //**************************************************
 bool GetKaonsForXSAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
@@ -115,10 +170,15 @@ bool GetKaonsForXSAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   //look over daughters and look for candidates
   for(int i = 0; i < (int)beamTrack->Daughters.size(); i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(beamTrack->Daughters[i]);
+    if((int)part->Daughters.size()>1)continue;
     std::pair<double,int> pid = pdAnaUtils::Chi2PID(*part,321);
-    double chi = pid.first/pid.second;
-    double trunc = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,part->Hits[2]);
-    if(chi>0 && chi<3.65 && trunc>2.4 && trunc<4.6)box.Candidates.push_back(part);
+    if(pid.first<0)continue;
+    double chi_kaon = pid.first/pid.second;
+    pid = pdAnaUtils::Chi2PID(*part,2212);
+    if(pid.first<0)continue;
+    double chi_prot = pid.first/pid.second;
+    if(chi_kaon>0 && chi_kaon<20 && chi_prot>10)
+      box.Candidates.push_back(part);
   }
   
   return true;  
@@ -167,7 +227,8 @@ bool GetForcedDaughterAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     for(int ipart = 0; ipart < nParts; ipart++){
       AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[ipart]);
       if(candidate->UniqueID == part->UniqueID)continue; //skip itself
-      if(part->Type!=2)continue; //skip showers
+      if(part->isPandora)continue; //skip beam particle
+      if(part->Type!=2)continue; //skip showers maybe not needed?
       double dis = 0;
       for(int i = 0; i < 3; i++)dis += pow(part->PositionStart[i]-candidate->PositionEnd[i],2);
       dis = sqrt(dis);
@@ -176,7 +237,7 @@ bool GetForcedDaughterAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 	i_closest = ipart;
       }
     }
-    if(i_closest == -1 || dis_min>5)continue;
+    if(i_closest == -1 || dis_min>8)continue;
     //associate the closest one as forced daughter
     AnaParticlePD* forced_dau = static_cast<AnaParticlePD*>(parts[i_closest]);
     candidate->forced_daughter = true;
@@ -192,12 +253,133 @@ bool GetForcedDaughterAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 	break;
       }
     }
-    std::cout << "forced daughter found with distance " << dis_min << " " << candidate->forced_daughter_matched << std::endl;
   }
     
   return true;  
 }
 
+//**************************************************
+bool DauMomMuonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+  
+  (void)event;
+
+  //cast the box
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+
+  //loop over candidates
+  for(std::vector<AnaParticlePD*>::iterator it = box.Candidates.begin(); it != box.Candidates.end(); ){
+    //check it has a single daughter
+    if((*it)->Daughters.size()!=1){
+      it = box.Candidates.erase(it);
+      continue;
+    }
+    //check mom condition
+    AnaParticlePD* dau = static_cast<AnaParticlePD*>((*it)->Daughters[0]);
+    double mom = pdAnaUtils::ComputeRangeMomentum(dau->Length,13);
+    if(abs(mom-0.23)<0.03)
+      it++;
+    else
+      it = box.Candidates.erase(it);
+  }
+
+  return !box.Candidates.empty();
+}
+
+//**************************************************
+bool AllCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+  
+  (void)event;
+
+  //cast the box
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+
+  //loop over candidates
+  for(std::vector<AnaParticlePD*>::iterator it = box.Candidates.begin(); it != box.Candidates.end(); ){
+    //check it has a single daughter
+    if((*it)->Daughters.size()!=1){
+      it = box.Candidates.erase(it);
+      continue;
+    }
+    //check conditions
+    AnaParticlePD* dau = static_cast<AnaParticlePD*>((*it)->Daughters[0]);
+    double candidates_truncated_dedx = (Float_t)pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*it)->Hits[2]);
+    double candidates_dau_truncated_dedx = (Float_t)pdAnaUtils::ComputeTruncatedMean(0.16,0.16,dau->Hits[2]);
+    double truncated_dedx = (candidates_truncated_dedx+candidates_dau_truncated_dedx)/2;
+    double mom = pdAnaUtils::ComputeRangeMomentum(dau->Length,13);
+    double dis = pdAnaUtils::ComputeDistanceMotherDaughter((*it),dau);
+    bool forced = (*it)->forced_daughter;
+    if(abs(mom-0.215)<0.045 && truncated_dedx<4.2 && ((forced && dis<2.5) || (!forced && dis<4)))
+      it++;
+    else
+      it = box.Candidates.erase(it);
+  }
+
+  return !box.Candidates.empty();
+}
+
+//**************************************************
+bool DrawingTestAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
+//**************************************************
+
+  //get anaeventinfo
+  AnaEventInfoPD* info = static_cast<AnaEventInfoPD*>(static_cast<AnaEventB*>(&event)->EventInfo);
+  
+  // Cast the ToyBox to the appropriate type
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
+
+  // loop over candidates
+  for(int ican = 0; ican < (int)box.Candidates.size(); ican++){
+    AnaParticlePD* candidate = box.Candidates[ican];
+    //get daughter
+    AnaParticlePD* dau = static_cast<AnaParticlePD*>(candidate->Daughters[0]);
+    //skip if not forced
+    if(!candidate->forced_daughter)continue;
+
+    //title
+    std::stringstream ssevent, ssmatch;
+    ssevent << info->Event;
+    if(candidate->forced_daughter_matched)
+      ssmatch << 1;
+    else
+      ssmatch << 0;
+    std::string title = ssevent.str()+"_"+ssmatch.str();
+    
+    TMultiGraph* mgg = new TMultiGraph();
+    TGraph* tg1 = new TGraph();
+    TGraph* tg2 = new TGraph();
+    int counter = 0;
+    for(int i = 0; i < candidate->Hits[2].size(); i++){
+      tg1->SetPoint(counter,candidate->Hits[2][i].Position.Z(),candidate->Hits[2][i].Position.Y());
+      counter++;
+    }
+    counter = 0;
+    for(int i = 0; i < dau->Hits[2].size(); i++){
+      tg2->SetPoint(counter,dau->Hits[2][i].Position.Z(),dau->Hits[2][i].Position.Y());
+      counter++;
+    }
+    tg1->SetLineColor(1);
+    tg1->SetMarkerColor(1);
+    tg2->SetLineColor(2);
+    tg2->SetMarkerColor(2);
+    mgg->Add(tg1,"pl*");
+    mgg->Add(tg2,"pl*");
+    mgg->SetTitle(title.c_str());
+    mgg->SetName(title.c_str());
+    mgg->GetXaxis()->SetTitle("Z [cm]");
+    mgg->GetYaxis()->SetTitle("Y [cm]");
+    mgg->GetXaxis()->CenterTitle();
+    mgg->GetYaxis()->CenterTitle();
+    mgg->Draw("apl");
+    gPad->Update();gPad->Print(("plots/"+title+".jpeg").c_str());
+    delete tg1;
+    delete tg2;
+    delete mgg;
+  }
+  
+  return true;  
+}
 
 //**************************************************
 void secondaryKaonXSSelection::InitializeEvent(AnaEventC& eventC){

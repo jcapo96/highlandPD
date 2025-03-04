@@ -67,19 +67,14 @@ class secondaryProtonAnalysis: public baseAnalysis {
 
 private:
 
-  bool _xs_selection;
-  std::string _selection_name;
-  
-  bool _UseDetailedSelection;
-
-  bool _ApplydQdxSystematic;
-  bool _ApplyRecombinationSystematic;
-  bool _ApplySCESystematic;
-  bool _ApplyBrokenTracksSystematic;
-  bool _ApplyBeamPIDEfficiencySystematic;
-  bool _ApplyBeamPartWeightSystematic;
-  bool _ApplyBeamMomWeightSystematic;
-  bool _ApplyProtonBackgroundWeightSystematic;
+  enum enumSecondaryProtonVarMicroTrees{
+    candidates_allhits = kaonTree::enumKaonMicroTreesLast+1,
+    candidates_hitvector_dedx,
+    candidates_hitvector_resrange,
+    candidates_hitvector_thetaYZ,
+    candidates_hitvector_thetaXZ,
+    candidates_hitvector_tracklength,
+  };
 
 public:
 

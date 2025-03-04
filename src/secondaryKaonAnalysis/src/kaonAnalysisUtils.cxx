@@ -39,9 +39,9 @@ void kaonAnaUtils::AddBeamParticleReducedCategory(){
 void kaonAnaUtils::AddBeamParticleOriginCategory(){
 //********************************************************************
 
-  std::string part_types[] = {"beam", "cosmic", NAMEOTHER};
-  int part_codes[]         = {0     , 1       , CATOTHER};
-  int part_colors[]        = {9     , 98      , COLOTHER};
+  std::string part_types[] = {"beam matched", "beam not matched", "cosmic", NAMEOTHER};
+  int part_codes[]         = {0             , 2                 ,  1      , CATOTHER};
+  int part_colors[]        = {9             , 8                 , 98      , COLOTHER};
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
   
   std::reverse(part_types,  part_types  + NPART);
@@ -164,15 +164,16 @@ void kaonAnaUtils::FillBeamParticleReducedCategory(AnaParticlePD* beampart){
 //********************************************************************
 void kaonAnaUtils::FillBeamParticleOriginCategory(AnaParticlePD* beampart){
 //********************************************************************
-  
+
   if(!beampart) return;  
   AnaTrueParticlePD* truepart = static_cast<AnaTrueParticlePD*>(beampart->TrueObject);
 
   if(!truepart)                    anaUtils::_categ->SetCode("beamorigin", CATNOTRUTH, CATNOTRUTH);
   else{												          
-    if  (truepart->Origin==4)   anaUtils::_categ->SetCode("beamorigin", 0, CATOTHER);
-    else if(truepart->Origin==2)anaUtils::_categ->SetCode("beamorigin", 1, CATOTHER);
-    else                        anaUtils::_categ->SetCode("beamorigin", CATOTHER, CATOTHER);
+    if     (truepart->Origin==4 && truepart->Matched) anaUtils::_categ->SetCode("beamorigin", 0       , CATOTHER);
+    else if(truepart->Origin==4 && !truepart->Matched)anaUtils::_categ->SetCode("beamorigin", 2       , CATOTHER);
+    else if(truepart->Origin==2)                      anaUtils::_categ->SetCode("beamorigin", 1       , CATOTHER);
+    else                                              anaUtils::_categ->SetCode("beamorigin", CATOTHER, CATOTHER);
   }
 }
 

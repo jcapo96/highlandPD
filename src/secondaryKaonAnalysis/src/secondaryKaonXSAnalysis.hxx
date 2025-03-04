@@ -72,6 +72,27 @@ class secondaryKaonXSAnalysis: public baseAnalysis {
 
 private:
 
+  bool _FillBeamInstrumentationInfo;
+  bool _FillBeamParticleInfo;
+  bool _FillBeamParticleHitsInfo;
+  bool _FillBeamParticleDaughtersInfo;
+  bool _FillKaonCandidatesInfo;
+  bool _FillKaonCandidatesPIDInfo;
+  bool _FillBestKaonCandidateInfo;
+  bool _FillToyVariablesInfo;
+
+  bool _ApplydQdxSystematic;
+  bool _ApplyRecombinationSystematic;
+  bool _ApplySCESystematic;
+  bool _ApplyBrokenTracksSystematic;
+  bool _ApplyBeamPIDEfficiencySystematic;
+  bool _ApplyBeamPartWeightSystematic;
+  bool _ApplyBeamMomWeightSystematic;
+  bool _ApplyProtonBackgroundWeightSystematic;
+
+  bool _ApplySCECorrection;
+  bool _ApplydEdxCorrection;
+
 public:
 
   enum enumConf_secondaryKaonXSAnalysis{
@@ -87,6 +108,7 @@ public:
     kBeamPIDEfficiency,
     kBeamPartWeight,
     kBeamMomWeight,
+    kProtonBackgroundWeight,
     enumSystLast_secondaryKaonXSAnalysis
   };  
 };

@@ -72,8 +72,8 @@ bool GetProtonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 bool SecondaryProtonsCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
-  (void)event;
-  
+  AnaEventB& eventB = *static_cast<AnaEventB*>(&event); 
+
   // Cast the ToyBox to the appropriate type
   ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB); 
     
@@ -87,6 +87,7 @@ bool SecondaryProtonsCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     if(chi2/ndf > _lower_cut && chi2/ndf < _upper_cut && chi2 > 0 && chi2>0){
       npass++;
       ipart++;
+      part->Distance_to_closest_particle = pdAnaUtils::ComputeDistanceToClosestParticle(part,eventB.Particles,eventB.nParticles);
     }
     else 
       box.Candidates.erase(box.Candidates.begin()+ipart);

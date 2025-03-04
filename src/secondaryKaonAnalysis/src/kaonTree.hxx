@@ -11,10 +11,12 @@ namespace kaonTree{
   void AddKaonVariables_TrueKaonCandidates(OutputManager& output);
 
   void AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t nmax);
+  void AddKaonVariables_KaonCandidatesRecoPID(OutputManager& output, UInt_t nmax);
   void AddKaonVariables_KaonCandidatesHitsReco(OutputManager& output, UInt_t nmax, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void AddKaonVariables_KaonCandidatesTrue(OutputManager& output, UInt_t nmax);
 
   void AddKaonVariables_KaonBestCandidateReco(OutputManager& output);
+  void AddKaonVariables_KaonBestCandidateRecoPID(OutputManager& output);
   void AddKaonVariables_KaonBestCandidateHitsReco(OutputManager& output, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void AddKaonVariables_KaonBestCandidateTrue(OutputManager& output);
 
@@ -22,10 +24,12 @@ namespace kaonTree{
   void FillKaonVariables_TrueKaonCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
 
   void FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
+  void FillKaonVariables_KaonCandidatesRecoPID(OutputManager& output, AnaParticlePD* part);
   void FillKaonVariables_KaonCandidatesHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void FillKaonVariables_KaonCandidatesTrue(OutputManager& output, AnaParticlePD* part);
 
   void FillKaonVariables_KaonBestCandidateReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
+  void FillKaonVariables_KaonBestCandidateRecoPID(OutputManager& output, AnaParticlePD* part);
   void FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output, AnaParticlePD* part, UInt_t nmaxhitsperplane = NMAXHITSPERPLANE);
   void FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent = NULL);
 
@@ -80,6 +84,8 @@ namespace kaonTree{
     candidates_length,
     candidates_mom_muon,
     candidates_mom_prot,
+    candidates_calE,
+    candidates_csdarange_prot_from_calE,
     candidates_type,
     candidates_CNNscore,
     candidates_chi2_prot,
@@ -91,12 +97,13 @@ namespace kaonTree{
     candidates_distance_mother,
     candidates_distance_dau,
     candidates_cos_dau,
-    candidates_averagedEdx,
+    candidates_average_dedx,
     candidates_truncated_dedx,
     candidates_vtx_michelscore,
     candidates_vtx_nhits,
     candidates_distance_tcp,
     candidates_lkl_prot,
+    candidates_lkl_kaon,
     candidates_freelkl_prot,
     candidates_freelkl_prot_range,
 
@@ -138,11 +145,15 @@ namespace kaonTree{
     candidates_dau_kaon_PID,
     candidates_dau_kaon_PID_ndf,
     candidates_dau_calE,
-    candidates_dau_averagedEdx,
+    candidates_dau_csdarange_muon_from_calE,
+    candidates_dau_average_dedx,
+    candidates_dau_truncated_dedx,
     candidates_dau_vtx_michelscore,
     candidates_dau_vtx_nhits,
     candidates_dau_forced,
     candidates_dau_forced_matched,
+    candidates_dau_lkl_prot,
+    candidates_dau_lkl_muon,
 
     candidates_dau_nhits,
     candidates_dau_hit_x,
@@ -178,7 +189,7 @@ namespace kaonTree{
     candidates_gdau_chi2_muon,
     candidates_gdau_chi2_ndf,
     candidates_gdau_calE,
-    candidates_gdau_averagedEdx,
+    candidates_gdau_average_dedx,
     candidates_gdau_vtx_michelscore,
     candidates_gdau_vtx_nhits,
 
@@ -213,10 +224,11 @@ namespace kaonTree{
     bestcandidate_distance_mother,
     bestcandidate_distance_dau,
     bestcandidate_cos_dau,
-    bestcandidate_averagedEdx,
+    bestcandidate_average_dedx,
     bestcandidate_vtx_michelscore,
     bestcandidate_vtx_nhits,
     bestcandidate_calE,
+    bestcandidate_truncated_dedx,
 
     bestcandidate_chi2_prot_perndf_5,
     bestcandidate_chi2_muon_perndf_5,

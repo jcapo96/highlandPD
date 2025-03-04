@@ -16,30 +16,18 @@
 #include "HighlandMiniTreeConverter.hxx"
 #include "PDSPAnalyzerTreeConverter.hxx"
 
-#include "dQdxCalVariation.hxx"
-#include "dQdxXCalVariation.hxx"
-#include "dQdxYZCalVariation.hxx"
-#include "dQdxNormVariation.hxx"
 #include "RecombinationVariation.hxx"
 #include "dEdxVariation.hxx"
-#include "ResidualRangeVariation.hxx"
 #include "BeamPartIdEffWeight.hxx"
 #include "BrokenTrackWeight.hxx"
-#include "SCEVariation.hxx"
-#include "LifetimeVariation.hxx"
 #include "SCEGeometricVariation.hxx"
 #include "NominalBeamMomWeight.hxx"
 #include "BeamCompositionWeight.hxx"
 #include "ProtonBackgroundWeight.hxx"
 
-#include "HitPitchSCECorrection.hxx"
-#include "HitPositionSCECorrection.hxx"
-#include "CalorimetryCalibration.hxx"
-#include "RecombinationDataCorrection.hxx"
-#include "RecombinationMCCorrection.hxx"
 #include "ParticlePositionSCECorrection.hxx"
-#include "DaughterFinderCorrection.hxx"
 #include "dEdxMCCorrection.hxx"
+#include "RecombinationDataCorrection.hxx"
 
 //********************************************************************
 secondaryKaonAnalysis::secondaryKaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
@@ -75,6 +63,10 @@ bool secondaryKaonAnalysis::Initialize(){
   _ApplyBeamPartWeightSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyBeamPartWeightSystematic");
   _ApplyBeamMomWeightSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyBeamMomWeightSystematic");
   _ApplyProtonBackgroundWeightSystematic = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyProtonBackgroundWeightSystematic");
+
+  _ApplySCECorrection = ND::params().GetParameterI("secondaryKaonAnalysis.ApplySCECorrection");
+  _ApplydEdxCorrection = ND::params().GetParameterI("secondaryKaonAnalysis.ApplydEdxCorrection");
+  _ApplyRecombinationCorrection = ND::params().GetParameterI("secondaryKaonAnalysis.ApplyRecombinationCorrection");
 
   // Parameters
   _xs_selection = ND::params().GetParameterI("secondaryKaonAnalysis.XSSelection");
@@ -119,13 +111,10 @@ void secondaryKaonAnalysis::DefineInputConverters(){
 void secondaryKaonAnalysis::DefineSelections(){
 //********************************************************************
 
-  if(_xs_selection)sel().AddSelection(_selection_name.c_str(), "kaon XS selection", new secondaryKaonXSSelection(false));
-  else{
-    //if(_UseDetailedSelection)sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelection(false));  
+  if(_UseDetailedSelection)sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelection(false));  
     //if(_UseDetailedSelection)sel().AddSelection(_selection_name.c_str(), "kaon selection",    new PrimaryProtonKaonSelection(false));  
-    if(_UseDetailedSelection)sel().AddSelection(_selection_name.c_str(), "proton selection",    new secondaryProtonSelection(false));  
-    else                     sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelectionNoBranches(false));  
-  }
+    //if(_UseDetailedSelection)sel().AddSelection(_selection_name.c_str(), "proton selection",    new secondaryProtonSelection(false));  
+  else                     sel().AddSelection(_selection_name.c_str(), "kaon selection",    new secondaryKaonSelectionNoBranches(false));  
 }
 
 //********************************************************************
@@ -133,11 +122,12 @@ void secondaryKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
   baseAnalysis::DefineCorrections();
-  corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
-  //corr().AddCorrection(1, "dEdx MC correction"      , new dEdxMCCorrection());
-  //corr().AddCorrection(1, "recombination data correction", new RecombinationDataCorrection());
-  // corr().AddCorrection(1, "recombination mc correction", new RecombinationMCCorrection());
-  // corr().AddCorrection(1, "daughter finder", new DaughterFinderCorrection());
+  if(_ApplySCECorrection)
+    corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
+  if(_ApplydEdxCorrection)
+    corr().AddCorrection(1, "dEdx MC correction"      , new dEdxMCCorrection());
+  if(_ApplyRecombinationCorrection)
+    corr().AddCorrection(2, "Recombination data correction"      , new RecombinationDataCorrection());
 }
 
 //********************************************************************
@@ -150,7 +140,8 @@ void secondaryKaonAnalysis::DefineSystematics(){
   if(_ApplySCESystematic)
     evar().AddEventVariation(kSCEGeometric     ,"SCE variation",           new SCEGeometricVariation());
   if(_ApplydQdxSystematic)
-    evar().AddEventVariation(kdQdxCalibration  ,"dQdx cal variation",      new dQdxCalVariation());
+    //evar().AddEventVariation(kdQdxCalibration  ,"dQdx cal variation",      new dQdxCalVariation());
+    evar().AddEventVariation(kdQdxCalibration  ,"dEdx variation",          new dEdxVariation());
   if(_ApplyRecombinationSystematic)
     evar().AddEventVariation(kRecombination    ,"Recombination variation", new RecombinationVariation());
   if(_ApplyBrokenTracksSystematic)
@@ -242,18 +233,13 @@ void secondaryKaonAnalysis::DefineMicroTrees(bool addBase){
     AddToyVarVF(output(), bestcandidate_dau_hit_dedx_toy, "bestcandidate dau hit dEdx", 300);
     
     AddToyVarF(output(), bestcandidate_chi2_kaon_perndf_toy, "bestcandidate chi2 kaon divided by ndf");
+    AddToyVarF(output(), bestcandidate_dau_chi2_muon_perndf_toy, "bestcandidate chi2 kaon divided by ndf");
     AddToyVarF(output(), bestcandidate_Zstart_toy          , "bestcandidate Z start toy");
     AddToyVarF(output(), bestcandidate_Zend_toy            , "bestcandidate Z end toy");
     AddToyVarF(output(), bestcandidate_calE_toy            , "bestcandidate calE toy");
     AddToyVarF(output(), bestcandidate_length_toy          , "bestcandidate length toy");
     AddToyVarF(output(), bestcandidate_dau_calE_toy        , "bestcandidate dau calE toy");
   }
-
-  //TEST
-  AddVarMaxSizeVF(output(), candidates_hitvector_dedx    , "all candidates all hits dedx"    , candidates_allhits, 3000);
-  AddVarMaxSizeVF(output(), candidates_hitvector_resrange, "all candidates all hits resrange", candidates_allhits, 3000);
-  AddVarMaxSizeVF(output(), candidates_hitvector_thetaYZ , "all candidates all hits thetaYZ" , candidates_allhits, 3000);
-  AddVarMaxSizeVF(output(), candidates_hitvector_thetaXZ , "all candidates all hits thetaXZ" , candidates_allhits, 3000);
 }
 
 //********************************************************************
@@ -331,23 +317,6 @@ void secondaryKaonAnalysis::FillMicroTrees(bool addBase){
       kaonTree::FillKaonVariables_KaonBestCandidateTrue    (output(), box().Candidates[branchmax], parent);
     }
   }  
-
-  //TEST
-  //loop over candidates and add their hits to the tree
-  if(box().Candidates.size()>0){
-    for(int ipart = 0; ipart < std::min((int)box().Candidates.size(),(int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES); ipart++){
-      AnaParticlePD* part = static_cast<AnaParticlePD*>(box().Candidates[ipart]);
-      double thetaYZ = atan(abs(part->DirectionStart[1]/part->DirectionStart[2]))*180/TMath::Pi();
-      double thetaXZ = atan(abs(part->DirectionStart[0]/part->DirectionStart[2]))*180/TMath::Pi();
-      for(int ihit = 1; ihit < (int)part->Hits[2].size()-1; ihit++){
-	output().FillVectorVar(candidates_hitvector_dedx,part->Hits[2][ihit].dEdx);
-	output().FillVectorVar(candidates_hitvector_resrange,part->Hits[2][ihit].ResidualRange);
-	output().FillVectorVar(candidates_hitvector_thetaYZ,(Float_t)thetaYZ);
-	output().FillVectorVar(candidates_hitvector_thetaXZ,(Float_t)thetaXZ);
-	output().IncrementCounter(candidates_allhits);
-      }
-    } 
-  }
 }
 
 //********************************************************************
@@ -400,7 +369,9 @@ void secondaryKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
       output().FillToyVectorVar(bestcandidate_dau_hit_resrange_toy,bestdau->Hits[2][ihit].ResidualRange,ihit);
       output().FillToyVectorVar(bestcandidate_dau_hit_dedx_toy,bestdau->Hits[2][ihit].dEdx,ihit);
     }
+    chi2 = pdAnaUtils::Chi2PID(*bestdau,13);
     output().FillToyVar(bestcandidate_dau_calE_toy,            (float)(Float_t)pdAnaUtils::ComputeDepositedEnergy(bestdau));
+    output().FillToyVar(bestcandidate_dau_chi2_muon_perndf_toy, (float)chi2.first/chi2.second);
   }
 }
 
@@ -512,6 +483,7 @@ void secondaryKaonAnalysis::FillCategories(){
   if(_FillBeamParticleInfo){
     if(box().MainTrack){
       anaUtils::FillCategories(&GetEvent(), box().MainTrack,""); // method in highland/src/highland2/highlandUtils
+      kaonAnaUtils::FillBeamParticleOriginCategory(box().MainTrack); // method in highland/src/highland2/highlandUtils
       kaonAnaUtils::FillBeamParticleReducedCategory(box().MainTrack);
       if(_FillBeamParticleDaughtersInfo){
 	int ndau = std::min(20,(int)box().MainTrack->Daughters.size());
@@ -561,10 +533,8 @@ void secondaryKaonAnalysis::FillCategories(){
   // For the beam
   if(_FillBeamInstrumentationInfo){
     AnaParticleB* beamPart = static_cast<AnaBeam*>(GetSpill().Beam)->BeamParticle;
-    if (beamPart){
+    if (beamPart)
       anaUtils::FillCategories(&GetEvent(), beamPart, "beam"); // method in highland/src/highland2/highlandUtils
-      kaonAnaUtils::FillBeamParticleReducedCategory(static_cast<AnaParticlePD*>(beamPart));
-    }
   }
 }
 

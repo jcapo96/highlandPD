@@ -46,6 +46,13 @@ class BeamFilterForXSCut: public StepBase{
   StepBase* MakeClone(){return new BeamFilterForXSCut();}
 };
 
+class BQCForXS: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new BQCForXS();}
+};
+
 class GetKaonsForXSAction: public StepBase{
  public:
   using StepBase::Apply;
@@ -65,6 +72,27 @@ class GetForcedDaughterAction: public StepBase{
   using StepBase::Apply;
   bool Apply(AnaEventC& event, ToyBoxB& box) const;
   StepBase* MakeClone(){return new GetForcedDaughterAction();}
+};
+
+class DauMomMuonCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new DauMomMuonCut();}
+};
+
+class AllCut: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new AllCut();}
+};
+
+class DrawingTestAction: public StepBase{
+ public:
+  using StepBase::Apply;
+  bool Apply(AnaEventC& event, ToyBoxB& box) const;
+  StepBase* MakeClone(){return new DrawingTestAction();}
 };
 
 #endif

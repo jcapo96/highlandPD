@@ -6,6 +6,11 @@
 #include "InputManager.hxx"
 #include <set>
 
+//Migue:
+//This class generates minitrees with particles compatible 
+//with the candidate definition (descendants of the beam 
+//particle with a single daughter)
+
 class CreateMiniTreeKaon: public CreateMiniTreePD {
  public:
 
