@@ -24,6 +24,8 @@ void CalorimetryCalibration::Apply(AnaSpillC& spillC){
   AnaSpill& spill = *static_cast<AnaSpill*>(&spillC);
   AnaBunch* bunch = static_cast<AnaBunch*>(spill.Bunches[0]);
 
+  if(!spill.GetIsMC())return;
+
   // Loop over particles
   for(UInt_t ipart = 0; ipart < bunch->Particles.size(); ipart++){
     

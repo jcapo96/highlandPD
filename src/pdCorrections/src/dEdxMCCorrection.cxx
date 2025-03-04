@@ -8,8 +8,23 @@
 dEdxMCCorrection::dEdxMCCorrection(){
 //********************************************************************
 
-  _params = new BinnedParams(std::string(getenv("PDCORRECTIONSROOT"))+"/data","dEdxMC", BinnedParams::k1D_SYMMETRIC,"",true);
+  _params_1 = new BinnedParams(std::string(getenv("PDCORRECTIONSROOT"))+"/data","dEdxMC_1", BinnedParams::k2D_SYMMETRIC,"",true);
+  _params_2 = new BinnedParams(std::string(getenv("PDCORRECTIONSROOT"))+"/data","dEdxMC_2", BinnedParams::k2D_SYMMETRIC,"",true);
+  _paramsparams_1 = new BinnedParamsParams();
+  _paramsparams_2 = new BinnedParamsParams();
+  
+  _random = new TRandom3();
+  _random->SetSeed(1);
+}
 
+//********************************************************************
+dEdxMCCorrection::~dEdxMCCorrection(){
+//********************************************************************
+
+  delete _params_1;
+  delete _params_2;
+  delete _paramsparams_1;
+  delete _paramsparams_2;
 }
 
 //********************************************************************
@@ -34,16 +49,33 @@ void dEdxMCCorrection::Apply(AnaSpillC& spillC){
     
     if (!original) continue; //?
 
-    //get correction
-    Float_t correction = 1;
-    _params->GetMeanValueForBin(0, correction); //only 1 bin
+    //get theta XZ angle
+    double thetaXZ = atan(abs(part->DirectionStart[0]/part->DirectionStart[2]))*180/TMath::Pi();
     
     // loop over hits
     for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
       //the uncorrected dEdx
       double dEdx = part->Hits[2][ihit].dEdx;
       if(dEdx<0)continue;
-      part->Hits[2][ihit].dEdx = dEdx*correction;   
+
+      //get correction
+      Float_t correction   = 1;
+      Float_t sigma_landau = 0;
+      Float_t sigma_gauss  = 0;
+      _params_1->GetInterBinValues(thetaXZ, dEdx, *_paramsparams_1);
+      _params_2->GetInterBinValues(thetaXZ, dEdx, *_paramsparams_2);
+      correction   = _paramsparams_1->mean;
+      sigma_landau = _paramsparams_1->sigma;
+      sigma_gauss  = _paramsparams_2->sigma;
+      //landau random number generation is not generated over mpv and sigma
+      //but over a mean value that is not the same as the mpv.
+      //doing numerical experiments I found the relation below to get a 
+      //zero mpv for a given sigma.
+      double mean_landau  = 0.0067*(1-0.2*sigma_landau)*sigma_landau;
+      
+      part->Hits[2][ihit].dEdx = dEdx*correction
+	+ _random->Landau(mean_landau,sigma_landau)
+	+ _random->Gaus(0,sigma_gauss);
     }
   }
 }

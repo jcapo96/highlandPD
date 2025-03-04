@@ -5,7 +5,9 @@
 #include "BaseDataClasses.hxx"
 #include "BinnedParams.hxx"
 
-/// This class defines a correction that affects end/start position of each track
+#include "TRandom3.h"
+
+/// This class corrects MC dEdx by increasing each MPV and sigma
 
 class dEdxMCCorrection: public CorrectionBase {
 
@@ -13,14 +15,19 @@ public:
   
   dEdxMCCorrection();
 
-  virtual ~dEdxMCCorrection() {}
+  virtual ~dEdxMCCorrection();
 
   /// Apply the sce correction
   void Apply(AnaSpillC& spill);
   
 protected:
 
-  BinnedParams* _params;
+  BinnedParams* _params_1;
+  BinnedParams* _params_2;
+  BinnedParamsParams* _paramsparams_1;
+  BinnedParamsParams* _paramsparams_2;
+
+  TRandom3* _random;
 
 };
 

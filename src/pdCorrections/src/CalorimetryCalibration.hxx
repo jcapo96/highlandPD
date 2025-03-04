@@ -5,8 +5,8 @@
 #include "BaseDataClasses.hxx"
 #include "Calorimetry.hxx"
 
-/// This class defines a correction that affects each hit of a reconstructed track
-/// It modifies the pitch by SCE and recomputes dQdx
+/// This class applies the full calibration chain to
+/// MC events
 
 class CalorimetryCalibration: public CorrectionBase {
 

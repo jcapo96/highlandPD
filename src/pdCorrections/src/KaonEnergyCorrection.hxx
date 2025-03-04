@@ -5,7 +5,8 @@
 #include "BaseDataClasses.hxx"
 #include "BinnedParams.hxx"
 
-/// This class defines a correction that affects end/start position of each track
+/// This class modifies kaons dEdx
+/// deprecated, to be removed
 
 class KaonEnergyCorrection: public CorrectionBase {
 

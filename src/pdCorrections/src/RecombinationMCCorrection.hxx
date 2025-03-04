@@ -6,8 +6,8 @@
 #include "Calorimetry.hxx"
 #include "BinnedParams.hxx"
 
-/// This class defines a correction that affects each hit of a reconstructed track
-/// It modifies the pitch by SCE and recomputes dQdx
+/// This class corrects MC tracks dEdx for different
+/// recombination parameters
 
 class RecombinationMCCorrection: public CorrectionBase {
 

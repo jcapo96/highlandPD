@@ -28,11 +28,11 @@ void RecombinationDataCorrection::Apply(AnaSpillC& spillC){
   //recombination parameters
   double alpha = 0.930;
   double beta  = 0.212;
-  double alpha_new = 0.905;
-  double beta_new  = 0.220;
+  double alpha_new = 0.92;
+  double beta_new  = 0.195;
 
   //calibration constant ratio
-  double C_ratio = 0.95;
+  double C_ratio = 0.98;//1.01;//0.98;
 
   // Loop over particles
   for(Int_t ipart = 0; ipart < (Int_t)bunch->Particles.size(); ipart++){

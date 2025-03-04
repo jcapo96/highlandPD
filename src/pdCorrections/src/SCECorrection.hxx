@@ -6,9 +6,7 @@
 #include "SpaceCharge.hxx"
 #include "Calorimetry.hxx"
 
-/// This class defines a correction that affects each hit of a reconstructed track
-/// it modifies pitch and position. It is the same as applying HitPitch and HitPosition
-/// corrections
+/// This class corrects hits and track end/start position by SCE
 
 class SCECorrection: public CorrectionBase {
 
