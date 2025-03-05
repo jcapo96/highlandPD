@@ -29,6 +29,9 @@ public:
   /// The reconstructed Event Vertex
   AnaVertexB* Vertex;
 
+  /// For storing the true MainTrack (the beam particle in general)
+  AnaTrueParticlePD* TrueMainTrack;
+  
   /// The MainTrack (the beam particle in general)
   AnaParticlePD* MainTrack;
 
