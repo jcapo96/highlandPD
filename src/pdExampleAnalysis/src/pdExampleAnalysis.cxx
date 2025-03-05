@@ -333,7 +333,7 @@ void pdExampleAnalysis::FillToyVarsInMicroTrees(bool addBase){
   
 }
 //********************************************************************
-bool pdExampleAnalysis::CheckFillTruthTree(const AnaTrueParticlePD& part){
+bool pdExampleAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
 
   /* To avoid unecessary events in the "truth" tree in this method we define the condition to include or not a given 
