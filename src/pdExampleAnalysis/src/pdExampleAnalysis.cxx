@@ -82,7 +82,7 @@
 
 
 //********************************************************************
-pdExampleAnalysis::pdExampleAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
+pdExampleAnalysis::pdExampleAnalysis(AnalysisAlgorithm* ana) : pdBaseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version
@@ -333,25 +333,25 @@ void pdExampleAnalysis::FillToyVarsInMicroTrees(bool addBase){
   
 }
 //********************************************************************
-bool pdExampleAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
+bool pdExampleAnalysis::CheckFillTruthTree(const AnaTrueParticlePD& part){
 //********************************************************************
 
   /* To avoid unecessary events in the "truth" tree in this method we define the condition to include or not a given 
      true vertex in the tree. 
   */
 
-  (void) vtx; // to avoid warning for unused vtx variable
+  (void) part; // to avoid warning for unused vtx variable
   
   // fill it allways for the moment
   return true;
 }
 
 //********************************************************************
-void pdExampleAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
+void pdExampleAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 //********************************************************************
 
   // Fill the common variables
-  baseAnalysis::FillTruthTreeBase(vtx);
+  pdBaseAnalysis::FillTruthTree(part);
 
   // Fill standard variables for the PD analysis
   //  standardPDTree::FillStandardVariables_CountersTrue(output(), _globalCounters);
