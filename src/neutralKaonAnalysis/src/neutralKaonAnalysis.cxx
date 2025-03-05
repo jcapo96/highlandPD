@@ -160,13 +160,13 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
       output().IncrementCounter(standardPDTree::seltrk_ndau);
     }
 
-    AnaTrueParticle* trueBeamPart = static_cast<AnaTrueParticle*>(box().MainTrack->TrueObject);
+    AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
     if(trueBeamPart){
       // std::cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << std::endl;
       int ndau_truth = std::min(20,(int)trueBeamPart->Daughters.size());
       for(int i = 0; i < ndau_truth; i++){
-        AnaTrueParticle* truthdau = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, trueBeamPart->Daughters[i]);
-        standardPDTree::FillStandardVariables_BeamTruthDaughters(output(), static_cast<AnaTrueParticle*>(truthdau));
+        AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, trueBeamPart->Daughters[i]);
+        standardPDTree::FillStandardVariables_BeamTruthDaughters(output(), static_cast<AnaTrueParticlePD*>(truthdau));
 
         // seltrk_truth_ndau and seltrk_truth_dau (pdg info)
 

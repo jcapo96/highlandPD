@@ -57,7 +57,7 @@ namespace standardPDTree{
   void FillStandardVariables_BeamParticleGGDaughtersReco(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
   void FillStandardVariables_BeamParticleGGDaughtersTrue(OutputManager& output, AnaParticlePD* part, Int_t index1, Int_t index2);
 
-  void FillStandardVariables_BeamTruthDaughters(OutputManager& output, AnaTrueParticle* beamTruePart);
+  void FillStandardVariables_BeamTruthDaughters(OutputManager& output, AnaTrueParticlePD* beamTruePart);
 
   // Enum with unique indexes for output tree variables
   enum enumStandardMicroTrees_standardPDTree{

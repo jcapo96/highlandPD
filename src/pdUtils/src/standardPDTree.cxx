@@ -271,11 +271,11 @@ void standardPDTree::AddStandardVariables_BeamTruthDaughters(OutputManager& outp
 //******************************************************************
 
 //******************************************************************
-void standardPDTree::FillStandardVariables_BeamTruthDaughters(OutputManager& output, AnaTrueParticle* part){
+void standardPDTree::FillStandardVariables_BeamTruthDaughters(OutputManager& output, AnaTrueParticlePD* part){
   if (!part) return;
-  AnaTrueParticle* truePart = static_cast<AnaTrueParticle*>(part);
+  AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part);
   if (!truePart) return;
-  output.FillVar(seltrk_truthdau_truepdg, truePart->PDG);
+  output.FillVectorVar(seltrk_truthdau_truepdg, truePart->PDG);
 }
 //******************************************************************
 
