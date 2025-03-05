@@ -112,7 +112,7 @@ void pdBaseAnalysis::FillTruthTree(){
     AnaTrueParticlePD& part = *static_cast<AnaTrueParticlePD*>(*it);
 
     // Check if this particle needs to be saved in the truth tree
-    if (!CheckFillTruthTree(&part)) continue;
+    if (!CheckFillTruthTreePD(&part)) continue;
 
     // Initialize the truth tree. We must do that for each saved particle since several entries may correspond to the same spill
     output().InitializeTree(OutputManager::truth);
@@ -165,12 +165,12 @@ void pdBaseAnalysis::FillTruthTree(){
   }
 }
 
-// //********************************************************************
-// bool pdBaseAnalysis::CheckFillTruthTree(const AnaTrueParticlePD* part){
-// //********************************************************************
+//********************************************************************
+bool pdBaseAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
+//********************************************************************
 
-//   return true;
-// }
+  return true;
+}
 
 //********************************************************************
 void pdBaseAnalysis::FillTruthTree(const AnaTrueParticlePD& part){

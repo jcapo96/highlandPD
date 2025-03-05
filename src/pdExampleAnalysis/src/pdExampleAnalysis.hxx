@@ -37,7 +37,7 @@ class pdExampleAnalysis: public pdBaseAnalysis {
   void FillMicroTrees(bool addBase=true);
   void FillToyVarsInMicroTrees(bool addBase=true);
 
-  bool CheckFillTruthTree(const AnaTrueParticlePD& part);
+  bool CheckFillTruthTreePD(const AnaTrueParticlePD* part);
 
   using pdBaseAnalysis::FillTruthTree;
   void FillTruthTree(const AnaTrueParticlePD& part);
