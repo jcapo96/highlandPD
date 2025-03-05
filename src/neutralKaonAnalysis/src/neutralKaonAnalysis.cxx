@@ -147,12 +147,12 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   if(box().MainTrack){
     AnaBeamPD* beam = static_cast<AnaBeamPD*>(GetSpill().Beam);
     AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
-    standardPDTree::FillStandardVariables_EventInfo(        output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
-    standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
-    standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
-    standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack);
-    standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);
-    standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
+    standardPDTree::FillStandardVariables_EventInfo(                  output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
+    standardPDTree::FillStandardVariables_BeamInstrumentationReco(    output(), GetSpill().Beam);
+    standardPDTree::FillStandardVariables_BeamInstrumentationTrue(    output(), GetSpill().Beam);
+    standardPDTree::FillStandardVariables_BeamParticleReco(           output(), box().MainTrack);
+    standardPDTree::FillStandardVariables_BeamParticleTrue(           output(), box().MainTrack);
+    standardPDTree::FillStandardVariables_BeamParticleHitsReco(       output(), box().MainTrack);
     int ndau = std::min(20,(int)box().MainTrack->Daughters.size());
     for(int i = 0; i < ndau; i++){
       standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
@@ -165,15 +165,15 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
       // std::cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << std::endl;
       int ndau_truth = std::min(20,(int)trueBeamPart->Daughters.size());
       for(int i = 0; i < ndau_truth; i++){
-        AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, trueBeamPart->Daughters[i]);
-        standardPDTree::FillStandardVariables_BeamTruthDaughters(output(), static_cast<AnaTrueParticlePD*>(truthdau));
-
-        // seltrk_truth_ndau and seltrk_truth_dau (pdg info)
-
-        //loops over the reco daughters and fills them
-        //need to loop over the true daughters and fill the new function
-
-        output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau); //seltrk_ndau needs to be adjusted to the new ndau_truth variable
+        AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, trueBeamPart->Daughters[i]);
+        // int ndaudau_truth = std::min(20,(int)truthdau->Daughters.size());
+        // for(int j = 0; j < ndaudau_truth; j++){
+        //   AnaTrueParticlePD* truthdau_dau = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles
+        //   , truthdau->Daughters[j]);
+        //   standardPDTree::FillStandardVariables_BeamTruthDaughters(     output(), static_cast<AnaTrueParticlePD*>(truthdau_dau));
+        // }
+        standardPDTree::FillStandardVariables_BeamTruthDaughters(     output(), static_cast<AnaTrueParticlePD*>(truthdau));
+        output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau);
       }
   }
     // standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack, beamPart);
