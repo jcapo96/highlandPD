@@ -1,7 +1,7 @@
 #ifndef pdExampleAnalysis_h
 #define pdExampleAnalysis_h
 
-#include "baseAnalysis.hxx"
+#include "pdBaseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
 
@@ -21,7 +21,7 @@ namespace pdExampleAnalysisConstants{
 }
 
 
-class pdExampleAnalysis: public baseAnalysis {
+class pdExampleAnalysis: public pdBaseAnalysis {
  public:
   pdExampleAnalysis(AnalysisAlgorithm* ana=NULL);
   virtual ~pdExampleAnalysis(){}
@@ -37,10 +37,10 @@ class pdExampleAnalysis: public baseAnalysis {
   void FillMicroTrees(bool addBase=true);
   void FillToyVarsInMicroTrees(bool addBase=true);
 
-  bool CheckFillTruthTree(const AnaTrueVertex& vtx);
+  bool CheckFillTruthTree(const AnaTrueParticlePD& part);
 
-  using baseAnalysis::FillTruthTree;
-  void FillTruthTree(const AnaTrueVertex& vtx);
+  using pdBaseAnalysis::FillTruthTree;
+  void FillTruthTree(const AnaTrueParticlePD& part);
   //--------------------
 
   bool Initialize();
