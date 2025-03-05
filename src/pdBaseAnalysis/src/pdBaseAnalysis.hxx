@@ -29,7 +29,7 @@ class pdBaseAnalysis: public baseAnalysis {
   void FillToyVarsInMicroTrees(bool addBase=true);
 
   bool CheckFillTruthTree(const AnaTrueVertex& vtx){return true;}
-  virtual bool CheckFillTruthTreePD(const AnaTrueParticlePD* part);
+  virtual bool CheckFillTruthTreePD(const AnaTrueParticlePD* part) = 0;
 
   bool FinalizeConfiguration();
   void FillTruthTree();

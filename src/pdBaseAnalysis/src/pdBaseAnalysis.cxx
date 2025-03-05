@@ -165,12 +165,12 @@ void pdBaseAnalysis::FillTruthTree(){
   }
 }
 
-//********************************************************************
-bool pdBaseAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
-//********************************************************************
+// //********************************************************************
+// bool pdBaseAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
+// //********************************************************************
 
-  return true;
-}
+//   return true;
+// }
 
 //********************************************************************
 void pdBaseAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
