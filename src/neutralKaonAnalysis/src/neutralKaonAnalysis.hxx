@@ -1,11 +1,11 @@
 #ifndef neutralKaonAnalysis_h
 #define neutralKaonAnalysis_h
 
-#include "baseAnalysis.hxx"
+#include "pdBaseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
 
-class neutralKaonAnalysis: public baseAnalysis {
+class neutralKaonAnalysis: public pdBaseAnalysis {
  public:
  neutralKaonAnalysis(AnalysisAlgorithm* ana=NULL);
   virtual ~neutralKaonAnalysis(){}
@@ -22,8 +22,9 @@ class neutralKaonAnalysis: public baseAnalysis {
   void FillToyVarsInMicroTrees(bool addBase=true);
 
   bool CheckFillTruthTree(const AnaTrueVertex& vtx);
+  bool CheckFillTruthTreePD(const AnaTrueParticlePD* part);
 
-  using baseAnalysis::FillTruthTree;
+  using pdBaseAnalysis::FillTruthTree;
   void FillTruthTree(const AnaTrueVertex& vtx);
   //--------------------
 

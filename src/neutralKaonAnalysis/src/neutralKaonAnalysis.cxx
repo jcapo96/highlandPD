@@ -15,7 +15,7 @@
 #include "baseToyMaker.hxx"
 
 //********************************************************************
-neutralKaonAnalysis::neutralKaonAnalysis(AnalysisAlgorithm* ana) : baseAnalysis(ana) {
+neutralKaonAnalysis::neutralKaonAnalysis(AnalysisAlgorithm* ana) : pdBaseAnalysis(ana) {
 //********************************************************************
 
   // Add the package version
@@ -31,8 +31,8 @@ bool neutralKaonAnalysis::Initialize(){
      option (-p param.dat) to work, parameters cannot be accessed in the constructors.
   */
 
-  // Initialize the baseAnalysis
-  if(!baseAnalysis::Initialize()) return false;
+  // Initialize the pdBaseAnalysis
+  if(!pdBaseAnalysis::Initialize()) return false;
 
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("neutralKaonAnalysis.MinAccumLevelToSave"));
@@ -68,8 +68,8 @@ void neutralKaonAnalysis::DefineSelections(){
 void neutralKaonAnalysis::DefineCorrections(){
 //********************************************************************
 
-  // Some corrections are defined in baseAnalysis
-  baseAnalysis::DefineCorrections();
+  // Some corrections are defined in pdBaseAnalysis
+  pdBaseAnalysis::DefineCorrections();
   // corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
 }
 
@@ -77,24 +77,24 @@ void neutralKaonAnalysis::DefineCorrections(){
 void neutralKaonAnalysis::DefineSystematics(){
 //********************************************************************
 
-  // Some systematics are defined in baseAnalysis (highland/src/highland2/baseAnalysis)
-  baseAnalysis::DefineSystematics();
+  // Some systematics are defined in pdBaseAnalysis (highland/src/highland2/pdBaseAnalysis)
+  pdBaseAnalysis::DefineSystematics();
 }
 
 //********************************************************************
 void neutralKaonAnalysis::DefineConfigurations(){
 //********************************************************************
 
-  // Some configurations are defined in baseAnalysis
-  baseAnalysis::DefineConfigurations();
+  // Some configurations are defined in pdBaseAnalysis
+  pdBaseAnalysis::DefineConfigurations();
 }
 
 //********************************************************************
 void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
 //********************************************************************
 
-  // Variables from baseAnalysis (run, event, ...)
-  if (addBase) baseAnalysis::DefineMicroTrees(addBase);
+  // Variables from pdBaseAnalysis (run, event, ...)
+  if (addBase) pdBaseAnalysis::DefineMicroTrees(addBase);
 
   // standardPDTree::AddStandardVariables_AllParticlesReco(output(), 10);
   // standardPDTree::AddStandardVariables_AllParticlesTrue(output(), 10);
@@ -126,8 +126,8 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
 void neutralKaonAnalysis::DefineTruthTree(){
 //********************************************************************
 
-  // Variables from baseAnalysis (run, event, ...)
-  baseAnalysis::DefineTruthTree();
+  // Variables from pdBaseAnalysis (run, event, ...)
+  pdBaseAnalysis::DefineTruthTree();
   // Function in standardPDTree.cxx where the truth tree variables are defined: momentum, pdg, etc.
   // Function in standardPDTree.cxx -> beamParticleTruthDaughters()
 }
@@ -136,8 +136,8 @@ void neutralKaonAnalysis::DefineTruthTree(){
 void neutralKaonAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
 
-  // Variables from baseAnalysis (run, event, ...)
-  if (addBase) baseAnalysis::FillMicroTreesBase(addBase);
+  // Variables from pdBaseAnalysis (run, event, ...)
+  if (addBase) pdBaseAnalysis::FillMicroTreesBase(addBase);
 
   // Fill standard variables for the PD analysis
   // standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
@@ -187,7 +187,7 @@ void neutralKaonAnalysis::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
 
    // Fill the common variables
-  if (addBase) baseAnalysis::FillToyVarsInMicroTreesBase(addBase);
+  if (addBase) pdBaseAnalysis::FillToyVarsInMicroTreesBase(addBase);
 }
 
 //********************************************************************
@@ -207,8 +207,17 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 
   // Fill the common variables
-  baseAnalysis::FillTruthTreeBase(vtx);
+  pdBaseAnalysis::FillTruthTreeBase(vtx);
 }
+
+// bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
+//   return true;
+// }
+
+// void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
+//   // Fill the common variables
+//   pdBaseAnalysis::FillTruthTree();
+// }
 
 //********************************************************************
 void neutralKaonAnalysis::FillCategories(){
