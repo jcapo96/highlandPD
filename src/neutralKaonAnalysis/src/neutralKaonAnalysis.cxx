@@ -4,8 +4,10 @@
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
 #include "standardPDTree.hxx"
+#include "neutralKaonTree.hxx"
 
 #include "pdAnalysisUtils.hxx"
+#include "standardPDTree.hxx"
 
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
@@ -128,6 +130,7 @@ void neutralKaonAnalysis::DefineTruthTree(){
 
   // Variables from pdBaseAnalysis (run, event, ...)
   pdBaseAnalysis::DefineTruthTree();
+  neutralKaonTree::AddNeutralKaonVariables_TrueNeutralKaonCandidates(output());
   // Function in standardPDTree.cxx where the truth tree variables are defined: momentum, pdg, etc.
   // Function in standardPDTree.cxx -> beamParticleTruthDaughters()
 }
@@ -200,6 +203,18 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 
   // fill it allways for the moment
   return true;
+}
+
+bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part)
+{
+    return true;
+}
+
+void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part)
+{
+    // Fill the common variables
+    pdBaseAnalysis::FillTruthTree(part);
+    neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(output(), &part);
 }
 
 //********************************************************************

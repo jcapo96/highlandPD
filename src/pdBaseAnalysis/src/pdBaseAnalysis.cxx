@@ -69,7 +69,7 @@ void pdBaseAnalysis::DefineMicroTrees(bool addBase){
 
   // Variables from baseAnalysis (run, event, ...)   (highland/src/highland2/baseAnalysis)
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
-   
+
 }
 
 //********************************************************************
@@ -84,16 +84,16 @@ void pdBaseAnalysis::DefineTruthTree(){
 //********************************************************************
 void pdBaseAnalysis::FillMicroTrees(bool addBase){
 //********************************************************************
-  
+
   // Variables from baseAnalysis (run, event, ...)  (highland/src/highland2/baseAnalysis)
-  if (addBase) baseAnalysis::FillMicroTreesBase(addBase); 
-  
+  if (addBase) baseAnalysis::FillMicroTreesBase(addBase);
+
 }
 
 //********************************************************************
 void pdBaseAnalysis::FillToyVarsInMicroTrees(bool addBase){
 //********************************************************************
-  
+
 }
 
 //********************************************************************
@@ -118,7 +118,7 @@ void pdBaseAnalysis::FillTruthTree(){
     output().InitializeTree(OutputManager::truth);
 
     // accumulated cut levels to compute efficiencies. This is taken directly from the AnaTrueObject
-    Int_t accumLevel=0;  
+    Int_t accumLevel=0;
     for(std::vector<SelectionBase*>::iterator itf = sel().GetSelections().begin(); itf != sel().GetSelections().end(); itf++){
       if(!(*itf)->IsEnabled())continue;
 
@@ -192,7 +192,7 @@ void pdBaseAnalysis::FillCategories(){
 //********************************************************************
 bool pdBaseAnalysis::FinalizeConfiguration(){
 //********************************************************************
-  
+
   // This is called before FillMicroTrees()
 
   // Save the accum level for the true vertex associated to the recon one such that efficiencies can be computed from the truth tree
@@ -210,8 +210,8 @@ bool pdBaseAnalysis::FinalizeConfiguration(){
 
   if (trueParticle) trueParticles.push_back(trueParticle);
 
-  // If true particle does not exist (e.g. can happen that reco particle is not yet available at this step of the selection) then 
-  // store the accum_level to all true vertices of the bunch -> i.e. this basically corresponds to the fact that event as a whole 
+  // If true particle does not exist (e.g. can happen that reco particle is not yet available at this step of the selection) then
+  // store the accum_level to all true vertices of the bunch -> i.e. this basically corresponds to the fact that event as a whole
   // passed some cuts
   if (trueParticles.size() == 0){
     // Loop over all true vertices in the event and found those that belong to the bunch being processed
@@ -224,19 +224,19 @@ bool pdBaseAnalysis::FinalizeConfiguration(){
       // // Check the bunch
       // if (GetBunch().Bunch != vtx->Bunch) continue;
 
-      trueParticles.push_back(truepart); 
+      trueParticles.push_back(truepart);
     }
   }
 
   // Loop over all true vertices of interest
-  for (iter = trueParticles.begin(); iter != trueParticles.end(); iter++){ 
+  for (iter = trueParticles.begin(); iter != trueParticles.end(); iter++){
     AnaTrueParticlePD* truepart = *iter;
     if (!truepart) continue;
 
-    // When the AccumLevel has not been already saved for this particle 
+    // When the AccumLevel has not been already saved for this particle
     if (truepart->AccumLevel.size() == 0)
       truepart->AccumLevel.resize(sel().GetNEnabledSelections());
-    
+
     for (std::vector<SelectionBase*>::iterator it = sel().GetSelections().begin(); it != sel().GetSelections().end(); it++){
 
       if (!(*it)->IsEnabled()) continue;

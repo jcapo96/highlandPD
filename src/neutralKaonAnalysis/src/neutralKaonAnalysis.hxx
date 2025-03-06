@@ -26,6 +26,7 @@ class neutralKaonAnalysis: public pdBaseAnalysis {
 
   using pdBaseAnalysis::FillTruthTree;
   void FillTruthTree(const AnaTrueVertex& vtx);
+  void FillTruthTree(const AnaTrueParticlePD& part);
   //--------------------
 
   bool Initialize();
@@ -53,12 +54,10 @@ public:
   };
 
   enum enumConf_neutralKaonAnalysis{
-    detmass_syst=baseAnalysis::enumConfLast_baseAnalysis+1,
+    detmass_syst=pdBaseAnalysis::enumConfLast_baseAnalysis+1,
     dedx_syst,
     enumConfLast_neutralKaonAnalysis
   };
-
-
 
 };
 
