@@ -42,6 +42,7 @@ bool neutralKaonAnalysis::Initialize(){
   // Define categories for color drawing. Have a look at highland/src/highland2/highlandUtils/src/CategoriesUtils.hxx
   anaUtils::AddStandardCategories();
   anaUtils::AddStandardCategories("beam");
+  anaUtils::AddStandardCategories("bestcandidate");
 
   return true;
 }
@@ -204,14 +205,15 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
   // fill it allways for the moment
   return true;
 }
-
-bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part)
-{
+//********************************************************************
+bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
+//********************************************************************
     return true;
 }
 
-void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part)
-{
+//********************************************************************
+void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
+//********************************************************************
     // Fill the common variables
     pdBaseAnalysis::FillTruthTree(part);
     neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(output(), &part);

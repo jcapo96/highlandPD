@@ -18,8 +18,8 @@ void secondaryKaonSelection::DefineSteps(){
   // the step sequence is broken if cut is not passed (default is "false")
 
   //copy steps from pandoraPreselection
-  AddStep(StepBase::kAction,   "FIND PANDORA TRACK",         new FindBeamTrackAction(),true);// in pdBaseAnalysis/src/pandoraPreselection  
-  AddStep(StepBase::kCut,      "BEAM TRACK EXISTS",           new BeamTrackExistsCut(), true);// in pdBaseAnalysis/src/pandoraPreselection  
+  AddStep(StepBase::kAction,   "FIND PANDORA TRACK",         new FindBeamTrackAction(),true);// in pdBaseAnalysis/src/pandoraPreselection
+  AddStep(StepBase::kCut,      "BEAM TRACK EXISTS",           new BeamTrackExistsCut(), true);// in pdBaseAnalysis/src/pandoraPreselection
   //select events using beam instrumentation
   //AddStep(StepBase::kCut,      "beam pdg filter",            new BeamHadronCut(),      true);
   AddStep(StepBase::kAction,   "GET VECTOR OF KAONS",      new GetKaonsAction(),     true);
@@ -36,15 +36,15 @@ void secondaryKaonSelection::DefineSteps(){
     // AddStep(i, StepBase::kCut, "Proton chi2 cut",            new ProtonChi2Cut(0,84),          true);
   }
 
-  //Set the branch aliases to the different branches 
+  //Set the branch aliases to the different branches
   for(int i = 0; i < (int)secondaryKaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
     std::stringstream ssi;
     ssi << i;
     SetBranchAlias(i,("possible candidate "+ssi.str()+"").c_str(),i);
-  }  
+  }
 
-  // This number tells the selection to stop when a given accum level (accumulated cut level) is not passed. 
-  // For example, 2 as argument would mean that selection is stopped for the current toy experiment when the 
+  // This number tells the selection to stop when a given accum level (accumulated cut level) is not passed.
+  // For example, 2 as argument would mean that selection is stopped for the current toy experiment when the
   // third cut (numbering starts at 0) is not passed. This is a way of saving time.
   // -1 means no preselection
   SetPreSelectionAccumLevel(-1);
@@ -53,7 +53,7 @@ void secondaryKaonSelection::DefineSteps(){
 //**************************************************
 bool BeamHadronCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   BeamPDGCut beamCut0(11);
   BeamPDGCut beamCut1(13);
   BeamPDGCut beamCut2(211);
@@ -61,7 +61,7 @@ bool BeamHadronCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   BeamPDGCut beamCut4(2212);
 
   if(beamCut0.Apply(event,boxB) ||
-     beamCut1.Apply(event,boxB) || beamCut2.Apply(event,boxB) || 
+     beamCut1.Apply(event,boxB) || beamCut2.Apply(event,boxB) ||
      beamCut4.Apply(event,boxB) || beamCut3.Apply(event,boxB))
     return true;
   else return false;
@@ -72,10 +72,10 @@ bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
 
   (void)event;
-  
+
   // Cast the ToyBox to the appropriate type
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB); 
-    
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
+
   // Get the array of parts from the event
   AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
   int nParts           = static_cast<AnaEventB*>(&event)->nParticles;
@@ -86,8 +86,8 @@ bool GetKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     if(part->isPandora)continue; //skip beam particle
     if(part->DaughtersIDs.size() == 1 && part->ParentID != -1)box.Candidates.push_back(part);
   }
-  
-  return true;  
+
+  return true;
 }
 
 //**************************************************
@@ -97,8 +97,7 @@ bool EventHasKaonCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
-
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
   //if the main track has at least a single daughter with a single daughter, pass
   if (box.Candidates.size()>0) return true;
   else return false;
@@ -111,11 +110,11 @@ bool MuonIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
-  
+
   //make sure there is a candidate for this branch
   if(branchesIDs[0] > box.Candidates.size()-1)return false;
 
@@ -125,19 +124,19 @@ bool MuonIsTrackCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
-  else return false; 
+  else return false;
 }
 
 //**************************************************
 bool MuonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
- 
+
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //if there is kaon, cut in its daughter chi2
@@ -146,19 +145,19 @@ bool MuonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
-  else return false; 
+  else return false;
 }
 
 //**************************************************
 bool MuonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //if there is kaon, cut in its daughter CNN score
@@ -167,19 +166,19 @@ bool MuonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
-  else return false; 
+  else return false;
 }
 
 //**************************************************
 bool MuonRangeMomCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //if there is kaon, cut in its daughter range mom
@@ -189,19 +188,19 @@ bool MuonRangeMomCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
-  else return false; 
+  else return false;
 }
 
 //**************************************************
 bool KaonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //if there is kaon, cut on its CNN
@@ -209,19 +208,19 @@ bool KaonCNNCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
-  else return false; 
+  else return false;
 }
 
 //**************************************************
 bool KaonMuonAngleCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //if there is kaon, cut on the angle between it and its daughter muon
@@ -233,19 +232,19 @@ bool KaonMuonAngleCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
-  else return false; 
+  else return false;
 }
 
 //**************************************************
 bool KaonMuonDistanceCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //if there is kaon, cut on the distance between it and its daughter muon
@@ -258,19 +257,19 @@ bool KaonMuonDistanceCut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
     box.UpdateBestCandidateIndex(Index(),branchesIDs[0]);
     return true;
   }
-  else return false; 
+  else return false;
 }
 
 //**************************************************
 bool ProtonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 //**************************************************
-  
+
   (void)event;
 
   //cast the box
-  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);   
+  ToyBoxKaon& box = *static_cast<ToyBoxKaon*>(&boxB);
 
-  //get the current branch  
+  //get the current branch
   std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
 
   //make sure there is a candidate for this branch
@@ -291,7 +290,7 @@ bool ProtonChi2Cut::Apply(AnaEventC& event, ToyBoxB& boxB) const{
 void secondaryKaonSelection::InitializeEvent(AnaEventC& eventC){
 //**************************************************
 
-  AnaEventB& event = *static_cast<AnaEventB*>(&eventC); 
+  AnaEventB& event = *static_cast<AnaEventB*>(&eventC);
 
   // Create the appropriate EventBox if it does not exist yet
   if (!event.EventBoxes[EventBoxId::kEventBoxKaon])

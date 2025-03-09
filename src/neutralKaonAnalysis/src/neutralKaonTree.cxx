@@ -36,7 +36,7 @@ void neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(OutputM
       output.FillVar               (truekaon_truepdg,            truePart->PDG             );
       output.FillVar               (truekaon_trueparentpdg,      truePart->ParentPDG       );
       output.FillVar               (truekaon_trueparentid,       truePart->ParentID        );
-      output.FillVar               (truekaon_trueproc,           truePart->ProcessStart    );
+      output.FillVar               (truekaon_trueproc,           NewFunction(truePart));
       output.FillVar               (truekaon_trueendproc,        truePart->ProcessEnd      );
       output.FillVar               (truekaon_truegeneration,     truePart->Generation      );
       //output.FillVar               (truekaon_truedecay,          kvtx.DecayMode            );
@@ -64,4 +64,9 @@ void neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(OutputM
           output.FillVectorVarFromArray(truekaon_truemuon_trueenddir,         trueDau->DirectionEnd,  3);
         }
         }*/
-    }
+}
+
+AnaTrueParticleB::ProcessEnum neutralKaonTree::NewFunction(const AnaTrueParticlePD* truePart)
+{
+  return truePart->ProcessStart;
+}

@@ -1,5 +1,5 @@
 --- Cut levels --------
- < neutralKaonAnalysis.MinAccumLevelToSave = -1 >   // minimum accum level to save the event
+ < neutralKaonAnalysis.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
 
 --- Systematics ------------
 

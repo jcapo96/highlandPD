@@ -10,8 +10,10 @@ namespace neutralKaonTree {
     void AddNeutralKaonVariables_TrueNeutralKaonCandidates(OutputManager& output);
     void FillNeutralKaonVariables_TrueNeutralKaonCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
 
+    AnaTrueParticleB::ProcessEnum NewFunction(const AnaTrueParticlePD* truePart);
+
 // Enum with unique indexes for output tree variables
-enum enumKaonMicroTrees{
+enum enumNeutralKaonMicroTrees{
 
     //true kaon candidates info
     truenkaons = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
