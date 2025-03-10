@@ -208,7 +208,8 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
-    return true;
+  if (part->PDG != 310) return false;
+  else return true;
 }
 
 //********************************************************************
