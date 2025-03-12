@@ -39,31 +39,191 @@ void neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(OutputM
       output.FillVar               (truekaon_trueproc,           NewFunction(truePart));
       output.FillVar               (truekaon_trueendproc,        truePart->ProcessEnd      );
       output.FillVar               (truekaon_truegeneration,     truePart->Generation      );
-      //output.FillVar               (truekaon_truedecay,          kvtx.DecayMode            );
-      //output.FillVar               (truekaon_truechainmuon,      kvtx.ChainMuon            );
       output.FillVar               (truekaon_truendau,    (Int_t)truePart->Daughters.size());
       output.FillVectorVarFromArray(truekaon_truepos,            truePart->Position,      4);
       output.FillVectorVarFromArray(truekaon_trueendpos,         truePart->PositionEnd,   4);
       output.FillVectorVarFromArray(truekaon_truedir,            truePart->Direction,     3);
       output.FillVectorVarFromArray(truekaon_trueenddir,         truePart->DirectionEnd,  3);
-      //output.FillVar               (truekaon_branch,      (Int_t)kvtx.Branch               );
+}
 
-      /*if(kvtx.TrueParticlesVect.size()>1){
-        AnaTrueParticlePD* trueDau = static_cast<AnaTrueParticlePD*>(kvtx.TrueParticlesVect[1]);
-        if(trueDau){
-          output.FillVar               (truekaon_truemuon_truemom,            trueDau->Momentum        );
-          output.FillVar               (truekaon_truemuon_trueendmom,         trueDau->MomentumEnd     );
-          output.FillVar               (truekaon_truemuon_truepdg,            trueDau->PDG             );
-          output.FillVar               (truekaon_truemuon_truepdg,            trueDau->PDG             );
-          output.FillVar               (truekaon_truemuon_trueproc,           trueDau->ProcessStart    );
-          output.FillVar               (truekaon_truemuon_trueendproc,        trueDau->ProcessEnd      );
-          output.FillVar               (truekaon_truemuon_truendau,    (Int_t)trueDau->Daughters.size());
-          output.FillVectorVarFromArray(truekaon_truemuon_truepos,            trueDau->Position,      4);
-          output.FillVectorVarFromArray(truekaon_truemuon_trueendpos,         trueDau->PositionEnd,   4);
-          output.FillVectorVarFromArray(truekaon_truemuon_truedir,            trueDau->Direction,     3);
-          output.FillVectorVarFromArray(truekaon_truemuon_trueenddir,         trueDau->DirectionEnd,  3);
-        }
-        }*/
+//********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_TrueDaughter1Candidates(OutputManager& output){
+  //********************************************************************
+
+    AddVarF  (output, truedau1_truemom,        "true dau1 candidate true momentum"     );
+    AddVarF  (output, truedau1_trueendmom,     "true dau1 candidate true end momentum" );
+    AddVarI  (output, truedau1_truepdg,        "true dau1 candidate true pdg"          );
+    AddVarI  (output, truedau1_trueparentpdg,  "true dau1 candidate parent true pdg"   );
+    AddVarI  (output, truedau1_trueparentid,   "true dau1 candidate parent true ID"    );
+    AddVarI  (output, truedau1_trueproc,       "true dau1 candidate true process"      );
+    AddVarI  (output, truedau1_trueendproc,    "true dau1 candidate true end process"  );
+    AddVarI  (output, truedau1_truedecay,      "true dau1 candidate true decay"        );
+    AddVarI  (output, truedau1_truechainmuon,  "true dau1 candidate chain to muon"     );
+    AddVarI  (output, truedau1_truendau,       "true dau1 candidate true ndaughters"   );
+    AddVar4VF(output, truedau1_truepos,        "true dau1 candidate true position"     );
+    AddVar4VF(output, truedau1_trueendpos,     "true dau1 candidate true end position" );
+    AddVar3VF(output, truedau1_truedir,        "true dau1 candidate true direction"    );
+    AddVar3VF(output, truedau1_trueenddir,     "true dau1 candidate true end direction");
+    AddVarI  (output, truedau1_truegeneration, "true dau1 candidate true generation"   );
+    AddVarF  (output, truedau1_trueeff,        "true dau1 candidate true efficciency"  );
+    AddVarF  (output, truedau1_truepur,        "true dau1 candidate true purity"       );
+    AddVarI  (output, truedau1_branch,         "selection branch associated to this true dau1");
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_TrueDaughter1Candidates(OutputManager& output, const AnaTrueParticlePD* truePart){
+  //********************************************************************
+
+    if(!truePart)return;
+
+    output.FillVar               (truedau1_truemom,            truePart->Momentum        );
+    output.FillVar               (truedau1_trueendmom,         truePart->MomentumEnd     );
+    output.FillVar               (truedau1_truepdg,            truePart->PDG             );
+    output.FillVar               (truedau1_trueparentpdg,      truePart->ParentPDG       );
+    output.FillVar               (truedau1_trueparentid,       truePart->ParentID        );
+    output.FillVar               (truedau1_trueproc,           NewFunction(truePart));
+    output.FillVar               (truedau1_trueendproc,        truePart->ProcessEnd      );
+    output.FillVar               (truedau1_truegeneration,     truePart->Generation      );
+    output.FillVar               (truedau1_truendau,    (Int_t)truePart->Daughters.size());
+    output.FillVectorVarFromArray(truedau1_truepos,            truePart->Position,      4);
+    output.FillVectorVarFromArray(truedau1_trueendpos,         truePart->PositionEnd,   4);
+    output.FillVectorVarFromArray(truedau1_truedir,            truePart->Direction,     3);
+    output.FillVectorVarFromArray(truedau1_trueenddir,         truePart->DirectionEnd,  3);
+}
+
+//********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_TrueDaughter2Candidates(OutputManager& output){
+  //********************************************************************
+
+    AddVarF  (output, truedau2_truemom,        "true dau2 candidate true momentum"     );
+    AddVarF  (output, truedau2_trueendmom,     "true dau2 candidate true end momentum" );
+    AddVarI  (output, truedau2_truepdg,        "true dau2 candidate true pdg"          );
+    AddVarI  (output, truedau2_trueparentpdg,  "true dau2 candidate parent true pdg"   );
+    AddVarI  (output, truedau2_trueparentid,   "true dau2 candidate parent true ID"    );
+    AddVarI  (output, truedau2_trueproc,       "true dau2 candidate true process"      );
+    AddVarI  (output, truedau2_trueendproc,    "true dau2 candidate true end process"  );
+    AddVarI  (output, truedau2_truedecay,      "true dau2 candidate true decay"        );
+    AddVarI  (output, truedau2_truechainmuon,  "true dau2 candidate chain to muon"     );
+    AddVarI  (output, truedau2_truendau,       "true dau2 candidate true ndaughters"   );
+    AddVar4VF(output, truedau2_truepos,        "true dau2 candidate true position"     );
+    AddVar4VF(output, truedau2_trueendpos,     "true dau2 candidate true end position" );
+    AddVar3VF(output, truedau2_truedir,        "true dau2 candidate true direction"    );
+    AddVar3VF(output, truedau2_trueenddir,     "true dau2 candidate true end direction");
+    AddVarI  (output, truedau2_truegeneration, "true dau2 candidate true generation"   );
+    AddVarF  (output, truedau2_trueeff,        "true dau2 candidate true efficciency"  );
+    AddVarF  (output, truedau2_truepur,        "true dau2 candidate true purity"       );
+    AddVarI  (output, truedau2_branch,         "selection branch associated to this true dau2");
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_TrueDaughter2Candidates(OutputManager& output, const AnaTrueParticlePD* truePart){
+  //********************************************************************
+
+    if(!truePart)return;
+
+    output.FillVar               (truedau2_truemom,            truePart->Momentum        );
+    output.FillVar               (truedau2_trueendmom,         truePart->MomentumEnd     );
+    output.FillVar               (truedau2_truepdg,            truePart->PDG             );
+    output.FillVar               (truedau2_trueparentpdg,      truePart->ParentPDG       );
+    output.FillVar               (truedau2_trueparentid,       truePart->ParentID        );
+    output.FillVar               (truedau2_trueproc,           NewFunction(truePart));
+    output.FillVar               (truedau2_trueendproc,        truePart->ProcessEnd      );
+    output.FillVar               (truedau2_truegeneration,     truePart->Generation      );
+    output.FillVar               (truedau2_truendau,    (Int_t)truePart->Daughters.size());
+    output.FillVectorVarFromArray(truedau2_truepos,            truePart->Position,      4);
+    output.FillVectorVarFromArray(truedau2_trueendpos,         truePart->PositionEnd,   4);
+    output.FillVectorVarFromArray(truedau2_truedir,            truePart->Direction,     3);
+    output.FillVectorVarFromArray(truedau2_trueenddir,         truePart->DirectionEnd,  3);
+}
+
+//********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_TrueParentCandidates(OutputManager& output){
+  //********************************************************************
+
+    AddVarF  (output, truepar_truemom,        "true par candidate true momentum"     );
+    AddVarF  (output, truepar_trueendmom,     "true par candidate true end momentum" );
+    AddVarI  (output, truepar_truepdg,        "true par candidate true pdg"          );
+    AddVarI  (output, truepar_trueparentpdg,  "true par candidate parent true pdg"   );
+    AddVarI  (output, truepar_trueparentid,   "true par candidate parent true ID"    );
+    AddVarI  (output, truepar_trueproc,       "true par candidate true process"      );
+    AddVarI  (output, truepar_trueendproc,    "true par candidate true end process"  );
+    AddVarI  (output, truepar_truedecay,      "true par candidate true decay"        );
+    AddVarI  (output, truepar_truechainmuon,  "true par candidate chain to muon"     );
+    AddVarI  (output, truepar_truendau,       "true par candidate true ndaughters"   );
+    AddVar4VF(output, truepar_truepos,        "true par candidate true position"     );
+    AddVar4VF(output, truepar_trueendpos,     "true par candidate true end position" );
+    AddVar3VF(output, truepar_truedir,        "true par candidate true direction"    );
+    AddVar3VF(output, truepar_trueenddir,     "true par candidate true end direction");
+    AddVarI  (output, truepar_truegeneration, "true par candidate true generation"   );
+    AddVarF  (output, truepar_trueeff,        "true par candidate true efficciency"  );
+    AddVarF  (output, truepar_truepur,        "true par candidate true purity"       );
+    AddVarI  (output, truepar_branch,         "selection branch associated to this true par");
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_TrueParentCandidates(OutputManager& output, const AnaTrueParticlePD* truePart){
+  //********************************************************************
+
+    if(!truePart)return;
+
+    output.FillVar               (truepar_truemom,            truePart->Momentum        );
+    output.FillVar               (truepar_trueendmom,         truePart->MomentumEnd     );
+    output.FillVar               (truepar_truepdg,            truePart->PDG             );
+    output.FillVar               (truepar_trueparentpdg,      truePart->ParentPDG       );
+    output.FillVar               (truepar_trueparentid,       truePart->ParentID        );
+    output.FillVar               (truepar_trueproc,           NewFunction(truePart));
+    output.FillVar               (truepar_trueendproc,        truePart->ProcessEnd      );
+    output.FillVar               (truepar_truegeneration,     truePart->Generation      );
+    output.FillVar               (truepar_truendau,    (Int_t)truePart->Daughters.size());
+    output.FillVectorVarFromArray(truepar_truepos,            truePart->Position,      4);
+    output.FillVectorVarFromArray(truepar_trueendpos,         truePart->PositionEnd,   4);
+    output.FillVectorVarFromArray(truepar_truedir,            truePart->Direction,     3);
+    output.FillVectorVarFromArray(truepar_trueenddir,         truePart->DirectionEnd,  3);
+}
+
+//********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_TrueGrandParentCandidates(OutputManager& output){
+  //********************************************************************
+
+    AddVarF  (output, truegpar_truemom,        "true gpar candidate true momentum"     );
+    AddVarF  (output, truegpar_trueendmom,     "true gpar candidate true end momentum" );
+    AddVarI  (output, truegpar_truepdg,        "true gpar candidate true pdg"          );
+    AddVarI  (output, truegpar_trueparentpdg,  "true gpar candidate gparent true pdg"   );
+    AddVarI  (output, truegpar_trueparentid,   "true gpar candidate gparent true ID"    );
+    AddVarI  (output, truegpar_trueproc,       "true gpar candidate true process"      );
+    AddVarI  (output, truegpar_trueendproc,    "true gpar candidate true end process"  );
+    AddVarI  (output, truegpar_truedecay,      "true gpar candidate true decay"        );
+    AddVarI  (output, truegpar_truechainmuon,  "true gpar candidate chain to muon"     );
+    AddVarI  (output, truegpar_truendau,       "true gpar candidate true ndaughters"   );
+    AddVar4VF(output, truegpar_truepos,        "true gpar candidate true position"     );
+    AddVar4VF(output, truegpar_trueendpos,     "true gpar candidate true end position" );
+    AddVar3VF(output, truegpar_truedir,        "true gpar candidate true direction"    );
+    AddVar3VF(output, truegpar_trueenddir,     "true gpar candidate true end direction");
+    AddVarI  (output, truegpar_truegeneration, "true gpar candidate true generation"   );
+    AddVarF  (output, truegpar_trueeff,        "true gpar candidate true efficciency"  );
+    AddVarF  (output, truegpar_truepur,        "true gpar candidate true purity"       );
+    AddVarI  (output, truegpar_branch,         "selection branch associated to this true gpar");
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_TrueGrandParentCandidates(OutputManager& output, const AnaTrueParticlePD* truePart){
+  //********************************************************************
+
+    if(!truePart)return;
+
+    output.FillVar               (truegpar_truemom,            truePart->Momentum        );
+    output.FillVar               (truegpar_trueendmom,         truePart->MomentumEnd     );
+    output.FillVar               (truegpar_truepdg,            truePart->PDG             );
+    output.FillVar               (truegpar_trueparentpdg,      truePart->ParentPDG       );
+    output.FillVar               (truegpar_trueparentid,       truePart->ParentID        );
+    output.FillVar               (truegpar_trueproc,           NewFunction(truePart));
+    output.FillVar               (truegpar_trueendproc,        truePart->ProcessEnd      );
+    output.FillVar               (truegpar_truegeneration,     truePart->Generation      );
+    output.FillVar               (truegpar_truendau,    (Int_t)truePart->Daughters.size());
+    output.FillVectorVarFromArray(truegpar_truepos,            truePart->Position,      4);
+    output.FillVectorVarFromArray(truegpar_trueendpos,         truePart->PositionEnd,   4);
+    output.FillVectorVarFromArray(truegpar_truedir,            truePart->Direction,     3);
+    output.FillVectorVarFromArray(truegpar_trueenddir,         truePart->DirectionEnd,  3);
 }
 
 AnaTrueParticleB::ProcessEnum neutralKaonTree::NewFunction(const AnaTrueParticlePD* truePart)

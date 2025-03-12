@@ -50,6 +50,11 @@ public:
   enum enumStandardMicroTrees_neutralKaonAnalysis{
     seltrk_csdarange_prot = standardPDTree::enumStandardMicroTreesLast_standardPDTree,
     seltrk_ndau,
+    seltrk_dau_ndau,
+    seltrk_truthdau_ndau,
+    seltrk_truthk0_ndau,
+    seltrk_goodk0,
+    seltrk_dau_trueparentpdg,
     enumStandardMicroTreesLast_neutralKaonAnalysis
   };
 

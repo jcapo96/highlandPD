@@ -113,6 +113,9 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),20);
   standardPDTree::AddStandardVariables_BeamTruthDaughters(output(),20);
 
+  AddVarF(output(), seltrk_goodk0, "K0 is daughter & K0 daughters are daughters of particle");
+  AddVarI(output(), seltrk_dau_trueparentpdg, "Parent PDG of reco daughter");
+
 
   // Add standard sets of variables for ProtoDUNE analysis (these methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   // beam instrumentation info
@@ -132,6 +135,10 @@ void neutralKaonAnalysis::DefineTruthTree(){
   // Variables from pdBaseAnalysis (run, event, ...)
   pdBaseAnalysis::DefineTruthTree();
   neutralKaonTree::AddNeutralKaonVariables_TrueNeutralKaonCandidates(output());
+  neutralKaonTree::AddNeutralKaonVariables_TrueDaughter1Candidates(output());
+  neutralKaonTree::AddNeutralKaonVariables_TrueDaughter2Candidates(output());
+  neutralKaonTree::AddNeutralKaonVariables_TrueParentCandidates(output());
+  neutralKaonTree::AddNeutralKaonVariables_TrueGrandParentCandidates(output());
   // Function in standardPDTree.cxx where the truth tree variables are defined: momentum, pdg, etc.
   // Function in standardPDTree.cxx -> beamParticleTruthDaughters()
 }
@@ -144,45 +151,71 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   if (addBase) pdBaseAnalysis::FillMicroTreesBase(addBase);
 
   // Fill standard variables for the PD analysis
-  // standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
-  // standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
 
   // ---------- Additional candidate variables --------------
   if(box().MainTrack){
     AnaBeamPD* beam = static_cast<AnaBeamPD*>(GetSpill().Beam);
     AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
+    AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
     standardPDTree::FillStandardVariables_EventInfo(                  output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
     standardPDTree::FillStandardVariables_BeamInstrumentationReco(    output(), GetSpill().Beam);
     standardPDTree::FillStandardVariables_BeamInstrumentationTrue(    output(), GetSpill().Beam);
     standardPDTree::FillStandardVariables_BeamParticleReco(           output(), box().MainTrack);
     standardPDTree::FillStandardVariables_BeamParticleTrue(           output(), box().MainTrack);
     standardPDTree::FillStandardVariables_BeamParticleHitsReco(       output(), box().MainTrack);
-    int ndau = std::min(20,(int)box().MainTrack->Daughters.size());
+    int ndau = (int)box().MainTrack->Daughters.size();
+    bool goodk0 = false;
     for(int i = 0; i < ndau; i++){
+      // cout << "box().MainTrack->Daughters[i]->TrueObject->ID = " << box().MainTrack->Daughters[i] << endl;
       standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
       standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
-      output().IncrementCounter(standardPDTree::seltrk_ndau);
-    }
-
-    AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
-    if(trueBeamPart){
-      // std::cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << std::endl;
-      int ndau_truth = std::min(20,(int)trueBeamPart->Daughters.size());
-      for(int i = 0; i < ndau_truth; i++){
-        AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, trueBeamPart->Daughters[i]);
-        // int ndaudau_truth = std::min(20,(int)truthdau->Daughters.size());
-        // for(int j = 0; j < ndaudau_truth; j++){
-        //   AnaTrueParticlePD* truthdau_dau = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles
-        //   , truthdau->Daughters[j]);
-        //   standardPDTree::FillStandardVariables_BeamTruthDaughters(     output(), static_cast<AnaTrueParticlePD*>(truthdau_dau));
-        // }
-        standardPDTree::FillStandardVariables_BeamTruthDaughters(     output(), static_cast<AnaTrueParticlePD*>(truthdau));
-        output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau);
+      output().FillVar(seltrk_dau_trueparentpdg, static_cast<AnaTrueParticlePD*>(box().MainTrack->Daughters[i]->TrueObject)->ParentPDG);
+      if (trueBeamPart) {
+        standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack, beamPart);
+        standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);
+        standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
+        int ndau_truth = (int)trueBeamPart->Daughters.size();
+        // cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << endl;
+        for(int j = 0; j < ndau_truth; j++){
+          // cout << "trueBeamPart->Daughters[j] = " << trueBeamPart->Daughters[j] << endl;
+          AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, trueBeamPart->Daughters[j]);
+          if (!truthdau) continue;
+          // cout << "truthdau->PDG = " << truthdau->PDG << endl;
+          if (truthdau->PDG == 310) {
+            int ndau_truthk0 = (int)truthdau->Daughters.size();
+            // cout << "truthdau->Daughters.size() = " << truthdau->Daughters.size() << endl;
+            // cout << "trueBeamPart->Daughters[j]: " << trueBeamPart->Daughters[j] << endl;
+            for(int k = 0; k < ndau_truthk0; k++){
+              // cout << "truthdau->Daughters[k]: " << truthdau->Daughters[k] << endl;
+              AnaTrueParticlePD* truthdauk0 = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, truthdau->Daughters[k]);
+              // cout << truthdauk0 << endl;
+              // cout << "GetSpill.TrueParticles.size(): " << GetSpill().TrueParticles.size() << endl;
+              if (!truthdauk0) continue;
+              // cout << "truthdauk0->ID: " << truthdauk0->ID << endl;
+              // cout << "box().MainTrack->Daughters[i]->TrueObject->ID" << box().MainTrack->Daughters[i]->TrueObject->ID << endl;
+              if (truthdauk0->ID == box().MainTrack->Daughters[i]->TrueObject->ID) {
+                // cout << "True - K0 has " << ndau_truthk0 << " daughters" << endl;
+                goodk0 = true;
+              }
+              output().IncrementCounter(neutralKaonAnalysis::seltrk_truthk0_ndau);
+            }
+          }
+          output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau);
+        }
       }
-  }
-    // standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack, beamPart);
-    // standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);
-    //standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
+    float seltrk_goodk0_true = 100.0;
+    float seltrk_goodk0_false = 0.0;
+    if (goodk0) {
+      cout << "Filled with 100" << endl;
+      output().FillVar(seltrk_goodk0, seltrk_goodk0_true);
+    }
+    else {
+      output().FillVar(seltrk_goodk0, seltrk_goodk0_false);
+    }
+    output().IncrementCounter(standardPDTree::seltrk_ndau);
+    }
   }
 }
 
@@ -200,16 +233,15 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 
   (void) vtx; // to avoid warning for unused vtx variable
 
-
-
   // fill it allways for the moment
   return true;
 }
 //********************************************************************
 bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
-  if (part->PDG != 310) return false;
-  else return true;
+  // if (part->PDG != 310) return false;
+  // else return true;
+  return true;
 }
 
 //********************************************************************
@@ -218,6 +250,24 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
     // Fill the common variables
     pdBaseAnalysis::FillTruthTree(part);
     neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(output(), &part);
+    AnaTrueParticlePD* truthpar = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, part.ParentID);
+    if (truthpar) {
+      neutralKaonTree::FillNeutralKaonVariables_TrueParentCandidates(output(), truthpar);
+      AnaTrueParticlePD* truthgpar = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, truthpar->ParentID);
+      if (truthgpar) {
+        neutralKaonTree::FillNeutralKaonVariables_TrueGrandParentCandidates(output(), truthgpar);
+      }
+    }
+    if(&part){
+      // std::cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << std::endl;
+      int ndau_truth = std::min(20,(int)part.Daughters.size());
+      if (ndau_truth == 2) {
+        AnaTrueParticlePD* truthdau1 = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, part.Daughters[0]);
+        AnaTrueParticlePD* truthdau2 = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, part.Daughters[1]);
+        neutralKaonTree::FillNeutralKaonVariables_TrueDaughter1Candidates(output(), truthdau1);
+        neutralKaonTree::FillNeutralKaonVariables_TrueDaughter2Candidates(output(), truthdau2);
+      }
+    }
 }
 
 //********************************************************************
