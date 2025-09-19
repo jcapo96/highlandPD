@@ -25,6 +25,47 @@ void neutralKaonTree::AddNeutralKaonVariables_TrueNeutralKaonCandidates(OutputMa
       AddVarI  (output, truekaon_branch,         "selection branch associated to this true kaon");
 }
 
+// void neutralKaonTree::AddVariablesDynamic(OutputManager& output, const std::string& par1) {
+//   floatVars[par1 + "_truemom"] = 0.0f;
+//   floatVars[par1 + "_trueendmom"] = 0.0f;
+//   // intVars[par1 + "_truepdg"] = 0;
+//   // intVars[par1 + "_trueparentpdg"] = 0;
+//   // intVars[par1 + "_trueparentid"] = 0;
+//   // intVars[par1 + "_trueproc"] = 0;
+//   // intVars[par1 + "_trueendproc"] = 0;
+//   // intVars[par1 + "_truedecay"] = 0;
+//   // intVars[par1 + "_truechainmuon"] = 0;
+//   // intVars[par1 + "_truendau"] = 0;
+//   // vec4Vars[par1 + "_truepos"] = {0.0f, 0.0f, 0.0f, 0.0f};
+//   // vec4Vars[par1 + "_trueendpos"] = {0.0f, 0.0f, 0.0f, 0.0f};
+//   // vec3Vars[par1 + "_truedir"] = {0.0f, 0.0f, 0.0f};
+//   // vec3Vars[par1 + "_trueenddir"] = {0.0f, 0.0f, 0.0f};
+//   // intVars[par1 + "_truegeneration"] = 0;
+//   floatVars[par1 + "_trueeff"] = 0.0f;
+//   floatVars[par1 + "_truepur"] = 0.0f;
+//   // intVars[par1 + "_branch"] = 0;
+
+//   AddVarF(output, floatVars[par1 + "_truemom"], par1 + " true momentum");
+//   AddVarF(output, floatVars[par1 + "_trueendmom"], par1 + " true end momentum");
+//   // AddVarI(output, intVars[par1 + "_truepdg"], par1 + " true pdg");
+//   // AddVarI(output, intVars[par1 + "_trueparentpdg"], par1 + " parent true pdg");
+//   // AddVarI(output, intVars[par1 + "_trueparentid"], par1 + " parent true ID");
+//   // AddVarI(output, intVars[par1 + "_trueproc"], par1 + " true process");
+//   // AddVarI(output, intVars[par1 + "_trueendproc"], par1 + " true end process");
+//   // AddVarI(output, intVars[par1 + "_truedecay"], par1 + " true decay");
+//   // AddVarI(output, intVars[par1 + "_truechainmuon"], par1 + " chain to muon");
+//   // AddVarI(output, intVars[par1 + "_truendau"], par1 + " true ndaughters");
+//   // AddVar4VF(output, vec4Vars[par1 + "_truepos"], par1 + " true position");
+//   // AddVar4VF(output, vec4Vars[par1 + "_trueendpos"], par1 + " true end position");
+//   // AddVar3VF(output, vec3Vars[par1 + "_truedir"], par1 + " true direction");
+//   // AddVar3VF(output, vec3Vars[par1 + "_trueenddir"], par1 + " true end direction");
+//   // AddVarI(output, intVars[par1 + "_truegeneration"], par1 + " true generation");
+//   AddVarF(output, floatVars[par1 + "_trueeff"], par1 + " true efficiency");
+//   AddVarF(output, floatVars[par1 + "_truepur"], par1 + " true purity");
+//   // AddVarI(output, intVars[par1 + "_branch"], "selection branch associated to this " + par1);
+// }
+
+
 //********************************************************************
 void neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(OutputManager& output, const AnaTrueParticlePD* truePart){
     //********************************************************************
@@ -134,6 +175,146 @@ void neutralKaonTree::FillNeutralKaonVariables_TrueDaughter2Candidates(OutputMan
     output.FillVectorVarFromArray(truedau2_trueendpos,         truePart->PositionEnd,   4);
     output.FillVectorVarFromArray(truedau2_truedir,            truePart->Direction,     3);
     output.FillVectorVarFromArray(truedau2_trueenddir,         truePart->DirectionEnd,  3);
+}
+
+//********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_TrueDaughtersDynamic(OutputManager& output, int maxDaughters){
+  //********************************************************************
+
+    // Use truekaon_truendau as dynamic length (rows) and maxDaughters as columns
+    AddVarMaxSizeVD(output, truedau_dynamic_truemom,        "true dynamic daughters true momentum",      truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVD(output, truedau_dynamic_trueendmom,     "true dynamic daughters true end momentum",  truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_truepdg,        "true dynamic daughters true pdg",           truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_trueparentpdg,  "true dynamic daughters parent true pdg",    truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_trueparentid,   "true dynamic daughters parent true ID",     truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_trueproc,       "true dynamic daughters true process",       truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_trueendproc,    "true dynamic daughters true end process",   truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_truedecay,      "true dynamic daughters true decay",         truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_truechainmuon,  "true dynamic daughters chain to muon",      truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_truendau,       "true dynamic daughters true ndaughters",    truekaon_truendau, maxDaughters);
+    AddVarMaxSize4MF(output, truedau_dynamic_truepos,       "true dynamic daughters true position",      truekaon_truendau, maxDaughters);
+    AddVarMaxSize4MF(output, truedau_dynamic_trueendpos,    "true dynamic daughters true end position",  truekaon_truendau, maxDaughters);
+    AddVarMaxSize3MF(output, truedau_dynamic_truedir,       "true dynamic daughters true direction",     truekaon_truendau, maxDaughters);
+    AddVarMaxSize3MF(output, truedau_dynamic_trueenddir,    "true dynamic daughters true end direction", truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_truegeneration, "true dynamic daughters true generation",    truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVD(output, truedau_dynamic_trueeff,        "true dynamic daughters true efficiency",     truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVD(output, truedau_dynamic_truepur,        "true dynamic daughters true purity",         truekaon_truendau, maxDaughters);
+    AddVarMaxSizeVI(output, truedau_dynamic_branch,         "true dynamic daughters branch",              truekaon_truendau, maxDaughters);
+  }
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_TrueDaughtersDynamic(OutputManager& output, const AnaTrueParticlePD* truePart, int maxDaughters){
+  //********************************************************************
+
+    if(!truePart)return;
+
+    // Reset the dynamic counter at the start of this particle
+    output.InitializeCounter(truekaon_truendau);
+
+    // Get the daughters of this true particle
+    const std::vector<int>& daughters = truePart->Daughters;
+    int nDaughters = std::min((int)daughters.size(), maxDaughters);
+
+    // Fill variables for each daughter up to maxDaughters
+    for(int i = 0; i < nDaughters; i++) {
+        // Get the actual daughter particle from the TrueParticles collection
+        // Note: This requires access to the TrueParticles collection, which should be passed as a parameter
+        // For now, we'll need to modify the function signature or use a different approach
+
+        // Since we don't have direct access to the TrueParticles collection here,
+        // we'll need to modify the calling function to pass the daughter particles directly
+        // This is a limitation of the current architecture
+
+        // For now, we'll fill with placeholder values and add a comment explaining the issue
+        // TODO: Modify function signature to accept daughter particles directly or pass TrueParticles collection
+
+        // Fill momentum (placeholder - should be daughter's momentum)
+        output.FillVectorVar(truedau_dynamic_truemom,        (Double_t)0.0);
+        output.FillVectorVar(truedau_dynamic_trueendmom,     (Double_t)0.0);
+
+        // Fill PDG and parent info (placeholder - should be daughter's info)
+        output.FillVectorVar(truedau_dynamic_truepdg,        (Int_t)0);
+        output.FillVectorVar(truedau_dynamic_trueparentpdg,  (Int_t)truePart->PDG); // Parent is the current particle
+        output.FillVectorVar(truedau_dynamic_trueparentid,   (Int_t)truePart->ID);   // Parent ID is the current particle's ID
+
+        // Fill process info (placeholder)
+        output.FillVectorVar(truedau_dynamic_trueproc,       (Int_t)0);
+        output.FillVectorVar(truedau_dynamic_trueendproc,    (Int_t)0);
+
+        // Fill decay and chain info (placeholder)
+        output.FillVectorVar(truedau_dynamic_truedecay,      (Int_t)0);
+        output.FillVectorVar(truedau_dynamic_truechainmuon,  (Int_t)0);
+
+        // Fill daughter count and generation (placeholder)
+        output.FillVectorVar(truedau_dynamic_truendau,       (Int_t)0);
+        output.FillVectorVar(truedau_dynamic_truegeneration, (Int_t)0);
+
+        // Fill position and direction arrays (placeholder)
+        float pos[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        float dir[3] = {0.0f, 0.0f, 0.0f};
+        output.FillMatrixVarFromArray(truedau_dynamic_truepos,     pos, 4);
+        output.FillMatrixVarFromArray(truedau_dynamic_trueendpos,  pos, 4);
+        output.FillMatrixVarFromArray(truedau_dynamic_truedir,     dir, 3);
+        output.FillMatrixVarFromArray(truedau_dynamic_trueenddir,  dir, 3);
+
+        // Fill efficiency and purity (default values)
+        output.FillVectorVar(truedau_dynamic_trueeff,        (Double_t)1.0);
+        output.FillVectorVar(truedau_dynamic_truepur,        (Double_t)1.0);
+
+        // Fill branch (default value)
+        output.FillVectorVar(truedau_dynamic_branch,         (Int_t)0);
+    }
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_TrueDaughtersWithCollection(OutputManager& output, const AnaTrueParticlePD* truePart,
+                                                                         const std::vector<AnaTrueParticleB*>& trueParticles, int maxDaughters){
+  //********************************************************************
+
+    if(!truePart)return;
+
+    // Get the daughters of this true particle
+    const std::vector<int>& daughters = truePart->Daughters;
+    int nDaughters = std::min((int)daughters.size(), maxDaughters);
+
+    // Fill variables for each daughter up to maxDaughters
+    for(int i = 0; i < nDaughters; i++) {
+        // Resolve daughter using helper (matches secondary/standard pattern)
+        AnaTrueParticlePD* daughter = pdAnaUtils::GetTrueParticle(trueParticles, daughters[i]);
+        if(!daughter) continue; // skip if not found; do not advance counter
+
+        // Fill with actual daughter information
+        output.FillVectorVar(truedau_dynamic_truemom,        (Double_t)daughter->Momentum);
+        output.FillVectorVar(truedau_dynamic_trueendmom,     (Double_t)daughter->MomentumEnd);
+
+        output.FillVectorVar(truedau_dynamic_truepdg,        (Int_t)daughter->PDG);
+        output.FillVectorVar(truedau_dynamic_trueparentpdg,  (Int_t)truePart->PDG); // Parent is the current particle
+        output.FillVectorVar(truedau_dynamic_trueparentid,   (Int_t)truePart->ID);  // Parent ID is the current particle's ID
+
+        output.FillVectorVar(truedau_dynamic_trueproc,       (Int_t)NewFunction(daughter));
+        output.FillVectorVar(truedau_dynamic_trueendproc,    (Int_t)daughter->ProcessEnd);
+
+        // Fields not available: keep default zeros
+        output.FillVectorVar(truedau_dynamic_truedecay,      (Int_t)0);
+        output.FillVectorVar(truedau_dynamic_truechainmuon,  (Int_t)0);
+
+        output.FillVectorVar(truedau_dynamic_truendau,       (Int_t)daughter->Daughters.size());
+        output.FillVectorVar(truedau_dynamic_truegeneration, (Int_t)daughter->Generation);
+
+        output.FillMatrixVarFromArray(truedau_dynamic_truepos,     daughter->Position,     4);
+        output.FillMatrixVarFromArray(truedau_dynamic_trueendpos,  daughter->PositionEnd,  4);
+        output.FillMatrixVarFromArray(truedau_dynamic_truedir,     daughter->Direction,    3);
+        output.FillMatrixVarFromArray(truedau_dynamic_trueenddir,  daughter->DirectionEnd, 3);
+
+        // Efficiency and purity might need to be calculated or set to default values
+        output.FillVectorVar(truedau_dynamic_trueeff,        (Double_t)1.0);
+        output.FillVectorVar(truedau_dynamic_truepur,        (Double_t)1.0);
+
+        output.FillVectorVar(truedau_dynamic_branch,         (Int_t)0);
+        // advance dynamic counter for filled daughter
+        output.IncrementCounter(truekaon_truendau);
+    }
+    // scalar truekaon_truendau is already filled elsewhere; do not overwrite here
 }
 
 //********************************************************************

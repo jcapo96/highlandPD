@@ -27,6 +27,13 @@ public:
     std::vector<AnaParticlePD*> neutralKaonCandidates;
     int BestNeutralKaonCandidateIndex;
     int MaxAccumLevel; //not the real accum level, just a counter
+
+    // New members for Preliminary K0 Selection
+    /// Simple counter for beam daughters
+    int nBeamDaughters;
+
+    /// Flag indicating if K0 exists in truth as beam daughter
+    bool hasK0InTruth;
 };
 
 #endif

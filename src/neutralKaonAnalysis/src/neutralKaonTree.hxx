@@ -22,6 +22,12 @@ namespace neutralKaonTree {
     void AddNeutralKaonVariables_TrueGrandParentCandidates(OutputManager& output);
     void FillNeutralKaonVariables_TrueGrandParentCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
 
+    // Dynamic daughters (matrix-style) declarations
+    void AddNeutralKaonVariables_TrueDaughtersDynamic(OutputManager& output, int maxDaughters);
+    void FillNeutralKaonVariables_TrueDaughtersDynamic(OutputManager& output, const AnaTrueParticlePD* truePart, int maxDaughters);
+    void FillNeutralKaonVariables_TrueDaughtersWithCollection(OutputManager& output, const AnaTrueParticlePD* truePart,
+                                                             const std::vector<AnaTrueParticleB*>& trueParticles, int maxDaughters);
+
     AnaTrueParticleB::ProcessEnum NewFunction(const AnaTrueParticlePD* truePart);
 
 // Enum with unique indexes for output tree neutralKaon variables
@@ -123,6 +129,26 @@ enum enumNeutralKaonMicroTrees{
     truegpar_trueeff,
     truegpar_truepur,
     truegpar_branch,
+
+    // dynamic true daughters (matrix variables)
+    truedau_dynamic_truemom,
+    truedau_dynamic_trueendmom,
+    truedau_dynamic_truepdg,
+    truedau_dynamic_trueparentpdg,
+    truedau_dynamic_trueparentid,
+    truedau_dynamic_trueproc,
+    truedau_dynamic_trueendproc,
+    truedau_dynamic_truedecay,
+    truedau_dynamic_truechainmuon,
+    truedau_dynamic_truendau,
+    truedau_dynamic_truepos,
+    truedau_dynamic_trueendpos,
+    truedau_dynamic_truedir,
+    truedau_dynamic_trueenddir,
+    truedau_dynamic_truegeneration,
+    truedau_dynamic_trueeff,
+    truedau_dynamic_truepur,
+    truedau_dynamic_branch,
     };
 
 }

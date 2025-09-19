@@ -8,6 +8,10 @@ ToyBoxNeutralKaon::ToyBoxNeutralKaon():ToyBoxPD(){
     neutralKaonCandidates.clear();
     BestNeutralKaonCandidateIndex = -1;
     MaxAccumLevel = -1;
+
+    // Initialize new members for Preliminary K0 Selection
+    nBeamDaughters = 0;
+    hasK0InTruth = false;
 }
 
 //********************************************************************
@@ -32,10 +36,14 @@ void ToyBoxNeutralKaon::ResetBase(){
 //********************************************************************
 
 ToyBoxPD::ResetBase();
-    std::cout << "Size of Candidates before clear: " << neutralKaonCandidates.size() << std::endl;
     neutralKaonCandidates.clear();
     BestNeutralKaonCandidateIndex = -1;
     MaxAccumLevel = -1;
+
+    // Reset new members for Preliminary K0 Selection
+    nBeamDaughters = 0;
+    hasK0InTruth = false;
+
     SoftReset();  // just reset internal stuff
 }
 

@@ -18,7 +18,7 @@ class neutralKaonSelection: public SelectionBase{
   //---- These are mandatory functions
   void DefineSteps();
   void DefineDetectorFV(); //dummy (not needed for this particular selection)
-  ToyBoxB* MakeToyBox(){return new ToyBoxPD();}
+  ToyBoxB* MakeToyBox(){return new ToyBoxNeutralKaon();}
   void InitializeEvent(AnaEventC&);
 
   // These ones are also mandatory, although only used in some cases. A dummy implementation is enough in many cases
@@ -46,6 +46,45 @@ class EventHasVertex: public StepBase{
     using StepBase::Apply;
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
     StepBase* MakeClone(){return new EventHasVertex();}
+  };
+
+// New Action classes for Preliminary K0 Selection
+class FindBeamDaughtersAction: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new FindBeamDaughtersAction();}
+  };
+
+class CheckK0InTruthAction: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new CheckK0InTruthAction();}
+  };
+
+// New Cut classes for Preliminary K0 Selection
+class HasEnoughBeamDaughtersCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new HasEnoughBeamDaughtersCut();}
+  };
+
+class BeamDaughtersDistanceCut: public StepBase{
+  public:
+    using StepBase::StepBase;
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new BeamDaughtersDistanceCut(_lower_cut, _upper_cut);}
+  };
+
+class BeamDaughtersPairDistanceCut: public StepBase{
+  public:
+    using StepBase::StepBase;
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new BeamDaughtersPairDistanceCut(_lower_cut, _upper_cut);}
   };
 
 #endif

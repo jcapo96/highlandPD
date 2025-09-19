@@ -109,9 +109,9 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   standardPDTree::AddStandardVariables_BeamParticleTrue(output());
   standardPDTree::AddStandardVariables_BeamParticleReco(output());
   standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
-  standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),20);
-  standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),20);
-  standardPDTree::AddStandardVariables_BeamTruthDaughters(output(),20);
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersTrue(output(),50);
+  standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),50);
+  standardPDTree::AddStandardVariables_BeamTruthDaughters(output(),50);
 
   AddVarF(output(), seltrk_goodk0, "K0 is daughter & K0 daughters are daughters of particle");
   AddVarI(output(), seltrk_dau_trueparentpdg, "Parent PDG of reco daughter");
@@ -135,8 +135,10 @@ void neutralKaonAnalysis::DefineTruthTree(){
   // Variables from pdBaseAnalysis (run, event, ...)
   pdBaseAnalysis::DefineTruthTree();
   neutralKaonTree::AddNeutralKaonVariables_TrueNeutralKaonCandidates(output());
-  neutralKaonTree::AddNeutralKaonVariables_TrueDaughter1Candidates(output());
-  neutralKaonTree::AddNeutralKaonVariables_TrueDaughter2Candidates(output());
+  // Add dynamic daughters variables up to a maximum (only filled for existing daughters)
+  std::cout << "[neutralKaonAnalysis] Adding dynamic true daughters (max=200)" << std::endl;
+  neutralKaonTree::AddNeutralKaonVariables_TrueDaughtersDynamic(output(), 200);
+  std::cout << "[neutralKaonAnalysis] Done adding dynamic true daughters" << std::endl;
   neutralKaonTree::AddNeutralKaonVariables_TrueParentCandidates(output());
   neutralKaonTree::AddNeutralKaonVariables_TrueGrandParentCandidates(output());
   // Function in standardPDTree.cxx where the truth tree variables are defined: momentum, pdg, etc.
@@ -208,7 +210,6 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
     float seltrk_goodk0_true = 100.0;
     float seltrk_goodk0_false = 0.0;
     if (goodk0) {
-      cout << "Filled with 100" << endl;
       output().FillVar(seltrk_goodk0, seltrk_goodk0_true);
     }
     else {
@@ -239,9 +240,19 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
-  // if (part->PDG != 310) return false;
-  // else return true;
-  return true;
+  // Only fill truth tree if there is a particle with PDG=310 in the daughters
+  if (!part) return false;
+
+  // Check if any daughter has PDG=310 (neutral kaon)
+  const std::vector<int>& daughters = part->Daughters;
+  for (size_t i = 0; i < daughters.size(); i++) {
+    AnaTrueParticlePD* daughter = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, daughters[i]);
+    if (daughter && daughter->PDG == 310) {
+      return true; // Found a neutral kaon daughter
+    }
+  }
+
+  return false; // No neutral kaon daughters found
 }
 
 //********************************************************************
@@ -259,14 +270,9 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
       }
     }
     if(&part){
-      // std::cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << std::endl;
-      int ndau_truth = std::min(20,(int)part.Daughters.size());
-      if (ndau_truth == 2) {
-        AnaTrueParticlePD* truthdau1 = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, part.Daughters[0]);
-        AnaTrueParticlePD* truthdau2 = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, part.Daughters[1]);
-        neutralKaonTree::FillNeutralKaonVariables_TrueDaughter1Candidates(output(), truthdau1);
-        neutralKaonTree::FillNeutralKaonVariables_TrueDaughter2Candidates(output(), truthdau2);
-      }
+      // Fill dynamic daughters (support up to 200, but only fill existing)
+      neutralKaonTree::FillNeutralKaonVariables_TrueDaughtersWithCollection(
+        output(), &part, GetSpill().TrueParticles, 1000);
     }
 }
 
