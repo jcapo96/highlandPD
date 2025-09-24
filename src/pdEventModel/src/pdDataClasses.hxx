@@ -13,7 +13,7 @@ public:
   AnaWireID(){Wire=Plane=TPC=Cryostat=0;}
   AnaWireID(const AnaWireID& wireID);
   virtual ~AnaWireID(){}
-  
+
   Int_t Wire;
   Int_t Plane;
   Int_t TPC;
@@ -33,17 +33,17 @@ public:
     PeakAmplitude = peakAmp;
     Position = pos;
   }
-    
+
   /// Dump the object to screen.
   virtual void Print() const;
 
   ///   Copy constructor
   AnaHitPD(const AnaHitPD& part);
-  
+
 public:
 
   // ---- Most of this information is needed to recompute the CNN. This is work in progress (is ABANDONED work)
-  AnaWireID WireID;    
+  AnaWireID WireID;
 
   Float_t Integral;
   Float_t PeakTime;
@@ -53,15 +53,15 @@ public:
 
   UInt_t StartTick;
   UInt_t EndTick;
-  
+
   UInt_t Channel;
   Int_t  View;
 
   //std::vector<Float_t> CNN; //!
   Float_t CNN[3];
-  
+
   /// wave form associated to this hit
-  std::vector<Float_t> Signal;  
+  std::vector<Float_t> Signal;
 
   //------------------------------------------------------------
 
@@ -99,7 +99,7 @@ public:
 };
 
 //trajectory point representation. Has position and direction information.
-//this information is somehow redundant since each hit has a tjp associated 
+//this information is somehow redundant since each hit has a tjp associated
 //from which position and direction are obtained. This should be solved at
 //some point. However, all tjp are needed to compute track lenght and sce
 //systematics
@@ -113,7 +113,7 @@ public:
 
   /// Copy constructor
   AnaTrajectoryPointPD(const AnaTrajectoryPointPD& tjp);
-  
+
 public:
 
   TVector3 Position;
@@ -148,7 +148,7 @@ protected:
 public:
 
     enum PartTypeEnum {
-      kUnknown=0, 
+      kUnknown=0,
       kShower,
       kTrack
   };
@@ -197,7 +197,7 @@ public:
 
   /// Libo truncated mean
   Float_t truncLibo_dEdx;
-  
+
   // PID variables
   Float_t Chi2Proton;
   Float_t Chi2Muon;
@@ -206,10 +206,10 @@ public:
   Float_t CNNscore[3];
   Float_t vtx_CNN_michelscore;
   Int_t   vtx_CNN_NHits;
-  
+
   /// CALO variables
   Float_t CALO[3][10];
-  
+
   /// Momentum by range for muon and proton hypotheses
   Float_t RangeMomentum[2];
   Float_t RangeMomentum_alt[2];
@@ -224,18 +224,18 @@ public:
   Double_t Distance_to_closest_particle;
 
   // ---- OBSOLETE PID VARIABLES ----------
-  
+
   /// Particle ID hypothesis used in the fit (if any)
   Int_t FitPDG;
-  
+
   /// PDG of the most probable particle hypothesis used at reconstruction level
-  Int_t ReconPDG[3]; 
+  Int_t ReconPDG[3];
 
   /// PID variables
   Float_t PID[3][10];
 
   /// PIDA
-  Float_t PIDA[3]; 
+  Float_t PIDA[3];
 
   /// Migue test
   bool forced_daughter;
@@ -265,9 +265,9 @@ protected:
 public:
 
   /// Vector Pi0 decays IDs
-  std::vector<Int_t> Pi0_decay_ID; 
+  std::vector<Int_t> Pi0_decay_ID;
 
-  /// True-reco matching flag, need for 
+  /// True-reco matching flag, need for
   Bool_t Matched;
 
   /// Origin
@@ -278,9 +278,9 @@ public:
 
   /// The particle length inside the TPC
   Float_t LengthInTPC;
-  
+
   /// The true momentum at the TPC entrance
-  Float_t MomentumInTPC;  
+  Float_t MomentumInTPC;
 };
 
 /// Extension of AnaEvent to include specific information of the ProtoDUNE beam line instrumentation
@@ -297,7 +297,7 @@ public :
 
   /// Dump the object to screen.
   virtual void Print() const;
-  
+
 protected:
 
   /// Copy constructor is protected, as Clone() should be used to copy this object.
@@ -316,9 +316,9 @@ public:
   double BeamMomentumInTPC;
 
   int nFibers[3];
-  size_t nMomenta;  
-  size_t nTracks;  
-  
+  size_t nMomenta;
+  size_t nTracks;
+
   std::vector< int > PDGs;
 };
 
@@ -328,17 +328,17 @@ public:
 class PDCounters{
 
 public:
-  
+
   PDCounters(){
     ntrue_beamdaughter_piplus=0;
     ntrue_beamdaughter_piminus=0;
     ntrue_beamdaughter_pi0=0;
     ntrue_beamdaughter_proton=0;
     ntrue_beamdaughter_neutron=0;
-    ntrue_beamdaughter_nucleus=0;    
+    ntrue_beamdaughter_nucleus=0;
   }
   virtual ~PDCounters(){}
-  
+
   Int_t ntrue_beamdaughter_pi0;
   Int_t ntrue_beamdaughter_piplus;
   Int_t ntrue_beamdaughter_piminus;
@@ -361,26 +361,26 @@ public:
 };
 
 
-// Extension of AnaBunch to include the APA wire wafeforms, needed to recompute the CNN 
+// Extension of AnaBunch to include the APA wire wafeforms, needed to recompute the CNN
 class AnaBunchPD: public AnaBunch{
 public :
-  
+
   AnaBunchPD();
   virtual ~AnaBunchPD();
-  
+
   /// Clone this object.
   virtual AnaBunchPD* Clone() {
     return new AnaBunchPD(*this);
   }
-  
+
   /// Dump the object to screen.
   virtual void Print() const;
-  
+
 protected:
-  
+
   /// Copy constructor is protected, as Clone() should be used to copy this object.
   AnaBunchPD(const AnaBunchPD& bunch);
-  
+
 public:
 
   std::vector<AnaWireCNN> CNNwires;
@@ -461,6 +461,82 @@ public:
 
   Bool_t EmptyEvent; //this should probably go in DataQuality
   Bool_t HasPandora; //this should probably go in DataQuality
+};
+
+// Extension of AnaTrueVertexB for ProtoDUNE analysis
+class AnaTrueVertexPD: public AnaTrueVertexB{
+public :
+
+  AnaTrueVertexPD();
+  virtual ~AnaTrueVertexPD();
+
+  /// Clone this object.
+  virtual AnaTrueVertexPD* Clone() {
+    return new AnaTrueVertexPD(*this);
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaTrueVertexPD(const AnaTrueVertexPD& vertex);
+
+public:
+
+  /// Number of true particles associated with this vertex
+  Int_t NTrueParticles;
+
+  /// Vector containing the true particles associated with this vertex
+  std::vector<AnaTrueParticlePD*> TrueParticles;
+
+  /// True particle that originated this vertex (parent particle)
+  AnaTrueParticlePD* Parent;
+
+  /// Generation of the vertex (0=beam, 1=primary, 2=secondary, etc.)
+  Int_t Generation;
+
+  /// Reaction/process that originated this vertex (interaction type)
+  Int_t ReactionType;
+};
+
+// Extension of AnaVertexB for ProtoDUNE analysis
+class AnaVertexPD: public AnaVertexB{
+public :
+
+  AnaVertexPD();
+  virtual ~AnaVertexPD();
+
+  /// Clone this object.
+  virtual AnaVertexPD* Clone() {
+    return new AnaVertexPD(*this);
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaVertexPD(const AnaVertexPD& vertex);
+
+public:
+
+  /// Number of particles associated with this vertex
+  Int_t NParticles;
+
+  /// Vector containing the particles associated with this vertex
+  std::vector<AnaParticlePD*> Particles;
+
+  /// Reconstructed particle that originated this vertex (parent particle)
+  AnaParticlePD* Parent;
+
+  /// Generation of the vertex (0=beam, 1=primary, 2=secondary, etc.)
+  Int_t Generation;
+
+  /// Reaction/process that originated this vertex (interaction type)
+  Int_t ReactionType;
 };
 
 

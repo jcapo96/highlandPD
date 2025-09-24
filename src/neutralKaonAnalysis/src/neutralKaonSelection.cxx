@@ -2,6 +2,9 @@
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pdBaseSelection.hxx"
+#include <algorithm>
+#include <set>
+#include <sstream>
 
 //********************************************************************
 neutralKaonSelection::neutralKaonSelection(bool forceBreak): SelectionBase(forceBreak,EventBoxId::kEventBoxPD) {
@@ -14,22 +17,33 @@ void neutralKaonSelection::DefineSteps(){
 //********************************************************************
 
   //basic cuts → see pdBaseAnalysis/src/pdBaseSelection
-  AddStep(StepBase::kAction, "find Pandora track"    , new FindBeamTrackAction(), true);
+  AddStep(StepBase::kAction, "find Pandora track", new FindBeamTrackAction(), true);
   AddStep(StepBase::kCut   , "beam track in TPC"     , new BeamTrackExistsCut() , true);
+  AddStep(StepBase::kCut, "beam pdg filter", new BeamPDGCut(321), true);
 
-  // Preliminary K0 Selection Steps
-  AddStep(StepBase::kCut, "find beam daughters"   , new FindBeamDaughtersAction(), true);
-  AddStep(StepBase::kCut   , ">2 daughters" , new HasEnoughBeamDaughtersCut(), true);
-  AddStep(StepBase::kAction, "check K0 in truth"     , new CheckK0InTruthAction(), true);
-  AddStep(StepBase::kCut   , ">3cm from end", new BeamDaughtersDistanceCut(3.0, 50.0), true);
-  AddStep(StepBase::kCut   , "close pairs"    , new BeamDaughtersPairDistanceCut(0.0, 1.5), true);
+  // Preliminary K0 Selection Steps - Look for vertex candidates
+  AddStep(StepBase::kAction, "find all particles"   , new FindAllParticlesAction(), true);
+  AddStep(StepBase::kCut   , "enough particles" , new HasEnoughParticlesCut(), true);
+  AddStep(StepBase::kAction, "find vertex candidates", new FindVertexCandidatesAction(), true);
+  AddStep(StepBase::kCut   , "has vertex candidates" , new HasVertexCandidatesCut(), true);
 
-  // Original neutral kaon steps (commented out for now)
-  // AddStep(StepBase::kAction,   "Get Triplet of (parent, daughter1, daughter2)",      new GetNeutralKaonsAction(),     true);
-  // AddStep(StepBase::kCut   , "beam pdg filter KPos"  , new BeamPDGCut(321)      , true);
-  // AddStep(StepBase::kCut   , "BEAM quality cut"      , new BeamQualityCut()     , true);
+  // // Split the selection in branches, one for each possible candidate
+  // AddSplit(neutralKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
 
+  // // Add branch-specific cuts for each candidate
+  // for(int i = 0; i < (int)neutralKaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
+  //   AddStep(i, StepBase::kCut, "vertex daughters are daughters of vertex parent", new VtxDaughtersAreDaughtersOfVtxParentCut(), true);
+  //   // AddStep(i, StepBase::kAction, "check K0 in truth"     , new CheckK0InTruthAction(), true);
+  // }
+
+  // // Set the branch aliases to the different branches
+  // for(int i = 0; i < (int)neutralKaonAnalysisConstants::NMAXSAVEDCANDIDATES; i++){
+  //   std::stringstream ssi;
+  //   ssi << i;
+  //   SetBranchAlias(i,("possible candidate "+ssi.str()+"").c_str(),i);
+  // }
   SetBranchAlias(0,"trunk");
+  SetPreSelectionAccumLevel(-1);
 }
 
 //**************************************************
@@ -70,23 +84,16 @@ bool GetNeutralKaonsAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   }
 
   // Step 1: Find all Kaons and store in Candidates[0]
-  // box.neutralKaonCandidates.clear();
-  // box.Candidates.shrink_to_fit();
   box.ResetBase();
-  std::cout << "Size of Candidates before clear: " << box.neutralKaonCandidates.size() << std::endl;
   for (int i = 0; i < nParts; i++) {
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     if (!part || part->DaughtersIDs.empty()) continue;  // Validate pointer
-
-    std::cout << "Found a Kaon" << std::endl;
-    std::cout << "Number of particles: " << nParts << std::endl;
-    box.neutralKaonCandidates.push_back(part);
   }
   return true;
 }
 
 //********************************************************************
-bool FindBeamDaughtersAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+bool FindAllParticlesAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
 //********************************************************************
 
   (void)event;
@@ -98,37 +105,25 @@ bool FindBeamDaughtersAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
   int nParts = static_cast<AnaEventB*>(&event)->nParticles;
 
-  // Get beam particle
-  AnaEventB& eventB = *static_cast<AnaEventB*>(&event);
-  if (!eventB.Beam) return false;
-
-  AnaBeam* beam = static_cast<AnaBeam*>(eventB.Beam);
-  if (!beam || !beam->BeamParticle) return false;
-
-  AnaParticleB* beamParticle = beam->BeamParticle;
-  AnaTrueParticleB* beamTrue = beamParticle->GetTrueParticle();
-  if (!beamTrue) return false;
-
-  // Look over the particles in the event
+  // Count all particles with valid start positions
+  box.nAllParticles = 0;
   for(int i = 0; i < nParts; i++){
     AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
     if(!part) continue;
 
-    // Get the true particle information
-    AnaTrueParticleB* truePart = part->GetTrueParticle();
-    if(!truePart) continue;
-
-    // Check if this reconstructed particle is a daughter of the beam particle
-    if(truePart->ParentID == beamTrue->ID){
-      box.nBeamDaughters++;
+    // Check if particle has valid start position
+    if (part->PositionStart[0] < -900 || part->PositionStart[1] < -900 || part->PositionStart[2] < -900) {
+      continue; // Skip particles with invalid start positions
     }
+
+    box.nAllParticles++;
   }
 
   return true;
 }
 
 //********************************************************************
-bool CheckK0InTruthAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+bool HasEnoughParticlesCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
 //********************************************************************
 
   (void)event;
@@ -136,36 +131,13 @@ bool CheckK0InTruthAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   // Cast the box to the appropriate type
   ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
 
-  // Get beam particle
-  AnaEventB& eventB = *static_cast<AnaEventB*>(&event);
-  if (!eventB.Beam) return false;
-
-  AnaBeam* beam = static_cast<AnaBeam*>(eventB.Beam);
-  if (!beam || !beam->BeamParticle) return false;
-
-  AnaParticleB* beamParticle = beam->BeamParticle;
-  AnaTrueParticleB* beamTrue = beamParticle->GetTrueParticle();
-  if (!beamTrue) return false;
-
-  // Check for K0 in truth information that is a daughter of beam particle
-  box.hasK0InTruth = false;
-  AnaTrueParticleB** trueParticles = static_cast<AnaEventB*>(&event)->TrueParticles;
-  int nTrueParticles = static_cast<AnaEventB*>(&event)->nTrueParticles;
-
-  for (int i = 0; i < nTrueParticles; i++) {
-    AnaTrueParticleB* truePart = trueParticles[i];
-    if (truePart && beamTrue && beamTrue->ID >= 0 &&
-        truePart->ParentID == beamTrue->ID && truePart->PDG == 310) {
-      box.hasK0InTruth = true;
-      break;
-    }
-  }
-
-  return true;
+  // Check if we have at least 2 particles with valid start positions
+  return (box.nAllParticles >= 2);
 }
 
+
 //********************************************************************
-bool HasEnoughBeamDaughtersCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+bool FindVertexCandidatesAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
 //********************************************************************
 
   (void)event;
@@ -173,140 +145,168 @@ bool HasEnoughBeamDaughtersCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   // Cast the box to the appropriate type
   ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
 
-  // Check if we have at least 2 beam daughters
-  return (box.nBeamDaughters >= 2);
+  // Clear existing vertex candidates
+  box.trueVertexCandidates.clear();
+  box.reconVertexCandidates.clear();
+  box.nTrueVertexCandidates = 0;
+  box.nReconVertexCandidates = 0;
+
+  // Use the common utility function to create reconstructed vertices
+  const double maxVertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.VertexRadius");
+  const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
+  box.reconVertexCandidates = pdAnaUtils::CreateReconstructedVertices(*static_cast<AnaEventB*>(&event), maxVertexRadius, maxDaughterDistance);
+  box.nReconVertexCandidates = box.reconVertexCandidates.size();
+
+  // Create true vertex candidates from the reconstructed vertices
+  for (const auto& reconVertex : box.reconVertexCandidates) {
+    if (!reconVertex || reconVertex->NParticles != 3) continue; // Skip if not 1 parent + 2 daughters
+
+    // Create true vertex candidate if all particles have true information
+    std::vector<AnaTrueParticlePD*> trueVertexParticles;
+    bool allHaveTrueInfo = true;
+
+    for (int i = 0; i < reconVertex->NParticles; i++) {
+      AnaParticlePD* particle = static_cast<AnaParticlePD*>(reconVertex->Particles[i]);
+      if (!particle) {
+        allHaveTrueInfo = false;
+        break;
+      }
+
+      AnaTrueParticleB* truePart = particle->GetTrueParticle();
+      if (truePart) {
+        trueVertexParticles.push_back(static_cast<AnaTrueParticlePD*>(truePart));
+      } else {
+        allHaveTrueInfo = false;
+        break;
+      }
+    }
+
+    if (allHaveTrueInfo && trueVertexParticles.size() == 3) { // exactly 1 parent + 2 daughters
+      AnaTrueVertexPD* trueVertex = new AnaTrueVertexPD();
+
+      // Get the true parent particle (first particle in the vertex)
+      AnaTrueParticleB* trueParent = static_cast<AnaParticlePD*>(reconVertex->Particles[0])->GetTrueParticle();
+      if (trueParent) {
+        // Set true vertex position to the true parent's position
+        trueVertex->Position[0] = trueParent->Position[0];
+        trueVertex->Position[1] = trueParent->Position[1];
+        trueVertex->Position[2] = trueParent->Position[2];
+        trueVertex->Position[3] = 0.0; // time
+
+        // Set true vertex properties - exactly 1 parent + 2 daughters
+        trueVertex->NTrueParticles = 3; // parent + 2 daughters
+        trueVertex->TrueParticles = trueVertexParticles;
+        trueVertex->Parent = static_cast<AnaTrueParticlePD*>(trueParent);
+        trueVertex->Generation = 1; // Secondary vertex
+        trueVertex->ReactionType = 0; // Unknown for now
+
+        // Add to true candidates
+        box.trueVertexCandidates.push_back(trueVertex);
+        box.nTrueVertexCandidates++;
+      }
+    }
+  }
+
+
+  return true;
 }
 
 //********************************************************************
-bool BeamDaughtersDistanceCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+bool HasVertexCandidatesCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
 //********************************************************************
 
   (void)event;
-  (void)boxB; // Unused but required for framework
 
-  // Get beam particle
-  AnaEventB& eventB = *static_cast<AnaEventB*>(&event);
-  if (!eventB.Beam) return false;
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
 
-  AnaBeam* beam = static_cast<AnaBeam*>(eventB.Beam);
-  if (!beam || !beam->BeamParticle) return false;
-
-  AnaParticleB* beamParticle = beam->BeamParticle;
-  AnaTrueParticleB* beamTrue = beamParticle->GetTrueParticle();
-  if (!beamTrue) return false;
-
-  // Get beam particle end position
-  float beamEndX = beamTrue->PositionEnd[0];
-  float beamEndY = beamTrue->PositionEnd[1];
-  float beamEndZ = beamTrue->PositionEnd[2];
-
-  // Check if beam particle end position is valid
-  if (beamEndX < -900 || beamEndY < -900 || beamEndZ < -900) {
-    return false; // Skip events with invalid beam particle end position
-  }
-
-  // Get the array of particles from the event
-  AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
-  int nParts = static_cast<AnaEventB*>(&event)->nParticles;
-
-  // Find daughters of the beam particle and check their distance from beam end
-  int validDaughters = 0;
-  for(int i = 0; i < nParts; i++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
-    if(!part) continue;
-
-    // Get the true particle information
-    AnaTrueParticleB* truePart = part->GetTrueParticle();
-    if(!truePart) continue;
-
-    // Check if this reconstructed particle is a daughter of the beam particle
-    if(truePart->ParentID == beamTrue->ID){
-      // Check if daughter has valid start position
-      if (part->PositionStart[0] < -900 || part->PositionStart[1] < -900 || part->PositionStart[2] < -900) {
-        continue; // Skip daughters with invalid start positions
-      }
-
-      // Calculate distance from beam particle end to daughter start position
-      double dist = sqrt((part->PositionStart[0] - beamEndX) * (part->PositionStart[0] - beamEndX) +
-                         (part->PositionStart[1] - beamEndY) * (part->PositionStart[1] - beamEndY) +
-                         (part->PositionStart[2] - beamEndZ) * (part->PositionStart[2] - beamEndZ));
-
-      // Check if daughter is within the distance range from beam end
-      if (dist >= _lower_cut && dist <= _upper_cut) {
-        validDaughters++;
-      }
-    }
-  }
-
-  // Need at least 2 valid daughters within the distance range
-  return (validDaughters >= 2);
+  // Check if we have at least one vertex candidate (either reconstructed or true)
+  return (box.nReconVertexCandidates > 0 || box.nTrueVertexCandidates > 0);
 }
 
 //********************************************************************
-bool BeamDaughtersPairDistanceCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+VertexDaughterCountCut::VertexDaughterCountCut(int min_daughters) :
+  _min_daughters(min_daughters) {
+//********************************************************************
+}
+
+//********************************************************************
+bool VertexDaughterCountCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
 //********************************************************************
 
   (void)event;
-  (void)boxB; // Unused but required for framework
 
-  // Get beam particle
-  AnaEventB& eventB = *static_cast<AnaEventB*>(&event);
-  if (!eventB.Beam) return false;
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
 
-  AnaBeam* beam = static_cast<AnaBeam*>(eventB.Beam);
-  if (!beam || !beam->BeamParticle) return false;
-
-  AnaParticleB* beamParticle = beam->BeamParticle;
-  AnaTrueParticleB* beamTrue = beamParticle->GetTrueParticle();
-  if (!beamTrue) return false;
-
-  // Get the array of particles from the event
-  AnaParticleB** parts = static_cast<AnaEventB*>(&event)->Particles;
-  int nParts = static_cast<AnaEventB*>(&event)->nParticles;
-
-  // Find all daughters of the beam particle
-  std::vector<AnaParticlePD*> beamDaughters;
-  for(int i = 0; i < nParts; i++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
-    if(!part) continue;
-
-    // Get the true particle information
-    AnaTrueParticleB* truePart = part->GetTrueParticle();
-    if(!truePart) continue;
-
-    // Check if this reconstructed particle is a daughter of the beam particle
-    if(truePart->ParentID == beamTrue->ID){
-      // Check if daughter has valid start position
-      if (part->PositionStart[0] < -900 || part->PositionStart[1] < -900 || part->PositionStart[2] < -900) {
-        continue; // Skip daughters with invalid start positions
+  // Check reconstructed vertex candidates
+  for (const auto& reconVertex : box.reconVertexCandidates) {
+    if (reconVertex) {
+      // Count daughters (particles that are not the parent)
+      int daughterCount = 0;
+      for (int i = 0; i < reconVertex->NParticles; i++) {
+        if (reconVertex->Particles[i] && reconVertex->Particles[i] != reconVertex->Parent) {
+          daughterCount++;
+        }
       }
-      beamDaughters.push_back(part);
-    }
-  }
 
-  // Need at least 2 daughters to check pair distance
-  if (beamDaughters.size() < 2) return false;
-
-  // Check all possible pairs of daughters for distance between their start positions
-  for (UInt_t d1 = 0; d1 < beamDaughters.size(); d1++) {
-    for (UInt_t d2 = d1 + 1; d2 < beamDaughters.size(); d2++) {
-      AnaParticlePD* dau1 = beamDaughters[d1];
-      AnaParticlePD* dau2 = beamDaughters[d2];
-
-      if (!dau1 || !dau2) continue;
-
-      // Calculate distance between the two daughters' start positions
-      double distBetweenDaughters = sqrt((dau1->PositionStart[0] - dau2->PositionStart[0]) * (dau1->PositionStart[0] - dau2->PositionStart[0]) +
-                                         (dau1->PositionStart[1] - dau2->PositionStart[1]) * (dau1->PositionStart[1] - dau2->PositionStart[1]) +
-                                         (dau1->PositionStart[2] - dau2->PositionStart[2]) * (dau1->PositionStart[2] - dau2->PositionStart[2]));
-
-      // Check if daughters start positions are close (within 3.0 cm as per PreliminaryK0Selection.C)
-      if (distBetweenDaughters >= _lower_cut && distBetweenDaughters <= _upper_cut) {
-        return true; // Found at least one valid pair
+      if (daughterCount >= _min_daughters) {
+        return true; // Found at least one valid vertex
       }
     }
   }
 
-  return false; // No valid pairs found
+  // Check true vertex candidates
+  for (const auto& trueVertex : box.trueVertexCandidates) {
+    if (trueVertex) {
+      // For true vertices, we can't easily count daughters separately
+      // This is a limitation of the current data structure
+      // For now, we'll skip this check for true vertices
+      continue;
+    }
+  }
+
+  return false; // No valid vertices found
 }
+
+//********************************************************************
+VtxDaughtersAreDaughtersOfVtxParentCut::VtxDaughtersAreDaughtersOfVtxParentCut() {
+//********************************************************************
+}
+
+//********************************************************************
+bool VtxDaughtersAreDaughtersOfVtxParentCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+//********************************************************************
+
+  (void)event;
+
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
+
+  // Get the current branch
+  std::vector<UInt_t> branchesIDs = GetBranchUniqueIDs();
+
+  // Make sure there is a candidate for this branch
+  if(branchesIDs[0] > box.reconVertexCandidates.size()-1) return false;
+
+  // Get the vertex candidate for this branch
+  AnaVertexPD* reconVertex = box.reconVertexCandidates[branchesIDs[0]];
+  if (!reconVertex || reconVertex->NParticles < 3) return false;
+
+  // Check if all daughters are daughters of the parent
+  AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(reconVertex->Particles[1]->TrueObject);
+  AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(reconVertex->Particles[2]->TrueObject);
+  AnaTrueParticlePD* trueParent = static_cast<AnaTrueParticlePD*>(reconVertex->Particles[0]->TrueObject);
+
+  if (trueDaughter1 && trueDaughter2 && trueParent) {
+    if (trueDaughter1->ParentID == trueParent->ID && trueDaughter2->ParentID == trueParent->ID) {
+      box.UpdateBestCandidateIndex(Index(), branchesIDs[0]);
+      return true; // Found a valid vertex for this branch
+    }
+  }
+
+  return false; // No valid vertex found for this branch
+}
+
+
 

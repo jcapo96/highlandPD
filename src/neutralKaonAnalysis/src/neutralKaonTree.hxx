@@ -7,150 +7,60 @@
 
 namespace neutralKaonTree {
 
-    void AddNeutralKaonVariables_TrueNeutralKaonCandidates(OutputManager& output);
-    void FillNeutralKaonVariables_TrueNeutralKaonCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
+  // Methods to add to the output tree the neutralKaonAnalysis sets of variables
+  void AddNeutralKaonVariables_VertexCandidates(OutputManager& output, UInt_t nmax);
 
-    void AddNeutralKaonVariables_TrueDaughter1Candidates(OutputManager& output);
-    void FillNeutralKaonVariables_TrueDaughter1Candidates(OutputManager& output, const AnaTrueParticlePD* truePart);
+  // Methods to fill the neutralKaonAnalysis sets of variables in the output tree
+  void FillNeutralKaonVariables_VertexCandidates(OutputManager& output, const std::vector<AnaVertexPD*>& reconCandidates, const std::vector<AnaTrueVertexPD*>& trueCandidates); // this should go out
 
-    void AddNeutralKaonVariables_TrueDaughter2Candidates(OutputManager& output);
-    void FillNeutralKaonVariables_TrueDaughter2Candidates(OutputManager& output, const AnaTrueParticlePD* truePart);
+  // Enum with unique indexes for output tree variables
+  enum enumNeutralKaonMicroTrees{
 
-    void AddNeutralKaonVariables_TrueParentCandidates(OutputManager& output);
-    void FillNeutralKaonVariables_TrueParentCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
+    // Vertex candidates info
+    n_recovtx_candidates = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
+    n_true_vertex_candidates,
+    recovtx_recoparticles,
+    recovtx_trueparticles,
+    true_vertex_nparticles,
+    recovtx_recoposition,
+    recovtx_trueposition,
+    true_vertex_position,
+    recovtx_recoquality,
+    recovtx_truequality,
+    true_vertex_quality,
+    recovtx_par_truepdg,
+    recovtx_par_recopdg,
+    recovtx_par_recodir,
+    recovtx_par_truedir,
+    recovtx_par_dau_recoangles,
+    recovtx_par_dau_trueangles,
+    recovtx_dau_recodistances,
+    recovtx_dau_truedistances,
+    recovtx_par_dau_recodistances,
+    recovtx_par_dau_truedistances,
+    recovtx_par_dau_recosyst_angle,
+    recovtx_par_dau_truesyst_angle,
+    recovtx_dau_recolengths,
+    recovtx_dau_truelengths,
+    recovtx_dau_truepdgs,
+    recovtx_dau_recopdgs,
+    recovtx_dau_trueproc,
+    recovtx_dau_trueendproc,
+    recovtx_dau_recoendproc,
+    recovtx_dau_par_recoangles,
+    recovtx_dau_par_trueangles,
+    recovtx_dau_par_truepdg,
+    recovtx_dau_recomom,
+    recovtx_dau_truemom,
+    recovtx_dau_recodedx,
+    recovtx_dau_truededx,
+    recovtx_recomass,
+    recovtx_truemass,
+    recovtx_daupi_recodistance,
+    recovtx_daupi_truedistance,
 
-    void AddNeutralKaonVariables_TrueGrandParentCandidates(OutputManager& output);
-    void FillNeutralKaonVariables_TrueGrandParentCandidates(OutputManager& output, const AnaTrueParticlePD* truePart);
-
-    // Dynamic daughters (matrix-style) declarations
-    void AddNeutralKaonVariables_TrueDaughtersDynamic(OutputManager& output, int maxDaughters);
-    void FillNeutralKaonVariables_TrueDaughtersDynamic(OutputManager& output, const AnaTrueParticlePD* truePart, int maxDaughters);
-    void FillNeutralKaonVariables_TrueDaughtersWithCollection(OutputManager& output, const AnaTrueParticlePD* truePart,
-                                                             const std::vector<AnaTrueParticleB*>& trueParticles, int maxDaughters);
-
-    AnaTrueParticleB::ProcessEnum NewFunction(const AnaTrueParticlePD* truePart);
-
-// Enum with unique indexes for output tree neutralKaon variables
-enum enumNeutralKaonMicroTrees{
-
-    //true kaon candidates info
-    truenkaons = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
-    truekaon_truemom,
-    truekaon_trueendmom,
-    truekaon_trueparentpdg,
-    truekaon_trueparentid,
-    truekaon_truepdg,
-    truekaon_trueproc,
-    truekaon_trueendproc,
-    truekaon_truedecay,
-    truekaon_truechainmuon,
-    truekaon_truendau,
-    truekaon_truepos,
-    truekaon_trueendpos,
-    truekaon_truedir,
-    truekaon_trueenddir,
-    truekaon_truegeneration,
-    truekaon_trueeff,
-    truekaon_truepur,
-    truekaon_branch,
-
-    truedau1_truemom,
-    truedau1_trueendmom,
-    truedau1_trueparentpdg,
-    truedau1_trueparentid,
-    truedau1_truepdg,
-    truedau1_trueproc,
-    truedau1_trueendproc,
-    truedau1_truedecay,
-    truedau1_truechainmuon,
-    truedau1_truendau,
-    truedau1_truepos,
-    truedau1_trueendpos,
-    truedau1_truedir,
-    truedau1_trueenddir,
-    truedau1_truegeneration,
-    truedau1_trueeff,
-    truedau1_truepur,
-    truedau1_branch,
-
-    truedau2_truemom,
-    truedau2_trueendmom,
-    truedau2_trueparentpdg,
-    truedau2_trueparentid,
-    truedau2_truepdg,
-    truedau2_trueproc,
-    truedau2_trueendproc,
-    truedau2_truedecay,
-    truedau2_truechainmuon,
-    truedau2_truendau,
-    truedau2_truepos,
-    truedau2_trueendpos,
-    truedau2_truedir,
-    truedau2_trueenddir,
-    truedau2_truegeneration,
-    truedau2_trueeff,
-    truedau2_truepur,
-    truedau2_branch,
-
-    truepar_truemom,
-    truepar_trueendmom,
-    truepar_trueparentpdg,
-    truepar_trueparentid,
-    truepar_truepdg,
-    truepar_trueproc,
-    truepar_trueendproc,
-    truepar_truedecay,
-    truepar_truechainmuon,
-    truepar_truendau,
-    truepar_truepos,
-    truepar_trueendpos,
-    truepar_truedir,
-    truepar_trueenddir,
-    truepar_truegeneration,
-    truepar_trueeff,
-    truepar_truepur,
-    truepar_branch,
-
-    truegpar_truemom,
-    truegpar_trueendmom,
-    truegpar_trueparentpdg,
-    truegpar_trueparentid,
-    truegpar_truepdg,
-    truegpar_trueproc,
-    truegpar_trueendproc,
-    truegpar_truedecay,
-    truegpar_truechainmuon,
-    truegpar_truendau,
-    truegpar_truepos,
-    truegpar_trueendpos,
-    truegpar_truedir,
-    truegpar_trueenddir,
-    truegpar_truegeneration,
-    truegpar_trueeff,
-    truegpar_truepur,
-    truegpar_branch,
-
-    // dynamic true daughters (matrix variables)
-    truedau_dynamic_truemom,
-    truedau_dynamic_trueendmom,
-    truedau_dynamic_truepdg,
-    truedau_dynamic_trueparentpdg,
-    truedau_dynamic_trueparentid,
-    truedau_dynamic_trueproc,
-    truedau_dynamic_trueendproc,
-    truedau_dynamic_truedecay,
-    truedau_dynamic_truechainmuon,
-    truedau_dynamic_truendau,
-    truedau_dynamic_truepos,
-    truedau_dynamic_trueendpos,
-    truedau_dynamic_truedir,
-    truedau_dynamic_trueenddir,
-    truedau_dynamic_truegeneration,
-    truedau_dynamic_trueeff,
-    truedau_dynamic_truepur,
-    truedau_dynamic_branch,
-    };
-
+    enumNeutralKaonMicroTreesLast
+  };
 }
 
 #endif

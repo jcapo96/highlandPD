@@ -27,7 +27,7 @@ void kaonAnaUtils::AddBeamParticleReducedCategory(){
   int part_codes[]         = {-13      , -11    , 211      ,  321    ,  2212, CATOTHER};
   int part_colors[]        = {7        , 6      , 31       ,  92     ,   8  , COLOTHER};
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
-  
+
   std::reverse(part_types,  part_types  + NPART);
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
@@ -43,7 +43,7 @@ void kaonAnaUtils::AddBeamParticleOriginCategory(){
   int part_codes[]         = {0             , 2                 ,  1      , CATOTHER};
   int part_colors[]        = {9             , 8                 , 98      , COLOTHER};
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
-  
+
   std::reverse(part_types,  part_types  + NPART);
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
@@ -59,7 +59,7 @@ void kaonAnaUtils::AddBestCandidateParticleReducedCategory(){
   int part_codes[]         = {-211     , 211      ,  321    ,  2212, CATOTHER};
   int part_colors[]        = {4        , 31       ,  92     ,   8  , COLOTHER};
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
-  
+
   std::reverse(part_types,  part_types  + NPART);
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
@@ -80,8 +80,9 @@ void kaonAnaUtils::AddCandidateParticleReducedCategory(){
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
 
-  anaUtils::_categ->AddObjectCategory("candidateparticlereduced", kaonTree::ncandidates, "ncandidates", 
-				      NPART, part_types, part_codes, part_colors, 
+  // name to be called in terminal, counter to follow, variable name
+  anaUtils::_categ->AddObjectCategory("candidateparticlereduced", kaonTree::ncandidates, "ncandidates",
+				      NPART, part_types, part_codes, part_colors,
 				      1, -100);
 }
 
@@ -98,8 +99,8 @@ void kaonAnaUtils::AddCandidateDaughterParticleReducedCategory(){
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
 
-  anaUtils::_categ->AddObjectCategory("candidatedauparticlereduced", kaonTree::ncandidates, "ncandidates", 
-				      NPART, part_types, part_codes, part_colors, 
+  anaUtils::_categ->AddObjectCategory("candidatedauparticlereduced", kaonTree::ncandidates, "ncandidates",
+				      NPART, part_types, part_codes, part_colors,
 				      1, -100);
 }
 
@@ -113,12 +114,12 @@ void kaonAnaUtils::AddCandidateDaughterMuonCategory(){
   int part_colors[]        = {2        ,  4       ,  1               , 72               , 7               ,  6             , 31       ,  92     ,   8  , COLOTHER};
 
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
-  
+
   std::reverse(part_types,  part_types  + NPART);
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
 
-  anaUtils::_categ->AddObjectCategory("candidatedaumuon", kaonTree::ncandidates, "ncandidates", 
+  anaUtils::_categ->AddObjectCategory("candidatedaumuon", kaonTree::ncandidates, "ncandidates",
 				      NPART, part_types, part_codes, part_colors,
 				      1, -100);
 }
@@ -133,12 +134,12 @@ void kaonAnaUtils::AddCandidateDaughterMuonReducedCategory(){
   int part_colors[]        = { 4       ,  1               , 7               , 31       ,   8  , COLOTHER};
 
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
-  
+
   std::reverse(part_types,  part_types  + NPART);
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
 
-  anaUtils::_categ->AddObjectCategory("candidatedaumuonreduced", kaonTree::ncandidates, "ncandidates", 
+  anaUtils::_categ->AddObjectCategory("candidatedaumuonreduced", kaonTree::ncandidates, "ncandidates",
 				      NPART, part_types, part_codes, part_colors,
 				      1, -100);
 }
@@ -146,12 +147,12 @@ void kaonAnaUtils::AddCandidateDaughterMuonReducedCategory(){
 //********************************************************************
 void kaonAnaUtils::FillBeamParticleReducedCategory(AnaParticlePD* beampart){
 //********************************************************************
-  
-  if(!beampart) return;  
+
+  if(!beampart) return;
   AnaTrueParticle* truepart = static_cast<AnaTrueParticle*>(beampart->TrueObject);
 
   if(!truepart)                    anaUtils::_categ->SetCode("beamparticlereduced", CATNOTRUTH, CATNOTRUTH);
-  else{												          
+  else{
     if      (truepart->PDG == -13 )anaUtils::_categ->SetCode("beamparticlereduced", -13,        CATOTHER);
     else if (truepart->PDG == -11 )anaUtils::_categ->SetCode("beamparticlereduced", -11,        CATOTHER);
     else if (truepart->PDG == 211 )anaUtils::_categ->SetCode("beamparticlereduced", 211,        CATOTHER);
@@ -165,11 +166,11 @@ void kaonAnaUtils::FillBeamParticleReducedCategory(AnaParticlePD* beampart){
 void kaonAnaUtils::FillBeamParticleOriginCategory(AnaParticlePD* beampart){
 //********************************************************************
 
-  if(!beampart) return;  
+  if(!beampart) return;
   AnaTrueParticlePD* truepart = static_cast<AnaTrueParticlePD*>(beampart->TrueObject);
 
   if(!truepart)                    anaUtils::_categ->SetCode("beamorigin", CATNOTRUTH, CATNOTRUTH);
-  else{												          
+  else{
     if     (truepart->Origin==4 && truepart->Matched) anaUtils::_categ->SetCode("beamorigin", 0       , CATOTHER);
     else if(truepart->Origin==4 && !truepart->Matched)anaUtils::_categ->SetCode("beamorigin", 2       , CATOTHER);
     else if(truepart->Origin==2)                      anaUtils::_categ->SetCode("beamorigin", 1       , CATOTHER);
@@ -180,8 +181,8 @@ void kaonAnaUtils::FillBeamParticleOriginCategory(AnaParticlePD* beampart){
 //********************************************************************
 void kaonAnaUtils::FillBestCandidateParticleReducedCategory(AnaParticlePD* part){
 //********************************************************************
-  
-  if(!part) return;  
+
+  if(!part) return;
   AnaTrueParticle* truepart = static_cast<AnaTrueParticle*>(part->TrueObject);
 
   if(!truepart)                    anaUtils::_categ->SetCode("bestcandidateparticlereduced", CATNOTRUTH, CATNOTRUTH);
@@ -197,8 +198,8 @@ void kaonAnaUtils::FillBestCandidateParticleReducedCategory(AnaParticlePD* part)
 //********************************************************************
 void kaonAnaUtils::FillCandidateParticleReducedCategory(AnaParticlePD* part){
 //********************************************************************
-  
-  if(!part) return;  
+
+  if(!part) return;
   AnaTrueParticle* truepart = static_cast<AnaTrueParticle*>(part->TrueObject);
 
   if(!truepart)                    anaUtils::_categ->SetObjectCode("candidateparticlereduced", CATNOTRUTH, CATNOTRUTH, -1);
@@ -214,8 +215,8 @@ void kaonAnaUtils::FillCandidateParticleReducedCategory(AnaParticlePD* part){
 //********************************************************************
 void kaonAnaUtils::FillCandidateDaughterParticleReducedCategory(AnaParticlePD* part){
 //********************************************************************
-  
-  if(!part) return;  
+
+  if(!part) return;
   AnaTrueParticle* truepart = static_cast<AnaTrueParticle*>(part->TrueObject);
 
   if(!truepart)                    anaUtils::_categ->SetObjectCode("candidatedauparticlereduced", CATNOTRUTH, CATNOTRUTH, -1);
@@ -232,15 +233,15 @@ void kaonAnaUtils::FillCandidateDaughterParticleReducedCategory(AnaParticlePD* p
 //********************************************************************
 void kaonAnaUtils::FillCandidateDaughterMuonCategory(AnaParticlePD* parent, AnaParticlePD* daughter){
 //********************************************************************
-  
-  if(!parent || !daughter) return;  
+
+  if(!parent || !daughter) return;
   AnaTrueParticle* parentTruePart   = static_cast<AnaTrueParticle*>(parent->TrueObject);
   AnaTrueParticle* daughterTruePart = static_cast<AnaTrueParticle*>(daughter->TrueObject);
 
   //if there is no trueObject associated to the object we can't avoid adding the
   //object to the category, since the category follows the ncandidates counter
   if(!daughterTruePart)                    anaUtils::_categ->SetObjectCode("candidatedaumuon", CATNOTRUTH, CATOTHER, -1);
-  else{												             
+  else{
     if      (daughterTruePart->PDG == 13  )anaUtils::_categ->SetObjectCode("candidatedaumuon", 13,         CATOTHER, -1);
     else if (daughterTruePart->PDG == -211)anaUtils::_categ->SetObjectCode("candidatedaumuon", -211,       CATOTHER, -1);
     else if (daughterTruePart->PDG == -13 ){
@@ -248,7 +249,7 @@ void kaonAnaUtils::FillCandidateDaughterMuonCategory(AnaParticlePD* parent, AnaP
       else if (parentTruePart->PDG == 321 )anaUtils::_categ->SetObjectCode("candidatedaumuon", -130,       CATOTHER, -1);
       else if (parentTruePart->PDG == 211 )anaUtils::_categ->SetObjectCode("candidatedaumuon", -131,       CATOTHER, -1);
       else                                 anaUtils::_categ->SetObjectCode("candidatedaumuon", -132,       CATOTHER, -1);
-    }												             
+    }
     else if (daughterTruePart->PDG == -11 )anaUtils::_categ->SetObjectCode("candidatedaumuon", -11,        CATOTHER, -1);
     else if (daughterTruePart->PDG == 211 )anaUtils::_categ->SetObjectCode("candidatedaumuon", 211,        CATOTHER, -1);
     else if (daughterTruePart->PDG == 321 )anaUtils::_categ->SetObjectCode("candidatedaumuon", 321,        CATOTHER, -1);
@@ -260,15 +261,15 @@ void kaonAnaUtils::FillCandidateDaughterMuonCategory(AnaParticlePD* parent, AnaP
 //********************************************************************
 void kaonAnaUtils::FillCandidateDaughterMuonReducedCategory(AnaParticlePD* parent, AnaParticlePD* daughter){
 //********************************************************************
-  
-  if(!parent || !daughter) return;  
+
+  if(!parent || !daughter) return;
   AnaTrueParticle* parentTruePart   = static_cast<AnaTrueParticle*>(parent->TrueObject);
   AnaTrueParticle* daughterTruePart = static_cast<AnaTrueParticle*>(daughter->TrueObject);
 
   //if there is no trueObject associated to the object we can't avoid adding the
   //object to the category, since the category follows the ncandidates counter
   if(!daughterTruePart)                    anaUtils::_categ->SetObjectCode("candidatedaumuonreduced", CATNOTRUTH, CATOTHER, -1);
-  else{					
+  else{
          if (daughterTruePart->PDG == -211)anaUtils::_categ->SetObjectCode("candidatedaumuonreduced", -211,       CATOTHER, -1);
     else if (daughterTruePart->PDG == -13 ){
       if (!parentTruePart)                 anaUtils::_categ->SetObjectCode("candidatedaumuonreduced", -132,       CATOTHER, -1);

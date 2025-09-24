@@ -4,11 +4,20 @@
 #include "pdBaseAnalysis.hxx"
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
+#include "neutralKaonTree.hxx"
+#include "pdEventDisplay.hxx"
+
+namespace neutralKaonAnalysisConstants{
+
+  const UInt_t NMAXSAVEDCANDIDATES     = 10;
+}
 
 class neutralKaonAnalysis: public pdBaseAnalysis {
  public:
  neutralKaonAnalysis(AnalysisAlgorithm* ana=NULL);
-  virtual ~neutralKaonAnalysis(){}
+  virtual ~neutralKaonAnalysis(){
+    if(_eventDisplay) delete _eventDisplay;
+  }
 
   //---- These are mandatory functions
   void DefineSelections();
@@ -44,17 +53,37 @@ class neutralKaonAnalysis: public pdBaseAnalysis {
 
 
 private:
+  // SCE correction and systematic parameters
+  bool _ApplySCECorrection;
+  bool _ApplySCESystematic;
+
+    // Event display parameters
+    bool _CreateEventDisplay;
+    bool _SaveToRootFile;
+    std::string _OutputDirectory;
+    int _MaxEventsToDisplay;
+    double _EventDisplayPercentage;
+    std::vector<int> _RequiredParticlePDGs;
+    double _VertexRadius;
+    double _DaughterDistance;
+    int _MinVertexDaughters;
+    bool _OnlySignalEvents;
+
+  // Event display object
+  pdEventDisplay* _eventDisplay;
 
 public:
 
   enum enumStandardMicroTrees_neutralKaonAnalysis{
-    seltrk_csdarange_prot = standardPDTree::enumStandardMicroTreesLast_standardPDTree,
+    seltrk_csdarange_prot = neutralKaonTree::enumNeutralKaonMicroTreesLast,
     seltrk_ndau,
     seltrk_dau_ndau,
     seltrk_truthdau_ndau,
-    seltrk_truthk0_ndau,
-    seltrk_goodk0,
     seltrk_dau_trueparentpdg,
+
+    // Debugging variables
+    nAllParticles,
+
     enumStandardMicroTreesLast_neutralKaonAnalysis
   };
 
@@ -63,6 +92,24 @@ public:
     dedx_syst,
     enumConfLast_neutralKaonAnalysis
   };
+
+  enum enumSyst_neutralKaonAnalysis{
+    kSCEGeometric=0,
+    enumSystLast_neutralKaonAnalysis
+  };
+
+  // Category functions
+  void AddVertexPionPairCategory();
+  void AddVertexParticleCountCategory();
+  void AddK0InVtxCategory();
+  void AddVertexParentPDGCategory();
+  void FillVertexPionPairCategory(AnaVertexPD* vertex);
+  void FillVertexParticleCountCategory(AnaVertexPD* vertex);
+  void FillK0InVtxCategory(const std::vector<AnaVertexPD*>& vertices);
+  void FillVertexParentPDGCategory(AnaVertexPD* vertex);
+
+  // Check if event contains signal vertices (K0 -> pi+ pi-)
+  bool EventContainsSignalVertices(const AnaEventB& event) const;
 
 };
 

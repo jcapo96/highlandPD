@@ -49,11 +49,11 @@ class EventHasVertex: public StepBase{
   };
 
 // New Action classes for Preliminary K0 Selection
-class FindBeamDaughtersAction: public StepBase{
+class FindAllParticlesAction: public StepBase{
   public:
     using StepBase::Apply;
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
-    StepBase* MakeClone(){return new FindBeamDaughtersAction();}
+    StepBase* MakeClone(){return new FindAllParticlesAction();}
   };
 
 class CheckK0InTruthAction: public StepBase{
@@ -63,28 +63,58 @@ class CheckK0InTruthAction: public StepBase{
     StepBase* MakeClone(){return new CheckK0InTruthAction();}
   };
 
+
+class FindVertexCandidatesAction: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new FindVertexCandidatesAction();}
+  };
+
 // New Cut classes for Preliminary K0 Selection
-class HasEnoughBeamDaughtersCut: public StepBase{
+class HasEnoughParticlesCut: public StepBase{
   public:
     using StepBase::Apply;
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
-    StepBase* MakeClone(){return new HasEnoughBeamDaughtersCut();}
+    StepBase* MakeClone(){return new HasEnoughParticlesCut();}
   };
 
-class BeamDaughtersDistanceCut: public StepBase{
+
+class HasVertexCandidatesCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new HasVertexCandidatesCut();}
+  };
+
+class VertexParentCountCut: public StepBase{
   public:
     using StepBase::StepBase;
     using StepBase::Apply;
+    VertexParentCountCut(int min_parents = 1);
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
-    StepBase* MakeClone(){return new BeamDaughtersDistanceCut(_lower_cut, _upper_cut);}
+    StepBase* MakeClone(){return new VertexParentCountCut(_min_parents);}
+  private:
+    int _min_parents;
   };
 
-class BeamDaughtersPairDistanceCut: public StepBase{
+class VertexDaughterCountCut: public StepBase{
   public:
     using StepBase::StepBase;
     using StepBase::Apply;
+    VertexDaughterCountCut(int min_daughters = 2);
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
-    StepBase* MakeClone(){return new BeamDaughtersPairDistanceCut(_lower_cut, _upper_cut);}
+    StepBase* MakeClone(){return new VertexDaughterCountCut(_min_daughters);}
+  private:
+    int _min_daughters;
   };
 
+class VtxDaughtersAreDaughtersOfVtxParentCut: public StepBase{
+  public:
+    using StepBase::StepBase;
+    using StepBase::Apply;
+    VtxDaughtersAreDaughtersOfVtxParentCut();
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new VtxDaughtersAreDaughtersOfVtxParentCut();}
+  };
 #endif

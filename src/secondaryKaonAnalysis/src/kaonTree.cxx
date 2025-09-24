@@ -43,13 +43,14 @@ void kaonTree::AddKaonVariables_TrueKaonCandidates(OutputManager& output){
 void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t nmax){
 //********************************************************************
 
+  AddVarI(output, ncandidates, "number of kaon candidates");
   AddVarMaxSizeVI (output, candidates_generation,      "candidates generation",                ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_parentID,        "candidates parent ID",                 ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_ndau,            "candidates' daughters",                ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_nsisters,        "candidates' sistets",                  ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_pos,             "candidates position",                  ncandidates, nmax); 
+  AddVarMaxSize4MF(output, candidates_pos,             "candidates position",                  ncandidates, nmax);
   AddVarMaxSize3MF(output, candidates_dir,             "candidates direction",                 ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_endpos,          "candidates position",                  ncandidates, nmax); 
+  AddVarMaxSize4MF(output, candidates_endpos,          "candidates position",                  ncandidates, nmax);
   AddVarMaxSize3MF(output, candidates_enddir,          "candidates direction",                 ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_length,          "candidates length",                    ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_mom_muon,        "candidates momentum (muon)",           ncandidates, nmax);
@@ -72,9 +73,9 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
   AddVarMaxSizeVI (output, candidates_vtx_nhits,       "candidates points in the vertex",      ncandidates, nmax);
 
   AddVarMaxSizeVI (output, candidates_dau_ndau,           "candidates daughter' daughters",            ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_dau_pos,            "candidates daughter position",              ncandidates, nmax); 
+  AddVarMaxSize4MF(output, candidates_dau_pos,            "candidates daughter position",              ncandidates, nmax);
   AddVarMaxSize3MF(output, candidates_dau_dir,            "candidates daughter direction",             ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_dau_endpos,         "candidates daughter position",              ncandidates, nmax); 
+  AddVarMaxSize4MF(output, candidates_dau_endpos,         "candidates daughter position",              ncandidates, nmax);
   AddVarMaxSize3MF(output, candidates_dau_enddir,         "candidates daughter direction",             ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_dau_length,         "candidates daughter length",                ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_dau_mom_muon,       "candidates daughter momentum (muon)",       ncandidates, nmax);
@@ -92,11 +93,11 @@ void kaonTree::AddKaonVariables_KaonCandidatesReco(OutputManager& output, UInt_t
   AddVarMaxSizeVF (output, candidates_dau_calE,            "candidates dau calorimetric energy",       ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_dau_vtx_michelscore, "candidates dau michelscore in the vertex", ncandidates, nmax);
   AddVarMaxSizeVI (output, candidates_dau_vtx_nhits,       "candidates dau points in the vertex",      ncandidates, nmax);
-  
+
   AddVarMaxSizeVI (output, candidates_gdau_ndau,            "candidates gdaughter' gdaughters",              ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_gdau_pos,             "candidates gdaughter position",                 ncandidates, nmax); 
+  AddVarMaxSize4MF(output, candidates_gdau_pos,             "candidates gdaughter position",                 ncandidates, nmax);
   AddVarMaxSize3MF(output, candidates_gdau_dir,             "candidates gdaughter direction",                ncandidates, nmax);
-  AddVarMaxSize4MF(output, candidates_gdau_endpos,          "candidates gdaughter position",                 ncandidates, nmax); 
+  AddVarMaxSize4MF(output, candidates_gdau_endpos,          "candidates gdaughter position",                 ncandidates, nmax);
   AddVarMaxSize3MF(output, candidates_gdau_enddir,          "candidates gdaughter direction",                ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_gdau_length,          "candidates gdaughter length",                   ncandidates, nmax);
   AddVarMaxSizeVF (output, candidates_gdau_mom_muon,        "candidates gdaughter momentum (muon)",          ncandidates, nmax);
@@ -181,9 +182,9 @@ void kaonTree::AddKaonVariables_KaonBestCandidateReco(OutputManager& output){
 
   AddVarI  (output, bestcandidate_generation,      "bestcandidate generation"       );
   AddVarI  (output, bestcandidate_ndau,            "bestcandidate' daughters"       );
-  AddVar4VF(output, bestcandidate_pos,             "bestcandidate position"         ); 
+  AddVar4VF(output, bestcandidate_pos,             "bestcandidate position"         );
   AddVar3VF(output, bestcandidate_dir,             "bestcandidate direction"        );
-  AddVar4VF(output, bestcandidate_endpos,          "bestcandidate position"         ); 
+  AddVar4VF(output, bestcandidate_endpos,          "bestcandidate position"         );
   AddVar3VF(output, bestcandidate_enddir,          "bestcandidate direction"        );
   AddVarF  (output, bestcandidate_length,          "bestcandidate length"           );
   AddVarF  (output, bestcandidate_mom_muon,        "bestcandidate momentum (muon)"  );
@@ -205,9 +206,9 @@ void kaonTree::AddKaonVariables_KaonBestCandidateReco(OutputManager& output){
   AddVarF  (output, bestcandidate_truncated_dedx,            "bestcandidate calorimetry energy deposition"     );
 
   AddVarI  (output, bestcandidate_dau_ndau,            "bestcandidate daughter' daughters"       );
-  AddVar4VF(output, bestcandidate_dau_pos,             "bestcandidate daughter position"         ); 
+  AddVar4VF(output, bestcandidate_dau_pos,             "bestcandidate daughter position"         );
   AddVar3VF(output, bestcandidate_dau_dir,             "bestcandidate daughter direction"        );
-  AddVar4VF(output, bestcandidate_dau_endpos,          "bestcandidate daughter position"         ); 
+  AddVar4VF(output, bestcandidate_dau_endpos,          "bestcandidate daughter position"         );
   AddVar3VF(output, bestcandidate_dau_enddir,          "bestcandidate daughter direction"        );
   AddVarF  (output, bestcandidate_dau_length,          "bestcandidate daughter length"           );
   AddVarF  (output, bestcandidate_dau_mom_muon,        "bestcandidate daughter momentum (muon)"  );
@@ -223,9 +224,9 @@ void kaonTree::AddKaonVariables_KaonBestCandidateReco(OutputManager& output){
   AddVarI  (output, bestcandidate_dau_vtx_nhits,       "bestcandidate dau points in the vertex"         );
 
   AddVarI  (output, bestcandidate_parent_ndau,       "bestcandidate parent' daughters"       );
-  AddVar4VF(output, bestcandidate_parent_pos,        "bestcandidate parent position"         ); 
+  AddVar4VF(output, bestcandidate_parent_pos,        "bestcandidate parent position"         );
   AddVar3VF(output, bestcandidate_parent_dir,        "bestcandidate parent direction"        );
-  AddVar4VF(output, bestcandidate_parent_endpos,     "bestcandidate parent position"         ); 
+  AddVar4VF(output, bestcandidate_parent_endpos,     "bestcandidate parent position"         );
   AddVar3VF(output, bestcandidate_parent_enddir,     "bestcandidate parent direction"        );
 }
 
@@ -347,17 +348,17 @@ void kaonTree::FillKaonVariables_TrueKaonCandidates(OutputManager& output, const
   output.FillVar               (truekaon_truepdg,            truePart->PDG             );
   output.FillVar               (truekaon_trueparentpdg,      truePart->ParentPDG       );
   output.FillVar               (truekaon_trueparentid,       truePart->ParentID        );
-  output.FillVar               (truekaon_trueproc,           truePart->ProcessStart    ); 
+  output.FillVar               (truekaon_trueproc,           truePart->ProcessStart    );
   output.FillVar               (truekaon_trueendproc,        truePart->ProcessEnd      );
   //output.FillVar               (truekaon_truedecay,          kvtx.DecayMode            );
   //output.FillVar               (truekaon_truechainmuon,      kvtx.ChainMuon            );
-  output.FillVar               (truekaon_truendau,    (Int_t)truePart->Daughters.size()); 
+  output.FillVar               (truekaon_truendau,    (Int_t)truePart->Daughters.size());
   output.FillVectorVarFromArray(truekaon_truepos,            truePart->Position,      4);
   output.FillVectorVarFromArray(truekaon_trueendpos,         truePart->PositionEnd,   4);
   output.FillVectorVarFromArray(truekaon_truedir,            truePart->Direction,     3);
   output.FillVectorVarFromArray(truekaon_trueenddir,         truePart->DirectionEnd,  3);
-  //output.FillVar               (truekaon_branch,      (Int_t)kvtx.Branch               ); 
-  
+  //output.FillVar               (truekaon_branch,      (Int_t)kvtx.Branch               );
+
   /*if(kvtx.TrueParticlesVect.size()>1){
     AnaTrueParticlePD* trueDau = static_cast<AnaTrueParticlePD*>(kvtx.TrueParticlesVect[1]);
     if(trueDau){
@@ -365,9 +366,9 @@ void kaonTree::FillKaonVariables_TrueKaonCandidates(OutputManager& output, const
       output.FillVar               (truekaon_truemuon_trueendmom,         trueDau->MomentumEnd     );
       output.FillVar               (truekaon_truemuon_truepdg,            trueDau->PDG             );
       output.FillVar               (truekaon_truemuon_truepdg,            trueDau->PDG             );
-      output.FillVar               (truekaon_truemuon_trueproc,           trueDau->ProcessStart    ); 
+      output.FillVar               (truekaon_truemuon_trueproc,           trueDau->ProcessStart    );
       output.FillVar               (truekaon_truemuon_trueendproc,        trueDau->ProcessEnd      );
-      output.FillVar               (truekaon_truemuon_truendau,    (Int_t)trueDau->Daughters.size()); 
+      output.FillVar               (truekaon_truemuon_truendau,    (Int_t)trueDau->Daughters.size());
       output.FillVectorVarFromArray(truekaon_truemuon_truepos,            trueDau->Position,      4);
       output.FillVectorVarFromArray(truekaon_truemuon_trueendpos,         trueDau->PositionEnd,   4);
       output.FillVectorVarFromArray(truekaon_truemuon_truedir,            trueDau->Direction,     3);
@@ -387,9 +388,9 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   if(parent)
     output.FillVectorVar         (candidates_nsisters,  (Int_t)parent->DaughtersIDs.size() );
   output.FillMatrixVarFromArray(candidates_pos,              part->PositionStart,  4);
-  output.FillMatrixVarFromArray(candidates_dir,              part->DirectionStart, 3); 
+  output.FillMatrixVarFromArray(candidates_dir,              part->DirectionStart, 3);
   output.FillMatrixVarFromArray(candidates_endpos,           part->PositionEnd,    4);
-  output.FillMatrixVarFromArray(candidates_enddir,           part->DirectionEnd,   3); 
+  output.FillMatrixVarFromArray(candidates_enddir,           part->DirectionEnd,   3);
   output.FillVectorVar         (candidates_length,           part->Length           );
   output.FillVectorVar         (candidates_mom_prot,         pdAnaUtils::ComputeRangeMomentum(part->Length,2212));
   output.FillVectorVar         (candidates_mom_muon,         pdAnaUtils::ComputeRangeMomentum(part->Length,13)  );
@@ -398,7 +399,7 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   Float_t csda = pdAnaUtils::ComputeCSDARange(mom, 2212);
   output.FillVectorVar         (candidates_calE,             calE           );
   output.FillVectorVar         (candidates_type,             part->Type             );
-  output.FillMatrixVarFromArray(candidates_CNNscore,         part->CNNscore,       3); 
+  output.FillMatrixVarFromArray(candidates_CNNscore,         part->CNNscore,       3);
   output.FillVectorVar         (candidates_chi2_prot,        part->Chi2Proton       );
   output.FillVectorVar         (candidates_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*part,321).first);
   output.FillVectorVar         (candidates_chi2_muon,        part->Chi2Muon         );
@@ -418,17 +419,17 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   if (!dau) return;
   output.FillVectorVar         (candidates_distance_dau,         pdAnaUtils::ComputeDistanceMotherDaughter(part,dau));
   output.FillVectorVar         (candidates_cos_dau,              pdAnaUtils::ComputeCosMotherDaughter(part,dau)     );
-     
+
   output.FillVectorVar         (candidates_dau_ndau,      (Int_t)dau->Daughters.size() );
   output.FillMatrixVarFromArray(candidates_dau_pos,              dau->PositionStart,  4);
-  output.FillMatrixVarFromArray(candidates_dau_dir,              dau->DirectionStart, 3); 
+  output.FillMatrixVarFromArray(candidates_dau_dir,              dau->DirectionStart, 3);
   output.FillMatrixVarFromArray(candidates_dau_endpos,           dau->PositionEnd,    4);
-  output.FillMatrixVarFromArray(candidates_dau_enddir,           dau->DirectionEnd,   3); 
+  output.FillMatrixVarFromArray(candidates_dau_enddir,           dau->DirectionEnd,   3);
   output.FillVectorVar         (candidates_dau_length,           dau->Length           );
   output.FillVectorVar         (candidates_dau_mom_prot,         pdAnaUtils::ComputeRangeMomentum(dau->Length,2212));
   output.FillVectorVar         (candidates_dau_mom_muon,         pdAnaUtils::ComputeRangeMomentum(dau->Length,13)  );
   output.FillVectorVar         (candidates_dau_type,             dau->Type             );
-  output.FillMatrixVarFromArray(candidates_dau_CNNscore,         dau->CNNscore,       3); 
+  output.FillMatrixVarFromArray(candidates_dau_CNNscore,         dau->CNNscore,       3);
   output.FillVectorVar         (candidates_dau_chi2_prot,        dau->Chi2Proton       );
   output.FillVectorVar         (candidates_dau_chi2_muon,        dau->Chi2Muon         );
   output.FillVectorVar         (candidates_dau_chi2_ndf,         dau->Chi2ndf          );
@@ -450,14 +451,14 @@ void kaonTree::FillKaonVariables_KaonCandidatesReco(OutputManager& output, AnaPa
   if (!gdau) return;
   output.FillVectorVar         (candidates_gdau_ndau,      (Int_t)gdau->Daughters.size() );
   output.FillMatrixVarFromArray(candidates_gdau_pos,              gdau->PositionStart,  4);
-  output.FillMatrixVarFromArray(candidates_gdau_dir,              gdau->DirectionStart, 3); 
+  output.FillMatrixVarFromArray(candidates_gdau_dir,              gdau->DirectionStart, 3);
   output.FillMatrixVarFromArray(candidates_gdau_endpos,           gdau->PositionEnd,    4);
-  output.FillMatrixVarFromArray(candidates_gdau_enddir,           gdau->DirectionEnd,   3); 
+  output.FillMatrixVarFromArray(candidates_gdau_enddir,           gdau->DirectionEnd,   3);
   output.FillVectorVar         (candidates_gdau_length,           gdau->Length           );
   output.FillVectorVar         (candidates_gdau_mom_prot,         pdAnaUtils::ComputeRangeMomentum(gdau->Length,2212));
   output.FillVectorVar         (candidates_gdau_mom_muon,         pdAnaUtils::ComputeRangeMomentum(gdau->Length,13)  );
   output.FillVectorVar         (candidates_gdau_type,             gdau->Type             );
-  output.FillMatrixVarFromArray(candidates_gdau_CNNscore,         gdau->CNNscore,       3); 
+  output.FillMatrixVarFromArray(candidates_gdau_CNNscore,         gdau->CNNscore,       3);
   output.FillVectorVar         (candidates_gdau_chi2_prot,        gdau->Chi2Proton       );
   output.FillVectorVar         (candidates_gdau_chi2_muon,        gdau->Chi2Muon         );
   output.FillVectorVar         (candidates_gdau_chi2_ndf,         gdau->Chi2ndf          );
@@ -538,7 +539,7 @@ void kaonTree::FillKaonVariables_KaonCandidatesHitsReco(OutputManager& output, A
 void kaonTree::FillKaonVariables_KaonCandidatesTrue(OutputManager& output, AnaParticlePD* part){
 //********************************************************************
 
-  if (!part) return;  
+  if (!part) return;
   AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
   if(!truePart) return;
 
@@ -592,14 +593,14 @@ void kaonTree::FillKaonVariables_KaonBestCandidateReco(OutputManager& output, An
   output.FillVar               (bestcandidate_generation,       part->Generation       );
   output.FillVar               (bestcandidate_ndau,      (Int_t)part->Daughters.size() );
   output.FillVectorVarFromArray(bestcandidate_pos,              part->PositionStart,  4);
-  output.FillVectorVarFromArray(bestcandidate_dir,              part->DirectionStart, 3); 
+  output.FillVectorVarFromArray(bestcandidate_dir,              part->DirectionStart, 3);
   output.FillVectorVarFromArray(bestcandidate_endpos,           part->PositionEnd,    4);
-  output.FillVectorVarFromArray(bestcandidate_enddir,           part->DirectionEnd,   3); 
+  output.FillVectorVarFromArray(bestcandidate_enddir,           part->DirectionEnd,   3);
   output.FillVar               (bestcandidate_length,           part->Length           );
   output.FillVar               (bestcandidate_mom_prot,         pdAnaUtils::ComputeRangeMomentum(part->Length,2212));
   output.FillVar               (bestcandidate_mom_muon,         pdAnaUtils::ComputeRangeMomentum(part->Length,13)  );
   output.FillVar               (bestcandidate_type,             part->Type             );
-  output.FillVectorVarFromArray(bestcandidate_CNNscore,         part->CNNscore,       3); 
+  output.FillVectorVarFromArray(bestcandidate_CNNscore,         part->CNNscore,       3);
   output.FillVar               (bestcandidate_chi2_prot,        part->Chi2Proton       );
   output.FillVar               (bestcandidate_chi2_muon,        part->Chi2Muon         );
   output.FillVar               (bestcandidate_chi2_kaon,        (Float_t)pdAnaUtils::Chi2PID(*part,321).first);
@@ -615,9 +616,9 @@ void kaonTree::FillKaonVariables_KaonBestCandidateReco(OutputManager& output, An
     output.FillVar(bestcandidate_distance_mother,         pdAnaUtils::ComputeDistanceMotherDaughter(parent,part));
     output.FillVar               (bestcandidate_parent_ndau,      (Int_t)parent->Daughters.size() );
     output.FillVectorVarFromArray(bestcandidate_parent_pos,              parent->PositionStart,  4);
-    output.FillVectorVarFromArray(bestcandidate_parent_dir,              parent->DirectionStart, 3); 
+    output.FillVectorVarFromArray(bestcandidate_parent_dir,              parent->DirectionStart, 3);
     output.FillVectorVarFromArray(bestcandidate_parent_endpos,           parent->PositionEnd,    4);
-    output.FillVectorVarFromArray(bestcandidate_parent_enddir,           parent->DirectionEnd,   3); 
+    output.FillVectorVarFromArray(bestcandidate_parent_enddir,           parent->DirectionEnd,   3);
   }
 
   if(part->Daughters.empty())return;
@@ -628,14 +629,14 @@ void kaonTree::FillKaonVariables_KaonBestCandidateReco(OutputManager& output, An
 
   output.FillVar               (bestcandidate_dau_ndau,      (Int_t)dau->Daughters.size() );
   output.FillVectorVarFromArray(bestcandidate_dau_pos,              dau->PositionStart,  4);
-  output.FillVectorVarFromArray(bestcandidate_dau_dir,              dau->DirectionStart, 3); 
+  output.FillVectorVarFromArray(bestcandidate_dau_dir,              dau->DirectionStart, 3);
   output.FillVectorVarFromArray(bestcandidate_dau_endpos,           dau->PositionEnd,    4);
-  output.FillVectorVarFromArray(bestcandidate_dau_enddir,           dau->DirectionEnd,   3); 
+  output.FillVectorVarFromArray(bestcandidate_dau_enddir,           dau->DirectionEnd,   3);
   output.FillVar               (bestcandidate_dau_length,           dau->Length           );
   output.FillVar               (bestcandidate_dau_mom_prot,         pdAnaUtils::ComputeRangeMomentum(dau->Length,2212));
   output.FillVar               (bestcandidate_dau_mom_muon,         pdAnaUtils::ComputeRangeMomentum(dau->Length,13)  );
   output.FillVar               (bestcandidate_dau_type,             dau->Type             );
-  output.FillVectorVarFromArray(bestcandidate_dau_CNNscore,         dau->CNNscore,       3); 
+  output.FillVectorVarFromArray(bestcandidate_dau_CNNscore,         dau->CNNscore,       3);
   output.FillVar               (bestcandidate_dau_chi2_prot,        dau->Chi2Proton       );
   output.FillVar               (bestcandidate_dau_chi2_muon,        dau->Chi2Muon         );
   output.FillVar               (bestcandidate_dau_chi2_ndf,         dau->Chi2ndf          );
@@ -746,7 +747,7 @@ void kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output
       output.FillVectorVar(bestcandidate_hit_resrange,  (Float_t)part->Hits[2][j].ResidualRange,   j);
     }
   }
-  
+
   if(part->Daughters.empty())return;
   AnaParticlePD* dau = static_cast<AnaParticlePD*>(part->Daughters[0]);
   if(!dau)return;
@@ -776,7 +777,7 @@ void kaonTree::FillKaonVariables_KaonBestCandidateHitsReco(OutputManager& output
 void kaonTree::FillKaonVariables_KaonBestCandidateTrue(OutputManager& output, AnaParticlePD* part, AnaParticlePD* parent){
 //********************************************************************
 
-  if (!part) return;  
+  if (!part) return;
   AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
   if(!truePart) return;
 

@@ -18,22 +18,40 @@ public :
   virtual void ResetBase();
 
   void UpdateBestCandidateIndex(const int AccumLevel, const int Index);
+  void UpdateBestTrueVertexCandidateIndex(const int AccumLevel, const int Index);
+  void UpdateBestReconVertexCandidateIndex(const int AccumLevel, const int Index);
 
 public:
 
-    /// Vector of candidates
-    // The vector of candidates is a vector of arrays of AnaParticlePD pointers
-    // The first element of the array is the kaon candidate, the second is the pi1 candidate, and the third is the pi2 candidate
-    std::vector<AnaParticlePD*> neutralKaonCandidates;
-    int BestNeutralKaonCandidateIndex;
-    int MaxAccumLevel; //not the real accum level, just a counter
+    /// Maximum accumulation level (not the real accum level, just a counter)
+    int MaxAccumLevel;
 
-    // New members for Preliminary K0 Selection
     /// Simple counter for beam daughters
     int nBeamDaughters;
 
+    /// Counter for all particles with valid start positions
+    int nAllParticles;
+
     /// Flag indicating if K0 exists in truth as beam daughter
     bool hasK0InTruth;
+
+    /// Vector of true vertex candidates
+    std::vector<AnaTrueVertexPD*> trueVertexCandidates;
+
+    /// Vector of reconstructed vertex candidates
+    std::vector<AnaVertexPD*> reconVertexCandidates;
+
+    /// Number of true vertex candidates
+    int nTrueVertexCandidates;
+
+    /// Number of reconstructed vertex candidates
+    int nReconVertexCandidates;
+
+    /// Index of best true vertex candidate
+    int BestTrueVertexCandidateIndex;
+
+    /// Index of best reconstructed vertex candidate
+    int BestReconVertexCandidateIndex;
 };
 
 #endif

@@ -25,14 +25,14 @@ float KE_MeV_new[29]= {
 
 double Range_gpercm_P_Nist[31]={
   1.887E-1/1.396, 3.823E-1/1.396, 6.335E-1/1.396, 1.296/1.396,   2.159/1.396,   7.375/1.396,   1.092E1/1.396, 2.215E1/1.396,
-  3.627E1/1.396,  5.282E1/1.396,  7.144E1/1.396,  9.184E1/1.396, 1.138E2/1.396, 1.370E2/1.396, 1.614E2/1.396, 1.869E2/1.396, 
-  2.132E2/1.396,  2.403E2/1.396,  2.681E2/1.396,  2.965E2/1.396, 3.254E2/1.396, 3.548E2/1.396, 3.846E2/1.396, 4.148E2/1.396, 
+  3.627E1/1.396,  5.282E1/1.396,  7.144E1/1.396,  9.184E1/1.396, 1.138E2/1.396, 1.370E2/1.396, 1.614E2/1.396, 1.869E2/1.396,
+  2.132E2/1.396,  2.403E2/1.396,  2.681E2/1.396,  2.965E2/1.396, 3.254E2/1.396, 3.548E2/1.396, 3.846E2/1.396, 4.148E2/1.396,
   4.454E2/1.396,  7.626E2/1.396,  1.090E3/1.396,  1.418E3/1.396, 1.745E3/1.396, 2.391E3/1.396, 3.022E3/1.396};
 
 double KE_MeV_P_Nist[31]={
   10,   15,   20,   30,   40,   80,   100, 150,
-  200,  250,  300,  350,  400,  450,  500, 550, 
-  600,  650,  700,  750,  800,  850,  900, 950, 
+  200,  250,  300,  350,  400,  450,  500, 550,
+  600,  650,  700,  750,  800,  850,  900, 950,
   1000, 1500, 2000, 2500, 3000, 4000, 5000};
 
 TGraph const KEvsR(29, Range_grampercm_new, KE_MeV_new);
@@ -61,11 +61,11 @@ templates[ 2212 ] = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 //*****************************************************************************
 Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
 //*****************************************************************************
-  
+
   /* Muon range-momentum tables from CSDA (Argon density = 1.4 g/cm^3)
      website:
      http://pdg.lbl.gov/2012/AtomicNuclearProperties/MUON_ELOSS_TABLES/muonloss_289.pdf
-     
+
      CSDA table values:
      float Range_grampercm[30] = {9.833E-1, 1.786E0, 3.321E0,
      6.598E0, 1.058E1, 3.084E1, 4.250E1, 6.732E1, 1.063E2, 1.725E2,
@@ -75,60 +75,60 @@ Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
      20, 30, 40, 80, 100, 140, 200, 300, 400, 800, 1000, 1400, 2000, 3000,
      4000, 8000, 10000, 14000, 20000, 30000, 40000, 80000, 100000, 140000,
      200000, 300000, 400000};
-     
+
      Functions below are obtained by fitting polynomial fits to KE_MeV vs
      Range (cm) graph. A better fit was obtained by splitting the graph into
      two: Below range<=200cm,a polynomial of power 4 was a good fit; above
      200cm, a polynomial of power 6 was a good fit
-     
+
      Fit errors for future purposes:
      Below 200cm, Forpoly4 fit: p0 err=1.38533;p1 err=0.209626; p2
      err=0.00650077; p3 err=6.42207E-5; p4 err=1.94893E-7; Above 200cm,
      Forpoly6 fit: p0 err=5.24743;p1 err=0.0176229; p2 err=1.6263E-5; p3
      err=5.9155E-9; p4 err=9.71709E-13; p5 err=7.22381E-17;p6
      err=1.9709E-21;*/
-  
+
   //*********For muon, the calculations are valid up to 1.91E4 cm range
   //corresponding to a Muon KE of 40 GeV**********//
-  
+
   /*Proton range-momentum tables from CSDA (Argon density = 1.4 g/cm^3):
     website: https://physics.nist.gov/PhysRefData/Star/Text/PSTAR.html
-    
+
     CSDA values:
     double KE_MeV_P_Nist[31]={10, 15, 20, 30, 40, 80, 100, 150, 200, 250, 300,
     350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
     1500, 2000, 2500, 3000, 4000, 5000};
-    
+
     double Range_gpercm_P_Nist[31]={1.887E-1,3.823E-1, 6.335E-1, 1.296,
     2.159, 7.375, 1.092E1, 2.215E1, 3.627E1, 5.282E1, 7.144E1,
     9.184E1, 1.138E2, 1.370E2, 1.614E2, 1.869E2, 2.132E2, 2.403E2,
     2.681E2, 2.965E2, 3.254E2, 3.548E2, 3.846E2, 4.148E2, 4.454E2,
     7.626E2, 1.090E3, 1.418E3, 1.745E3, 2.391E3, 3.022E3};
-    
+
     Functions below are obtained by fitting power and polynomial fits to
     KE_MeV vs Range (cm) graph. A better fit was obtained by splitting the
     graph into two: Below range<=80cm,a a*(x^b) was a good fit; above 80cm, a
     polynomial of power 6 was a good fit
-    
+
     Fit errors for future purposes:
     For power function fit: a=0.388873; and b=0.00347075
     Forpoly6 fit: p0 err=3.49729;p1 err=0.0487859; p2 err=0.000225834; p3
     err=4.45542E-7; p4 err=4.16428E-10; p5 err=1.81679E-13;p6
     err=2.96958E-17;*/
-  
+
   //*********For proton, the calculations are valid up to 3.022E3 cm range
   //corresponding to a Muon KE of 5 GeV**********//
 
   if (trkrange < 0 || std::isnan(trkrange)) {
-    //    std::cout << "TrackMomentumCalculator   " 
+    //    std::cout << "TrackMomentumCalculator   "
     //              << "Invalid track range " << trkrange << " return -1" << std::endl;
     return -1.;
   }
 
-    
+
   double KE, Momentum, M;
   constexpr double Muon_M = 105.7, Proton_M = 938.272;
-  
+
   if (abs(pdg) == 13) {
     M = Muon_M;
     KE = KEvsR_spline3.Eval(trkrange);
@@ -148,30 +148,30 @@ Float_t pdAnaUtils::ComputeRangeMomentum(double trkrange, int pdg){
       KE = -999;
   } else
     KE = -999;
-  
+
   if (KE < 0)
     Momentum = -999;
   else
     Momentum = std::sqrt((KE * KE) + (2 * M * KE));
-  
+
   Momentum = Momentum / 1000;
-  
+
   return Momentum;
 }
 
 //*****************************************************************************
 Float_t pdAnaUtils::ComputeCSDARange(double beammom, int pdg){
 //*****************************************************************************
-    
+
   if (beammom < 0 || std::isnan(beammom)) {
-    //    std::cout << "CSDARangeCalculator   " 
+    //    std::cout << "CSDARangeCalculator   "
     //              << "Invalid beam mom " << beammom << " return -1" << std::endl;
     return -1.;
   }
 
   double KE, M, CSDARange;
   constexpr double Muon_M = 105.7, Proton_M = 938.272;
-  
+
   if (abs(pdg) == 13) {
     M = Muon_M;
     KE = sqrt(beammom * beammom + M * M) - M;
@@ -181,9 +181,9 @@ Float_t pdAnaUtils::ComputeCSDARange(double beammom, int pdg){
     KE = sqrt(beammom * beammom + M * M) - M;
     CSDARange = RvsKE_P_spline3.Eval(KE);
   }
-  else 
+  else
     CSDARange=-1;
-  
+
   return CSDARange;
 }
 
@@ -194,7 +194,7 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
   int plane = 2;
 
   if(part.Hits[plane].size() < 1)return -1;
-  
+
   double kinetic = 0;
   double res     = 0;
 
@@ -232,11 +232,11 @@ void pdAnaUtils::ComputeDistanceToVertex(AnaParticlePD* part, std::vector<Float_
 }
 
 //********************************************************************
-AnaTrueParticle* pdAnaUtils::GetBeamTrueParticle(const AnaSpillB& spill){  
+AnaTrueParticle* pdAnaUtils::GetBeamTrueParticle(const AnaSpillB& spill){
 //********************************************************************
 
   AnaTrueParticle* beampart = NULL;
-  
+
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(spill.Beam);
   AnaParticleMomB* beamPart = beam->BeamParticle;
 
@@ -244,7 +244,7 @@ AnaTrueParticle* pdAnaUtils::GetBeamTrueParticle(const AnaSpillB& spill){
   if(beamPart)
     if(beamPart->TrueObject)
       true_id = static_cast<AnaTrueParticleB*>(beamPart->TrueObject)->ID;
-  
+
   if(spill.TrueParticles.size() > 0){
     for(int i = 0; i < (int)spill.TrueParticles.size(); i++){
       if(true_id == spill.TrueParticles[i]->ID){
@@ -276,7 +276,7 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
 //*****************************************************************************
 AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(const std::vector<AnaTrueParticleB*>& trueParticles, Int_t ID){
 //*****************************************************************************
- 
+
   // Get all reconstructed tracks in the event
   for (UInt_t i=0;i<trueParticles.size();i++){
     if (trueParticles[i]->ID == ID){
@@ -290,7 +290,7 @@ AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(const std::vector<AnaTrueParticle
 //*****************************************************************************
 AnaParticlePD* pdAnaUtils::GetRecoParticleWithAssociatedTrueID(const std::vector<AnaParticleB*> particles, Int_t true_ID){
 //*****************************************************************************
- 
+
   // loop over reconstructed tracks
   for(UInt_t i = 0; i < particles.size(); i++){
     AnaTrueParticlePD* truepart = static_cast<AnaTrueParticlePD*>(particles[i]->TrueObject);
@@ -304,15 +304,15 @@ AnaParticlePD* pdAnaUtils::GetRecoParticleWithAssociatedTrueID(const std::vector
 
 //*****************************************************************************
 std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const int pdg ){
-//*****************************************************************************	
+//*****************************************************************************
 
-  double pid_chi2 = 0.; 
+  double pid_chi2 = 0.;
   int npt = 0;
 
   Int_t plane=2;
 
   TProfile* profile;
-  
+
   if(pdg == 2212)profile = ProtonTemplate;
   else if(pdg == 13)profile = MuonTemplate;
   else if(pdg == 321)profile = KaonTemplate;
@@ -320,7 +320,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
     std::cout << "no profile for pdg " << pdg << std::endl;
     return std::make_pair(9999., -1);
   }
-  
+
   if( part.Hits[plane].size() < 1 )
     return std::make_pair(9999., -1);
 
@@ -333,46 +333,46 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
     int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
 
     if( bin >= 1 && bin <= profile->GetNbinsX() ){
-      
+
       double template_dedx = profile->GetBinContent( bin );
       if( template_dedx < 1.e-6 ){
-        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;        
-      }
-      
-      
-      double template_dedx_err = profile->GetBinError( bin );
-      if( template_dedx_err < 1.e-6 ){
-        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
+        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;
       }
 
-      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx * part.Hits[plane][i].dEdx;      
-      dedx_res *= part.Hits[plane][i].dEdx; 
-      
-      
-      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
-      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
-            
-      ++npt;      
-    }	
+
+      double template_dedx_err = profile->GetBinError( bin );
+      if( template_dedx_err < 1.e-6 ){
+        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;
+      }
+
+      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx * part.Hits[plane][i].dEdx;
+      dedx_res *= part.Hits[plane][i].dEdx;
+
+
+      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )
+      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) );
+
+      ++npt;
+    }
   }
-		
-  if( npt == 0 )	
+
+  if( npt == 0 )
     return std::make_pair(9999., -1);
-	  	
-  return std::make_pair(pid_chi2, npt); 	
+
+  return std::make_pair(pid_chi2, npt);
 }
 
 //*****************************************************************************
 std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, const int pdg, const double RR){
-//*****************************************************************************	
+//*****************************************************************************
 
-  double pid_chi2 = 0.; 
+  double pid_chi2 = 0.;
   int npt = 0;
 
   Int_t plane=2;
 
   TProfile* profile;
-  
+
   if(pdg == 2212)profile = ProtonTemplate;
   else if(pdg == 13)profile = MuonTemplate;
   else if(pdg == 321)profile = KaonTemplate;
@@ -380,12 +380,12 @@ std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, c
     std::cout << "no profile for pdg " << pdg << std::endl;
     return std::make_pair(9999., -1);
   }
-  
+
   if( part.Hits[plane].size() < 1 )
     return std::make_pair(9999., -1);
-  
+
   //check particles' length is at least as long as maximum RR
-  // if(part.Length<RR) 
+  // if(part.Length<RR)
   //   return std::make_pair(9999., -1);
   //Ignore first and last point
   for( UInt_t i = 1; i < part.Hits[plane].size()-1; ++i ){
@@ -395,45 +395,45 @@ std::pair< double, int > pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, c
 
     //break whenever above RR upper limit, 26 cm is maximum
     if(part.Hits[plane][i].ResidualRange > RR)continue;
-    
+
     int bin = profile->FindBin( part.Hits[plane][i].ResidualRange );
 
     if( bin >= 1 && bin <= profile->GetNbinsX() ){
-      
+
       double template_dedx = profile->GetBinContent( bin );
       if( template_dedx < 1.e-6 ){
-        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;        
+        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;
       }
-      
-      
+
+
       double template_dedx_err = profile->GetBinError( bin );
       if( template_dedx_err < 1.e-6 ){
-        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
+        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;
       }
 
-      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx * part.Hits[plane][i].dEdx;      
-      dedx_res *= part.Hits[plane][i].dEdx; 
-      
-      
-      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
-      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
-            
-      ++npt;      
-    }	
+      double dedx_res = 0.04231 + 0.0001783 * part.Hits[plane][i].dEdx * part.Hits[plane][i].dEdx;
+      dedx_res *= part.Hits[plane][i].dEdx;
+
+
+      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )
+      pid_chi2 += ( pow( (part.Hits[plane][i].dEdx - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) );
+
+      ++npt;
+    }
   }
 
-  if( npt == 0 )	
+  if( npt == 0 )
     return std::make_pair(9999., -1);
-	  	
-  return std::make_pair(pid_chi2, npt); 	
+
+  return std::make_pair(pid_chi2, npt);
 }
 
 //*****************************************************************************
 bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
-//*****************************************************************************	
+//*****************************************************************************
 
   if (!part) return false;
-  
+
   //From Owen Goodwins studies
   Float_t mccuts[7]  ={-3.,  7., -8.,  7., 27.5, 32.5, 0.93};
   Float_t datacuts[7]={ 0., 10., -5., 10., 30.,  35.0, 0.93};
@@ -441,8 +441,8 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
   //cast the beam particle
   AnaParticlePD* beampart = static_cast<AnaParticlePD*>(beam->BeamParticle);
   if (!beampart) return false;
-  
-  Float_t beampos[3],beamdir[3], dist[3], dcos=0, cuts[7];      
+
+  Float_t beampos[3],beamdir[3], dist[3], dcos=0, cuts[7];
 
   // different way of obtaining the beam position and angle for DATA and MC
   // Use the true beam particle to discriminate between data and MC
@@ -465,7 +465,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
     }
     for (int i=0;i<7;i++) cuts[i] = datacuts[i];
   }
-  
+
   // compute the difference in position and cos(angle) considering that particle could have been reconstructed backwards
   if(part->PositionEnd[2]<part->PositionStart[2] && part->PositionEnd[2]!=-999){
     for (int i=0;i<3;i++){
@@ -488,7 +488,7 @@ bool pdAnaUtils::isBeamLike(AnaParticlePD* part, AnaBeamPD* beam ){
 AnaParticlePD* pdAnaUtils::GetBeamParticle(const AnaEventC& event){
 //***************************************************************
 
-  //Get the beam 
+  //Get the beam
   AnaBeamPD* beam = static_cast<AnaBeamPD*>(static_cast<const AnaEventB*>(&event)->Beam);
   if (!beam->BeamParticle) return NULL;
 
@@ -531,18 +531,18 @@ Float_t pdAnaUtils::ComputeTrackLengthFromHitPosition(const AnaParticlePD* part)
     length += disp.Mag();
     disp = pos;
   }
-  
+
   return length;
 }
 
 //***************************************************************
 Float_t pdAnaUtils::ComputeTrackLengthFromTrajectoryPoints(AnaParticlePD* part){
 //***************************************************************
-  
+
   if(!part)return -999;
-  
+
   Float_t length = 0.;
-  
+
   int ntps = part->TrjPoints.size();
   int i0 = 0;
   double x0 = 0,y0 = 0,z0 = 0,dx = 0,dy = 0,dz = 0;
@@ -561,21 +561,21 @@ Float_t pdAnaUtils::ComputeTrackLengthFromTrajectoryPoints(AnaParticlePD* part){
     dx = part->TrjPoints[itp].Position.X()-x0;
     dy = part->TrjPoints[itp].Position.Y()-y0;
     dz = part->TrjPoints[itp].Position.Z()-z0;
-    
+
     length += sqrt(dx*dx+dy*dy+dz*dz);
-    
+
     x0 = part->TrjPoints[itp].Position.X();
     y0 = part->TrjPoints[itp].Position.Y();
     z0 = part->TrjPoints[itp].Position.Z();
   }
-  
+
   return length;
 }
 
 //***************************************************************
 void pdAnaUtils::ComputeParticlePositionAndDirection(AnaParticlePD* part){
 //***************************************************************
-  
+
   if(!part)return;
 
   int ntps = part->TrjPoints.size();
@@ -596,7 +596,7 @@ void pdAnaUtils::ComputeParticlePositionAndDirection(AnaParticlePD* part){
     part->DirectionStart[1] = part->TrjPoints[ifirst].Direction.Y();
     part->DirectionStart[2] = part->TrjPoints[ifirst].Direction.Z();
   }
-  
+
   int ilast  = -1;
   for(int itp = 1; itp < ntps; itp++){
     if(part->TrjPoints[ntps-itp].IsValid()){
@@ -611,7 +611,7 @@ void pdAnaUtils::ComputeParticlePositionAndDirection(AnaParticlePD* part){
     part->DirectionEnd[0] = part->TrjPoints[ilast].Direction.X();
     part->DirectionEnd[1] = part->TrjPoints[ilast].Direction.Y();
     part->DirectionEnd[2] = part->TrjPoints[ilast].Direction.Z();
-  } 
+  }
 }
 
 //***************************************************************
@@ -644,7 +644,7 @@ Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high
     accumulated = accumulated + dEdx[i];
     counter ++;
   }
-  
+
   return accumulated/counter;
 }
 
@@ -678,7 +678,7 @@ Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high
     accumulated = accumulated + hits.at(i).dEdx;
     counter ++;
   }
-  
+
   return accumulated/counter;
 }
 
@@ -691,13 +691,13 @@ Float_t pdAnaUtils::ComputeDistanceMotherDaughter(AnaParticlePD* mother, AnaPart
     std::cout << "Returning -999" << std::endl;
     return -999.;
   }
-  
+
   double dis = 0;
   for(int i = 0; i < 3; i++)dis = dis + pow(mother->PositionEnd[i] - daughter->PositionStart[i],2);
   dis = sqrt(dis);
   return dis;
 }
-  
+
 //***************************************************************
 Float_t pdAnaUtils::ComputeCosMotherDaughter(AnaParticlePD* mother, AnaParticlePD* daughter){
 //***************************************************************
@@ -707,7 +707,7 @@ Float_t pdAnaUtils::ComputeCosMotherDaughter(AnaParticlePD* mother, AnaParticleP
     std::cout << "Returning -999" << std::endl;
     return -999.;
   }
-  
+
   double cos = 0;
   for(int i = 0; i < 3; i++)cos = cos + mother->DirectionEnd[i] * daughter->DirectionStart[i];
   return cos;
@@ -722,7 +722,7 @@ Float_t pdAnaUtils::ComputeAveragedEdxOverResRange(AnaParticlePD* part, double m
     std::cout << "Returning -999" << std::endl;
     return -999.;
   }
-  
+
   if(part->Hits[2].empty()){
     //std::cout << "ComputeAveragedEdxOverResRange: has no hits" << std::endl;
     //std::cout << "Returning -999" << std::endl;
@@ -750,13 +750,13 @@ bool pdAnaUtils::IsStoppingInFV(AnaParticlePD *part){
   if(!part)return false;
 
   bool ItIs = true;
-  
-  if((TMath::Abs(part->PositionStart[0])>350 || 
-      part->PositionStart[1]<50 || part->PositionStart[1]>550 || 
+
+  if((TMath::Abs(part->PositionStart[0])>350 ||
+      part->PositionStart[1]<50 || part->PositionStart[1]>550 ||
       part->PositionStart[2]<50 || part->PositionStart[2]>645)
       &&
-      (TMath::Abs(part->PositionEnd[0])>350 || 
-       part->PositionEnd[1]<50 || part->PositionEnd[1]>550 || 
+      (TMath::Abs(part->PositionEnd[0])>350 ||
+       part->PositionEnd[1]<50 || part->PositionEnd[1]>550 ||
        part->PositionEnd[2]<50 || part->PositionEnd[2]>645))
     ItIs = false;
 
@@ -775,7 +775,7 @@ int pdAnaUtils::GetPosTPCid(TVector3 pos){
 //***************************************************************
 
   int TPCid = -1;
-  
+
   if(pos.X() < 0){
     if(pos.Z() > 0 && pos.Z() < 230)       TPCid = 1;
     else if(pos.Z() > 230 && pos.Z() < 460)TPCid = 5;
@@ -786,16 +786,16 @@ int pdAnaUtils::GetPosTPCid(TVector3 pos){
     else if(pos.Z() > 230 && pos.Z() < 460)TPCid = 6;
     else if(pos.Z() > 460 && pos.Z() < 690)TPCid = 10;
   }
-  
+
   return TPCid;
 }
 
 //***************************************************************
 void pdAnaUtils::EstimateHitsDirection(AnaParticlePD* part){
 //***************************************************************
-  
+
   if(!part)return;
-  
+
   //loop over hits
   for(int ihit = 0; ihit < (int)part->Hits[2].size(); ihit++){
     if(ihit < (int)part->Hits[2].size()-1){
@@ -808,13 +808,13 @@ void pdAnaUtils::EstimateHitsDirection(AnaParticlePD* part){
       part->Hits[2][ihit].Direction.SetXYZ(part->Hits[2][ihit-1].Direction.X(),part->Hits[2][ihit-1].Direction.Y(),part->Hits[2][ihit-1].Direction.Z());
       part->Hits[2][ihit].Direction_NoSCE.SetXYZ(part->Hits[2][ihit-1].Direction.X(),part->Hits[2][ihit-1].Direction.Y(),part->Hits[2][ihit-1].Direction.Z());
     }
-  } 
+  }
 }
 
 //***************************************************************
 void pdAnaUtils::ComputeResidualRange(AnaParticlePD* part){
 //***************************************************************
-  
+
   if(!part)return;
 
   std::vector<double> delta; delta.clear();
@@ -838,10 +838,10 @@ void pdAnaUtils::ComputeResidualRange(AnaParticlePD* part){
 //***************************************************************
 Double_t pdAnaUtils::ComputeDepositedEnergy(AnaParticlePD* part){
 //***************************************************************
-  
+
   Double_t E = -999;
   if(!part)return E;
-  
+
   int nhits = part->Hits[2].size();
   if(nhits <= 0)return E;
 
@@ -851,7 +851,7 @@ Double_t pdAnaUtils::ComputeDepositedEnergy(AnaParticlePD* part){
       continue;
     E += part->Hits[2][ihit].dEdx * part->Hits[2][ihit].Pitch;
   }
-  
+
   return E;
 }
 
@@ -864,7 +864,7 @@ Double_t pdAnaUtils::EstimateTrueMomAtAPABorder(AnaParticlePD* part){
 
   AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
   if(!truePart)return momf;
-  
+
   if(part->PositionStart[2]>220)return momf;
 
   int nhits = part->Hits[2].size();
@@ -913,7 +913,7 @@ Double_t pdAnaUtils::ComputeDistanceToClosestParticle(AnaParticlePD* part, AnaPa
 
 
 //***************************************************************
-void pdAnaUtils::GetBeamQualityCuts(AnaEventPD* event, 
+void pdAnaUtils::GetBeamQualityCuts(AnaEventPD* event,
 				    double &mean_x, double &mean_y, double &mean_z,
 				    double &sigma_x, double &sigma_y, double &sigma_z,
 				    double &cos){
@@ -954,37 +954,37 @@ double pdAnaUtils::GetDensityCorrection(double beta, double gamma){
 //***************************************************************
 
   //Parameters for the density correction
-  const double density_C  = 5.2146; 
-  const double density_y0 = 0.2; 
-  const double density_y1 = 3.0; 
+  const double density_C  = 5.2146;
+  const double density_y0 = 0.2;
+  const double density_y1 = 3.0;
   const double density_a  = 0.19559;
-  const double density_k  = 3.0; 
-  
+  const double density_k  = 3.0;
+
   //Estimate the density correction
-  double density_y = TMath::Log10(beta * gamma); 
+  double density_y = TMath::Log10(beta * gamma);
   double ln10 = TMath::Log(10);
   double this_delta = 0.;
   if(density_y > density_y1){
-    this_delta = 2.0 * ln10 * density_y - density_C; 
+    this_delta = 2.0 * ln10 * density_y - density_C;
   }
   else if (density_y < density_y0){
-    this_delta = 0.; 
+    this_delta = 0.;
   }
   else{
     this_delta = 2.0 * ln10 * density_y - density_C + density_a * pow(density_y1 - density_y, density_k);
   }
-  
-  return this_delta; 
-} 
+
+  return this_delta;
+}
 
 //***************************************************************
-double pdAnaUtils::GetdEdxBetheBloch(double KE, double mass){ 
+double pdAnaUtils::GetdEdxBetheBloch(double KE, double mass){
 //***************************************************************
 
-  //Bethe-Bloch parameters, https://indico.fnal.gov/event/14933/contributions/28526/attachments/17961/22583/Final_SIST_Paper.pdf 
+  //Bethe-Bloch parameters, https://indico.fnal.gov/event/14933/contributions/28526/attachments/17961/22583/Final_SIST_Paper.pdf
   const double rho = 1.39; // [g/cm3], density of LAr
   const double K   = 0.307075; // [MeV cm2 / mol]
-  const double A   = 39.948; // [g / mol], atomic mass of Ar 
+  const double A   = 39.948; // [g / mol], atomic mass of Ar
   const double I   = 188.0e-6; // [MeV], mean excitation energy
   const double Me  = 0.511; // [Mev], mass of electron
 
@@ -992,73 +992,73 @@ double pdAnaUtils::GetdEdxBetheBloch(double KE, double mass){
   double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
   double Wmax = (2.0 * Me * pow(beta * gamma, 2)) / (1.0 + 2.0 * Me * (gamma / mass) + pow((Me / mass),2));
   double delta = GetDensityCorrection(beta, gamma);
-  
+
   // == dE/dx with the density correction
-  double f = rho * K * (18.0 / A) * pow(1. / beta, 2); 
+  double f = rho * K * (18.0 / A) * pow(1. / beta, 2);
   double a0 = 0.5 * TMath::Log(2.0 * Me * pow(beta * gamma, 2) * Wmax / (I * I));
-  double this_dEdx = f * ( a0 - pow(beta, 2) - delta / 2.0); // [MeV/cm] 
-  
+  double this_dEdx = f * ( a0 - pow(beta, 2) - delta / 2.0); // [MeV/cm]
+
   return this_dEdx;
 }
 
 //***************************************************************
-double pdAnaUtils::GetWmax(double KE, double mass){ 
+double pdAnaUtils::GetWmax(double KE, double mass){
 //***************************************************************
 
   const double Me  = 0.511; // [Mev], mass of electron
-  
+
   double gamma = (KE/mass)+1.0;
   double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
   double Wmax = (2.0 * Me * pow(beta * gamma, 2)) / (1.0 + 2.0 * Me * (gamma / mass) + pow((Me / mass),2));
-  
-  return Wmax; 
-} 
+
+  return Wmax;
+}
 
 //***************************************************************
 double pdAnaUtils::GetLandauXi(double KE, double dx, double mass){
 //***************************************************************
- 
+
   const double rho = 1.39; // [g/cm3], density of LAr
   const double K   = 0.307075; // [MeV cm2 / mol]
-  const double A   = 39.948; // [g / mol], atomic mass of Ar 
-  
+  const double A   = 39.948; // [g / mol], atomic mass of Ar
+
   double gamma = (KE/mass)+1.0;
   double beta = TMath::Sqrt(1-(1.0/(gamma*gamma)));
-  double xi = rho * dx * 0.5 * K * (18.0 / A) * pow(1. / beta, 2); 
-  return xi; 
-}    
+  double xi = rho * dx * 0.5 * K * (18.0 / A) * pow(1. / beta, 2);
+  return xi;
+}
 
 //***************************************************************
-double pdAnaUtils::dEdxPDF(double *x, double *par){ 
-//***************************************************************  
+double pdAnaUtils::dEdxPDF(double *x, double *par){
+//***************************************************************
 
   ROOT::Math::VavilovAccurate vav;
 
   double a = par[2] / par[4];
-  double b = (0.422784 + par[1] + log(par[0])) * par[2] / par[4] + par[3]; 
-  double y = (x[0] - b) / a; 
-  
+  double b = (0.422784 + par[1] + log(par[0])) * par[2] / par[4] + par[3];
+  double y = (x[0] - b) / a;
+
   double this_vav = 0.;
-  
+
   if(par[0] < 0.01){ // == Landau
-    this_vav = TMath::Landau(y); 
+    this_vav = TMath::Landau(y);
     this_vav =this_vav / a;
   }
   else if(par[0] > 10.){ // == Gaussian
     double mu = vav.Mean(par[0], par[1]);
-    double sigma = sqrt(vav.Variance(par[0], par[1])); 
-    this_vav =TMath::Gaus(y, mu, sigma); 
+    double sigma = sqrt(vav.Variance(par[0], par[1]));
+    this_vav =TMath::Gaus(y, mu, sigma);
   }
   else{ // == Vavilov
     this_vav = vav.Pdf(y, par[0], par[1]);
     this_vav = this_vav / a;
   }
-  
+
   return this_vav;
 }
 
 //***************************************************************
-Float_t pdAnaUtils::dEdxLikelihood(TGraph* tg, TGraph* tg_ke, 
+Float_t pdAnaUtils::dEdxLikelihood(TGraph* tg, TGraph* tg_ke,
 				   Float_t mass){
 //***************************************************************
 
@@ -1183,7 +1183,7 @@ Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, con
 }
 
 //***************************************************************
-std::pair<Float_t,Float_t> pdAnaUtils::dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke, 
+std::pair<Float_t,Float_t> pdAnaUtils::dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke,
 					    Float_t mass){
 //***************************************************************
 
@@ -1266,7 +1266,7 @@ std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange(AnaParticlePD*
   std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
   delete tg;
   file_ke->Close("R");
-  
+
   return result;
 }
 
@@ -1314,6 +1314,163 @@ std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaPart
   std::pair<Float_t,Float_t>result = dEdxLikelihoodFreeRange(tg,tg_ke,mass);
   delete tg;
   file_ke->Close("R");
-  
+
   return result;
+}
+//********************************************************************
+std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& event, double maxVertexRadius, double maxDaughterDistance){
+//********************************************************************
+
+  std::vector<AnaVertexPD*> vertices;
+
+  // Get the array of particles from the event
+  AnaParticleB** parts = event.Particles;
+  int nParts = event.nParticles;
+
+  // Find all particles with valid start positions
+  std::vector<AnaParticlePD*> validParticles;
+  for(int i = 0; i < nParts; i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    if(!part) continue;
+
+    // Check if particle has valid start position
+    if (part->PositionStart[0] < -900 || part->PositionStart[1] < -900 || part->PositionStart[2] < -900) {
+      continue; // Skip particles with invalid start positions
+    }
+    validParticles.push_back(part);
+  }
+
+  // Need at least 2 particles to form a vertex
+  if (validParticles.size() < 2) {
+    return vertices;
+  }
+
+  // Find all particles with valid end positions (potential parents)
+  std::vector<AnaParticlePD*> potentialParents;
+  for (int i = 0; i < nParts; i++) {
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    if (!part) continue;
+
+    // Check if this particle has valid end position
+    if (part->PositionEnd[0] < -900 || part->PositionEnd[1] < -900 || part->PositionEnd[2] < -900) {
+      continue; // Skip particles with invalid end positions
+    }
+
+    // Skip particles that are not Beam particles
+    // TODO: Try to generalise this for all particles
+    if (!part->isPandora) continue;
+
+    potentialParents.push_back(part);
+  }
+
+  // For each potential parent, create all possible vertex combinations with exactly 2 daughters
+  for (const auto& parent : potentialParents) {
+    // Find all particles whose start positions are within the sphere of the parent's end position
+    std::vector<AnaParticlePD*> daughterCandidates;
+    for (const auto& candidateParticle : validParticles) {
+      if (!candidateParticle || candidateParticle == parent) continue;
+      // Calculate distance from parent's end position to candidate's start position
+      double dist = sqrt((candidateParticle->PositionStart[0] - parent->PositionEnd[0]) * (candidateParticle->PositionStart[0] - parent->PositionEnd[0]) +
+                        (candidateParticle->PositionStart[1] - parent->PositionEnd[1]) * (candidateParticle->PositionStart[1] - parent->PositionEnd[1]) +
+                        (candidateParticle->PositionStart[2] - parent->PositionEnd[2]) * (candidateParticle->PositionStart[2] - parent->PositionEnd[2]));
+
+      if (dist <= maxVertexRadius) {
+        daughterCandidates.push_back(candidateParticle);
+      }
+    }
+
+    // Generate all possible combinations of exactly 2 daughters
+    if ((int)daughterCandidates.size() >= 2) {
+      // Generate all combinations of 2 daughters from daughterCandidates
+      for (size_t i = 0; i < daughterCandidates.size(); i++) {
+        for (size_t j = i + 1; j < daughterCandidates.size(); j++) {
+          AnaParticlePD* daughter1 = daughterCandidates[i];
+          AnaParticlePD* daughter2 = daughterCandidates[j];
+
+          // Skip if the daughters are not the reco daughters of the parent
+          if (daughter1->ParentID != parent->UniqueID || daughter2->ParentID != parent->UniqueID) continue;
+
+          if (!daughter1 || !daughter2) continue;
+
+          double daughterDistance = sqrt((daughter1->PositionStart[0] - daughter2->PositionStart[0]) * (daughter1->PositionStart[0] - daughter2->PositionStart[0]) +
+                                        (daughter1->PositionStart[1] - daughter2->PositionStart[1]) * (daughter1->PositionStart[1] - daughter2->PositionStart[1]) +
+                                        (daughter1->PositionStart[2] - daughter2->PositionStart[2]) * (daughter1->PositionStart[2] - daughter2->PositionStart[2]));
+          if (daughterDistance > maxDaughterDistance) continue;
+
+          // Create vertex with 1 parent and exactly 2 daughters
+          std::vector<AnaParticlePD*> vertexParticles;
+          vertexParticles.push_back(parent);  // parent
+          vertexParticles.push_back(daughter1); // daughter 1
+          vertexParticles.push_back(daughter2); // daughter 2
+
+          // Check that all particles in the vertex have different particle IDs
+          bool hasUniqueParticleIDs = true;
+          std::set<int> particleIDs;
+          for (const auto& particle : vertexParticles) {
+            if (particleIDs.find(particle->UniqueID) != particleIDs.end()) {
+              hasUniqueParticleIDs = false;
+              break;
+            }
+            particleIDs.insert(particle->UniqueID);
+          }
+
+          // Skip this vertex if particles have duplicate IDs
+          if (!hasUniqueParticleIDs) {
+            continue;
+          }
+
+          // Create reconstructed vertex candidate
+          AnaVertexPD* reconVertex = new AnaVertexPD();
+
+          // Set vertex position to the parent's end position
+          reconVertex->Position[0] = parent->PositionEnd[0];
+          reconVertex->Position[1] = parent->PositionEnd[1];
+          reconVertex->Position[2] = parent->PositionEnd[2];
+          reconVertex->Position[3] = 0.0; // time
+
+          // Set vertex properties - exactly 1 parent + 2 daughters
+          reconVertex->NParticles = 3; // parent + 2 daughters
+          reconVertex->Particles = vertexParticles;
+          reconVertex->Parent = parent;
+          reconVertex->Generation = 1; // Secondary vertex
+          reconVertex->ReactionType = 0; // Unknown for now
+
+          // Check if this vertex combination already exists (same particle IDs)
+          bool vertexExists = false;
+          for (const auto& existingVertex : vertices) {
+            if (existingVertex->Parent == reconVertex->Parent &&
+                existingVertex->NParticles == reconVertex->NParticles) {
+              // Check if the daughters are the same
+              bool sameDaughters = true;
+              for (size_t k = 1; k < reconVertex->NParticles; k++) { // Skip parent (index 0)
+                bool found = false;
+                for (size_t l = 1; l < existingVertex->NParticles; l++) {
+                  if (reconVertex->Particles[k] == existingVertex->Particles[l]) {
+                    found = true;
+                    break;
+                  }
+                }
+                if (!found) {
+                  sameDaughters = false;
+                  break;
+                }
+              }
+              if (sameDaughters) {
+                vertexExists = true;
+                delete reconVertex; // Clean up since we won't use it
+                break;
+              }
+            }
+          }
+
+          // Only add vertex if it doesn't already exist
+          if (!vertexExists) {
+            vertices.push_back(reconVertex);
+          }
+        }
+      }
+    }
+  }
+
+  return vertices;
 }

@@ -8,17 +8,24 @@
 
 #include "pdAnalysisUtils.hxx"
 #include "standardPDTree.hxx"
+#include <sstream>
+#include <iostream>
 
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 
-// #include "ParticlePositionSCECorrection.hxx"
+#include "ParticlePositionSCECorrection.hxx"
+#include "SCEGeometricVariation.hxx"
+#include "pdEventDisplay.hxx"
 
 #include "baseToyMaker.hxx"
 
 //********************************************************************
 neutralKaonAnalysis::neutralKaonAnalysis(AnalysisAlgorithm* ana) : pdBaseAnalysis(ana) {
 //********************************************************************
+
+  // Initialize event display pointer
+  _eventDisplay = NULL;
 
   // Add the package version
   //  ND::versioning().AddPackage("StoppingProtonAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("STOPPINGPROTONANALYSISROOT")));
@@ -39,10 +46,74 @@ bool neutralKaonAnalysis::Initialize(){
   // Minimum accum cut level (how many cuts should be passed) to save event into the output tree
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("neutralKaonAnalysis.MinAccumLevelToSave"));
 
+  // SCE correction parameter
+  _ApplySCECorrection = ND::params().GetParameterI("neutralKaonAnalysis.ApplySCECorrection");
+  _ApplySCESystematic = ND::params().GetParameterI("neutralKaonAnalysis.ApplySCESystematic");
+
+    // Event display parameters
+    _CreateEventDisplay = ND::params().GetParameterI("neutralKaonAnalysis.CreateEventDisplay");
+    _SaveToRootFile = ND::params().GetParameterI("neutralKaonAnalysis.SaveToRootFile");
+    _OutputDirectory = ND::params().GetParameterS("neutralKaonAnalysis.OutputDirectory");
+    _MaxEventsToDisplay = ND::params().GetParameterI("neutralKaonAnalysis.MaxEventsToDisplay");
+    _EventDisplayPercentage = ND::params().GetParameterD("neutralKaonAnalysis.EventDisplayPercentage");
+    _VertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.VertexRadius");
+    _MinVertexDaughters = ND::params().GetParameterI("neutralKaonAnalysis.MinVertexDaughters");
+    _OnlySignalEvents = ND::params().GetParameterI("neutralKaonAnalysis.OnlySignalEvents");
+
+    // Parse required particle PDGs from parameters
+    std::string requiredPDGsStr = ND::params().GetParameterS("neutralKaonAnalysis.RequiredParticlePDGs");
+    _RequiredParticlePDGs.clear();
+    if (!requiredPDGsStr.empty() && requiredPDGsStr != "none") {
+        // Remove quotes if present
+        if (requiredPDGsStr.front() == '"' && requiredPDGsStr.back() == '"') {
+            requiredPDGsStr = requiredPDGsStr.substr(1, requiredPDGsStr.length() - 2);
+        }
+
+        std::istringstream iss(requiredPDGsStr);
+        std::string pdgStr;
+        while (std::getline(iss, pdgStr, ',')) {
+            // Trim whitespace from the string
+            pdgStr.erase(0, pdgStr.find_first_not_of(" \t"));
+            pdgStr.erase(pdgStr.find_last_not_of(" \t") + 1);
+
+            // Only parse if the string is not empty
+            if (!pdgStr.empty()) {
+                try {
+                    int pdg = std::stoi(pdgStr);
+                    _RequiredParticlePDGs.push_back(pdg);
+                } catch (const std::invalid_argument& e) {
+                    std::cerr << "Warning: Could not parse PDG '" << pdgStr << "' from RequiredParticlePDGs parameter. Skipping." << std::endl;
+                }
+            }
+        }
+    }
+
+    // Debug: Print loaded PDG requirements
+    if (!_RequiredParticlePDGs.empty()) {
+        std::cout << "Event display will only save events containing these particle types: ";
+        for (size_t i = 0; i < _RequiredParticlePDGs.size(); ++i) {
+            std::cout << _RequiredParticlePDGs[i];
+            if (i < _RequiredParticlePDGs.size() - 1) std::cout << ", ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Event display will save events with any particle types (no filtering)" << std::endl;
+    }
+
+    // Initialize event display
+    _eventDisplay = new pdEventDisplay();
+    _eventDisplay->Initialize(_CreateEventDisplay, _SaveToRootFile, _OutputDirectory, _MaxEventsToDisplay, _EventDisplayPercentage, _RequiredParticlePDGs, _VertexRadius, _MinVertexDaughters);
+
   // Define categories for color drawing. Have a look at highland/src/highland2/highlandUtils/src/CategoriesUtils.hxx
   anaUtils::AddStandardCategories();
   anaUtils::AddStandardCategories("beam");
   anaUtils::AddStandardCategories("bestcandidate");
+
+  // Add custom categories for neutral kaon analysis
+  AddVertexPionPairCategory();
+  AddVertexParticleCountCategory();
+  AddK0InVtxCategory();
+  AddVertexParentPDGCategory();
 
   return true;
 }
@@ -73,7 +144,8 @@ void neutralKaonAnalysis::DefineCorrections(){
 
   // Some corrections are defined in pdBaseAnalysis
   pdBaseAnalysis::DefineCorrections();
-  // corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
+  if(_ApplySCECorrection)
+    corr().AddCorrection(0, "sce geometric correction", new ParticlePositionSCECorrection());
 }
 
 //********************************************************************
@@ -82,6 +154,9 @@ void neutralKaonAnalysis::DefineSystematics(){
 
   // Some systematics are defined in pdBaseAnalysis (highland/src/highland2/pdBaseAnalysis)
   pdBaseAnalysis::DefineSystematics();
+
+  if(_ApplySCESystematic)
+    evar().AddEventVariation(kSCEGeometric, "SCE variation", new SCEGeometricVariation());
 }
 
 //********************************************************************
@@ -99,10 +174,7 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   // Variables from pdBaseAnalysis (run, event, ...)
   if (addBase) pdBaseAnalysis::DefineMicroTrees(addBase);
 
-  // standardPDTree::AddStandardVariables_AllParticlesReco(output(), 10);
-  // standardPDTree::AddStandardVariables_AllParticlesTrue(output(), 10);
-
-  // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
+  // // Add standard sets of variables for ProtoDUNE analysis  (those methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
   standardPDTree::AddStandardVariables_EventInfo(output());
   standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
   standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
@@ -113,19 +185,14 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   standardPDTree::AddStandardVariables_BeamParticleDaughtersReco(output(),50);
   standardPDTree::AddStandardVariables_BeamTruthDaughters(output(),50);
 
-  AddVarF(output(), seltrk_goodk0, "K0 is daughter & K0 daughters are daughters of particle");
   AddVarI(output(), seltrk_dau_trueparentpdg, "Parent PDG of reco daughter");
 
+  AddVarI(output(), nAllParticles, "Number of all particles with valid start positions");
 
-  // Add standard sets of variables for ProtoDUNE analysis (these methods are in highlandPD/src/pdUtils/standardPDTree.cxx)
-  // beam instrumentation info
-  // standardPDTree::AddStandardVariables_BeamInstrumentationTrue(output());
-  // standardPDTree::AddStandardVariables_BeamInstrumentationReco(output());
+  // // Add vertex candidates variables
+  // // Increased from 500 to 1000 to accommodate the new combinatorial vertex creation algorithm
+  neutralKaonTree::AddNeutralKaonVariables_VertexCandidates(output(), 1000);
 
-  // // candidate track (beam track) info
-  // standardPDTree::AddStandardVariables_BeamParticleTrue(output());
-  // standardPDTree::AddStandardVariables_BeamParticleReco(output());
-  //standardPDTree::AddStandardVariables_BeamParticleHitsReco(output());
 }
 
 //********************************************************************
@@ -134,13 +201,6 @@ void neutralKaonAnalysis::DefineTruthTree(){
 
   // Variables from pdBaseAnalysis (run, event, ...)
   pdBaseAnalysis::DefineTruthTree();
-  neutralKaonTree::AddNeutralKaonVariables_TrueNeutralKaonCandidates(output());
-  // Add dynamic daughters variables up to a maximum (only filled for existing daughters)
-  std::cout << "[neutralKaonAnalysis] Adding dynamic true daughters (max=200)" << std::endl;
-  neutralKaonTree::AddNeutralKaonVariables_TrueDaughtersDynamic(output(), 200);
-  std::cout << "[neutralKaonAnalysis] Done adding dynamic true daughters" << std::endl;
-  neutralKaonTree::AddNeutralKaonVariables_TrueParentCandidates(output());
-  neutralKaonTree::AddNeutralKaonVariables_TrueGrandParentCandidates(output());
   // Function in standardPDTree.cxx where the truth tree variables are defined: momentum, pdg, etc.
   // Function in standardPDTree.cxx -> beamParticleTruthDaughters()
 }
@@ -152,70 +212,82 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   // Variables from pdBaseAnalysis (run, event, ...)
   if (addBase) pdBaseAnalysis::FillMicroTreesBase(addBase);
 
-  // Fill standard variables for the PD analysis
-  standardPDTree::FillStandardVariables_BeamInstrumentationReco(         output(), GetSpill().Beam);
-  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(         output(), GetSpill().Beam);
+  // Fill standard variables for the PD analysis (only once)
+  standardPDTree::FillStandardVariables_EventInfo(output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
+  standardPDTree::FillStandardVariables_BeamInstrumentationReco(output(), GetSpill().Beam);
+  standardPDTree::FillStandardVariables_BeamInstrumentationTrue(output(), GetSpill().Beam);
 
   // ---------- Additional candidate variables --------------
   if(box().MainTrack){
-    AnaBeamPD* beam = static_cast<AnaBeamPD*>(GetSpill().Beam);
-    AnaParticlePD* beamPart = static_cast<AnaParticlePD*>(beam->BeamParticle);
-    AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
-    standardPDTree::FillStandardVariables_EventInfo(                  output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
-    standardPDTree::FillStandardVariables_BeamInstrumentationReco(    output(), GetSpill().Beam);
-    standardPDTree::FillStandardVariables_BeamInstrumentationTrue(    output(), GetSpill().Beam);
-    standardPDTree::FillStandardVariables_BeamParticleReco(           output(), box().MainTrack);
-    standardPDTree::FillStandardVariables_BeamParticleTrue(           output(), box().MainTrack);
-    standardPDTree::FillStandardVariables_BeamParticleHitsReco(       output(), box().MainTrack);
-    int ndau = (int)box().MainTrack->Daughters.size();
-    bool goodk0 = false;
+    // Fill beam particle information
+    standardPDTree::FillStandardVariables_BeamParticleReco(output(), box().MainTrack);
+    standardPDTree::FillStandardVariables_BeamParticleTrue(output(), box().MainTrack);
+    standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
+
+    // Fill beam particle daughters information
+    int ndau = std::min(50, (int)box().MainTrack->Daughters.size());
     for(int i = 0; i < ndau; i++){
-      // cout << "box().MainTrack->Daughters[i]->TrueObject->ID = " << box().MainTrack->Daughters[i] << endl;
-      standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
-      standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]));
-      output().FillVar(seltrk_dau_trueparentpdg, static_cast<AnaTrueParticlePD*>(box().MainTrack->Daughters[i]->TrueObject)->ParentPDG);
-      if (trueBeamPart) {
-        standardPDTree::FillStandardVariables_BeamParticleReco(    output(), box().MainTrack, beamPart);
-        standardPDTree::FillStandardVariables_BeamParticleTrue(    output(), box().MainTrack);
-        standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
-        int ndau_truth = (int)trueBeamPart->Daughters.size();
-        // cout << "trueBeamPart->Daughters.size() = " << trueBeamPart->Daughters.size() << endl;
-        for(int j = 0; j < ndau_truth; j++){
-          // cout << "trueBeamPart->Daughters[j] = " << trueBeamPart->Daughters[j] << endl;
-          AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, trueBeamPart->Daughters[j]);
-          if (!truthdau) continue;
-          // cout << "truthdau->PDG = " << truthdau->PDG << endl;
-          if (truthdau->PDG == 310) {
-            int ndau_truthk0 = (int)truthdau->Daughters.size();
-            // cout << "truthdau->Daughters.size() = " << truthdau->Daughters.size() << endl;
-            // cout << "trueBeamPart->Daughters[j]: " << trueBeamPart->Daughters[j] << endl;
-            for(int k = 0; k < ndau_truthk0; k++){
-              // cout << "truthdau->Daughters[k]: " << truthdau->Daughters[k] << endl;
-              AnaTrueParticlePD* truthdauk0 = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, truthdau->Daughters[k]);
-              // cout << truthdauk0 << endl;
-              // cout << "GetSpill.TrueParticles.size(): " << GetSpill().TrueParticles.size() << endl;
-              if (!truthdauk0) continue;
-              // cout << "truthdauk0->ID: " << truthdauk0->ID << endl;
-              // cout << "box().MainTrack->Daughters[i]->TrueObject->ID" << box().MainTrack->Daughters[i]->TrueObject->ID << endl;
-              if (truthdauk0->ID == box().MainTrack->Daughters[i]->TrueObject->ID) {
-                // cout << "True - K0 has " << ndau_truthk0 << " daughters" << endl;
-                goodk0 = true;
-              }
-              output().IncrementCounter(neutralKaonAnalysis::seltrk_truthk0_ndau);
-            }
-          }
-          output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau);
+      AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
+      if (!daughter) continue;
+
+      standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), daughter);
+      standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), daughter);
+
+      // Fill parent PDG information
+      if (daughter->TrueObject) {
+        AnaTrueParticlePD* trueDaughter = static_cast<AnaTrueParticlePD*>(daughter->TrueObject);
+        if (trueDaughter) {
+          output().FillVar(seltrk_dau_trueparentpdg, trueDaughter->ParentPDG);
         }
       }
-    float seltrk_goodk0_true = 100.0;
-    float seltrk_goodk0_false = 0.0;
-    if (goodk0) {
-      output().FillVar(seltrk_goodk0, seltrk_goodk0_true);
+
+      output().IncrementCounter(standardPDTree::seltrk_ndau);
     }
-    else {
-      output().FillVar(seltrk_goodk0, seltrk_goodk0_false);
+
+    // Fill truth daughter counter (needed by other variables)
+    AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
+    if (trueBeamPart) {
+      int ndau_truth = (int)trueBeamPart->Daughters.size();
+      for(int j = 0; j < ndau_truth; j++){
+        AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, trueBeamPart->Daughters[j]);
+        if (!truthdau) continue;
+        output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau);
+      }
     }
-    output().IncrementCounter(standardPDTree::seltrk_ndau);
+  }
+
+  // Fill vertex candidates information for all events (regardless of main track)
+  const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
+  output().FillVar(nAllParticles, neutralKaonBox.nAllParticles);
+
+  // // Initialize counters for this event
+  // output().InitializeCounter(neutralKaonTree::n_recovtx_candidates);
+  // output().InitializeCounter(neutralKaonTree::n_true_vertex_candidates);
+
+  // Fill vertex candidates data
+  // const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
+  neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(output(), neutralKaonBox.reconVertexCandidates, neutralKaonBox.trueVertexCandidates);
+
+  // Create event display if enabled and event passes the minimum accumulated level to save
+  if (_eventDisplay && _eventDisplay->ShouldCreateEventDisplay()) {
+    // Only create event display for events that pass the minimum accumulated level to save
+    SelectionBase* neutralKaonSelection = sel().GetSelection("neutralKaonSelection");
+    if (neutralKaonSelection) {
+      int maxAccumLevel = 0;
+      for(UInt_t ibranch = 0; ibranch < neutralKaonSelection->GetNBranches(); ibranch++){
+        if(neutralKaonSelection->GetAccumCutLevel(ibranch) > maxAccumLevel){
+          maxAccumLevel = neutralKaonSelection->GetAccumCutLevel(ibranch);
+        }
+      }
+
+      // Get the minimum accumulated level to save from parameters
+      int minAccumLevelToSave = ND::params().GetParameterI("neutralKaonAnalysis.MinAccumLevelToSave");
+
+      // Only display events that pass the minimum accumulated level to save
+      if (maxAccumLevel >= minAccumLevelToSave) {
+        // Check if event contains required particles BEFORE creating event display
+        _eventDisplay->CreateEventDisplay(GetEvent(), GetEvent().EventInfo->Event);
+      }
     }
   }
 }
@@ -240,19 +312,10 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
-  // Only fill truth tree if there is a particle with PDG=310 in the daughters
+  // Fill truth tree for all particles to include vertex information
   if (!part) return false;
 
-  // Check if any daughter has PDG=310 (neutral kaon)
-  const std::vector<int>& daughters = part->Daughters;
-  for (size_t i = 0; i < daughters.size(); i++) {
-    AnaTrueParticlePD* daughter = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, daughters[i]);
-    if (daughter && daughter->PDG == 310) {
-      return true; // Found a neutral kaon daughter
-    }
-  }
-
-  return false; // No neutral kaon daughters found
+  return true; // Fill truth tree for all particles
 }
 
 //********************************************************************
@@ -260,20 +323,9 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 //********************************************************************
     // Fill the common variables
     pdBaseAnalysis::FillTruthTree(part);
-    neutralKaonTree::FillNeutralKaonVariables_TrueNeutralKaonCandidates(output(), &part);
-    AnaTrueParticlePD* truthpar = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, part.ParentID);
-    if (truthpar) {
-      neutralKaonTree::FillNeutralKaonVariables_TrueParentCandidates(output(), truthpar);
-      AnaTrueParticlePD* truthgpar = pdAnaUtils::GetTrueParticle(    GetSpill().TrueParticles, truthpar->ParentID);
-      if (truthgpar) {
-        neutralKaonTree::FillNeutralKaonVariables_TrueGrandParentCandidates(output(), truthgpar);
-      }
-    }
-    if(&part){
-      // Fill dynamic daughters (support up to 200, but only fill existing)
-      neutralKaonTree::FillNeutralKaonVariables_TrueDaughtersWithCollection(
-        output(), &part, GetSpill().TrueParticles, 1000);
-    }
+
+    // The truth tree is meant for individual particle information, not analysis results
+    // Vertex candidates are analysis results and belong in the ana tree only
 }
 
 //********************************************************************
@@ -304,4 +356,451 @@ void neutralKaonAnalysis::FillCategories(){
   // For the beam track
   AnaParticleB* beam = static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle;
   if(beam)anaUtils::FillCategories(&GetEvent(), beam,"beam");
+
+  // Fill vertex pion pair categories for reconstructed vertex candidates
+  const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
+
+  // Fill categories for the best reconstructed vertex candidate if available
+  // Fill categories for all vertices
+  FillK0InVtxCategory(neutralKaonBox.reconVertexCandidates);
+
+  // Fill other categories for best vertex if available
+  // if(neutralKaonBox.BestReconVertexCandidateIndex >= 0 &&
+  //    neutralKaonBox.BestReconVertexCandidateIndex < (int)neutralKaonBox.reconVertexCandidates.size()) {
+  //   AnaVertexPD* bestVertex = neutralKaonBox.reconVertexCandidates[neutralKaonBox.BestReconVertexCandidateIndex];
+  //   if(bestVertex) {
+  //     FillVertexPionPairCategory(bestVertex);
+  //     FillVertexParticleCountCategory(bestVertex);
+  //     FillVertexParentPDGCategory(bestVertex);
+  //   }
+  // }
+  // If no best vertex, try to fill for any available vertex
+  // else if(!neutralKaonBox.reconVertexCandidates.empty()) {
+  //   AnaVertexPD* firstVertex = neutralKaonBox.reconVertexCandidates[0];
+  //   if(firstVertex) {
+  //     FillVertexPionPairCategory(firstVertex);
+  //     FillVertexParticleCountCategory(firstVertex);
+  //     FillVertexParentPDGCategory(firstVertex);
+  //   }
+  // }
+  // If no vertices available, set to no truth
+  // else {
+  //   FillVertexPionPairCategory(nullptr);
+  //   FillVertexParticleCountCategory(nullptr);
+  //   FillVertexParentPDGCategory(nullptr);
+  // }
+}
+
+//********************************************************************
+void neutralKaonAnalysis::AddVertexPionPairCategory(){
+//********************************************************************
+
+  std::string part_types[] = {"signal", "background", NAMEOTHER};
+  int part_codes[]         = {1        , 0           , CATOTHER};
+  int part_colors[]        = {2        , 4           , COLOTHER};
+  const int NPART = sizeof(part_types)/sizeof(part_types[0]);
+
+  std::reverse(part_types,  part_types  + NPART);
+  std::reverse(part_codes,  part_codes  + NPART);
+  std::reverse(part_colors, part_colors + NPART);
+
+  anaUtils::_categ->AddCategory("vertexpionpair", NPART, part_types, part_codes, part_colors);
+}
+
+//********************************************************************
+void neutralKaonAnalysis::AddVertexParticleCountCategory(){
+//********************************************************************
+
+  std::string part_types[] = {"0_daughters", "1_daughter", "2_daughters", "3_daughters", "4_daughters", "more_than_4", NAMEOTHER};
+  int part_codes[]         = {0            , 1           , 2            , 3            , 4            , 5            , CATOTHER};
+  int part_colors[]        = {1            , 2           , 3            , 4            , 6            , 7            , COLOTHER};
+  const int NPART = sizeof(part_types)/sizeof(part_types[0]);
+
+  std::reverse(part_types,  part_types  + NPART);
+  std::reverse(part_codes,  part_codes  + NPART);
+  std::reverse(part_colors, part_colors + NPART);
+
+  anaUtils::_categ->AddCategory("vertexparticlecount", NPART, part_types, part_codes, part_colors);
+}
+
+//********************************************************************
+void neutralKaonAnalysis::AddK0InVtxCategory(){
+//********************************************************************
+
+  std::string part_types[] = {"signal", "background", NAMEOTHER};
+  int part_codes[]         = {1        , 0           , CATOTHER};
+  int part_colors[]        = {3        , 2           , COLOTHER};
+  const int NPART = sizeof(part_types)/sizeof(part_types[0]);
+
+  std::reverse(part_types,  part_types  + NPART);
+  std::reverse(part_codes,  part_codes  + NPART);
+  std::reverse(part_colors, part_colors + NPART);
+
+  anaUtils::_categ->AddObjectCategory("k0invtx", neutralKaonTree::n_recovtx_candidates, "n_recovtx_candidates",
+    NPART, part_types, part_codes, part_colors,
+    1, -1000);
+  // anaUtils::_categ->AddObjectCategory("k0invtx", NPART, part_types, part_codes, part_colors);
+}
+
+//********************************************************************
+void neutralKaonAnalysis::FillVertexPionPairCategory(AnaVertexPD* vertex){
+//********************************************************************
+
+  if(!vertex) {
+    anaUtils::_categ->SetCode("vertexpionpair", CATNOTRUTH, CATNOTRUTH);
+    return;
+  }
+
+  // Check if there are exactly two pions (pi+ and pi-) in the reconstructed particles
+  bool hasPiPlus = false;
+  bool hasPiMinus = false;
+
+  // Loop through all reconstructed particles in the vertex
+  for(int i = 0; i < vertex->NParticles; i++) {
+    AnaParticlePD* recoPart = vertex->Particles[i];
+    if(!recoPart) continue;
+
+    // Get the associated true particle
+    AnaTrueParticleB* truePart = recoPart->GetTrueParticle();
+    if(!truePart) continue;
+
+    if(truePart->PDG == 211) {      // pi+
+      hasPiPlus = true;
+    }
+    else if(truePart->PDG == -211) { // pi-
+      hasPiMinus = true;
+    }
+  }
+
+  // Set category based on pion pair presence
+  if(hasPiPlus && hasPiMinus) {
+    anaUtils::_categ->SetCode("vertexpionpair", 1, CATOTHER); // signal
+  }
+  else {
+    anaUtils::_categ->SetCode("vertexpionpair", 0, CATOTHER); // background
+  }
+}
+
+//********************************************************************
+void neutralKaonAnalysis::FillVertexParticleCountCategory(AnaVertexPD* vertex){
+//********************************************************************
+
+  if(!vertex) {
+    anaUtils::_categ->SetCode("vertexparticlecount", CATNOTRUTH, CATNOTRUTH);
+    return;
+  }
+
+  // Count the number of daughters in the vertex (excluding the parent)
+  // The first particle is the parent, so daughters = total particles - 1
+  int daughterCount = vertex->NParticles - 1;
+
+  // Set category based on daughter count
+  if(daughterCount == 0) {
+    anaUtils::_categ->SetCode("vertexparticlecount", 0, CATOTHER); // 0 daughters
+  }
+  else if(daughterCount == 1) {
+    anaUtils::_categ->SetCode("vertexparticlecount", 1, CATOTHER); // 1 daughter
+  }
+  else if(daughterCount == 2) {
+    anaUtils::_categ->SetCode("vertexparticlecount", 2, CATOTHER); // 2 daughters
+  }
+  else if(daughterCount == 3) {
+    anaUtils::_categ->SetCode("vertexparticlecount", 3, CATOTHER); // 3 daughters
+  }
+  else if(daughterCount == 4) {
+    anaUtils::_categ->SetCode("vertexparticlecount", 4, CATOTHER); // 4 daughters
+  }
+  else if(daughterCount > 4) {
+    anaUtils::_categ->SetCode("vertexparticlecount", 5, CATOTHER); // more than 4 daughters
+  }
+  else {
+    // This should not happen (negative daughter count), but handle it
+    anaUtils::_categ->SetCode("vertexparticlecount", CATOTHER, CATOTHER);
+  }
+}
+
+//********************************************************************
+void neutralKaonAnalysis::FillK0InVtxCategory(const std::vector<AnaVertexPD*>& vertices){
+//********************************************************************
+
+  // Loop over all vertices and classify each one
+  for(const auto& vertex : vertices) {
+    if(!vertex) {
+      anaUtils::_categ->SetObjectCode("k0invtx", CATNOTRUTH, CATNOTRUTH, -1);
+      continue;
+    }
+
+    // Check if the two daughters are π+ and π- from the same K0 (PDG=310) by checking both PDG and particle ID
+    bool isSignal = false;
+
+    // We need exactly 2 daughters (plus 1 parent = 3 total particles)
+    if(vertex->NParticles >= 3) {
+      std::vector<AnaTrueParticleB*> daughterTrueParts;
+
+      // Skip the first particle (parent) and collect the daughters
+      for(int i = 1; i < vertex->NParticles; i++) {
+        AnaParticlePD* recoPart = vertex->Particles[i];
+        if(!recoPart) continue;
+
+        // Get the associated true particle
+        AnaTrueParticleB* truePart = recoPart->GetTrueParticle();
+        if(!truePart) continue;
+
+        daughterTrueParts.push_back(truePart);
+      }
+
+      // Check if we have exactly 2 daughters
+      if(daughterTrueParts.size() == 2) {
+        AnaTrueParticleB* daughter1 = daughterTrueParts[0];
+        AnaTrueParticleB* daughter2 = daughterTrueParts[1];
+
+        // Check if both daughters have the same K0 parent (PDG=310 and same ParentID)
+        if(daughter1->ParentPDG == 310 && daughter2->ParentPDG == 310) {
+          // Check if they have the same parent particle ID (same K0)
+          if(daughter1->ParentID == daughter2->ParentID && daughter1->ParentID != 0) {
+            // Now check if they are specifically π+ and π- (signal definition)
+            if((daughter1->PDG == 211 && daughter2->PDG == -211) ||
+               (daughter1->PDG == -211 && daughter2->PDG == 211)) {
+
+              // Additional condition: Check if the K0 parent has a K+ parent (PDG=321)
+              // and that this K+ is the same particle that originated the vertex
+
+              // Find the K0 parent particle in the true particles list
+              AnaTrueParticleB* k0Parent = nullptr;
+              AnaTrueParticleB** allTrueParticles = GetEvent().TrueParticles;
+              int nTrueParticles = GetEvent().nTrueParticles;
+
+              for (int j = 0; j < nTrueParticles; j++) {
+                if (allTrueParticles[j] && allTrueParticles[j]->ID == daughter1->ParentID) {
+                  k0Parent = allTrueParticles[j];
+                  break;
+                }
+              }
+
+              if (k0Parent) {
+                // Check if the K0 parent has a K+ parent (PDG=321)
+                if (k0Parent->ParentPDG == 321) {
+                  // Find the K+ parent particle
+                  AnaTrueParticleB* kPlusParent = nullptr;
+                  for (int k = 0; k < nTrueParticles; k++) {
+                    if (allTrueParticles[k] && allTrueParticles[k]->ID == k0Parent->ParentID) {
+                      kPlusParent = allTrueParticles[k];
+                      break;
+                    }
+                  }
+
+                  if (kPlusParent) {
+                    // Check if this K+ is the same particle that originated the vertex
+                    // The vertex parent should be the reconstructed particle corresponding to this K+
+                    AnaParticlePD* vertexParent = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+                    if (vertexParent) {
+                      AnaTrueParticleB* vertexParentTrue = vertexParent->GetTrueParticle();
+                      if (vertexParentTrue && vertexParentTrue->ID == kPlusParent->ID) {
+                        isSignal = true; // All conditions met for signal vertex
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Set category based on signal/background classification for this vertex
+    if(isSignal) {
+      anaUtils::_categ->SetObjectCode("k0invtx", 1, CATOTHER, -1); // signal: daughters from same K0
+    }
+    else {
+      anaUtils::_categ->SetObjectCode("k0invtx", 0, CATOTHER, -1); // background: daughters not from same K0
+    }
+  }
+}
+
+//********************************************************************
+void neutralKaonAnalysis::AddVertexParentPDGCategory(){
+//********************************************************************
+
+  std::string part_types[] = {"K+", "K-", "K0", "pi+", "pi-", "pi0", "p", "n", "mu+", "mu-", "e+", "e-", "gamma", "other", NAMEOTHER};
+  int part_codes[]         = {321  , -321 , 310 , 211  , -211  , 111  , 2212, 2112, 13   , -13   , 11  , -11  , 22    , 0     , CATOTHER};
+  int part_colors[]        = {2    , 3   , 4   , 5    , 6    , 7    , 8   , 9   , 10   , 11   , 12  , 13  , 14    , 15    , COLOTHER};
+
+  const int NPART = sizeof(part_types)/sizeof(part_types[0]);
+
+  anaUtils::_categ->AddCategory("vertexparentpdg", NPART, part_types, part_codes, part_colors);
+}
+
+//********************************************************************
+void neutralKaonAnalysis::FillVertexParentPDGCategory(AnaVertexPD* vertex){
+//********************************************************************
+
+  if(!vertex) {
+    anaUtils::_categ->SetCode("vertexparentpdg", CATNOTRUTH, CATNOTRUTH);
+    return;
+  }
+
+  // Get the parent particle of the vertex
+  AnaParticlePD* parent = vertex->Parent;
+  if(!parent) {
+    anaUtils::_categ->SetCode("vertexparentpdg", CATNOTRUTH, CATNOTRUTH);
+    return;
+  }
+
+  // Get the true particle associated with the parent
+  AnaTrueParticleB* trueParent = parent->GetTrueParticle();
+  if(!trueParent) {
+    anaUtils::_categ->SetCode("vertexparentpdg", CATNOTRUTH, CATNOTRUTH);
+    return;
+  }
+
+  // Set the category based on the parent's true PDG
+  int parentPDG = trueParent->PDG;
+
+  // Map PDG codes to category codes
+  int categoryCode = 0; // default to "other"
+
+  switch(abs(parentPDG)) {
+    case 321:  // K+
+      categoryCode = (parentPDG > 0) ? 321 : 321; // Both K+ and K- map to same code
+      break;
+    case 310:  // K0
+      categoryCode = 310;
+      break;
+    case 211:  // pi+/pi-
+      categoryCode = (parentPDG > 0) ? 211 : 211; // Both pi+ and pi- map to same code
+      break;
+    case 111:  // pi0
+      categoryCode = 111;
+      break;
+    case 2212: // proton
+      categoryCode = 2212;
+      break;
+    case 2112: // neutron
+      categoryCode = 2112;
+      break;
+    case 13:   // mu+/mu-
+      categoryCode = (parentPDG > 0) ? 13 : 13; // Both mu+ and mu- map to same code
+      break;
+    case 11:   // e+/e-
+      categoryCode = (parentPDG > 0) ? 11 : 11; // Both e+ and e- map to same code
+      break;
+    case 22:   // gamma
+      categoryCode = 22;
+      break;
+    default:
+      categoryCode = 0; // other
+      break;
+  }
+
+  anaUtils::_categ->SetCode("vertexparentpdg", categoryCode, CATOTHER);
+}
+
+//********************************************************************
+bool neutralKaonAnalysis::EventContainsSignalVertices(const AnaEventB& event) const {
+//********************************************************************
+
+  // Check if any vertex is classified as signal (k0invtx == 1)
+  // We need to check the category system to see if any vertex has been marked as signal
+
+  // Get the number of reconstructed vertex candidates
+  const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
+
+  // If no vertex candidates, no signal
+  if (neutralKaonBox.reconVertexCandidates.empty()) {
+    return false;
+  }
+
+  // Check each vertex candidate to see if it's classified as signal
+  // Store signal flags in an array to avoid overwriting
+  std::vector<bool> vertexSignalFlags(neutralKaonBox.reconVertexCandidates.size(), false);
+
+  for (size_t vtxIdx = 0; vtxIdx < neutralKaonBox.reconVertexCandidates.size(); vtxIdx++) {
+    const auto& vertex = neutralKaonBox.reconVertexCandidates[vtxIdx];
+    if (!vertex) continue;
+
+    // Check if this vertex has exactly 2 daughters (K0 -> pi+ pi-)
+    if (vertex->NParticles >= 3) { // parent + 2 daughters
+      std::vector<AnaTrueParticleB*> daughterTrueParts;
+
+      // Skip the first particle (parent) and collect the daughters
+      for (int i = 1; i < vertex->NParticles; i++) {
+        AnaParticlePD* recoPart = vertex->Particles[i];
+        if (!recoPart) continue;
+
+        // Get the associated true particle
+        AnaTrueParticleB* truePart = recoPart->GetTrueParticle();
+        if (!truePart) continue;
+
+        daughterTrueParts.push_back(truePart);
+      }
+
+      // Check if we have exactly 2 daughters
+      if (daughterTrueParts.size() == 2) {
+        AnaTrueParticleB* daughter1 = daughterTrueParts[0];
+        AnaTrueParticleB* daughter2 = daughterTrueParts[1];
+
+        // Check if both daughters have the same K0 parent (PDG=310 and same ParentID)
+        if (daughter1->ParentPDG == 310 && daughter2->ParentPDG == 310) {
+          // Check if they have the same parent particle ID (same K0)
+          if (daughter1->ParentID == daughter2->ParentID && daughter1->ParentID != 0) {
+            // Now check if they are specifically π+ and π- (signal definition)
+            if ((daughter1->PDG == 211 && daughter2->PDG == -211) ||
+                (daughter1->PDG == -211 && daughter2->PDG == 211)) {
+
+              // Additional condition: Check if the K0 parent has a K+ parent (PDG=321)
+              // and that this K+ is the same particle that originated the vertex
+
+              // Find the K0 parent particle in the true particles list
+              AnaTrueParticleB* k0Parent = nullptr;
+              AnaTrueParticleB** allTrueParticles = event.TrueParticles;
+              int nTrueParticles = event.nTrueParticles;
+
+              for (int j = 0; j < nTrueParticles; j++) {
+                if (allTrueParticles[j] && allTrueParticles[j]->ID == daughter1->ParentID) {
+                  k0Parent = allTrueParticles[j];
+                  break;
+                }
+              }
+
+              if (k0Parent) {
+                // Check if the K0 parent has a K+ parent (PDG=321)
+                if (k0Parent->ParentPDG == 321) {
+                  // Find the K+ parent particle
+                  AnaTrueParticleB* kPlusParent = nullptr;
+                  for (int k = 0; k < nTrueParticles; k++) {
+                    if (allTrueParticles[k] && allTrueParticles[k]->ID == k0Parent->ParentID) {
+                      kPlusParent = allTrueParticles[k];
+                      break;
+                    }
+                  }
+
+                  if (kPlusParent) {
+                    // Check if this K+ is the same particle that originated the vertex
+                    // The vertex parent should be the reconstructed particle corresponding to this K+
+                    AnaParticlePD* vertexParent = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+                    if (vertexParent) {
+                      AnaTrueParticleB* vertexParentTrue = vertexParent->GetTrueParticle();
+                      if (vertexParentTrue && vertexParentTrue->ID == kPlusParent->ID) {
+                        vertexSignalFlags[vtxIdx] = true; // Mark this vertex as signal
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Check if any vertex is classified as signal
+  for (bool isSignal : vertexSignalFlags) {
+    if (isSignal) {
+      return true; // Found at least one signal vertex
+    }
+  }
+
+  return false; // No signal vertices found
 }

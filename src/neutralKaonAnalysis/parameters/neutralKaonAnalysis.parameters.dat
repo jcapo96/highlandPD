@@ -1,5 +1,5 @@
 --- Cut levels --------
- < neutralKaonAnalysis.MinAccumLevelToSave = 1 >   // minimum accum level to save the event
+ < neutralKaonAnalysis.MinAccumLevelToSave = 4 >   // minimum accum level to save the event
 
 --- Systematics ------------
 
@@ -8,6 +8,25 @@ or the all systematics configuration (when EnableAllSystematics = 0)
 need to be enabled in baseAnalysis parameter file
 
 --- Corrections -----------
+ < neutralKaonAnalysis.ApplySCECorrection = 1 >
+
+--- Systematics ------------
+ < neutralKaonAnalysis.ApplySCESystematic = 0 >
+
+--- Event Display ------------
+ < neutralKaonAnalysis.CreateEventDisplay = 1 >
+ < neutralKaonAnalysis.SaveToRootFile = 1 >
+ < neutralKaonAnalysis.OutputDirectory = "/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/plots" >
+ < neutralKaonAnalysis.MaxEventsToDisplay = 100 >
+ < neutralKaonAnalysis.EventDisplayPercentage = 10 >
+ < neutralKaonAnalysis.RequiredParticlePDGs = "310" >
+ < neutralKaonAnalysis.OnlySignalEvents = 1 >
+
+--- Vertex Finder ------------
+ < neutralKaonAnalysis.VertexRadius = 50.0 >
+ < neutralKaonAnalysis.DaughterDistance = 5.0 >
+ < neutralKaonAnalysis.MinVertexDaughters = 2 >
+ < neutralKaonAnalysis.MaxVertexDaughters = 2 >
 
 --- Other Parameters -----------
 

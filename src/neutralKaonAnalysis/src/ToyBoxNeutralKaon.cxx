@@ -5,13 +5,22 @@
 ToyBoxNeutralKaon::ToyBoxNeutralKaon():ToyBoxPD(){
 //********************************************************************
 
-    neutralKaonCandidates.clear();
-    BestNeutralKaonCandidateIndex = -1;
     MaxAccumLevel = -1;
 
     // Initialize new members for Preliminary K0 Selection
     nBeamDaughters = 0;
+    nAllParticles = 0;
     hasK0InTruth = false;
+
+    // Initialize vertex candidate vectors
+    trueVertexCandidates.clear();
+    reconVertexCandidates.clear();
+
+    // Initialize vertex candidate counters and indices
+    nTrueVertexCandidates = 0;
+    nReconVertexCandidates = 0;
+    BestTrueVertexCandidateIndex = -1;
+    BestReconVertexCandidateIndex = -1;
 }
 
 //********************************************************************
@@ -35,14 +44,23 @@ void ToyBoxNeutralKaon::Reset(){
 void ToyBoxNeutralKaon::ResetBase(){
 //********************************************************************
 
-ToyBoxPD::ResetBase();
-    neutralKaonCandidates.clear();
-    BestNeutralKaonCandidateIndex = -1;
+    ToyBoxPD::ResetBase();
     MaxAccumLevel = -1;
 
     // Reset new members for Preliminary K0 Selection
     nBeamDaughters = 0;
+    nAllParticles = 0;
     hasK0InTruth = false;
+
+    // Clear vertex candidate vectors
+    trueVertexCandidates.clear();
+    reconVertexCandidates.clear();
+
+    // Reset vertex candidate counters and indices
+    nTrueVertexCandidates = 0;
+    nReconVertexCandidates = 0;
+    BestTrueVertexCandidateIndex = -1;
+    BestReconVertexCandidateIndex = -1;
 
     SoftReset();  // just reset internal stuff
 }
@@ -52,7 +70,26 @@ void ToyBoxNeutralKaon::UpdateBestCandidateIndex(const int AccumLevel, const int
 //********************************************************************
 
   if(AccumLevel>MaxAccumLevel){
-    BestNeutralKaonCandidateIndex =  Index;
+    MaxAccumLevel = AccumLevel;
+  }
+}
+
+//********************************************************************
+void ToyBoxNeutralKaon::UpdateBestTrueVertexCandidateIndex(const int AccumLevel, const int Index){
+//********************************************************************
+
+  if(AccumLevel>MaxAccumLevel){
+    BestTrueVertexCandidateIndex = Index;
+    MaxAccumLevel = AccumLevel;
+  }
+}
+
+//********************************************************************
+void ToyBoxNeutralKaon::UpdateBestReconVertexCandidateIndex(const int AccumLevel, const int Index){
+//********************************************************************
+
+  if(AccumLevel>MaxAccumLevel){
+    BestReconVertexCandidateIndex = Index;
     MaxAccumLevel = AccumLevel;
   }
 }
