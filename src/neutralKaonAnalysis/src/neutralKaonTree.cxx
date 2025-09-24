@@ -28,6 +28,10 @@ void neutralKaonTree::AddNeutralKaonVariables_VertexCandidates(OutputManager& ou
   AddVarMaxSizeVD(output, recovtx_par_dau_trueangles, "true angles between parent end and daughter start positions", n_recovtx_candidates, nmax);
   AddVarMaxSizeVD(output, recovtx_dau_recodistances, "reconstructed distances between daughter start positions", n_recovtx_candidates, nmax);
   AddVarMaxSizeVD(output, recovtx_dau_truedistances, "true distances between daughter start positions", n_recovtx_candidates, nmax);
+  AddVarMaxSizeVD(output, recovtx_dau_recodistances_ss, "true distances between daughter start positions", n_recovtx_candidates, nmax);
+  AddVarMaxSizeVD(output, recovtx_dau_recodistances_se, "true distances between daughter start/end positions", n_recovtx_candidates, nmax);
+  AddVarMaxSizeVD(output, recovtx_dau_recodistances_es, "true distances between daughter end/start positions", n_recovtx_candidates, nmax);
+  AddVarMaxSizeVD(output, recovtx_dau_recodistances_ee, "true distances between daughter end/end positions", n_recovtx_candidates, nmax);
   AddVarMaxSizeVD(output, recovtx_par_dau_recodistances, "reconstructed distances between parent end and daughter start positions", n_recovtx_candidates, nmax);
   AddVarMaxSizeVD(output, recovtx_par_dau_truedistances, "true distances between parent end and daughter start positions", n_recovtx_candidates, nmax);
   AddVarMaxSizeVD(output, recovtx_par_dau_recosyst_angle, "reconstructed angle between parent direction and daughter system direction", n_recovtx_candidates, nmax);
@@ -303,11 +307,32 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
         for (size_t j = i + 1; j < daughters.size(); j++) {
           if (daughters[i] && daughters[j]) {
             // Reconstructed distances
-            Float_t dx = daughters[i]->PositionStart[0] - daughters[j]->PositionStart[0];
-            Float_t dy = daughters[i]->PositionStart[1] - daughters[j]->PositionStart[1];
-            Float_t dz = daughters[i]->PositionStart[2] - daughters[j]->PositionStart[2];
-            Double_t distance = sqrt(dx*dx + dy*dy + dz*dz);
-            output.FillVectorVar(recovtx_dau_recodistances, distance);
+            Float_t dx_ss = daughters[i]->PositionStart[0] - daughters[j]->PositionStart[0];
+            Float_t dy_ss = daughters[i]->PositionStart[1] - daughters[j]->PositionStart[1];
+            Float_t dz_ss = daughters[i]->PositionStart[2] - daughters[j]->PositionStart[2];
+            Double_t distance_ss = sqrt(dx_ss*dx_ss + dy_ss*dy_ss + dz_ss*dz_ss);
+
+            Float_t dx_se = daughters[i]->PositionStart[0] - daughters[j]->PositionEnd[0];
+            Float_t dy_se = daughters[i]->PositionStart[1] - daughters[j]->PositionEnd[1];
+            Float_t dz_se = daughters[i]->PositionStart[2] - daughters[j]->PositionEnd[2];
+            Double_t distance_se = sqrt(dx_se*dx_se + dy_se*dy_se + dz_se*dz_se);
+
+            Float_t dx_es = daughters[i]->PositionEnd[0] - daughters[j]->PositionStart[0];
+            Float_t dy_es = daughters[i]->PositionEnd[1] - daughters[j]->PositionStart[1];
+            Float_t dz_es = daughters[i]->PositionEnd[2] - daughters[j]->PositionStart[2];
+            Double_t distance_es = sqrt(dx_es*dx_es + dy_es*dy_es + dz_es*dz_es);
+
+            Float_t dx_ee = daughters[i]->PositionEnd[0] - daughters[j]->PositionEnd[0];
+            Float_t dy_ee = daughters[i]->PositionEnd[1] - daughters[j]->PositionEnd[1];
+            Float_t dz_ee = daughters[i]->PositionEnd[2] - daughters[j]->PositionEnd[2];
+            Double_t distance_ee = sqrt(dx_ee*dx_ee + dy_ee*dy_ee + dz_ee*dz_ee);
+
+            output.FillVectorVar(recovtx_dau_recodistances_ss, distance_ss);
+            output.FillVectorVar(recovtx_dau_recodistances_se, distance_se);
+            output.FillVectorVar(recovtx_dau_recodistances_es, distance_es);
+            output.FillVectorVar(recovtx_dau_recodistances_ee, distance_ee);
+
+            output.FillVectorVar(recovtx_dau_recodistances, std::min(distance_ss, std::min(distance_se, std::min(distance_es, distance_ee))));
 
             // True distances
             Double_t trueDistance = -999.0;
