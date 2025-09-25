@@ -24,7 +24,7 @@ need to be enabled in baseAnalysis parameter file
 
 --- Vertex Finder ------------
  < neutralKaonAnalysis.VertexRadius = 50.0 >
- < neutralKaonAnalysis.DaughterDistance = 100.0 >
+ < neutralKaonAnalysis.DaughterDistance = 50.0 >
  < neutralKaonAnalysis.MinVertexDaughters = 2 >
  < neutralKaonAnalysis.MaxVertexDaughters = 2 >
 

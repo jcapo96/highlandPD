@@ -266,7 +266,7 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
 
   // Fill vertex candidates data
   // const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
-  neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(output(), neutralKaonBox.reconVertexCandidates, neutralKaonBox.trueVertexCandidates);
+  neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(output(), neutralKaonBox.reconVertexCandidates, neutralKaonBox.trueVertexCandidates, GetEvent());
 
   // Create event display if enabled and event passes the minimum accumulated level to save
   if (_eventDisplay && _eventDisplay->ShouldCreateEventDisplay()) {
@@ -436,7 +436,7 @@ void neutralKaonAnalysis::AddK0InVtxCategory(){
   std::reverse(part_codes,  part_codes  + NPART);
   std::reverse(part_colors, part_colors + NPART);
 
-  anaUtils::_categ->AddObjectCategory("k0invtx", neutralKaonTree::n_recovtx_candidates, "n_recovtx_candidates",
+  anaUtils::_categ->AddObjectCategory("k0invtx", neutralKaonTree::nvcandidates, "nvcandidates",
     NPART, part_types, part_codes, part_colors,
     1, -1000);
   // anaUtils::_categ->AddObjectCategory("k0invtx", NPART, part_types, part_codes, part_colors);
@@ -539,7 +539,7 @@ void neutralKaonAnalysis::FillK0InVtxCategory(const std::vector<AnaVertexPD*>& v
 
       // Skip the first particle (parent) and collect the daughters
       for(int i = 1; i < vertex->NParticles; i++) {
-        AnaParticlePD* recoPart = vertex->Particles[i];
+        AnaParticlePD* recoPart = static_cast<AnaParticlePD*>(vertex->Particles[i]);
         if(!recoPart) continue;
 
         // Get the associated true particle
@@ -578,6 +578,17 @@ void neutralKaonAnalysis::FillK0InVtxCategory(const std::vector<AnaVertexPD*>& v
               }
 
               if (k0Parent) {
+                // Cast to AnaTrueParticlePD to access Daughters vector
+                AnaTrueParticlePD* k0TruePart = static_cast<AnaTrueParticlePD*>(k0Parent);
+
+                //Check if the K0 has exactly two daughters
+                if (k0TruePart->Daughters.size() != 2) {
+                  break;
+                }
+                //Check if the two daughters of the K0 are the same as the two daughters of the vertex
+                if (k0TruePart->Daughters[0] != daughter1->ID || k0TruePart->Daughters[1] != daughter2->ID) {
+                  break;
+                }
                 // Check if the K0 parent has a K+ parent (PDG=321)
                 if (k0Parent->ParentPDG == 321) {
                   // Find the K+ parent particle

@@ -1358,7 +1358,7 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
 
     // Skip particles that are not Beam particles
     // TODO: Try to generalise this for all particles
-    if (!part->isPandora) continue;
+    // if (!part->isPandora) continue;
 
     potentialParents.push_back(part);
   }
@@ -1370,6 +1370,7 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
     for (const auto& candidateParticle : validParticles) {
       if (!candidateParticle || candidateParticle == parent) continue;
       // Calculate distance from parent's end position to candidate's start position
+      // TODO: use HL function
       double dist = sqrt((candidateParticle->PositionStart[0] - parent->PositionEnd[0]) * (candidateParticle->PositionStart[0] - parent->PositionEnd[0]) +
                         (candidateParticle->PositionStart[1] - parent->PositionEnd[1]) * (candidateParticle->PositionStart[1] - parent->PositionEnd[1]) +
                         (candidateParticle->PositionStart[2] - parent->PositionEnd[2]) * (candidateParticle->PositionStart[2] - parent->PositionEnd[2]));
@@ -1388,7 +1389,7 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
           AnaParticlePD* daughter2 = daughterCandidates[j];
 
           // Skip if the daughters are not the reco daughters of the parent
-          if (daughter1->ParentID != parent->UniqueID || daughter2->ParentID != parent->UniqueID) continue;
+          // if (daughter1->ParentID != parent->UniqueID || daughter2->ParentID != parent->UniqueID) continue;
 
           if (!daughter1 || !daughter2) continue;
 

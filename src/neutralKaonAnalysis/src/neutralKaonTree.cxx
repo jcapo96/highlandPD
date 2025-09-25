@@ -10,59 +10,79 @@ void neutralKaonTree::AddNeutralKaonVariables_VertexCandidates(OutputManager& ou
     //********************************************************************
 
   // Number of vertex candidates
-  AddVarI(output, n_recovtx_candidates, "number of reconstructed vertex candidates");
-  AddVarI(output, n_true_vertex_candidates, "number of true vertex candidates");
+  AddVarI(output, nvcandidates, "number of reconstructed vertex candidates");
+  AddVarI(output, ntruevertexcandidates, "number of true vertex candidates");
 
   // Reconstructed vertex candidates
-  AddVarMaxSizeVI(output, recovtx_recoparticles, "reconstructed vertex number of particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_trueparticles, "true vertex number of particles", n_recovtx_candidates, nmax);
-  AddVarMaxSize3MF(output, recovtx_recoposition, "reconstructed vertex position", n_recovtx_candidates, nmax);
-  AddVarMaxSize3MF(output, recovtx_trueposition, "true vertex position", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_recoquality, "reconstructed vertex quality", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_truequality, "true vertex quality", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_par_truepdg, "reconstructed vertex parent true PDG", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_par_recopdg, "reconstructed vertex parent reconstructed PDG", n_recovtx_candidates, nmax);
-  AddVarMaxSize3MF(output, recovtx_par_recodir, "reconstructed vertex parent reconstructed direction", n_recovtx_candidates, nmax);
-  AddVarMaxSize3MF(output, recovtx_par_truedir, "reconstructed vertex parent true direction", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_par_dau_recoangles, "reconstructed angles between parent end and daughter start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_par_dau_trueangles, "true angles between parent end and daughter start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recodistances, "reconstructed distances between daughter start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_truedistances, "true distances between daughter start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recodistances_ss, "true distances between daughter start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recodistances_se, "true distances between daughter start/end positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recodistances_es, "true distances between daughter end/start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recodistances_ee, "true distances between daughter end/end positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_par_dau_recodistances, "reconstructed distances between parent end and daughter start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_par_dau_truedistances, "true distances between parent end and daughter start positions", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_par_dau_recosyst_angle, "reconstructed angle between parent direction and daughter system direction", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_par_dau_truesyst_angle, "true angle between parent direction and daughter system direction", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recolengths, "reconstructed lengths of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_truelengths, "true lengths of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_dau_truepdgs, "true PDG codes of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_dau_recopdgs, "reconstructed PDG codes of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_dau_trueendproc, "true end processes of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_dau_recoendproc, "reconstructed end processes of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_par_recoangles, "reconstructed angles between daughters and parent direction", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_par_trueangles, "true angles between daughters and parent direction", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_dau_par_truepdg, "true PDG codes of parents of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVI(output, recovtx_dau_trueproc, "true process codes of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recomom, "reconstructed momenta of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_truemom, "true momenta of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_recodedx, "reconstructed dE/dx of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_dau_truededx, "true dE/dx of daughter particles", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_recomass, "reconstructed invariant mass of vertex parent particle", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_truemass, "true invariant mass of vertex parent particle", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_daupi_recodistance, "reconstructed distance between pion daughters from same K0", n_recovtx_candidates, nmax);
-  AddVarMaxSizeVD(output, recovtx_daupi_truedistance, "true distance between pion daughters from same K0", n_recovtx_candidates, nmax);
+  AddVarMaxSizeVI(output, vrecoparticles, "reconstructed vertex number of particles", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vtrueparticles, "true vertex number of particles", nvcandidates, nmax);
+  AddVarMaxSize3MF(output, vrecoposition, "reconstructed vertex position", nvcandidates, nmax);
+  AddVarMaxSize3MF(output, vtrueposition, "true vertex position", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vrecoquality, "reconstructed vertex quality", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vtruequality, "true vertex quality", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpartruepdg, "reconstructed vertex parent true PDG", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vparrecopdg, "reconstructed vertex parent reconstructed PDG", nvcandidates, nmax);
+  AddVarMaxSize3MF(output, vparrecodir, "reconstructed vertex parent reconstructed direction", nvcandidates, nmax);
+  AddVarMaxSize3MF(output, vpartruedir, "reconstructed vertex parent true direction", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vpardaurecoang, "reconstructed angles between parent end and daughter start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vpardautrueang, "true angles between parent end and daughter start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecodist, "reconstructed distances between daughter start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdautruedist, "true distances between daughter start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecodistss, "true distances between daughter start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecodistse, "true distances between daughter start/end positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecodistes, "true distances between daughter end/start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecodistee, "true distances between daughter end/end positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vpardaurecodist, "reconstructed distances between parent end and daughter start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vpardautruedist, "true distances between parent end and daughter start positions", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vpardaurecosystang, "reconstructed angle between parent direction and daughter system direction", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vpardautruesystang, "true angle between parent direction and daughter system direction", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecolength, "reconstructed lengths of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdautruelength, "true lengths of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdautruepdg, "true PDG codes of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaurecopdg, "reconstructed PDG codes of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdautrueendproc, "true end processes of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaurecoendproc, "reconstructed end processes of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdauparrecoang, "reconstructed angles between daughters and parent direction", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaupartrueang, "true angles between daughters and parent direction", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaupartruepdg, "true PDG codes of parents of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdautrueproc, "true process codes of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecomom, "reconstructed momenta of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdautruemom, "true momenta of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaurecodedx, "reconstructed dE/dx of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdautruededx, "true dE/dx of daughter particles", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vrecomass, "reconstructed invariant mass of vertex parent particle", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vtruemass, "true invariant mass of vertex parent particle", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaupirecodist, "reconstructed distance between pion daughters from same K0", nvcandidates, nmax);
+  AddVarMaxSizeVD(output, vdaupitruedist, "true distance between pion daughters from same K0", nvcandidates, nmax);
+
+  // New variables for parent daughters
+  AddVarMaxSizeVI(output, vparrecondau, "number of reconstructed daughters of vertex parent", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpartruendau, "number of true daughters of vertex parent", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpardaurecopdgs, "reconstructed PDG codes of parent daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpardautruepdgs, "true PDG codes of parent daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpardaurecoproc, "reconstructed process codes of parent daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpardautrueproc, "true process codes of parent daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpardaurecoendproc, "reconstructed end process codes of parent daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vpardautrueendproc, "true end process codes of parent daughters", nvcandidates, nmax);
+
+  // New variables for daughter daughters
+  AddVarMaxSizeVI(output, vdaurecondau, "number of reconstructed daughters of vertex daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdautruendau, "number of true daughters of vertex daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaudaurecopdgs, "reconstructed PDG codes of daughter daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaudautruepdgs, "true PDG codes of daughter daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaudaurecoproc, "reconstructed process codes of daughter daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaudautrueproc, "true process codes of daughter daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaudaurecoendproc, "reconstructed end process codes of daughter daughters", nvcandidates, nmax);
+  AddVarMaxSizeVI(output, vdaudautrueendproc, "true end process codes of daughter daughters", nvcandidates, nmax);
 
   // True vertex candidates
-  AddVarMaxSizeVI(output, true_vertex_nparticles, "true vertex number of particles", n_true_vertex_candidates, nmax);
-  AddVarMaxSize3MF(output, true_vertex_position, "true vertex position", n_true_vertex_candidates, nmax);
-  AddVarMaxSizeVD(output, true_vertex_quality, "true vertex quality", n_true_vertex_candidates, nmax);
+  AddVarMaxSizeVI(output, truevertexnparticles, "true vertex number of particles", ntruevertexcandidates, nmax);
+  AddVarMaxSize3MF(output, truevertexposition, "true vertex position", ntruevertexcandidates, nmax);
+  AddVarMaxSizeVD(output, truevertexquality, "true vertex quality", ntruevertexcandidates, nmax);
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& output, const std::vector<AnaVertexPD*>& reconCandidates, const std::vector<AnaTrueVertexPD*>& trueCandidates){
+void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& output, const std::vector<AnaVertexPD*>& reconCandidates, const std::vector<AnaTrueVertexPD*>& trueCandidates, const AnaEventB& event){
   //********************************************************************
 
   // Fill reconstructed vertex candidates
@@ -88,9 +108,9 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
       continue;
     }
 
-    output.FillVectorVar(recovtx_recoparticles, (Int_t)reconVertex->NParticles);
-    output.FillMatrixVarFromArray(recovtx_recoposition, reconVertex->Position, 3);
-    output.FillVectorVar(recovtx_recoquality, (Double_t)reconVertex->NParticles); // Simple quality metric based on number of particles
+    output.FillVectorVar(vrecoparticles, (Int_t)reconVertex->NParticles);
+    output.FillMatrixVarFromArray(vrecoposition, reconVertex->Position, 3);
+    output.FillVectorVar(vrecoquality, (Double_t)reconVertex->NParticles); // Simple quality metric based on number of particles
 
     // Fill true information for reconstructed vertex (if available)
     Int_t trueParticles = -999;
@@ -111,9 +131,9 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
       }
     }
 
-    output.FillVectorVar(recovtx_trueparticles, trueParticles);
-    output.FillMatrixVarFromArray(recovtx_trueposition, truePosition, 3);
-    output.FillVectorVar(recovtx_truequality, trueQuality);
+    output.FillVectorVar(vtrueparticles, trueParticles);
+    output.FillMatrixVarFromArray(vtrueposition, truePosition, 3);
+    output.FillVectorVar(vtruequality, trueQuality);
 
     // Fill parent PDG (from true particle associated to reconstructed parent)
     Int_t parentTruePDG = -999;
@@ -127,8 +147,8 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
       // Always try to get reconstructed PDG
       parentReconPDG = reconVertex->Parent->ReconPDG[0];
     }
-    output.FillVectorVar(recovtx_par_truepdg, parentTruePDG);
-    output.FillVectorVar(recovtx_par_recopdg, parentReconPDG);
+    output.FillVectorVar(vpartruepdg, parentTruePDG);
+    output.FillVectorVar(vparrecopdg, parentReconPDG);
 
     // Fill particle direction (average direction of all particles in vertex)
     Float_t avgReconDirection[3] = {0.0, 0.0, 0.0};
@@ -157,8 +177,8 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
         avgReconDirection[2] /= norm;
       }
     }
-    output.FillMatrixVarFromArray(recovtx_par_recodir, avgReconDirection, 3);
-    output.FillMatrixVarFromArray(recovtx_par_truedir, avgTrueDirection, 3);
+    output.FillMatrixVarFromArray(vparrecodir, avgReconDirection, 3);
+    output.FillMatrixVarFromArray(vpartruedir, avgTrueDirection, 3);
 
     // Calculate angles between parent end position and daughter start positions
     if (reconVertex->Parent && reconVertex->NParticles > 0) {
@@ -221,7 +241,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
           // Clamp dot product to avoid numerical issues
           dotProduct = std::max(-1.0f, std::min(1.0f, dotProduct));
           Double_t angle = acos(dotProduct) * 180.0 / M_PI; // Convert to degrees
-          output.FillVectorVar(recovtx_par_dau_recoangles, angle);
+          output.FillVectorVar(vpardaurecoang, angle);
 
           // Calculate true angle if true particle is available
           Double_t trueAngle = -999.0;
@@ -287,7 +307,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
               trueAngle = acos(trueDotProduct) * 180.0 / M_PI; // Convert to degrees
             }
           }
-          output.FillVectorVar(recovtx_par_dau_trueangles, trueAngle);
+          output.FillVectorVar(vpardautrueang, trueAngle);
         }
       }
     }
@@ -327,12 +347,12 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
             Float_t dz_ee = daughters[i]->PositionEnd[2] - daughters[j]->PositionEnd[2];
             Double_t distance_ee = sqrt(dx_ee*dx_ee + dy_ee*dy_ee + dz_ee*dz_ee);
 
-            output.FillVectorVar(recovtx_dau_recodistances_ss, distance_ss);
-            output.FillVectorVar(recovtx_dau_recodistances_se, distance_se);
-            output.FillVectorVar(recovtx_dau_recodistances_es, distance_es);
-            output.FillVectorVar(recovtx_dau_recodistances_ee, distance_ee);
+            output.FillVectorVar(vdaurecodistss, distance_ss);
+            output.FillVectorVar(vdaurecodistse, distance_se);
+            output.FillVectorVar(vdaurecodistes, distance_es);
+            output.FillVectorVar(vdaurecodistee, distance_ee);
 
-            output.FillVectorVar(recovtx_dau_recodistances, std::min(distance_ss, std::min(distance_se, std::min(distance_es, distance_ee))));
+            output.FillVectorVar(vdaurecodist, std::min(distance_ss, std::min(distance_se, std::min(distance_es, distance_ee))));
 
             // True distances
             Double_t trueDistance = -999.0;
@@ -344,7 +364,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
               Float_t trueDz = trueParticle1->Position[2] - trueParticle2->Position[2];
               trueDistance = sqrt(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
             }
-            output.FillVectorVar(recovtx_dau_truedistances, trueDistance);
+            output.FillVectorVar(vdautruedist, trueDistance);
           }
         }
       }
@@ -396,8 +416,8 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
         }
       }
 
-      output.FillVectorVar(recovtx_daupi_recodistance, pionRecoDistance);
-      output.FillVectorVar(recovtx_daupi_truedistance, pionTrueDistance);
+      output.FillVectorVar(vdaupirecodist, pionRecoDistance);
+      output.FillVectorVar(vdaupitruedist, pionTrueDistance);
     }
 
     // Calculate distances between parent end position and daughter start positions
@@ -423,7 +443,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
           Float_t dy = daughter->PositionStart[1] - parentPos[1];
           Float_t dz = daughter->PositionStart[2] - parentPos[2];
           Double_t distance = sqrt(dx*dx + dy*dy + dz*dz);
-          output.FillVectorVar(recovtx_par_dau_recodistances, distance);
+          output.FillVectorVar(vpardaurecodist, distance);
 
           // True distances between parent and daughter
           Double_t trueDistance = -999.0;
@@ -450,7 +470,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
               trueDistance = sqrt(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
             }
           }
-          output.FillVectorVar(recovtx_par_dau_truedistances, trueDistance);
+          output.FillVectorVar(vpardautruedist, trueDistance);
         }
       }
     }
@@ -510,7 +530,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
       // Clamp dot product to avoid numerical issues
       dotProduct = std::max(-1.0f, std::min(1.0f, dotProduct));
       Double_t angle = acos(dotProduct) * 180.0 / M_PI; // Convert to degrees
-      output.FillVectorVar(recovtx_par_dau_recosyst_angle, angle);
+      output.FillVectorVar(vpardaurecosystang, angle);
 
       // Calculate true system angle
       Double_t trueSystemAngle = -999.0;
@@ -575,7 +595,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
           trueSystemAngle = acos(trueDotProduct) * 180.0 / M_PI; // Convert to degrees
         }
       }
-      output.FillVectorVar(recovtx_par_dau_truesyst_angle, trueSystemAngle);
+      output.FillVectorVar(vpardautruesystang, trueSystemAngle);
     }
 
     // Fill daughter particle information (all variables in a single loop to avoid overwriting)
@@ -592,7 +612,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
             Float_t dz = daughter->PositionEnd[2] - daughter->PositionStart[2];
             length = sqrt(dx*dx + dy*dy + dz*dz);
           }
-          output.FillVectorVar(recovtx_dau_recolengths, length);
+          output.FillVectorVar(vdaurecolength, length);
 
           // Calculate true length
           Double_t trueLength = -999.0;
@@ -606,7 +626,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
               trueLength = sqrt(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
             }
           }
-          output.FillVectorVar(recovtx_dau_truelengths, trueLength);
+          output.FillVectorVar(vdautruelength, trueLength);
 
           // Fill daughter PDG (from true particle if available)
           Int_t daughterTruePDG = -999;
@@ -616,12 +636,12 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
           }
           // Always try to get reconstructed PDG
           daughterReconPDG = daughter->ReconPDG[0];
-          output.FillVectorVar(recovtx_dau_truepdgs, daughterTruePDG);
-          output.FillVectorVar(recovtx_dau_recopdgs, daughterReconPDG);
+          output.FillVectorVar(vdautruepdg, daughterTruePDG);
+          output.FillVectorVar(vdaurecopdg, daughterReconPDG);
 
           // Fill parent true PDG of daughter particle
           if (trueDaughter) {
-            output.FillVectorVar(recovtx_dau_par_truepdg, trueDaughter->ParentPDG);
+            output.FillVectorVar(vdaupartruepdg, trueDaughter->ParentPDG);
           }
 
           // Fill true process code of daughter particle
@@ -629,7 +649,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
           if (trueDaughter) {
             daughterTrueProcess = trueDaughter->ProcessStart;
           }
-          output.FillVectorVar(recovtx_dau_trueproc, daughterTrueProcess);
+          output.FillVectorVar(vdautrueproc, daughterTrueProcess);
 
           // Fill daughter end process (from true particle if available)
           Int_t trueEndProcess = -999;
@@ -639,8 +659,8 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
           }
           // For reconstructed end process, we don't have this information directly
           // so we'll set it to -999 for now
-          output.FillVectorVar(recovtx_dau_trueendproc, trueEndProcess);
-          output.FillVectorVar(recovtx_dau_recoendproc, reconEndProcess);
+          output.FillVectorVar(vdautrueendproc, trueEndProcess);
+          output.FillVectorVar(vdaurecoendproc, reconEndProcess);
 
           // Calculate angle between daughter direction and parent direction
           Double_t angleWithParent = -999.0;
@@ -681,7 +701,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
             dotProduct = std::max(-1.0f, std::min(1.0f, dotProduct));
             angleWithParent = acos(dotProduct) * 180.0 / M_PI; // Convert to degrees
           }
-          output.FillVectorVar(recovtx_dau_par_recoangles, angleWithParent);
+          output.FillVectorVar(vdauparrecoang, angleWithParent);
 
           // Calculate true angle between daughter and parent
           Double_t trueAngleWithParent = -999.0;
@@ -725,7 +745,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
               trueAngleWithParent = acos(trueDotProduct) * 180.0 / M_PI; // Convert to degrees
             }
           }
-          output.FillVectorVar(recovtx_dau_par_trueangles, trueAngleWithParent);
+          output.FillVectorVar(vdaupartrueang, trueAngleWithParent);
 
           // Fill daughter momentum using range-momentum calculation (pion hypothesis only)
           Double_t reconMomentum = -999.0;
@@ -738,13 +758,13 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
             reconMomentum = pdAnaUtils::ComputeRangeMomentum(daughterPD->Length, 211);
             // If it fails, keep -999
           }
-          output.FillVectorVar(recovtx_dau_recomom, reconMomentum);
+          output.FillVectorVar(vdaurecomom, reconMomentum);
 
           // Calculate true momentum from true particle
           if (trueDaughter && trueDaughter->Momentum > 0) {
             trueMomentum = trueDaughter->Momentum / 1000.0; // Convert from MeV to GeV
           }
-          output.FillVectorVar(recovtx_dau_truemom, trueMomentum);
+          output.FillVectorVar(vdautruemom, trueMomentum);
 
           // Fill daughter dE/dx using pdAnaUtils methods
           Double_t reconDedx = -999.0;
@@ -758,7 +778,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
               reconDedx = daughterPD->truncLibo_dEdx;
             }
           }
-          output.FillVectorVar(recovtx_dau_recodedx, reconDedx);
+          output.FillVectorVar(vdaurecodedx, reconDedx);
 
           // Calculate true dE/dx from true particle
           if (trueDaughter) {
@@ -770,7 +790,7 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
               trueDedx = trueDaughter->Momentum / daughter->Length;
             }
           }
-          output.FillVectorVar(recovtx_dau_truededx, trueDedx);
+          output.FillVectorVar(vdautruededx, trueDedx);
         }
       }
     }
@@ -855,23 +875,159 @@ void neutralKaonTree::FillNeutralKaonVariables_VertexCandidates(OutputManager& o
       }
     }
 
-    output.FillVectorVar(recovtx_recomass, recoInvariantMass);
-    output.FillVectorVar(recovtx_truemass, trueInvariantMass);
+    output.FillVectorVar(vrecomass, recoInvariantMass);
+    output.FillVectorVar(vtruemass, trueInvariantMass);
 
-    output.IncrementCounter(n_recovtx_candidates);
+    // Fill new variables for parent daughters
+    Int_t parNDauReco = -999;
+    Int_t parNDauTrue = -999;
+    std::vector<Int_t> parDauPDGsReco;
+    std::vector<Int_t> parDauPDGsTrue;
+    std::vector<Int_t> parDauProcReco;
+    std::vector<Int_t> parDauProcTrue;
+    std::vector<Int_t> parDauEndProcReco;
+    std::vector<Int_t> parDauEndProcTrue;
+
+    if (reconVertex->Parent) {
+      AnaParticlePD* parentReco = static_cast<AnaParticlePD*>(reconVertex->Parent);
+      AnaTrueParticleB* parentTrue = parentReco->GetTrueParticle();
+
+      // Get reconstructed parent daughters
+      if (parentReco) {
+        parNDauReco = parentReco->Daughters.size();
+        for (const auto& dau : parentReco->Daughters) {
+          if (dau) {
+            AnaParticlePD* dauReco = static_cast<AnaParticlePD*>(dau);
+            parDauPDGsReco.push_back(dauReco->ReconPDG[0]);
+            parDauProcReco.push_back(-999); // Process not available for reconstructed particles
+            parDauEndProcReco.push_back(-999); // End process not available for reconstructed particles
+          }
+        }
+      }
+
+      // Get true parent daughters
+      if (parentTrue) {
+        AnaTrueParticlePD* parentTruePD = static_cast<AnaTrueParticlePD*>(parentTrue);
+        if (parentTruePD) {
+          parNDauTrue = parentTruePD->Daughters.size();
+          // Get all true particles to find daughters by ID
+          AnaTrueParticleB** allTrueParticles = event.TrueParticles;
+          int nTrueParticles = event.nTrueParticles;
+
+          for (int i = 0; i < nTrueParticles; i++) {
+            if (allTrueParticles[i]) {
+              // Check if this particle is a daughter of the parent
+              for (const auto& dauID : parentTruePD->Daughters) {
+                if (allTrueParticles[i]->ID == dauID) {
+                  AnaTrueParticlePD* dauTrue = static_cast<AnaTrueParticlePD*>(allTrueParticles[i]);
+                  if (dauTrue) {
+                    parDauPDGsTrue.push_back(dauTrue->PDG);
+                    parDauProcTrue.push_back(static_cast<Int_t>(dauTrue->ProcessStart));
+                    parDauEndProcTrue.push_back(static_cast<Int_t>(dauTrue->ProcessEnd));
+                  }
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Fill parent daughter variables
+    output.FillVectorVar(vparrecondau, parNDauReco);
+    output.FillVectorVar(vpartruendau, parNDauTrue);
+    for (const auto& pdg : parDauPDGsReco) output.FillVectorVar(vpardaurecopdgs, pdg);
+    for (const auto& pdg : parDauPDGsTrue) output.FillVectorVar(vpardautruepdgs, pdg);
+    for (const auto& proc : parDauProcReco) output.FillVectorVar(vpardaurecoproc, proc);
+    for (const auto& proc : parDauProcTrue) output.FillVectorVar(vpardautrueproc, proc);
+    for (const auto& endproc : parDauEndProcReco) output.FillVectorVar(vpardaurecoendproc, endproc);
+    for (const auto& endproc : parDauEndProcTrue) output.FillVectorVar(vpardautrueendproc, endproc);
+
+    // Fill new variables for daughter daughters
+    std::vector<Int_t> dauNDauReco;
+    std::vector<Int_t> dauNDauTrue;
+    std::vector<Int_t> dauDauPDGsReco;
+    std::vector<Int_t> dauDauPDGsTrue;
+    std::vector<Int_t> dauDauProcReco;
+    std::vector<Int_t> dauDauProcTrue;
+    std::vector<Int_t> dauDauEndProcReco;
+    std::vector<Int_t> dauDauEndProcTrue;
+
+    // Loop over vertex daughters (excluding parent)
+    for (const auto& particle : reconVertex->Particles) {
+      if (particle && particle != reconVertex->Parent) {
+        AnaParticlePD* daughterReco = static_cast<AnaParticlePD*>(particle);
+        AnaTrueParticleB* daughterTrue = daughterReco->GetTrueParticle();
+
+        // Get reconstructed daughter daughters
+        Int_t nDauReco = daughterReco->Daughters.size();
+        dauNDauReco.push_back(nDauReco);
+        for (const auto& dau : daughterReco->Daughters) {
+          if (dau) {
+            AnaParticlePD* dauReco = static_cast<AnaParticlePD*>(dau);
+            dauDauPDGsReco.push_back(dauReco->ReconPDG[0]);
+            dauDauProcReco.push_back(-999); // Process not available for reconstructed particles
+            dauDauEndProcReco.push_back(-999); // End process not available for reconstructed particles
+          }
+        }
+
+        // Get true daughter daughters
+        Int_t nDauTrue = -999;
+        if (daughterTrue) {
+          AnaTrueParticlePD* daughterTruePD = static_cast<AnaTrueParticlePD*>(daughterTrue);
+          if (daughterTruePD) {
+            nDauTrue = daughterTruePD->Daughters.size();
+            // Get all true particles to find daughters by ID
+            AnaTrueParticleB** allTrueParticles = event.TrueParticles;
+            int nTrueParticles = event.nTrueParticles;
+
+            for (int i = 0; i < nTrueParticles; i++) {
+              if (allTrueParticles[i]) {
+                // Check if this particle is a daughter of the daughter
+                for (const auto& dauID : daughterTruePD->Daughters) {
+                  if (allTrueParticles[i]->ID == dauID) {
+                    AnaTrueParticlePD* dauTrue = static_cast<AnaTrueParticlePD*>(allTrueParticles[i]);
+                    if (dauTrue) {
+                      dauDauPDGsTrue.push_back(dauTrue->PDG);
+                      dauDauProcTrue.push_back(static_cast<Int_t>(dauTrue->ProcessStart));
+                      dauDauEndProcTrue.push_back(static_cast<Int_t>(dauTrue->ProcessEnd));
+                    }
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+        dauNDauTrue.push_back(nDauTrue);
+      }
+    }
+
+    // Fill daughter daughter variables
+    for (const auto& ndau : dauNDauReco) output.FillVectorVar(vdaurecondau, ndau);
+    for (const auto& ndau : dauNDauTrue) output.FillVectorVar(vdautruendau, ndau);
+    for (const auto& pdg : dauDauPDGsReco) output.FillVectorVar(vdaudaurecopdgs, pdg);
+    for (const auto& pdg : dauDauPDGsTrue) output.FillVectorVar(vdaudautruepdgs, pdg);
+    for (const auto& proc : dauDauProcReco) output.FillVectorVar(vdaudaurecoproc, proc);
+    for (const auto& proc : dauDauProcTrue) output.FillVectorVar(vdaudautrueproc, proc);
+    for (const auto& endproc : dauDauEndProcReco) output.FillVectorVar(vdaudaurecoendproc, endproc);
+    for (const auto& endproc : dauDauEndProcTrue) output.FillVectorVar(vdaudautrueendproc, endproc);
+
+    output.IncrementCounter(nvcandidates);
   }
 
   // Fill true vertex candidates
   for (const auto& trueVertex : trueCandidates) {
     if (!trueVertex) continue;
 
-    output.FillVectorVar(true_vertex_nparticles, (Int_t)trueVertex->NTrueParticles);
-    output.FillMatrixVarFromArray(true_vertex_position, trueVertex->Position, 3);
-    output.FillVectorVar(true_vertex_quality, (Double_t)trueVertex->NTrueParticles); // Simple quality metric based on number of particles
-    output.IncrementCounter(n_true_vertex_candidates);
+    output.FillVectorVar(truevertexnparticles, (Int_t)trueVertex->NTrueParticles);
+    output.FillMatrixVarFromArray(truevertexposition, trueVertex->Position, 3);
+    output.FillVectorVar(truevertexquality, (Double_t)trueVertex->NTrueParticles); // Simple quality metric based on number of particles
+    output.IncrementCounter(ntruevertexcandidates);
   }
 
   // // Fill the count variables directly
-  output.FillVar(n_recovtx_candidates, (Int_t)reconCandidates.size());
-  // output.FillVar(n_true_vertex_candidates, (Int_t)trueCandidates.size());
+  output.FillVar(nvcandidates, (Int_t)reconCandidates.size());
+  // output.FillVar(ntruevertexcandidates, (Int_t)trueCandidates.size());
 }

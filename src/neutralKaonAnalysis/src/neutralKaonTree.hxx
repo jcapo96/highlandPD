@@ -11,57 +11,78 @@ namespace neutralKaonTree {
   void AddNeutralKaonVariables_VertexCandidates(OutputManager& output, UInt_t nmax);
 
   // Methods to fill the neutralKaonAnalysis sets of variables in the output tree
-  void FillNeutralKaonVariables_VertexCandidates(OutputManager& output, const std::vector<AnaVertexPD*>& reconCandidates, const std::vector<AnaTrueVertexPD*>& trueCandidates); // this should go out
+  void FillNeutralKaonVariables_VertexCandidates(OutputManager& output, const std::vector<AnaVertexPD*>& reconCandidates, const std::vector<AnaTrueVertexPD*>& trueCandidates, const AnaEventB& event); // this should go out
 
   // Enum with unique indexes for output tree variables
   enum enumNeutralKaonMicroTrees{
 
     // Vertex candidates info
-    n_recovtx_candidates = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
-    n_true_vertex_candidates,
-    recovtx_recoparticles,
-    recovtx_trueparticles,
-    true_vertex_nparticles,
-    recovtx_recoposition,
-    recovtx_trueposition,
-    true_vertex_position,
-    recovtx_recoquality,
-    recovtx_truequality,
-    true_vertex_quality,
-    recovtx_par_truepdg,
-    recovtx_par_recopdg,
-    recovtx_par_recodir,
-    recovtx_par_truedir,
-    recovtx_par_dau_recoangles,
-    recovtx_par_dau_trueangles,
-    recovtx_dau_recodistances_ss,
-    recovtx_dau_recodistances_se,
-    recovtx_dau_recodistances_es,
-    recovtx_dau_recodistances_ee,
-    recovtx_dau_recodistances,
-    recovtx_dau_truedistances,
-    recovtx_par_dau_recodistances,
-    recovtx_par_dau_truedistances,
-    recovtx_par_dau_recosyst_angle,
-    recovtx_par_dau_truesyst_angle,
-    recovtx_dau_recolengths,
-    recovtx_dau_truelengths,
-    recovtx_dau_truepdgs,
-    recovtx_dau_recopdgs,
-    recovtx_dau_trueproc,
-    recovtx_dau_trueendproc,
-    recovtx_dau_recoendproc,
-    recovtx_dau_par_recoangles,
-    recovtx_dau_par_trueangles,
-    recovtx_dau_par_truepdg,
-    recovtx_dau_recomom,
-    recovtx_dau_truemom,
-    recovtx_dau_recodedx,
-    recovtx_dau_truededx,
-    recovtx_recomass,
-    recovtx_truemass,
-    recovtx_daupi_recodistance,
-    recovtx_daupi_truedistance,
+    nvcandidates = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
+    ntruevertexcandidates, //number of true vertex candidates
+    vrecoparticles, //reconstructed vertex reconstructed number of particles
+    vtrueparticles, //reconstructed vertex true number of particles
+    truevertexnparticles, //true vertex true number of particles
+    vrecoposition, //reconstructed vertex reconstructed position
+    vtrueposition, //true vertex true position
+    truevertexposition, //true vertex true position
+    vrecoquality, //reconstructed vertex reconstructed quality
+    vtruequality, //reconstructed vertex true quality
+    truevertexquality, //true vertex true quality
+    vparrecopdg, //reconstructed vertex parent reconstructed PDG
+    vpartruepdg, //reconstructed vertex parent true PDG
+    vparrecodir, //reconstructed vertex parent reconstructed direction
+    vpartruedir, //reconstructed vertex parent true direction
+    vpardaurecoang, //reconstructed vertex: reconstructed angles between parent end and daughter start positions
+    vpardautrueang, //reconstructed vertex: true angles between parent end and daughter start positions
+    vdaurecodistss, //reconstructed vertex: reconstructed distances between daughter daughters (start-start)
+    vdaurecodistse, //reconstructed vertex: reconstructed distances between daughter daughters (start-end)
+    vdaurecodistes, //reconstructed vertex: reconstructed distances between daughter daughters (end-start)
+    vdaurecodistee, //reconstructed vertex: reconstructed distances between daughter daughters (end-end)
+    vdaurecodist, //reconstructed vertex: reconstructed distances between daughter daughters (min of 4 combinations)
+    vdautruedist, //reconstructed vertex: true distances between daughter daughters (min of 4 combinations)
+    vpardaurecodist, //reconstructed vertex: reconstructed distances between parent end and daughter start positions
+    vpardautruedist, //reconstructed vertex: true distances between parent end and daughter start positions
+    vpardaurecosystang, //reconstructed vertex: reconstructed system angles between parent end and daughter start positions
+    vpardautruesystang, //reconstructed vertex: true system angles between parent end and daughter start positions
+    vdaurecolength,
+    vdautruelength,
+    vdaurecopdg,
+    vdautruepdg,
+    vdautrueproc,
+    vdaurecoproc,
+    vdaurecoendproc,
+    vdautrueendproc,
+    vdauparrecoang,
+    vdaupartrueang,
+    vdaupartruepdg,
+    vdaurecomom,
+    vdautruemom,
+    vdaurecodedx,
+    vdautruededx,
+    vrecomass,
+    vtruemass,
+    vdaupirecodist,
+    vdaupitruedist,
+
+    // New variables for parent daughters
+    vparrecondau,
+    vpartruendau,
+    vpardaurecopdgs,
+    vpardautruepdgs,
+    vpardaurecoproc,
+    vpardautrueproc,
+    vpardaurecoendproc,
+    vpardautrueendproc,
+
+    // New variables for daughter daughters
+    vdaurecondau,
+    vdautruendau,
+    vdaudaurecopdgs,
+    vdaudautruepdgs,
+    vdaudaurecoproc,
+    vdaudautrueproc,
+    vdaudaurecoendproc,
+    vdaudautrueendproc,
 
     enumNeutralKaonMicroTreesLast
   };
