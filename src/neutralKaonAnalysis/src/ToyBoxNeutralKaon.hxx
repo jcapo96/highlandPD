@@ -18,8 +18,7 @@ public :
   virtual void ResetBase();
 
   void UpdateBestCandidateIndex(const int AccumLevel, const int Index);
-  void UpdateBestTrueVertexCandidateIndex(const int AccumLevel, const int Index);
-  void UpdateBestReconVertexCandidateIndex(const int AccumLevel, const int Index);
+  void UpdateBestNeutralParticleCandidateIndex(const int AccumLevel, const int Index);
 
 public:
 
@@ -35,23 +34,14 @@ public:
     /// Flag indicating if K0 exists in truth as beam daughter
     bool hasK0InTruth;
 
-    /// Vector of true vertex candidates
-    std::vector<AnaTrueVertexPD*> trueVertexCandidates;
+    /// Vector of neutral particle candidates
+    std::vector<AnaNeutralParticlePD*> neutralParticleCandidates;
 
-    /// Vector of reconstructed vertex candidates
-    std::vector<AnaVertexPD*> reconVertexCandidates;
+    /// Number of neutral particle candidates
+    int nNeutralParticleCandidates;
 
-    /// Number of true vertex candidates
-    int nTrueVertexCandidates;
-
-    /// Number of reconstructed vertex candidates
-    int nReconVertexCandidates;
-
-    /// Index of best true vertex candidate
-    int BestTrueVertexCandidateIndex;
-
-    /// Index of best reconstructed vertex candidate
-    int BestReconVertexCandidateIndex;
+    /// Index of best neutral particle candidate
+    int BestNeutralParticleCandidateIndex;
 };
 
 #endif

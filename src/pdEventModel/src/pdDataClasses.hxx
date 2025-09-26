@@ -491,14 +491,14 @@ public:
   /// Vector containing the true particles associated with this vertex
   std::vector<AnaTrueParticlePD*> TrueParticles;
 
-  /// True particle that originated this vertex (parent particle)
+  /// Parent particle of this vertex
   AnaTrueParticlePD* Parent;
 
   /// Generation of the vertex (0=beam, 1=primary, 2=secondary, etc.)
   Int_t Generation;
 
   /// Reaction/process that originated this vertex (interaction type)
-  Int_t ReactionType;
+  Int_t Process;
 };
 
 // Extension of AnaVertexB for ProtoDUNE analysis
@@ -523,20 +523,76 @@ protected:
 
 public:
 
+  /// Unique ID for this vertex within the event
+  Int_t UniqueID;
+
   /// Number of particles associated with this vertex
   Int_t NParticles;
 
   /// Vector containing the particles associated with this vertex
   std::vector<AnaParticlePD*> Particles;
 
-  /// Reconstructed particle that originated this vertex (parent particle)
-  AnaParticlePD* Parent;
+  /// 3D coordinates of the vertex
+  Float_t Position[3];
 
   /// Generation of the vertex (0=beam, 1=primary, 2=secondary, etc.)
   Int_t Generation;
 
   /// Reaction/process that originated this vertex (interaction type)
-  Int_t ReactionType;
+  Int_t Process;
+};
+
+// Extension for neutral particle analysis in ProtoDUNE
+class AnaNeutralParticlePD{
+public :
+
+  AnaNeutralParticlePD();
+  virtual ~AnaNeutralParticlePD();
+
+  /// Clone this object.
+  virtual AnaNeutralParticlePD* Clone() {
+    return new AnaNeutralParticlePD(*this);
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralParticle);
+
+public:
+
+  /// Unique ID for this neutral particle within the event
+  Int_t UniqueID;
+
+  /// The vertex associated with this neutral particle
+  AnaVertexPD* Vertex;
+
+  /// The parent particle that decayed into this neutral particle
+  AnaParticlePD* Parent;
+
+  /// Mass of the neutral particle (in GeV/c²)
+  Float_t Mass;
+
+  /// Momentum of the neutral particle (in GeV/c)
+  Float_t Momentum;
+
+  /// 3D direction of the neutral particle
+  Float_t Direction[3];
+
+  /// 3D position of the neutral particle (usually the vertex position)
+  Float_t Position[3];
+
+  /// PDG code of the neutral particle
+  Int_t PDG;
+
+  /// Lifetime of the neutral particle (in ns)
+  Float_t Lifetime;
+
+  /// Decay length of the neutral particle (in cm)
+  Float_t DecayLength;
 };
 
 

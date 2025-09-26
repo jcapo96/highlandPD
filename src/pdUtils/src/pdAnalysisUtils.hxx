@@ -102,6 +102,52 @@ namespace pdAnaUtils{
   double dEdxPDF(double *x, double *par);
 
   //  Float_t ComputeVertexPolarity(AnaParticlePD* part1, AnaParticlePD* part2);
+
+  /// Fit a line to 3D hits within 15 cm of the position defined by DefinePosition
+  /// @param part The particle to analyze
+  /// @param fitParams Output: Vector with 6 parameters [x0, y0, z0, dx, dy, dz] for line fit (point + direction)
+  /// The function fits a 3D line to hits within 15 cm of the position returned by DefinePosition
+  void ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams);
+
+  /// Helper function to fit a line to a set of 3D points using PCA
+  /// @param points Vector of 3D points to fit
+  /// @param fitParams Output: Vector with 6 parameters [x0, y0, z0, dx, dy, dz] (point + direction)
+  void FitLineToPoints(const std::vector<TVector3>& points, std::vector<double>& fitParams);
+
+  /// Define the position to use for calculations (distance, line fitting, etc.)
+  /// @param particle The particle to get position from
+  /// @return TVector3 with the position to use for calculations
+  /// This function can be modified to return different positions (e.g., extrapolated positions)
+  TVector3 DefinePosition(AnaParticlePD* particle);
+
+  /// Find the closest points between two 3D lines
+  /// @param line1Params Vector with 6 parameters [x0, y0, z0, dx, dy, dz] for first line
+  /// @param line2Params Vector with 6 parameters [x0, y0, z0, dx, dy, dz] for second line
+  /// @param closestPoint1 Output: Closest point on first line
+  /// @param closestPoint2 Output: Closest point on second line
+  /// @return Minimum distance between the two lines
+  double FindClosestPointsBetweenLines(const std::vector<double>& line1Params,
+                                      const std::vector<double>& line2Params,
+                                      TVector3& closestPoint1,
+                                      TVector3& closestPoint2);
+
+  /// Calculate the impact parameter (distance from a point to a line)
+  /// @param lineParams Vector with 6 parameters [x0, y0, z0, dx, dy, dz] for the line
+  /// @param point The point to calculate distance from
+  /// @return Distance from point to line
+  double CalculateImpactParameter(const std::vector<double>& lineParams, const TVector3& point);
+
+  /// Create neutral particles from vertices by checking particles within sphere and impact parameter
+  /// @param event The event containing particles
+  /// @param vertices Vector of vertices to check against
+  /// @param VertexRadius Radius of sphere around vertex to check for particle end positions
+  /// @param ImpactParameter Maximum impact parameter for neutral particle creation
+  /// @return Vector of created AnaNeutralParticlePD objects
+  std::vector<AnaNeutralParticlePD*> CreateAnaNeutralParticles(AnaEventB& event, const std::vector<AnaVertexPD*>& vertices, double VertexRadius, double ImpactParameter);
+
+  /// Find vertex position by fitting lines to daughter particles and finding closest points
+  /// @param vertex The vertex to find position for
+  void FindVertexPosition(AnaVertexPD* vertex);
 }
 
 #endif

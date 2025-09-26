@@ -1,5 +1,5 @@
 --- Cut levels --------
- < neutralKaonAnalysis.MinAccumLevelToSave = 4 >   // minimum accum level to save the event
+ < neutralKaonAnalysis.MinAccumLevelToSave = -1 >   // minimum accum level to save the event
 
 --- Systematics ------------
 
@@ -24,7 +24,8 @@ need to be enabled in baseAnalysis parameter file
 
 --- Vertex Finder ------------
  < neutralKaonAnalysis.VertexRadius = 50.0 >
- < neutralKaonAnalysis.DaughterDistance = 50.0 >
+ < neutralKaonAnalysis.DaughterDistance = 2.5 >
+ < neutralKaonAnalysis.ImpactParameter = 5.0 >
  < neutralKaonAnalysis.MinVertexDaughters = 2 >
  < neutralKaonAnalysis.MaxVertexDaughters = 2 >
 

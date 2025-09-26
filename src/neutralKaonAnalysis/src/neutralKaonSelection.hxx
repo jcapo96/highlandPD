@@ -64,11 +64,11 @@ class CheckK0InTruthAction: public StepBase{
   };
 
 
-class FindVertexCandidatesAction: public StepBase{
+class FindNeutralCandidatesAction: public StepBase{
   public:
     using StepBase::Apply;
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
-    StepBase* MakeClone(){return new FindVertexCandidatesAction();}
+    StepBase* MakeClone(){return new FindNeutralCandidatesAction();}
   };
 
 // New Cut classes for Preliminary K0 Selection
@@ -80,11 +80,11 @@ class HasEnoughParticlesCut: public StepBase{
   };
 
 
-class HasVertexCandidatesCut: public StepBase{
+class HasNeutralCandidatesCut: public StepBase{
   public:
     using StepBase::Apply;
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
-    StepBase* MakeClone(){return new HasVertexCandidatesCut();}
+    StepBase* MakeClone(){return new HasNeutralCandidatesCut();}
   };
 
 class VertexParentCountCut: public StepBase{

@@ -5,7 +5,7 @@
 #include "ToyBoxPD.hxx"
 #include "standardPDTree.hxx"
 #include "neutralKaonTree.hxx"
-#include "pdEventDisplay.hxx"
+#include "neutralKaonAnalysisUtils.hxx"
 
 namespace neutralKaonAnalysisConstants{
 
@@ -16,7 +16,6 @@ class neutralKaonAnalysis: public pdBaseAnalysis {
  public:
  neutralKaonAnalysis(AnalysisAlgorithm* ana=NULL);
   virtual ~neutralKaonAnalysis(){
-    if(_eventDisplay) delete _eventDisplay;
   }
 
   //---- These are mandatory functions
@@ -57,20 +56,6 @@ private:
   bool _ApplySCECorrection;
   bool _ApplySCESystematic;
 
-    // Event display parameters
-    bool _CreateEventDisplay;
-    bool _SaveToRootFile;
-    std::string _OutputDirectory;
-    int _MaxEventsToDisplay;
-    double _EventDisplayPercentage;
-    std::vector<int> _RequiredParticlePDGs;
-    double _VertexRadius;
-    double _DaughterDistance;
-    int _MinVertexDaughters;
-    bool _OnlySignalEvents;
-
-  // Event display object
-  pdEventDisplay* _eventDisplay;
 
 public:
 
@@ -98,15 +83,6 @@ public:
     enumSystLast_neutralKaonAnalysis
   };
 
-  // Category functions
-  void AddVertexPionPairCategory();
-  void AddVertexParticleCountCategory();
-  void AddK0InVtxCategory();
-  void AddVertexParentPDGCategory();
-  void FillVertexPionPairCategory(AnaVertexPD* vertex);
-  void FillVertexParticleCountCategory(AnaVertexPD* vertex);
-  void FillK0InVtxCategory(const std::vector<AnaVertexPD*>& vertices);
-  void FillVertexParentPDGCategory(AnaVertexPD* vertex);
 
   // Check if event contains signal vertices (K0 -> pi+ pi-)
   bool EventContainsSignalVertices(const AnaEventB& event) const;

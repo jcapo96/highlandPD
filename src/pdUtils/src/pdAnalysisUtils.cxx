@@ -2,11 +2,14 @@
 #include "TSpline.h"
 #include "CategoryManager.hxx"
 #include "standardPDTree.hxx"
+#include "AnalysisUtils.hxx"
 #include <TH3F.h>
 #include <TH2F.h>
 #include <TF1.h>
 #include <Math/VavilovAccurate.h>
-
+#include <TMatrixD.h>
+#include <TMatrixDEigen.h>
+#include <TVectorD.h>
 //data for range-momentum conversion, muons
 //http://pdg.lbl.gov/2012/AtomicNuclearProperties/MUON_ELOSS_TABLES/muonloss_289.pdf divided by LAr density for cm
 
@@ -1317,161 +1320,478 @@ std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaPart
 
   return result;
 }
+
+//***************************************************************
+// Usage example:
+//   std::vector<AnaVertexPD*> vertices = pdAnaUtils::CreateReconstructedVertices(event, 5.0);
+//   std::vector<AnaNeutralParticlePD*> neutralParticles = pdAnaUtils::CreateAnaNeutralParticles(event, vertices, 10.0, 2.0);
+//   // This will find particles whose end positions are within 10cm of any vertex,
+//   // extrapolate their trajectories, and create neutral particles for those with
+//   // impact parameter >= 2.0cm (i.e., particles that don't pass too close to the vertex)
+//   // A single particle can be assigned to multiple vertices if it meets the criteria for multiple vertices
+//***************************************************************
+std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEventB& event, const std::vector<AnaVertexPD*>& vertices, double VertexRadius, double ImpactParameter){
+//***************************************************************
+
+  std::vector<AnaNeutralParticlePD*> neutralParticles;
+
+  // Get all particles from the event
+  AnaParticleB** parts = event.Particles;
+  int nParts = event.nParticles;
+  int neutralParticleID = 0; // Counter for unique neutral particle IDs
+
+  // Loop over all particles
+  for(int i = 0; i < nParts; i++){
+    AnaParticlePD* particle = static_cast<AnaParticlePD*>(parts[i]);
+    if(!particle) continue;
+
+    // Check if particle has valid end position
+    if (particle->PositionEnd[0] < -900 || particle->PositionEnd[1] < -900 || particle->PositionEnd[2] < -900) {
+      continue; // Skip particles with invalid end positions
+    }
+
+    // Extrapolate the particle trajectory first
+    std::vector<double> fitParams;
+    pdAnaUtils::ExtrapolateTrack(particle, fitParams);
+
+    // Check if extrapolation was successful
+    if (fitParams[0] == -999.0) {
+      continue; // Skip if extrapolation failed
+    }
+
+    // Check if this particle's end position is within any vertex sphere
+    // and if impact parameter is sufficient
+
+    // Loop over all vertices to check if particle end is within sphere
+    for(size_t v = 0; v < vertices.size(); v++){
+      AnaVertexPD* vertex = vertices[v];
+      if(!vertex) continue;
+
+      // Calculate distance from particle end position to vertex position
+      TVector3 particleEnd(particle->PositionEnd[0], particle->PositionEnd[1], particle->PositionEnd[2]);
+      TVector3 vertexPos(vertex->Position[0], vertex->Position[1], vertex->Position[2]);
+      double distance = (particleEnd - vertexPos).Mag();
+
+      // Check if particle end is within sphere
+      if(distance < VertexRadius){
+        // Calculate impact parameter (distance from extrapolated line to vertex)
+        double impactParameter = pdAnaUtils::CalculateImpactParameter(fitParams, vertexPos);
+
+        // Check if impact parameter is sufficient (particle doesn't pass too close to vertex)
+        if (impactParameter >= ImpactParameter) {
+          // Create neutral particle for this vertex
+          AnaNeutralParticlePD* neutralParticle = new AnaNeutralParticlePD();
+          neutralParticle->UniqueID = neutralParticleID++;
+
+          // Set vertex and parent
+          neutralParticle->Vertex = vertex;
+          neutralParticle->Parent = particle;
+
+          // Set position (vertex position)
+          neutralParticle->Position[0] = vertex->Position[0];
+          neutralParticle->Position[1] = vertex->Position[1];
+          neutralParticle->Position[2] = vertex->Position[2];
+
+          // Set direction (from extrapolated line)
+          neutralParticle->Direction[0] = fitParams[3];
+          neutralParticle->Direction[1] = fitParams[4];
+          neutralParticle->Direction[2] = fitParams[5];
+
+          // Set other properties
+          neutralParticle->Mass = -999; // Will be calculated based on particle type
+          neutralParticle->Momentum = -999;
+          neutralParticle->PDG = -999;
+          neutralParticle->Lifetime = -999; // Will be calculated based on particle type
+          neutralParticle->DecayLength = -999; // Use impact parameter as decay length
+
+          neutralParticles.push_back(neutralParticle);
+        }
+      }
+    }
+    // Note: We don't skip the particle if no vertices found, as it might be assigned to multiple vertices
+  }
+
+  return neutralParticles;
+
+}
+
 //********************************************************************
 std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& event, double maxVertexRadius, double maxDaughterDistance){
 //********************************************************************
 
-  std::vector<AnaVertexPD*> vertices;
+  // Note: maxVertexRadius parameter is not currently used in this implementation
+  (void)maxVertexRadius; // Suppress unused parameter warning
 
   // Get the array of particles from the event
   AnaParticleB** parts = event.Particles;
   int nParts = event.nParticles;
 
-  // Find all particles with valid start positions
-  std::vector<AnaParticlePD*> validParticles;
+  // Create reconstructed vertices
+  std::vector<AnaVertexPD*> reconstructedVertices;
+  int vertexID = 0; // Counter for unique vertex IDs
   for(int i = 0; i < nParts; i++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
-    if(!part) continue;
+    AnaParticlePD* daughter1 = static_cast<AnaParticlePD*>(parts[i]);
+    if(!daughter1) continue;
 
-    // Check if particle has valid start position
-    if (part->PositionStart[0] < -900 || part->PositionStart[1] < -900 || part->PositionStart[2] < -900) {
-      continue; // Skip particles with invalid start positions
+    // Check if daughter1 has valid start position
+    if (daughter1->PositionStart[0] < -900 || daughter1->PositionStart[1] < -900 || daughter1->PositionStart[2] < -900) {
+      continue; // Skip daughter1 with invalid start positions
     }
-    validParticles.push_back(part);
-  }
-
-  // Need at least 2 particles to form a vertex
-  if (validParticles.size() < 2) {
-    return vertices;
-  }
-
-  // Find all particles with valid end positions (potential parents)
-  std::vector<AnaParticlePD*> potentialParents;
-  for (int i = 0; i < nParts; i++) {
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
-    if (!part) continue;
-
-    // Check if this particle has valid end position
-    if (part->PositionEnd[0] < -900 || part->PositionEnd[1] < -900 || part->PositionEnd[2] < -900) {
-      continue; // Skip particles with invalid end positions
+    // Check if daughter1 has valid end position
+    if (daughter1->PositionEnd[0] < -900 || daughter1->PositionEnd[1] < -900 || daughter1->PositionEnd[2] < -900) {
+      continue; // Skip daughter1 with invalid end positions
     }
 
-    // Skip particles that are not Beam particles
-    // TODO: Try to generalise this for all particles
-    // if (!part->isPandora) continue;
+    for(int j = 0; j < nParts; j++){
+      AnaParticlePD* daughter2 = static_cast<AnaParticlePD*>(parts[j]);
+      if(!daughter2) continue;
 
-    potentialParents.push_back(part);
-  }
-
-  // For each potential parent, create all possible vertex combinations with exactly 2 daughters
-  for (const auto& parent : potentialParents) {
-    // Find all particles whose start positions are within the sphere of the parent's end position
-    std::vector<AnaParticlePD*> daughterCandidates;
-    for (const auto& candidateParticle : validParticles) {
-      if (!candidateParticle || candidateParticle == parent) continue;
-      // Calculate distance from parent's end position to candidate's start position
-      // TODO: use HL function
-      double dist = sqrt((candidateParticle->PositionStart[0] - parent->PositionEnd[0]) * (candidateParticle->PositionStart[0] - parent->PositionEnd[0]) +
-                        (candidateParticle->PositionStart[1] - parent->PositionEnd[1]) * (candidateParticle->PositionStart[1] - parent->PositionEnd[1]) +
-                        (candidateParticle->PositionStart[2] - parent->PositionEnd[2]) * (candidateParticle->PositionStart[2] - parent->PositionEnd[2]));
-
-      if (dist <= maxVertexRadius) {
-        daughterCandidates.push_back(candidateParticle);
+      // Check if daughter2 has valid start position
+      if (daughter2->PositionStart[0] < -900 || daughter2->PositionStart[1] < -900 || daughter2->PositionStart[2] < -900) {
+        continue; // Skip daughter2 with invalid start positions
       }
+      // Check if daughter2 has valid end position
+      if (daughter2->PositionEnd[0] < -900 || daughter2->PositionEnd[1] < -900 || daughter2->PositionEnd[2] < -900) {
+        continue; // Skip daughter2 with invalid end positions
+      }
+
+      // Skip if daughter1 and daughter2 are the same particle
+      if (daughter1 == daughter2) {
+        continue;
+      }
+
+      // Check if daughter1 and daughter2 are close enough
+      // Use the DefinePosition function to get the position of the particles, this can be changed by the user
+      TVector3 pos1 = pdAnaUtils::DefinePosition(daughter1);
+      TVector3 pos2 = pdAnaUtils::DefinePosition(daughter2);
+
+      // Check if positions are valid
+      if (pos1.X() < -900 || pos2.X() < -900) {
+        continue; // Skip if positions are invalid
+      }
+
+      // Convert TVector3 to arrays for GetSeparationSquared
+      Float_t pos1_array[3] = {static_cast<Float_t>(pos1.X()), static_cast<Float_t>(pos1.Y()), static_cast<Float_t>(pos1.Z())};
+      Float_t pos2_array[3] = {static_cast<Float_t>(pos2.X()), static_cast<Float_t>(pos2.Y()), static_cast<Float_t>(pos2.Z())};
+
+      float distance = sqrt(anaUtils::GetSeparationSquared(pos1_array, pos2_array));
+      if(distance > maxDaughterDistance){
+        continue; // Skip daughter1 and daughter2 if they are not close enough
+      }
+
+      // Create reconstructed vertex
+      AnaVertexPD* reconstructedVertex = new AnaVertexPD();
+      reconstructedVertex->UniqueID = vertexID++;
+      reconstructedVertex->NParticles = 2;
+      reconstructedVertex->Particles.push_back(daughter1);
+      reconstructedVertex->Particles.push_back(daughter2);
+
+      // Calculate the vertex position using fitted lines
+      pdAnaUtils::FindVertexPosition(reconstructedVertex);
+
+      // Set default values for other properties
+      reconstructedVertex->Generation = -999;
+      reconstructedVertex->Process = -999;
+
+      reconstructedVertices.push_back(reconstructedVertex);
     }
 
-    // Generate all possible combinations of exactly 2 daughters
-    if ((int)daughterCandidates.size() >= 2) {
-      // Generate all combinations of 2 daughters from daughterCandidates
-      for (size_t i = 0; i < daughterCandidates.size(); i++) {
-        for (size_t j = i + 1; j < daughterCandidates.size(); j++) {
-          AnaParticlePD* daughter1 = daughterCandidates[i];
-          AnaParticlePD* daughter2 = daughterCandidates[j];
+  }
+  return reconstructedVertices;
+}
 
-          // Skip if the daughters are not the reco daughters of the parent
-          // if (daughter1->ParentID != parent->UniqueID || daughter2->ParentID != parent->UniqueID) continue;
+//***************************************************************
+void pdAnaUtils::FindVertexPosition(AnaVertexPD* vertex){
+//***************************************************************
 
-          if (!daughter1 || !daughter2) continue;
+  if (!vertex || vertex->NParticles < 2) {
+    return;
+  }
 
-          double daughterDistance = sqrt((daughter1->PositionStart[0] - daughter2->PositionStart[0]) * (daughter1->PositionStart[0] - daughter2->PositionStart[0]) +
-                                        (daughter1->PositionStart[1] - daughter2->PositionStart[1]) * (daughter1->PositionStart[1] - daughter2->PositionStart[1]) +
-                                        (daughter1->PositionStart[2] - daughter2->PositionStart[2]) * (daughter1->PositionStart[2] - daughter2->PositionStart[2]));
-          if (daughterDistance > maxDaughterDistance) continue;
+  // Get the first two particles from the vertex
+  AnaParticlePD* part1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+  AnaParticlePD* part2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
 
-          // Create vertex with 1 parent and exactly 2 daughters
-          std::vector<AnaParticlePD*> vertexParticles;
-          vertexParticles.push_back(parent);  // parent
-          vertexParticles.push_back(daughter1); // daughter 1
-          vertexParticles.push_back(daughter2); // daughter 2
+  if (!part1 || !part2) {
+    return;
+  }
 
-          // Check that all particles in the vertex have different particle IDs
-          bool hasUniqueParticleIDs = true;
-          std::set<int> particleIDs;
-          for (const auto& particle : vertexParticles) {
-            if (particleIDs.find(particle->UniqueID) != particleIDs.end()) {
-              hasUniqueParticleIDs = false;
-              break;
-            }
-            particleIDs.insert(particle->UniqueID);
-          }
+  // Fit lines to both particles
+  std::vector<double> line1Params, line2Params;
+  pdAnaUtils::ExtrapolateTrack(part1, line1Params);
+  pdAnaUtils::ExtrapolateTrack(part2, line2Params);
 
-          // Skip this vertex if particles have duplicate IDs
-          if (!hasUniqueParticleIDs) {
-            continue;
-          }
+  // Check if both fits were successful
+  if (line1Params[0] == -999.0 || line2Params[0] == -999.0) {
+    return;
+  }
 
-          // Create reconstructed vertex candidate
-          AnaVertexPD* reconVertex = new AnaVertexPD();
+  // Find the closest points between the two fitted lines
+  TVector3 closestPoint1, closestPoint2;
+  pdAnaUtils::FindClosestPointsBetweenLines(line1Params, line2Params,
+                                           closestPoint1, closestPoint2);
 
-          // Set vertex position to the parent's end position
-          reconVertex->Position[0] = parent->PositionEnd[0];
-          reconVertex->Position[1] = parent->PositionEnd[1];
-          reconVertex->Position[2] = parent->PositionEnd[2];
-          reconVertex->Position[3] = 0.0; // time
+  // Set the vertex position to the midpoint between the closest points
+  TVector3 vertexPosition = 0.5 * (closestPoint1 + closestPoint2);
 
-          // Set vertex properties - exactly 1 parent + 2 daughters
-          reconVertex->NParticles = 3; // parent + 2 daughters
-          reconVertex->Particles = vertexParticles;
-          reconVertex->Parent = parent;
-          reconVertex->Generation = 1; // Secondary vertex
-          reconVertex->ReactionType = 0; // Unknown for now
+  vertex->Position[0] = vertexPosition.X();
+  vertex->Position[1] = vertexPosition.Y();
+  vertex->Position[2] = vertexPosition.Z();
 
-          // Check if this vertex combination already exists (same particle IDs)
-          bool vertexExists = false;
-          for (const auto& existingVertex : vertices) {
-            if (existingVertex->Parent == reconVertex->Parent &&
-                existingVertex->NParticles == reconVertex->NParticles) {
-              // Check if the daughters are the same
-              bool sameDaughters = true;
-              for (size_t k = 1; k < reconVertex->NParticles; k++) { // Skip parent (index 0)
-                bool found = false;
-                for (size_t l = 1; l < existingVertex->NParticles; l++) {
-                  if (reconVertex->Particles[k] == existingVertex->Particles[l]) {
-                    found = true;
-                    break;
-                  }
-                }
-                if (!found) {
-                  sameDaughters = false;
-                  break;
-                }
-              }
-              if (sameDaughters) {
-                vertexExists = true;
-                delete reconVertex; // Clean up since we won't use it
-                break;
-              }
-            }
-          }
+}
 
-          // Only add vertex if it doesn't already exist
-          if (!vertexExists) {
-            vertices.push_back(reconVertex);
-          }
-        }
+//***************************************************************
+// Usage example:
+//   std::vector<double> fitParams;
+//   pdAnaUtils::ExtrapolateTrack(particle, fitParams);
+//   // fitParams: [x0, y0, z0, dx, dy, dz] for hits within 15 cm of DefinePosition
+//***************************************************************
+void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams){
+//***************************************************************
+
+  // Initialize output vector with 6 parameters
+  fitParams.clear();
+  fitParams.resize(6, -999.0);
+
+  if (!part) {
+    return;
+  }
+
+  // Get the reference position for distance calculations
+  TVector3 referencePos = pdAnaUtils::DefinePosition(part);
+  if (referencePos.X() < -900) {
+    return; // Invalid reference position
+  }
+
+  // Collect all 3D hit positions from all planes with their distances from reference position
+  std::vector<std::pair<TVector3, double>> hitPositionsWithDistance;
+
+  for (int plane = 0; plane < 3; plane++) {
+    for (size_t i = 0; i < part->Hits[plane].size(); i++) {
+      AnaHitPD& hit = part->Hits[plane][i];
+      TVector3 position;
+
+      // Use SCE-corrected position if available, otherwise use non-SCE position
+      if (hit.Position_NoSCE.Z() != -999) {
+        position = hit.Position_NoSCE;
+      } else if (hit.Position.Z() != -999) {
+        position = hit.Position;
+      } else {
+        continue; // Skip invalid hits
       }
+
+      // Calculate distance from reference position
+      double distance = (position - referencePos).Mag();
+
+      hitPositionsWithDistance.push_back(std::make_pair(position, distance));
     }
   }
 
-  return vertices;
+  // Need at least 2 points to fit a line
+  if (hitPositionsWithDistance.size() < 2) {
+    return;
+  }
+
+  // Fit line to hits within 15 cm of reference position
+  std::vector<TVector3> nearbyHits;
+  for (const auto& hitPair : hitPositionsWithDistance) {
+    if (hitPair.second <= 15.0) { // Within 15 cm of reference position
+      nearbyHits.push_back(hitPair.first);
+    }
+  }
+
+  if (nearbyHits.size() >= 2) {
+    FitLineToPoints(nearbyHits, fitParams);
+  }
+
+}
+
+//***************************************************************
+// Helper function to fit a line to a set of 3D points
+//***************************************************************
+void pdAnaUtils::FitLineToPoints(const std::vector<TVector3>& points, std::vector<double>& fitParams) {
+//***************************************************************
+
+  if (points.size() < 2) {
+    return;
+  }
+
+  // Calculate centroid of points
+  TVector3 centroid(0, 0, 0);
+  for (const auto& pos : points) {
+    centroid += pos;
+  }
+  centroid *= (1.0 / points.size());
+
+  // Calculate covariance matrix
+  double covXX = 0, covXY = 0, covXZ = 0;
+  double covYY = 0, covYZ = 0, covZZ = 0;
+
+  for (const auto& pos : points) {
+    double dx = pos.X() - centroid.X();
+    double dy = pos.Y() - centroid.Y();
+    double dz = pos.Z() - centroid.Z();
+
+    covXX += dx * dx;
+    covXY += dx * dy;
+    covXZ += dx * dz;
+    covYY += dy * dy;
+    covYZ += dy * dz;
+    covZZ += dz * dz;
+  }
+
+  // Normalize by number of points
+  int nPoints = points.size();
+  covXX /= nPoints;
+  covXY /= nPoints;
+  covXZ /= nPoints;
+  covYY /= nPoints;
+  covYZ /= nPoints;
+  covZZ /= nPoints;
+
+  // Build covariance matrix
+  TMatrixD covMatrix(3, 3);
+  covMatrix(0, 0) = covXX; covMatrix(0, 1) = covXY; covMatrix(0, 2) = covXZ;
+  covMatrix(1, 0) = covXY; covMatrix(1, 1) = covYY; covMatrix(1, 2) = covYZ;
+  covMatrix(2, 0) = covXZ; covMatrix(2, 1) = covYZ; covMatrix(2, 2) = covZZ;
+
+  // Find eigenvalues and eigenvectors
+  TMatrixDEigen eigen(covMatrix);
+  TVectorD eigenValues = eigen.GetEigenValuesRe();
+  TMatrixD eigenVectors = eigen.GetEigenVectors();
+
+  // Find the largest eigenvalue and corresponding eigenvector
+  int maxEigenIndex = 0;
+  double maxEigenValue = eigenValues[0];
+  for (int i = 1; i < 3; i++) {
+    if (eigenValues[i] > maxEigenValue) {
+      maxEigenValue = eigenValues[i];
+      maxEigenIndex = i;
+    }
+  }
+
+  // The direction vector is the eigenvector corresponding to the largest eigenvalue
+  TVector3 direction(eigenVectors(0, maxEigenIndex),
+                    eigenVectors(1, maxEigenIndex),
+                    eigenVectors(2, maxEigenIndex));
+  direction = direction.Unit();
+
+  // Set fit parameters: [x0, y0, z0, dx, dy, dz]
+  fitParams[0] = centroid.X();  // x0
+  fitParams[1] = centroid.Y();  // y0
+  fitParams[2] = centroid.Z();  // z0
+  fitParams[3] = direction.X(); // dx
+  fitParams[4] = direction.Y(); // dy
+  fitParams[5] = direction.Z(); // dz
+
+}
+
+//***************************************************************
+// Define the position to use for calculations (distance, line fitting, etc.)
+//***************************************************************
+TVector3 pdAnaUtils::DefinePosition(AnaParticlePD* particle) {
+//***************************************************************
+
+  if (!particle) {
+    return TVector3(-999, -999, -999);
+  }
+
+  // For now, return the start position
+  // In the future, this can be modified to return:
+  // - End positions
+  // - Extrapolated positions from ExtrapolateTrack
+  // - Any other calculated position
+  // This position will be used as reference for:
+  // - Distance calculations in CreateReconstructedVertices
+  // - Line fitting in ExtrapolateTrack
+
+  // Current implementation: use start position
+  return TVector3(particle->PositionStart[0],
+                  particle->PositionStart[1],
+                  particle->PositionStart[2]);
+
+}
+
+//***************************************************************
+// Find the closest points between two 3D lines
+//***************************************************************
+double pdAnaUtils::FindClosestPointsBetweenLines(const std::vector<double>& line1Params,
+                                                const std::vector<double>& line2Params,
+                                                TVector3& closestPoint1,
+                                                TVector3& closestPoint2) {
+//***************************************************************
+
+  // Check if both lines have valid parameters
+  if (line1Params.size() != 6 || line2Params.size() != 6 ||
+      line1Params[0] == -999.0 || line2Params[0] == -999.0) {
+    closestPoint1.SetXYZ(-999, -999, -999);
+    closestPoint2.SetXYZ(-999, -999, -999);
+    return -999.0;
+  }
+
+  // Extract line parameters
+  // Line 1: P1(t1) = (x1, y1, z1) + t1 * (dx1, dy1, dz1)
+  TVector3 point1(line1Params[0], line1Params[1], line1Params[2]);
+  TVector3 dir1(line1Params[3], line1Params[4], line1Params[5]);
+
+  // Line 2: P2(t2) = (x2, y2, z2) + t2 * (dx2, dy2, dz2)
+  TVector3 point2(line2Params[0], line2Params[1], line2Params[2]);
+  TVector3 dir2(line2Params[3], line2Params[4], line2Params[5]);
+
+  // Normalize direction vectors
+  dir1 = dir1.Unit();
+  dir2 = dir2.Unit();
+
+  // Vector between the two points
+  TVector3 w0 = point1 - point2;
+
+  // Calculate dot products
+  double a = dir1.Dot(dir1);  // Should be 1 since dir1 is normalized
+  double b = dir1.Dot(dir2);
+  double c = dir2.Dot(dir2);  // Should be 1 since dir2 is normalized
+  double d = dir1.Dot(w0);
+  double e = dir2.Dot(w0);
+
+  // Calculate denominator
+  double denom = a * c - b * b;
+
+  // Check if lines are parallel (denominator close to zero)
+  if (fabs(denom) < 1e-10) {
+    // Lines are parallel, use arbitrary point on line1 and project to line2
+    closestPoint1 = point1;
+    double t2 = e / c;  // Project point1 onto line2
+    closestPoint2 = point2 + t2 * dir2;
+  } else {
+    // Lines are not parallel, find closest points
+    double t1 = (b * e - c * d) / denom;
+    double t2 = (a * e - b * d) / denom;
+
+    closestPoint1 = point1 + t1 * dir1;
+    closestPoint2 = point2 + t2 * dir2;
+  }
+
+  // Calculate the minimum distance
+  double minDistance = (closestPoint1 - closestPoint2).Mag();
+
+  return minDistance;
+}
+
+//********************************************************************
+double pdAnaUtils::CalculateImpactParameter(const std::vector<double>& lineParams, const TVector3& point){
+//********************************************************************
+
+  if (lineParams.size() != 6 || lineParams[0] == -999.0) {
+    return -999.0;
+  }
+
+  TVector3 linePoint(lineParams[0], lineParams[1], lineParams[2]);
+  TVector3 lineDirection(lineParams[3], lineParams[4], lineParams[5]);
+  lineDirection = lineDirection.Unit(); // Ensure it's normalized
+
+  // Calculate distance from point to line
+  TVector3 pointToLine = point - linePoint;
+  TVector3 projection = (pointToLine.Dot(lineDirection)) * lineDirection;
+  TVector3 perpendicular = pointToLine - projection;
+
+  return perpendicular.Mag();
 }
