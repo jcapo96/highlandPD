@@ -48,7 +48,7 @@ LArSoftTreeConverter::LArSoftTreeConverter():InputConverter("Events"){
   std::string YZ_correction_name = std::string(getenv("PROTODUNEEXAMPLEANALYSISROOT"))+"/data/YZcalo_r5387.root";
   std::string E_field_correction_name = std::string(getenv("PROTODUNEEXAMPLEANALYSISROOT"))+"/data/SCE_DataDriven_180kV_v3.root";
 
-  std::string dEdX_template_name = std::string(getenv("PROTODUNEEXAMPLEANALYSISROOT"))+"/data/dEdxrestemplates.root"; 
+  std::string dEdX_template_name = std::string(getenv("PROTODUNEEXAMPLEANALYSISROOT"))+"/data/dEdxrestemplates.root";
 
   X_correction_file  = new TFile( X_correction_name.c_str(), "OPEN" );
   YZ_correction_file = new TFile( YZ_correction_name.c_str(), "OPEN" );
@@ -98,7 +98,7 @@ bool LArSoftTreeConverter::Initialize(){
 #else
   std::string trailer = "Reco.";
 #endif
-  
+
   eventsTree->SetBranchAddress("EventAuxiliary", &EventInfo);
 
   // beam info
@@ -108,10 +108,10 @@ bool LArSoftTreeConverter::Initialize(){
 
   // Particles META Data
   eventsTree->SetBranchAddress(("larpandoraobj::PFParticleMetadatarecob::PFParticlevoidart::Assns_pandora__"+trailer).c_str(), &PFParticles_MetaData);
-  
+
   eventsTree->SetBranchAddress(("larpandoraobj::PFParticleMetadatas_pandora__"+trailer).c_str(), &MetaData);
 
-  
+
   // Calorimetry
   eventsTree->SetBranchAddress(("anab::Calorimetrys_pandoracalo__"   +trailer).c_str(), &CALOs);
   eventsTree->SetBranchAddress(("anab::Calorimetrys_pandoracaloSCE__"+trailer).c_str(), &CALOsSCE);
@@ -122,7 +122,7 @@ bool LArSoftTreeConverter::Initialize(){
   eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercalo__"   +trailer).c_str(), &Showers_CALOs);
   eventsTree->SetBranchAddress(("anab::Calorimetryrecob::Showervoidart::Assns_pandoraShowercaloSCE__"+trailer).c_str(), &Showers_CALOsSCE);
 
-  
+
   // Particle id
   eventsTree->SetBranchAddress(("anab::ParticleIDs_pandorapid__"+trailer).c_str(), &PIDs);
 
@@ -135,7 +135,7 @@ bool LArSoftTreeConverter::Initialize(){
   eventsTree->SetBranchAddress(("recob::Tracks_pandoraTrack__"  +trailer).c_str(), &Tracks);
   eventsTree->SetBranchAddress(("recob::Showers_pandoraShower__"+trailer).c_str(), &Showers);
   eventsTree->SetBranchAddress(("recob::Vertexs_pandora__"      +trailer).c_str(), &Vertices);
-  
+
 
   eventsTree->SetBranchAddress(("recob::PFParticlerecob::Trackvoidart::Assns_pandoraTrack__"+trailer).c_str(),   &PFParticles_Tracks);
   eventsTree->SetBranchAddress(("recob::PFParticlerecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), &PFParticles_Showers);
@@ -146,7 +146,7 @@ bool LArSoftTreeConverter::Initialize(){
 #ifndef ISMC
   eventsTree->SetBranchAddress(("raw::ctb::pdspctbs_ctbrawdecoder_daq_"+trailer).c_str(), &CTB);
 #endif
-  
+
   // ------------- Points --------------------
   //  eventsTree->SetBranchAddress(("recob::SpacePoints_pmtrackdc__"+trailer).c_str(), &SpacePoints);
 
@@ -169,7 +169,7 @@ bool LArSoftTreeConverter::Initialize(){
     // Association between reconstructed hits and tracks/showers
     eventsTree->SetBranchAddress(("recob::Hitrecob::Trackvoidart::Assns_pandoraTrack__"  +trailer).c_str(), &Tracks_Hits);
     eventsTree->SetBranchAddress(("recob::Hitrecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), &Showers_Hits);
-    
+
   // Channels
 #ifdef ISMC
     eventsTree->SetBranchAddress("sim::SimChannels_largeant__G4.", &SimChannels);
@@ -180,8 +180,8 @@ bool LArSoftTreeConverter::Initialize(){
   eventsTree->SetBranchAddress(("4anab::FeatureVectors_emtrkmichelid_emtrkmichelrecobHit_"+trailer).c_str(), &MVA);
   eventsTree->SetBranchAddress(("4anab::MVADescriptions_emtrkmichelid_emtrkmichel_"       +trailer).c_str(), &MVADescription);
 
-                                 
-    
+
+
   //-------------------- Disable the unnecessary branches -------------------
   eventsTree->SetBranchStatus("art::*",0);
   //  eventsTree->SetBranchStatus("sim::Beam*",0);
@@ -189,7 +189,7 @@ bool LArSoftTreeConverter::Initialize(){
     eventsTree->SetBranchStatus("sim::AuxDet*",0);
     eventsTree->SetBranchStatus("sim::SimPhoton*",0);
 #endif
-  
+
   //  eventsTree->SetBranchStatus("*shower*",0);
 
   eventsTree->SetBranchStatus("raw*",0);
@@ -197,7 +197,7 @@ bool LArSoftTreeConverter::Initialize(){
   eventsTree->SetBranchStatus("anab::T0recob*",0);
   eventsTree->SetBranchStatus("anab::Cosmic*",0);
   //  eventsTree->SetBranchStatus("anab::Calo*",0);
-        
+
   eventsTree->SetBranchStatus("recob::Wires*",0);
   //  eventsTree->SetBranchStatus("recob::Vertexs*",0);
   eventsTree->SetBranchStatus("recob::Space*",0);
@@ -222,7 +222,7 @@ bool LArSoftTreeConverter::Initialize(){
 
   eventsTree->SetBranchStatus("EventAuxiliary", 1);
 #ifdef ISMC
-    eventsTree->SetBranchStatus("sim::SimChannels_largeant__G4.", 1);  
+    eventsTree->SetBranchStatus("sim::SimChannels_largeant__G4.", 1);
     eventsTree->SetBranchStatus("simb::MCParticles_largeant__G4.",1);
     //  eventsTree->SetBranchStatus("simb::MCTruths_generator__GenieGen.",1);
     eventsTree->SetBranchStatus("simb::MCTruths_generator__SinglesGen.",1);
@@ -245,14 +245,14 @@ bool LArSoftTreeConverter::Initialize(){
 
 
   eventsTree->SetBranchStatus(("recob::Hitrecob::Showervoidart::Assns_pandoraShower__"+trailer).c_str(), 1);
-  
+
 #ifndef ISMC
   eventsTree->SetBranchStatus(("raw::ctb::pdspctbs_ctbrawdecoder_daq_"+trailer).c_str(),1);
 #endif
 
   eventsTree->SetBranchStatus(("4anab::FeatureVectors_emtrkmichelid_emtrkmichelrecobHit_"+trailer).c_str(), 1);
   eventsTree->SetBranchStatus(("4anab::MVADescriptions_emtrkmichelid_emtrkmichel_"+trailer).c_str(),1);
-  
+
   return true;
 }
 
@@ -292,8 +292,8 @@ bool LArSoftTreeConverter::AddFileToTChain(const std::string& inputString){
 
   std::cout << _previousRefEventID << " " <<  (Int_t)EventInfo->id_.event_ << std::endl;
 
-  if (_previousRunID      == (Int_t)EventInfo->id_.subRun_.run_.run_ &&  
-      _previousSubrunID   == (Int_t)EventInfo->id_.subRun_.subRun_   && 
+  if (_previousRunID      == (Int_t)EventInfo->id_.subRun_.run_.run_ &&
+      _previousSubrunID   == (Int_t)EventInfo->id_.subRun_.subRun_   &&
       _previousRefEventID >= (Int_t)EventInfo->id_.event_){
     std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "LArSoftTreeConverter::AddFileToTChain(). Current file has the same run and subrun as the previous" << std::endl;
@@ -304,7 +304,7 @@ bool LArSoftTreeConverter::AddFileToTChain(const std::string& inputString){
     std::cout << "-------------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << _previousRunID      << " " << (Int_t)EventInfo->id_.subRun_.run_.run_ << std::endl;
     std::cout << _previousSubrunID   << " " << (Int_t)EventInfo->id_.subRun_.subRun_   << std::endl;
-    std::cout << _previousRefEventID << " " << (Int_t)EventInfo->id_.event_ << std::endl;          
+    std::cout << _previousRefEventID << " " << (Int_t)EventInfo->id_.event_ << std::endl;
     //    exit(1);
   }
 
@@ -314,11 +314,11 @@ bool LArSoftTreeConverter::AddFileToTChain(const std::string& inputString){
   _previousSubrunID     = (Int_t)EventInfo->id_.subRun_.subRun_;
   _previousRefEventID   = (Int_t)EventInfo->id_.event_;
 
-  
+
   _isMC = (!EventInfo->isRealData_);
 
   std::cout << "Running on data or MC ?  MC = " << _isMC << std::endl;
-  
+
   // Set the data/MC mode and return false when mixing data and MC files
   if (!header().SetIsMC(_isMC)) return false;
 
@@ -350,7 +350,7 @@ Int_t LArSoftTreeConverter::ReadEntries(Long64_t& entry) {
 Int_t LArSoftTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 //*****************************************************************************
 
-  
+
   static std::string currentfilename("");
 
   // Read contents of entry (which correspond to one Spill)
@@ -361,8 +361,8 @@ Int_t LArSoftTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
   if( filename != currentfilename ) {
     std::cout << " Running on file: " << filename << std::endl;
     currentfilename = filename;
-    
-    //load geometry 
+
+    //load geometry
     //    ND::hgman().LoadGeometry(filename);
   }
 
@@ -381,7 +381,7 @@ Int_t LArSoftTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
   else{
     std::cout << "Failed in reading entry " << entry << std::endl;
   }
-  
+
   entry++;
 
   return entry_temp;
@@ -390,9 +390,9 @@ Int_t LArSoftTreeConverter::GetSpill(Long64_t& entry, AnaSpillC*& spill){
 //********************************************************************
 void LArSoftTreeConverter::IncrementPOTBySpill() {
 //********************************************************************
-  
+
 //  bool bySpillInMC = false;
-  
+
   //  if (!_isMC || bySpillInMC)
     //    header().IncrementPOTBySpill(*_spill);
   //    anaUtils::IncrementPOTBySpill(*_spill,header());
@@ -409,7 +409,7 @@ void LArSoftTreeConverter::FillDQInfo(AnaDataQuality* dq){
 void LArSoftTreeConverter::FillBeamInfo(AnaBeam* beam){
 //*****************************************************************************
 
-    
+
   beam->GoodSpill = true;
 
 #ifdef ISMC
@@ -417,38 +417,38 @@ void LArSoftTreeConverter::FillBeamInfo(AnaBeam* beam){
 
     // Get the G4 particle that corresponds to the beam particle
     const simb::MCParticle* geantGoodParticle = GetGeantGoodParticle((MCTruths->obj[0]));
-    
+
     if(geantGoodParticle == NULL) return;
-    
-    
-    //    std::cout << "Found GEANT particle corresponding to the good particle with pdg = " << geantGoodParticle->fpdgCode 
+
+
+    //    std::cout << "Found GEANT particle corresponding to the good particle with pdg = " << geantGoodParticle->fpdgCode
     //              << " , track id = " << geantGoodParticle->ftrackId
     //              << std::endl;
-    
+
     // Create the BeamParticle object
 
     beam->BeamParticle = new AnaParticle();
-    
+
     //---------------- Fill the truth info of the beam particle -----------------------
-    
+
     // Create the TrueParticle inside the BeamParticle
     beam->BeamParticle->TrueObject = new AnaTrueParticle();
-    
+
     // Downcast the AnaTRueObjectC inside BeamParticle to a AnaTrueParticle such that we can access all info
     AnaTrueParticlePD * truePart = static_cast<AnaTrueParticlePD*>(beam->BeamParticle->TrueObject);
-   
+
     FillTrueParticleInfo(NULL, *geantGoodParticle, truePart);
 
 
 #else
-    
+
     std::vector<beam::ProtoDUNEBeamEvent> beaminfo = BEAM->obj;
-    
-    std::cout << "BEAM->size(): " << beaminfo.size() <<  std::endl; 
-    
+
+    std::cout << "BEAM->size(): " << beaminfo.size() <<  std::endl;
+
     for(unsigned int i = 0; i < beaminfo.size(); ++i){
 
-      std::cout << "BEAM[0]: " << beaminfo[0].theTOF << " " << beaminfo[i].Tracks.size() << " " << beaminfo[0].RecoBeamMomenta.size() <<  std::endl; 
+      std::cout << "BEAM[0]: " << beaminfo[0].theTOF << " " << beaminfo[i].Tracks.size() << " " << beaminfo[0].RecoBeamMomenta.size() <<  std::endl;
 
       //if(!beaminfo[i]->CheckIsMatched()) continue;
       beam->BeamTrigger   = beaminfo[i].TimingTrigger;
@@ -468,7 +468,7 @@ void LArSoftTreeConverter::FillBeamInfo(AnaBeam* beam){
         beam->CerenkovPressure[1] = beaminfo[i].CKov1.pressure;
       }
 
-      // Beam particle could have more than one tracks - for now take the first one, need to do this properly      
+      // Beam particle could have more than one tracks - for now take the first one, need to do this properly
       auto & tracks = beaminfo[i].Tracks;
 
       if(!tracks.empty()){
@@ -497,8 +497,8 @@ void LArSoftTreeConverter::FillBeamInfo(AnaBeam* beam){
       beam::ProtoDUNEBeamEvent beamEvent = BEAM->obj[0];
       std::vector< int > pdg_cands = GetPID( beamEvent, 1. );
       //      beam->PDGs.insert( beam->PDGs.end(), pdg_cands.begin(), pdg_cands.end() );
-      
-      // Beam particle could have more than one  ... - for now take the first one, need to do this properly      
+
+      // Beam particle could have more than one  ... - for now take the first one, need to do this properly
       auto & fibers = beaminfo[i].fiberMonitors;
 
       if(!fibers.empty()){
@@ -507,20 +507,20 @@ void LArSoftTreeConverter::FillBeamInfo(AnaBeam* beam){
         beam->nFibers[2] = GetActiveFibers(fibers, "XBPF022702" ).size();
 
       }
-      
+
       // For now only take the first beam particle - need to add some criteria if more than one are found
       break;
-      
+
     }
 
     std::cout << "beam info" << std::endl;
     //beam->Print();
 
-    
+
     std::cout << "beam particle: " <<     beam->BeamParticle << std::endl;
     //if (beam->BeamParticle)
     //beam->BeamParticle->Print();
-    
+
 #endif
 
 }
@@ -537,7 +537,7 @@ void LArSoftTreeConverter::FillTrueInfo(AnaSpill* spill){
 //*****************************************************************************
 
 #ifdef ISMC
-  
+
   // Fill the true vertices vector
   spill->TrueVertices.clear();
 
@@ -548,7 +548,7 @@ void LArSoftTreeConverter::FillTrueInfo(AnaSpill* spill){
     AnaTrueVertex* trueVertex = MakeTrueVertex();
 
     FillTrueVertexInfo(i, trueVertex);
-    spill->TrueVertices.push_back(trueVertex);    
+    spill->TrueVertices.push_back(trueVertex);
   }
 
   // Fill the true particles vector
@@ -582,13 +582,13 @@ void LArSoftTreeConverter::FillTrueInfo(AnaSpill* spill){
     if (!truePart){
       truePart = MakeTrueParticle();
       FillTrueParticleInfo(NULL, MCParticles->obj[i], truePart);
-      spill->TrueParticles.push_back(truePart);    
+      spill->TrueParticles.push_back(truePart);
     }
 
   }
 
 #endif
-  
+
 }
 
 //*****************************************************************************
@@ -610,7 +610,7 @@ void LArSoftTreeConverter::FillInfo(AnaSpill* spill){
   spill->Beam = MakeBeam();
 
   spill->GeomID = (UInt_t)ND::hgman().GetCurrentGeomID();
-  
+
   // beam related information
   FillBeamInfo(static_cast<AnaBeam*>(spill->Beam));
 
@@ -626,7 +626,7 @@ void LArSoftTreeConverter::FillInfo(AnaSpill* spill){
   // All information about each bunch
   AnaBunch* bunch = MakeBunch();
   spill->Bunches.push_back(bunch);
-  FillBunchInfo(spill->TrueParticles, bunch);  
+  FillBunchInfo(spill->TrueParticles, bunch);
 
 }
 
@@ -653,7 +653,7 @@ void LArSoftTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
   for (UInt_t i=0;i<PFParticles->obj.size();i++){
     recob::PFParticle& PFPart = PFParticles->obj[i];
     AnaParticlePD* part = MakeParticle();
-    
+
     if (pfParticles.size()){
       if (pfParticles[0]->fSelf == PFPart.fSelf){
         part->isPandora=true;
@@ -664,10 +664,10 @@ void LArSoftTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
       bunch->Particles.push_back(part);
     else
       delete part;
-  } 
+  }
 
   //  std::cout << "# particles: " << bunch->Particles.size() << " " << PFParticles->obj.size() << " " << Tracks->obj.size() + Showers->obj.size() << std::endl;
-  // Fill the Daughters in all AnaParticles following the PFParticle hierarchy 
+  // Fill the Daughters in all AnaParticles following the PFParticle hierarchy
   for (UInt_t i=0;i<PFParticles->obj.size();i++){
     FillPFParticleDaughterInfo(i, bunch);
   }
@@ -681,7 +681,7 @@ void LArSoftTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& truePar
   */
 
   // Find the particle vertex. We need the tracker tag here because we need to do a bit of
-  // additional work if the PFParticle is track-like to find the vertex. 
+  // additional work if the PFParticle is track-like to find the vertex.
   //  const TVector3 vtx = GetPFParticleVertex(PFParticles->obj[2]);
   //  std::cout << vtx.X() << " " << vtx.Y() << " " <<  vtx.Z() << std::endl;
   //fprimaryVertex[0] = vtx.X(); fprimaryVertex[1] = vtx.Y(); fprimaryVertex[2] = vtx.Z();
@@ -702,21 +702,21 @@ bool LArSoftTreeConverter::FillPFParticleInfo(std::vector<AnaTrueParticleB*>& tr
 
   // Pandora's BDT beam-cosmic score
   //  fprimaryBDTScore = (double)pfpUtil.GetBeamCosmicScore(*particle,evt,fPFParticleTag);
-  
+
   // NHits associated with this pfParticle
   //  fprimaryNHits = (pfpUtil.GetPFParticleHits(*particle,evt,fPFParticleTag)).size();
-  
+
   // Get the T0 for this pfParticle
   //  std::vector<anab::T0> pfT0vec = pfpUtil.GetPFParticleT0(*particle,evt,fPFParticleTag);
   //  if(!pfT0vec.empty())
   //    fprimaryT0 = pfT0vec[0].Time();
-    
+
   // "particle" is the pointer to our beam particle. The recob::Track or recob::Shower object
   // of this particle might be more helpful. These return null pointers if not track-like / shower-like
 
-  //  std::cout << "an0: " << ipart << " " << PFPart.fSelf << " " << track << " " << shower << " " << PFPart.fPdgCode << " " << PFPart.fDaughters.size() << std::endl; 
+  //  std::cout << "an0: " << ipart << " " << PFPart.fSelf << " " << track << " " << shower << " " << PFPart.fPdgCode << " " << PFPart.fDaughters.size() << std::endl;
 
-  
+
   const recob::Track*  track  = GetPFParticleTrack( PFPart);
   if (track){
     FillParticleTrackInfo(trueParticles, *track, part);
@@ -748,22 +748,22 @@ void LArSoftTreeConverter::FillPFParticleDaughterInfo(Int_t ipart, AnaBunch* bun
   recob::PFParticle& PFPart = PFParticles->obj[ipart];
 
   UInt_t NMAXDAUGHTERS = 100;
-  
+
   //  for (int k=0;k<indent;k++) std::cout << " ";
   //  std::cout << "Particle " << PFPart.fSelf << " has " << PFPart.fDaughters.size() << " daughters. indent = " << indent << std::endl;
-  
+
   if(PFPart.fDaughters.size() > NMAXDAUGHTERS)
     std::cout << "INFO::Number of daughters is " << PFPart.fDaughters.size() << ". Only the first NMAXDAUGHTERS are processed." << std::endl;
-  
+
   indent +=2;
   for (UInt_t idau=0;idau<PFPart.fDaughters.size();idau++){
-    
+
     UInt_t daughterID = PFPart.fDaughters[idau];
-    
+
     AnaParticle*   part = static_cast<AnaParticle*>(bunch->Particles[ipart]);
-    AnaParticleB* Dpart = bunch->Particles[daughterID];      
+    AnaParticleB* Dpart = bunch->Particles[daughterID];
     if (Dpart && daughterID < bunch->Particles.size()) part->Daughters.push_back(Dpart);
-    
+
     // Find daughters recursively
     FillPFParticleDaughterInfo(daughterID, bunch,indent);
   }
@@ -786,13 +786,13 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
 
   // Particle ID hypothesis used in the fit (if any)
   part->FitPDG = track.fPId;
-  
+
   // Compute the range momentum
   part->RangeMomentum[0] = GetTrackMomentum(part->Length,  13);
-  part->RangeMomentum[1] = GetTrackMomentum(part->Length,2212); 
-  
+  part->RangeMomentum[1] = GetTrackMomentum(part->Length,2212);
+
   // ------------------- Fill PID variables -----------------------
-  
+
   // Vector of pids for track track.fID
   std::vector<anab::ParticleID> pids;
 
@@ -805,27 +805,27 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
       pids.push_back(PIDs->obj[ipid]);
     }
   }
-  
+
   if(pids.size() != 3)
     std::cerr << "WARNING::PID vector size for primary is = " << pids.size() << std::endl;
-    
+
   for (UInt_t i=0;i<pids.size();i++){
 
     int plane = pids[i].fPlaneID.Plane;
     if(plane < 0) continue;
     if(plane > 2) continue;
-    
+
     part->PIDA[plane]=pids[plane].fPIDA;
     part->ReconPDG[plane] = pids[plane].fPdg;
-    
-    part->PID[plane][0] = pids[plane].fNdf;        
-    part->PID[plane][1] = pids[plane].fMinChi2;    
-    part->PID[plane][2] = pids[plane].fDeltaChi2;  
-    part->PID[plane][3] = pids[plane].fChi2Proton; 
-    part->PID[plane][4] = pids[plane].fChi2Kaon;   
-    part->PID[plane][5] = pids[plane].fChi2Pion;   
-    part->PID[plane][6] = pids[plane].fChi2Muon;   
-    part->PID[plane][7] = pids[plane].fMissingE;   
+
+    part->PID[plane][0] = pids[plane].fNdf;
+    part->PID[plane][1] = pids[plane].fMinChi2;
+    part->PID[plane][2] = pids[plane].fDeltaChi2;
+    part->PID[plane][3] = pids[plane].fChi2Proton;
+    part->PID[plane][4] = pids[plane].fChi2Kaon;
+    part->PID[plane][5] = pids[plane].fChi2Pion;
+    part->PID[plane][6] = pids[plane].fChi2Muon;
+    part->PID[plane][7] = pids[plane].fMissingE;
     part->PID[plane][8] = pids[plane].fMissingEavg;
 
   }
@@ -835,7 +835,7 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   // Vector of calos for track track.fID
   std::vector<anab::Calorimetry*> calovector = GetRecoTrackCalorimetry(track,"pandora2Track", "pandora2caloSCE");
 
-  
+
   if(calovector.size() != 3)
     std::cerr << "WARNING::Calorimetry vector size for primary is = " << calovector.size() << std::endl;
 
@@ -857,7 +857,7 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
     if(plane > 2) continue;
 
     //    std::vector< double > cali_dEdX_SCE = GetCalibratedCalorimetry(track, plane, "pandora2Track", "pandora2caloSCE" );
-    
+
     //    CaloKin = 0.0;
     part->CALO[plane][0] = calovector[k]->fKineticEnergy;
     part->CALO[plane][1] = calovector[k]->fRange;
@@ -883,7 +883,7 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
       double dedxi_corr = ComputedEdxfromdQdx(dqdxi_corr);
       double residualrangei = calovector[k]->fResidualRange[l];
 
-      //compute kinetic energy      
+      //compute kinetic energy
       if (residualrangei<0.01 || dedxi_corr<0.01 || dedxi_corr>100)continue;
       else {
         kinetic = kinetic + dedxi_corr * (residualrangei - res);
@@ -901,13 +901,13 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
         //        AnaHitPD hit(2,(*reco_beam_hit_integral), (*reco_beam_hit_peakTime)[j], (*reco_beam_hit_peakAmplitude)[j], point);
         AnaHitPD hit(2,0,0,0, point);
         part->Hits[2].push_back(hit);
-        
-        
+
+
         part->Hits[plane][l].dEdx         = calovector[k]->fdEdx[l];
         part->Hits[plane][l].dQdx         = calovector[k]->fdQdx[l];
         part->Hits[plane][l].ResidualRange= calovector[k]->fResidualRange[l];
 
-                
+
         //        if (l<cali_dEdX_SCE.size())
         //          part->dEdx[plane][l] = cali_dEdX_SCE[l];
 
@@ -925,7 +925,7 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
         }
         //      std::cout << CaloKin << std::endl;
         //      CaloKin = CaloKin + part->dEdx_corr[plane][l]*part->HitX[plane][l];
-               
+
       }
 #ifdef ISMC
       // No need to loop more since for MC we don't recompute kinetic energy
@@ -938,7 +938,7 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
 #ifdef ISMC
     // repeat Kinetic in 0 an 3 such that is the same as for data
     part->CALO[plane][3] = calovector[k]->fKineticEnergy/1000;
-#else    
+#else
     part->CALO[plane][3]=kinetic/units::GeV;
 #endif
   }
@@ -951,7 +951,7 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
 
   // Associate a TrueObject to this Particle
 #ifdef ISMC
-  //  part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+  //  part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);
 #endif
 
 
@@ -964,33 +964,33 @@ void LArSoftTreeConverter::FillParticleTrackInfo(std::vector<AnaTrueParticleB*>&
   //  if (part->TrueObject)
   //    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
 
-  
+
   //  std::cout << "TrueObject:" << part->TrueObject << std::endl;
-  
+
   //  part->Print();
-  
+
   //  if (part->TrueObject) static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
 
   //  if (part->PositionStart[2]>30.692947 && part->PositionStart[2]< 30.692948){
   //  if (part->isPandora){
 
-    part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+    part->TrueObject = FindTrueParticle(true, track.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);
     //part->Print();
     //if (part->TrueObject){
     //if (static_cast<AnaTrueParticle*>(part->TrueObject)->Position[1]!=865)
     //  static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
     //}
-  
-  
+
+
 }
 
 //********************************************************************
 Float_t LArSoftTreeConverter::ComputedEdxfromdQdx(Float_t prim_dqdx, Float_t Efield) {
 //********************************************************************
 
-  double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia) 
+  double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia)
   double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
-  double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+  double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm
   double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm. In MeV/e
   //  double Efield1=0.50;//kV/cm protoDUNE electric filed
   double beta = betap/(Rho*Efield); // cm/MeV
@@ -1020,21 +1020,21 @@ Float_t LArSoftTreeConverter::ComputeCalibratedDqDx(Float_t Cx, Float_t prim_dqd
 void LArSoftTreeConverter::FillBasicTrackInfo(const recob::Track& track, AnaParticleMomB* part){
 //*****************************************************************************
 
-    
+
   // Track Unique ID
   part->UniqueID = track.fID;
-    
+
   UInt_t lastTrajPoint = track.fTraj.fPositions.size()-1;
 
   for (int i=track.fTraj.fPositions.size()-1;i>=0;i--){
-    if (track.fTraj.fPositions[i].X() != -999){      
+    if (track.fTraj.fPositions[i].X() != -999){
       lastTrajPoint=i;
       break;
     }
   }
-      
+
   //  std::cout << "last: " << lastTrajPoint << std::endl;
-  
+
   if (track.fTraj.fPositions.size() == 0) return;
   // Start position
   part->PositionStart[0]= track.fTraj.fPositions[0].X();
@@ -1050,7 +1050,7 @@ void LArSoftTreeConverter::FillBasicTrackInfo(const recob::Track& track, AnaPart
   // Start momentum
   if (track.fTraj.fHasMomentum)
     part->Momentum = track.fTraj.fMomenta[0].R();
-  
+
   // End position
   part->PositionEnd[0]= track.fTraj.fPositions[lastTrajPoint].X();
   part->PositionEnd[1]= track.fTraj.fPositions[lastTrajPoint].Y();
@@ -1061,7 +1061,7 @@ void LArSoftTreeConverter::FillBasicTrackInfo(const recob::Track& track, AnaPart
   part->DirectionEnd[0]= endDir.X();
   part->DirectionEnd[1]= endDir.Y();
   part->DirectionEnd[2]= endDir.Z();
- 
+
   // End momentum
   if (track.fTraj.fHasMomentum)
     part->MomentumEnd = track.fTraj.fMomenta[lastTrajPoint].R();
@@ -1097,19 +1097,19 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
    double         fLength;                 //
    double         fOpenAngle;              //
 */
-  
+
   (void)trueParticles;
-  
+
   // Unique ID. It is -999 in LArSoft. We should may be use the PFParticle.fSelf
   part->UniqueID = shower.fID;
 
   // Shower length
   part->Length = shower.fLength;
 
-  // TODO: Number of hits as 
-  //  part->NHits = 
+  // TODO: Number of hits as
+  //  part->NHits =
 
- 
+
   // Start position
   part->PositionStart[0] = shower.fXYZstart.X();
   part->PositionStart[1] = shower.fXYZstart.Y();
@@ -1126,7 +1126,7 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
 
   if(shower.fTotalEnergy.size())
     part->CALO[0][2] =   shower.fTotalEnergy[0];
-  
+
   if(shower.fTotalMIPEnergy.size())
     part->CALO[0][3] =   shower.fTotalMIPEnergy[0];
 
@@ -1136,18 +1136,18 @@ void LArSoftTreeConverter::FillParticleShowerInfo(std::vector<AnaTrueParticleB*>
 
   // Associate a TrueObject to this Particle
 #ifdef ISMC
-  //  part->TrueObject = FindTrueParticle(false, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+  //  part->TrueObject = FindTrueParticle(false, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);
 #endif
 
 
   if (part->isPandora){
-    part->TrueObject = FindTrueParticle(true, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);  
+    part->TrueObject = FindTrueParticle(true, shower.fID, trueParticles, static_cast<AnaParticle*>(part)->TruePur);
     //part->Print();
     //if (part->TrueObject)
     //static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
   }
 
-  
+
   //  std::cout << "anselmo shower: " << static_cast<AnaParticle*>(part)->UniqueID << " " << static_cast<AnaParticle*>(part)->Length << " " << part->TrueObject << std::endl;
   //  if (part->TrueObject)
   //    static_cast<AnaTrueParticle*>(part->TrueObject)->Print();
@@ -1163,7 +1163,7 @@ AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(bool isTrack, Int_t itrk,
   if (debugTrueReco)
     std::cout << "FindTrueParticle: isTrack = " << isTrack << ", index = " << itrk << std::endl;
 
-  
+
   // Vector of hits for track itrk
   std::vector<recob::Hit> hits;
 
@@ -1172,8 +1172,8 @@ AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(bool isTrack, Int_t itrk,
 
   // Tracks_Hits->obj.ptr_data_1_.second is the hit index
   // Tracks_Hits->obj.ptr_data_2_.second is the track index
-  
-  
+
+
   // Loop over the map with association between hits and trackID
   if (isTrack){
     for (UInt_t i=0;i<Tracks_Hits->obj.ptr_data_2_.size();i++){
@@ -1198,8 +1198,8 @@ AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(bool isTrack, Int_t itrk,
 
   if (debugTrueReco)
     std::cout << "FindTrueParticle: #hits = " << hits.size() << std::endl;
-  
-  Int_t trackid; 
+
+  Int_t trackid;
   purity=0;
   double maxe;
   // Get the MC track id for the particle with more true ionization energy from the input hits
@@ -1209,7 +1209,7 @@ AnaTrueObjectC* LArSoftTreeConverter::FindTrueParticle(bool isTrack, Int_t itrk,
   for (UInt_t i=0;i<trueParticles.size();i++){
     if (trueParticles[i]->ID == trackid) return trueParticles[i];
   }
-  
+
   return NULL;
 }
 
@@ -1229,7 +1229,7 @@ const simb::MCParticle* LArSoftTreeConverter::GetMCParticleFromRecoTrack(const r
   //  const art::FindManyP<recob::Hit> findTrackHits(allRecoTracks, evt, trackModule);
   std::vector<recob::Hit> trackHits;
 
-  
+
   //  unsigned int trackIndex = track.ID();
   unsigned int trackIndex = track.fID;
 
@@ -1280,7 +1280,7 @@ void LArSoftTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* true
   simb::MCNeutrino& nu = MCTruths->obj[ivertex].fMCNeutrino;
 
   if (nu.fNu.fstatus!=1) return;
-  
+
 
   trueVertex->ID       = nu.fNu.ftrackId;
   trueVertex->NuPDG    = nu.fNu.fpdgCode;
@@ -1292,7 +1292,7 @@ void LArSoftTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* true
   anaUtils::VectorToArray(nu.fLepton.ftrajectory.ftrajectory[0].first,trueVertex->Position);
 
 
-  vector<simb::MCParticle>& parts =  MCTruths->obj[ivertex].fPartList;  
+  vector<simb::MCParticle>& parts =  MCTruths->obj[ivertex].fPartList;
 
   trueVertex->nTrueParticles = 0;
   anaUtils::CreateArray(trueVertex->TrueParticles, parts.size());
@@ -1302,7 +1302,7 @@ void LArSoftTreeConverter::FillTrueVertexInfo(Int_t ivertex, AnaTrueVertex* true
     FillTrueParticleInfo(trueVertex, parts[i], truePart);
     trueVertex->TrueParticles[trueVertex->nTrueParticles++] = truePart;
   }
-  
+
 
   trueVertex->ReacCode  = nu.fInteractionType;
   trueVertex->TargetPDG = nu.fTarget;
@@ -1323,7 +1323,7 @@ double LArSoftTreeConverter::ComputeTrackLength(const recob::Track& track){
 /*
   // sanity check
      if (startAt >= LastPoint()) return 0.;
-     
+
      // just sum the distance between all locations in the trajectory
      Point_t const* curr = &(LocationAtPoint(startAt));
      Point_t const* next = curr;
@@ -1336,7 +1336,7 @@ double LArSoftTreeConverter::ComputeTrackLength(const recob::Track& track){
      return length;
    } // recob::Trajectory::Length()
 */
-  
+
   double result = 0.;
 
   TVector3 disp(track.fTraj.fPositions[0].X(),track.fTraj.fPositions[0].Y(),track.fTraj.fPositions[0].Z());
@@ -1358,9 +1358,9 @@ double LArSoftTreeConverter::ComputeTrackLength(const recob::Track& track){
 //*****************************************************************************
 void LArSoftTreeConverter::FillTrueParticleInfo(AnaTrueVertexB* trueVertex, const simb::MCParticle& artTruePart, AnaTrueParticlePD* truePart){
 //*****************************************************************************
-  
+
   truePart->ID       = artTruePart.ftrackId;
-  truePart->ParentID = artTruePart.fmother;      
+  truePart->ParentID = artTruePart.fmother;
   truePart->PDG      = artTruePart.fpdgCode;
 
   truePart->ParentPDG  = 0;
@@ -1373,15 +1373,15 @@ void LArSoftTreeConverter::FillTrueParticleInfo(AnaTrueVertexB* trueVertex, cons
     simb::MCParticle* gmother = GetMotherMCParticle(*mother);
     if (gmother) truePart->GParentPDG = gmother->fpdgCode;
   }
-  
+
   // Set the daughter particles
   for (std::set<int>::iterator it = artTruePart.fdaughters.begin();it!=artTruePart.fdaughters.end();it++)
     truePart->Daughters.push_back(*it);
-  
+
   truePart->TrueVertex = trueVertex;
 
   UInt_t lastTrajPoint = artTruePart.ftrajectory.ftrajectory.size()-1;
- 
+
   TLorentzVector mom      = artTruePart.ftrajectory.ftrajectory[0].second;
   TLorentzVector endmom   = artTruePart.ftrajectory.ftrajectory[lastTrajPoint].second;
   TLorentzVector startpos = artTruePart.ftrajectory.ftrajectory[0].first;
@@ -1394,12 +1394,12 @@ void LArSoftTreeConverter::FillTrueParticleInfo(AnaTrueVertexB* trueVertex, cons
   // Set the true momentum when entering in the TPC
   truePart->MomentumInTPC = GetTrueMomentumInTPC(artTruePart);
 
-  
+
   anaUtils::VectorToArray(mom.Vect().Unit(),   truePart->Direction);
   anaUtils::VectorToArray(endmom.Vect().Unit(),truePart->DirectionEnd);
   anaUtils::VectorToArray(startpos,            truePart->Position);
   anaUtils::VectorToArray(endpos,              truePart->PositionEnd);
-      
+
 
   // The length of the true particle
   truePart->Length = ComputeMCTrajectoryLength(artTruePart.ftrajectory, truePart->LengthInTPC);
@@ -1410,7 +1410,7 @@ void LArSoftTreeConverter::FillTrueParticleInfo(AnaTrueVertexB* trueVertex, cons
 
   //  std::cout << "anselmo 5" << std::endl;
   //  truePart->Print();
-  
+
 }
 
 //*****************************************************************************
@@ -1420,7 +1420,7 @@ simb::MCParticle* LArSoftTreeConverter::GetMotherMCParticle(const simb::MCPartic
   simb::MCParticle* mother=NULL;
 
   if (part.fmother<=0) return mother;
-  
+
   if (part.fmother<= (Int_t)MCParticles->obj.size())
     mother = &MCParticles->obj[part.fmother-1];
   else{
@@ -1450,19 +1450,19 @@ double LArSoftTreeConverter::GetTrueMomentumInTPC(const simb::MCParticle& part) 
 double LArSoftTreeConverter::ComputeMCTrajectoryLength(const simb::MCTrajectory& traj, Float_t& lengthInTPC){
 //*****************************************************************************
 
- 
+
   const int N = traj.ftrajectory.size();
   if(N < 2) return 0;
-  
+
   // We take the sum of the straight lines between the trajectory points
   double dist = 0;
   lengthInTPC=0;
   for(int n = 0; n < N-1; ++n){
     double l_inc = (traj.ftrajectory[n+1].first-traj.ftrajectory[n].first).Vect().Mag();
     dist += l_inc;
-    if (traj.ftrajectory[n].first.Z()>0) lengthInTPC += l_inc; 
+    if (traj.ftrajectory[n].first.Z()>0) lengthInTPC += l_inc;
   }
-  
+
   return dist;
 }
 
@@ -1470,8 +1470,8 @@ double LArSoftTreeConverter::ComputeMCTrajectoryLength(const simb::MCTrajectory&
 void LArSoftTreeConverter::HitsPurity(std::vector<recob::Hit> const& hits, Int_t& trackid, Float_t& purity, double& maxe){
 //*****************************************************************************
 
-  // Given a vector of hits it returns the 
-  
+  // Given a vector of hits it returns the
+
   trackid = -1;
   purity = -1;
 
@@ -1511,7 +1511,7 @@ void LArSoftTreeConverter::HitsPurity(std::vector<recob::Hit> const& hits, Int_t
 
     // Get all IDEs correspondint to a hit
     std::vector<sim::TrackIDE> trackIDEs = HitToTrackIDEs(hit);
-    
+
     // Loop over all trackIDEs
     for(size_t e = 0; e < trackIDEs.size(); ++e){
       //      std::cout<< h <<" "<<e<<" "<<trackIDEs[e].trackID<<" "<<trackIDEs[e].energy<<std::endl;
@@ -1587,14 +1587,14 @@ std::vector< sim::TrackIDE > LArSoftTreeConverter::ChannelToTrackIDEs(Int_t chan
 
     const std::vector< sim::TrackIDE > cheat::BackTracker::ChannelToTrackIDEs	(	raw::ChannelID_t 	channel,
     const double 	hit_start_time,
-    const double 	hit_end_time 
+    const double 	hit_end_time
     )		const
 
     std::vector< sim::TrackIDE > trackIDEs;
      double totalE=0.;
      try{
        art::Ptr<sim::SimChannel> schannel = this->FindSimChannel(channel);
- 
+
        // loop over the electrons in the channel and grab those that are in time
        // with the identified hit start and stop times
        int start_tdc = fDetClocks->TPCTick2TDC( hit_start_time );
@@ -1602,39 +1602,39 @@ std::vector< sim::TrackIDE > LArSoftTreeConverter::ChannelToTrackIDEs(Int_t chan
        if(start_tdc<0) start_tdc = 0;
        if(end_tdc<0) end_tdc = 0;
        std::vector<sim::IDE> simides = schannel->TrackIDsAndEnergies(start_tdc, end_tdc);
- 
+
        // first get the total energy represented by all track ids for
        // this channel and range of tdc values
        for(size_t e = 0; e < simides.size(); ++e)
          totalE += simides[e].energy;
- 
- 
+
+
        // protect against a divide by zero below
        if(totalE < 1.e-5) totalE = 1.;
- 
+
        // loop over the entries in the map and fill the input vectors
- 
+
        for(size_t e = 0; e < simides.size(); ++e){
- 
+
          if(simides[e].trackID == sim::NoParticleId) continue;
- 
+
          sim::TrackIDE info;
          info.trackID    = simides[e].trackID;
          info.energyFrac = simides[e].energy/totalE;
          info.energy     = simides[e].energy;
          info.numElectrons = simides[e].numElectrons;
- 
+
          trackIDEs.push_back(info);
- 
+
        }
      }// end try
      catch(cet::exception e){
        mf::LogWarning("BackTracker") << "caught exception \n"
          << e;
      }
- 
+
      return trackIDEs;
- 
+
    }
 
    */
@@ -1646,11 +1646,11 @@ std::vector< sim::TrackIDE > LArSoftTreeConverter::ChannelToTrackIDEs(Int_t chan
 
   if (!schannel) return trackIDEs;
   if (debugTrueReco)  std::cout << "      ChannelToTrackIDEs(0): ch1 = " << channel << ", ch2 = " << schannel->fChannel << std::endl;
-  
+
   // loop over the electrons in the channel and grab those that are in time
   // with the identified hit start and stop times
-  int start_tdc = TPCTick2TDC( hit_start_time ); 
-  int end_tdc   = TPCTick2TDC( hit_end_time   ); 
+  int start_tdc = TPCTick2TDC( hit_start_time );
+  int end_tdc   = TPCTick2TDC( hit_end_time   );
   if(start_tdc<0) start_tdc = 0;
   if(end_tdc<0) end_tdc = 0;
 
@@ -1659,30 +1659,30 @@ std::vector< sim::TrackIDE > LArSoftTreeConverter::ChannelToTrackIDEs(Int_t chan
 
 
   if (debugTrueReco)  std::cout << "      ChannelToTrackIDEs(1): start_tdc (hit_start_time) = " << start_tdc << " (" << hit_start_time << ") , end_tdc = " << end_tdc << ", #sim IDES = " << simides.size() << std::endl;
-  
+
   // first get the total energy represented by all track ids for
   // this channel and range of tdc values
   for(size_t e = 0; e < simides.size(); ++e)
     totalE += simides[e].energy;
-  
-  
+
+
   // protect against a divide by zero below
   if(totalE < 1.e-5) totalE = 1.;
 
   // loop over the entries in the map and fill the input vectors
   for(size_t e = 0; e < simides.size(); ++e){
-    
+
     //    if(simides[e].trackID == sim::NoParticleId) continue;  //TODO
     if(simides[e].trackID == std::numeric_limits<int>::min()) continue;  //TODO
-    
+
     sim::TrackIDE info;
     info.trackID    = simides[e].trackID;
     info.energyFrac = simides[e].energy/totalE;
     info.energy     = simides[e].energy;
     info.numElectrons = simides[e].numElectrons;
- 
+
     trackIDEs.push_back(info);
-    
+
   }
 
   if (debugTrueReco){
@@ -1703,22 +1703,22 @@ Double_t LArSoftTreeConverter::TPCTick2TDC(Double_t tick) const{
 
   // Definition at line 287 of file DetectorClocksStandard.h.
 
-  Double_t TriggerOffsetTPC_0 = detinfo::kDEFAULT_TRIG_OFFSET_TPC; 
+  Double_t TriggerOffsetTPC_0 = detinfo::kDEFAULT_TRIG_OFFSET_TPC;
   Double_t TriggerTime        = detinfo::kDEFAULT_TRIG_TIME;
   Double_t Frequency          = detinfo::kDEFAULT_FREQUENCY;
   Double_t TriggerOffsetTPC;
-  
+
   if (TriggerOffsetTPC_0<0)
-    TriggerOffsetTPC = TriggerOffsetTPC_0; 
+    TriggerOffsetTPC = TriggerOffsetTPC_0;
   else
     TriggerOffsetTPC = -TriggerOffsetTPC_0/Frequency; //convert ticks to us
 
 
   double TickPeriod =  1./Frequency;
-  
+
   double doTPCTime =  TriggerTime + TriggerOffsetTPC;
-  
-  return ( doTPCTime / TickPeriod + tick ); 
+
+  return ( doTPCTime / TickPeriod + tick );
 
 }
 
@@ -1756,7 +1756,7 @@ sim::SimChannel* LArSoftTreeConverter::FindSimChannel(Int_t channel)	const{
 //*****************************************************************************
 struct LArSoftTreeConverter::CompareByTDC {
 //*****************************************************************************
-  
+
   bool operator()
   (TDCIDE const& a, TDCIDE const& b) const
   { return a.first < b.first; }
@@ -1764,7 +1764,7 @@ struct LArSoftTreeConverter::CompareByTDC {
   bool operator()
   (StoredTDC_t a_tdc, TDCIDE const& b) const
   { return a_tdc < b.first; }
-  
+
   bool operator()
   (TDCIDE const& a, StoredTDC_t b_tdc) const
   { return a.first < b_tdc; }
@@ -1772,7 +1772,7 @@ struct LArSoftTreeConverter::CompareByTDC {
 }; // struct CompareByTDC
 
 //*****************************************************************************
-TDCIDEs_t::const_iterator  LArSoftTreeConverter::findClosestTDCIDE(const sim::SimChannel& chan, StoredTDC_t tdc) const{	
+TDCIDEs_t::const_iterator  LArSoftTreeConverter::findClosestTDCIDE(const sim::SimChannel& chan, StoredTDC_t tdc) const{
 //*****************************************************************************
 
 
@@ -1791,48 +1791,48 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
   /*
 
     std::vector< sim::IDE > sim::SimChannel::TrackIDsAndEnergies	(	TDC_t 	startTDC,
-    TDC_t 	endTDC 
+    TDC_t 	endTDC
     )		const
 
     Return all the recorded energy deposition within a time interval.
-    
+
     Parameters
     startTDC	TDC tick opening the time window
     endTDC	TDC tick closing the time window (included in the interval)
     Returns
     a collection of energy deposit information from all tracks
     This method returns the energy deposited on this channel by each track ID active in the specified TDC time interval.
-    
+
     Each entry pertains a single track ID. For each entry, all energy deposit information is merged into a single record. It includes:
-    
+
     energy and number of electrons, as the integral in the time interval
     position, as average weighted by the number of electrons
     the ID of the track depositing this energy
     Entries are sorted by track ID number.
-    
+
     Definition at line 178 of file SimChannel.cxx.
 
    {
      // make a map of track ID values to sim::IDE objects
- 
+
      if(startTDC > endTDC ){
        mf::LogWarning("SimChannel") << "requested tdc range is bogus: "
                                     << startTDC << " " << endTDC
                                     << " return empty vector";
        return {}; // returns an empty vector
      }
- 
+
      std::map<TrackID_t, sim::IDE> idToIDE;
-     
+
        //find the lower bound for this tdc and then iterate from there
      auto itr = findClosestTDCIDE(startTDC);
-     
+
      while(itr != fTDCIDEs.end()){
-       
+
        // check the tdc value for the iterator, break the loop if we
        // are outside the range
        if(itr->first > endTDC) break;
-       
+
        // grab the vector of IDEs for this tdc
        auto const& idelist = itr->second;
        // now loop over them and add their content to the map
@@ -1841,14 +1841,14 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
          if( itTrkIDE != idToIDE.end() ){
            // the IDE we are going to update:
            sim::IDE& trackIDE = itTrkIDE->second;
-           
+
            double const nel1   = trackIDE.numElectrons;
            double const nel2   = ide.numElectrons;
            double const en1    = trackIDE.energy;
            double const en2    = ide.energy;
            double const energy = en1  + en2;
            double const weight = nel1 + nel2;
-           
+
              // make a weighted average for the location information
            trackIDE.x            = (ide.x*nel2 + trackIDE.x*nel1)/weight;
            trackIDE.y            = (ide.y*nel2 + trackIDE.y*nel1)/weight;
@@ -1860,17 +1860,17 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
            idToIDE[ide.trackID] = sim::IDE(ide);
          }
        } // end loop over vector
-       
+
        ++itr;
      } // end loop over tdc values
-     
+
        // now fill the vector with the ides from the map
      std::vector<sim::IDE> ides;
      ides.reserve(idToIDE.size());
      for(auto const& itr : idToIDE){
        ides.push_back(itr.second);
      }
-     
+
      return ides;
    }
 
@@ -1879,13 +1879,13 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
   //  std::map<TrackID_t, sim::IDE> idToIDE;
   std::map<Int_t, sim::IDE> idToIDE;  //TODO
   //find the lower bound for this tdc and then iterate from there
-  
-  auto itr = findClosestTDCIDE(chan,startTDC); 
+
+  auto itr = findClosestTDCIDE(chan,startTDC);
 
   if (debugTrueReco)  std::cout << "        TrackIDsAndEnergies(0): Loop over IDEs for this channels starting at TDC = " << startTDC << " " << std::endl;
-  
+
   while(itr != chan.fTDCIDEs.end()){
-    
+
     // check the tdc value for the iterator, break the loop if we
     // are outside the range
     if(itr->first > endTDC) break;
@@ -1898,14 +1898,14 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
       if( itTrkIDE != idToIDE.end() ){
         // the IDE we are going to update:
         sim::IDE& trackIDE = itTrkIDE->second;
-        
+
         double const nel1   = trackIDE.numElectrons;
         double const nel2   = ide.numElectrons;
         double const en1    = trackIDE.energy;
         double const en2    = ide.energy;
         double const energy = en1  + en2;
         double const weight = nel1 + nel2;
-        
+
         // make a weighted average for the location information
         trackIDE.x            = (ide.x*nel2 + trackIDE.x*nel1)/weight;
         trackIDE.y            = (ide.y*nel2 + trackIDE.y*nel1)/weight;
@@ -1920,14 +1920,14 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
         idToIDE[ide.trackID] = sim::IDE(ide);
       }
     } // end loop over vector
-    
+
     ++itr;
   } // end loop over tdc values
 
   if (debugTrueReco)
     std::cout << "        TrackIDsAndEnergies(2): #idToIDE = " << idToIDE.size() << std::endl;
 
-  
+
   // now fill the vector with the ides from the map
   std::vector<sim::IDE> ides;
   ides.reserve(idToIDE.size());
@@ -1937,9 +1937,9 @@ std::vector<sim::IDE> LArSoftTreeConverter::TrackIDsAndEnergies(const sim::SimCh
     if (debugTrueReco)
       std::cout << "        - TrackIDsAndEnergies(3): trackID = " << itr.first << " " <<  itr.second.trackID << ", E = " << itr.second.energy << std::endl;
   }
-  
+
   return ides;
-  
+
 }
 
 //*****************************************************************************
@@ -1953,26 +1953,26 @@ std::vector<sim::IDE> LArSoftTreeConverter::HitToEveID(const recob::Hit& hit){
     Ionization at a point of the TPC sensitive volume.
 
     This class stores information about the ionization from the simulation of a small step of a track through the TPC active volume.
-    
+
     Ionization information consists of both energy and number of electrons. It is of paramount importance to understand what each field stores:
-    
+
     position: where the ionization occurred (from Geant4 simulation)
     track ID: Geant4 track ID of the ionizing particle
     energy: amount of energy released by ionization (from Geant4 simulation)
     electrons: amount of electrons reaching the readout channel
     Note the different definition of the electrons respect to the rest: it describes the electrons at the anode after the drifting occurred, while all the other quantities can be related to the moment the ionization happened.
-    
+
     The number of electrons typically includes inefficiencies and physics effects that reduce and spread the electrons. In the simulation, this yields a fractional number of electrons.
-    
+
     Each IDE is also typically associated with a time (TDC) count, that is the time at which the ionized electrons reached the readout channel, in electronic ticks, as opposed as the time when ionization occurred. The latter is not stored.
-    
+
     At the time of writing this documentation (LArSoft 6.4.0), IDEs are computed in larg4::LArVoxelReadout. The energy and track ID come directly from Geant4 simulation. The position is the mid point of the Geant4 step that produced ionization. The electrons are
-    
+
     converted from that same energy (using a fundamental conversion factor stored in larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h)
     applied recombination effect by larg4::IonizationAndScintillation::Reset()
     applied attenuation and diffusion in larg4::LArVoxelReadout::DriftIonizationElectrons()
     The latter also assembles the sim::IDE objects to be stored into sim::SimChannel.
-    
+
     Definition at line 87 of file SimChannel.h.
 
     // Data Members.
@@ -1983,12 +1983,12 @@ std::vector<sim::IDE> LArSoftTreeConverter::HitToEveID(const recob::Hit& hit){
     float       y;               //y position of ionization [cm]
     float       z;               //z position of ionization [cm]
 
-        
+
   */
 
-  
+
   for (UInt_t j=0;j<SimChannels->obj.size();j++){
-    if (hit.fChannel == SimChannels->obj[j].fChannel && SimChannels->obj[j].fTDCIDEs.size()>0){ 
+    if (hit.fChannel == SimChannels->obj[j].fChannel && SimChannels->obj[j].fTDCIDEs.size()>0){
       return (*SimChannels->obj[j].fTDCIDEs.begin()).second;
     }
   }
@@ -1998,7 +1998,7 @@ std::vector<sim::IDE> LArSoftTreeConverter::HitToEveID(const recob::Hit& hit){
 //*****************************************************************************
 const simb::MCParticle* LArSoftTreeConverter::GetGeantGoodParticle(const simb::MCTruth &genTruth) const{
 //*****************************************************************************
-  
+
   // Get the good particle from the MCTruth
   const simb::MCParticle* goodPart;
   bool found = false;
@@ -2023,8 +2023,8 @@ const simb::MCParticle* LArSoftTreeConverter::GetGeantGoodParticle(const simb::M
     if((goodPart->fpdgCode == MCParticles->obj[i].fpdgCode) && fabs(goodPart->ftrajectory.ftrajectory[0].second.E() - MCParticles->obj[i].ftrajectory.ftrajectory[0].second.E()) < 1e-5){
       return &(MCParticles->obj[i]);
     }
-  } 
-  
+  }
+
   // If we get here something has gone wrong
   std::cerr << "No G4 version of the good particle was found, returning null pointer" << std::endl;
   return NULL;
@@ -2036,11 +2036,11 @@ const simb::MCParticle* LArSoftTreeConverter::GetGeantGoodParticle(const simb::M
 //*****************************************************************************
 double LArSoftTreeConverter::GetTrackMomentum(double trkrange, int pdg) const {
 //*****************************************************************************
-  
+
   /* Muon range-momentum tables from CSDA (Argon density = 1.4 g/cm^3)
      website:
      http://pdg.lbl.gov/2012/AtomicNuclearProperties/MUON_ELOSS_TABLES/muonloss_289.pdf
-     
+
      CSDA table values:
      float Range_grampercm[30] = {9.833E-1, 1.786E0, 3.321E0,
      6.598E0, 1.058E1, 3.084E1, 4.250E1, 6.732E1, 1.063E2, 1.725E2,
@@ -2050,60 +2050,60 @@ double LArSoftTreeConverter::GetTrackMomentum(double trkrange, int pdg) const {
      20, 30, 40, 80, 100, 140, 200, 300, 400, 800, 1000, 1400, 2000, 3000,
      4000, 8000, 10000, 14000, 20000, 30000, 40000, 80000, 100000, 140000,
      200000, 300000, 400000};
-     
+
      Functions below are obtained by fitting polynomial fits to KE_MeV vs
      Range (cm) graph. A better fit was obtained by splitting the graph into
      two: Below range<=200cm,a polynomial of power 4 was a good fit; above
      200cm, a polynomial of power 6 was a good fit
-     
+
      Fit errors for future purposes:
      Below 200cm, Forpoly4 fit: p0 err=1.38533;p1 err=0.209626; p2
      err=0.00650077; p3 err=6.42207E-5; p4 err=1.94893E-7; Above 200cm,
      Forpoly6 fit: p0 err=5.24743;p1 err=0.0176229; p2 err=1.6263E-5; p3
      err=5.9155E-9; p4 err=9.71709E-13; p5 err=7.22381E-17;p6
      err=1.9709E-21;*/
-  
+
   //*********For muon, the calculations are valid up to 1.91E4 cm range
   //corresponding to a Muon KE of 40 GeV**********//
-  
+
   /*Proton range-momentum tables from CSDA (Argon density = 1.4 g/cm^3):
     website: https://physics.nist.gov/PhysRefData/Star/Text/PSTAR.html
-    
+
     CSDA values:
     double KE_MeV_P_Nist[31]={10, 15, 20, 30, 40, 80, 100, 150, 200, 250, 300,
     350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
     1500, 2000, 2500, 3000, 4000, 5000};
-    
+
     double Range_gpercm_P_Nist[31]={1.887E-1,3.823E-1, 6.335E-1, 1.296,
     2.159, 7.375, 1.092E1, 2.215E1, 3.627E1, 5.282E1, 7.144E1,
     9.184E1, 1.138E2, 1.370E2, 1.614E2, 1.869E2, 2.132E2, 2.403E2,
     2.681E2, 2.965E2, 3.254E2, 3.548E2, 3.846E2, 4.148E2, 4.454E2,
     7.626E2, 1.090E3, 1.418E3, 1.745E3, 2.391E3, 3.022E3};
-    
+
     Functions below are obtained by fitting power and polynomial fits to
     KE_MeV vs Range (cm) graph. A better fit was obtained by splitting the
     graph into two: Below range<=80cm,a a*(x^b) was a good fit; above 80cm, a
     polynomial of power 6 was a good fit
-    
+
     Fit errors for future purposes:
     For power function fit: a=0.388873; and b=0.00347075
     Forpoly6 fit: p0 err=3.49729;p1 err=0.0487859; p2 err=0.000225834; p3
     err=4.45542E-7; p4 err=4.16428E-10; p5 err=1.81679E-13;p6
     err=2.96958E-17;*/
-  
+
   //*********For proton, the calculations are valid up to 3.022E3 cm range
   //corresponding to a Muon KE of 5 GeV**********//
-  
+
   if (trkrange < 0 || std::isnan(trkrange)) {
-    std::cout << "TrackMomentumCalculator   " 
+    std::cout << "TrackMomentumCalculator   "
               << "Invalid track range " << trkrange << " return -1" << std::endl;
     return -1.;
   }
 
-    
+
   double KE, Momentum, M;
   constexpr double Muon_M = 105.7, Proton_M = 938.272;
-  
+
   if (abs(pdg) == 13) {
     M = Muon_M;
     KE = KEvsR_spline3.Eval(trkrange);
@@ -2123,14 +2123,14 @@ double LArSoftTreeConverter::GetTrackMomentum(double trkrange, int pdg) const {
       KE = -999;
   } else
     KE = -999;
-  
+
   if (KE < 0)
     Momentum = -999;
   else
     Momentum = std::sqrt((KE * KE) + (2 * M * KE));
-  
+
   Momentum = Momentum / 1000;
-  
+
   return Momentum;
 }
 
@@ -2142,7 +2142,7 @@ const recob::Track* LArSoftTreeConverter::GetPFParticleTrack(const recob::PFPart
 
   // Vector of pids for track itrk
   std::vector<recob::Track*> pfpTracks;
-  
+
   // Loop over the map with association between PFParticles and Tracks
   for (UInt_t j=0;j<PFParticles_Tracks->obj.ptr_data_1_.size();j++){
     Int_t itrack =-1;
@@ -2153,7 +2153,7 @@ const recob::Track* LArSoftTreeConverter::GetPFParticleTrack(const recob::PFPart
       pfpTracks.push_back(&Tracks->obj[itrack]);
     }
   }
-  
+
   // Check that the track exists
   if(pfpTracks.size() != 0)
     return (pfpTracks[0]);
@@ -2168,7 +2168,7 @@ const recob::Shower* LArSoftTreeConverter::GetPFParticleShower(const recob::PFPa
 
   // Vector of pids for shower itrk
   std::vector<recob::Shower*> pfpShowers;
-  
+
   // Loop over the map with association between PFParticles and Showers
   for (UInt_t j=0;j<PFParticles_Showers->obj.ptr_data_1_.size();j++){
     Int_t ishower =-1;
@@ -2179,7 +2179,7 @@ const recob::Shower* LArSoftTreeConverter::GetPFParticleShower(const recob::PFPa
       pfpShowers.push_back(&Showers->obj[ishower]);
     }
   }
-  
+
   // Check that the shower exists
   if(pfpShowers.size() != 0)
     return (pfpShowers[0]);
@@ -2194,7 +2194,7 @@ const TVector3 LArSoftTreeConverter::GetPFParticleVertex(const recob::PFParticle
 
   // Vector of vertices
   std::vector<recob::Vertex*> vertices;
-  
+
   // Loop over the map with association between PFParticles and Vertices
   for (UInt_t j=0;j<PFParticles_Vertices->obj.ptr_data_1_.size();j++){
     Int_t ivertex =-1;
@@ -2230,7 +2230,7 @@ const TVector3 LArSoftTreeConverter::GetPFParticleVertex(const recob::PFParticle
   }
   else{
     // Cosmic or track-like beam primary particle
-        
+
     const recob::Track* track = GetPFParticleTrack(PFParticles->obj[0]);
 
     if(track){
@@ -2240,7 +2240,7 @@ const TVector3 LArSoftTreeConverter::GetPFParticleVertex(const recob::PFParticle
       const TVector3 end  (track->fTraj.fPositions[last].X(),track->fTraj.fPositions[last].Y(),track->fTraj.fPositions[last].Z());
       // Return the most upstream point as some cases where the track is reversed...
       //      if(IsBeamParticle(particle,evt,particleLabel)){
-      if(false){ 
+      if(false){
         if(start.Z() < end.Z()) return start;
         else return end;
       }
@@ -2265,12 +2265,12 @@ const TVector3 LArSoftTreeConverter::GetPFParticleVertex(const recob::PFParticle
 const std::vector<const recob::PFParticle*> LArSoftTreeConverter::GetPFParticlesFromBeamSlice(const std::string particleLabel) const{
 //*****************************************************************************
 
-  (void)particleLabel;  
+  (void)particleLabel;
 
-  
+
   if (debug)
     std::cout << "1. GetPFParticlesFromBeamSlice" << std::endl;
-  
+
   unsigned short beamSlice = GetBeamSlice("-beam");
   if (debug)
     std::cout << "1.a. beam slice 1: " << beamSlice << std::endl;
@@ -2287,12 +2287,12 @@ unsigned short LArSoftTreeConverter::GetBeamSlice(const std::string particleLabe
 
   if (debug)
     std::cout << "2. GetBeamSlice " << std::endl;
-  
+
   const std::map<unsigned int, std::vector<const recob::PFParticle*> > sliceMap = GetPFParticleSliceMap(particleLabel);
 
   if (debug)
     std::cout << "2.a. GetBeamSlice: " << sliceMap.size() << std::endl;
-  
+
   for(auto slice : sliceMap){
     for(auto particle : slice.second){
       if(IsBeamParticle(*particle,particleLabel)){
@@ -2327,7 +2327,7 @@ bool LArSoftTreeConverter::FindBoolInMetaData(const recob::PFParticle &particle,
 
   if (debug)
     std::cout << "8. FindBoolInMetaData " << std::endl;
-  
+
   std::map<std::string,float> mdMap = GetPFParticleMetaData(particle,particleLabel);
 
   if (debug)
@@ -2336,10 +2336,10 @@ bool LArSoftTreeConverter::FindBoolInMetaData(const recob::PFParticle &particle,
 
 
   std::map<std::string,float>::iterator it;
-  for (it = mdMap.begin(); it != mdMap.end(); it++)    
+  for (it = mdMap.begin(); it != mdMap.end(); it++)
     if (debug)
       std::cout << "  - " << it->first << " " << it->second << std::endl;
-  
+
   if(mdMap.find(entry) != mdMap.end()){
     return true;
   }
@@ -2352,15 +2352,15 @@ bool LArSoftTreeConverter::FindBoolInMetaData(const recob::PFParticle &particle,
 //*****************************************************************************
 const std::map<std::string,float> LArSoftTreeConverter::GetPFParticleMetaData(const recob::PFParticle &particle, const std::string particleLabel) const {
 //*****************************************************************************
-  
+
   (void)particleLabel;
-  
+
   // Vector of MetaDatas
   std::vector<larpandoraobj::PFParticleMetadata*> metadatas;
 
   if (debug)
     std::cout << "    6. GetPFParticleMetaData: " << PFParticles_MetaData->obj.ptr_data_1_.size() << std::endl;
-    
+
   // Loop over the map with association between PFParticles and MetaData
   for (UInt_t j=0;j<PFParticles_MetaData->obj.ptr_data_1_.size();j++){
     Int_t imd =-1;
@@ -2368,7 +2368,7 @@ const std::map<std::string,float> LArSoftTreeConverter::GetPFParticleMetaData(co
       imd = PFParticles_MetaData->obj.ptr_data_2_[j].second;
       if (debug)
         std::cout << "    6.a GetPFParticleMetaData: imd = " << imd << std::endl;
-      // fill a vector with all vertex associated to the metadata with index 
+      // fill a vector with all vertex associated to the metadata with index
       metadatas.push_back(&MetaData->obj[imd]);
     }
   }
@@ -2379,7 +2379,7 @@ const std::map<std::string,float> LArSoftTreeConverter::GetPFParticleMetaData(co
   if (metadatas.size()){
     if (debug)
       std::cout << "    6.c. GetPFParticleMetaData: " <<       metadatas[0]->m_propertiesMap.size() << std::endl;
-  
+
     return metadatas[0]->m_propertiesMap;
   }
 
@@ -2393,7 +2393,7 @@ const std::vector<const recob::PFParticle*> LArSoftTreeConverter::GetPFParticles
 
   if (debug)
     std::cout << "9. GetPFParticlesFromSlice" << std::endl;
-  
+
   const std::map<unsigned int, std::vector<const recob::PFParticle*> > sliceMap = GetPFParticleSliceMap(particleLabel);
 
   if (debug)
@@ -2402,7 +2402,7 @@ const std::vector<const recob::PFParticle*> LArSoftTreeConverter::GetPFParticles
   for (it = sliceMap.begin();it!=sliceMap.end(); it++)
     if (debug)
       std::cout << "  - " << it->first << " " << it->second.size() << std::endl;
-  
+
   if(sliceMap.find(slice) != sliceMap.end()){
     if (debug)
       std::cout << "9.b. GetPFParticlesFromSlice: " << sliceMap.at(slice).size() << std::endl;
@@ -2432,7 +2432,7 @@ const std::map<unsigned int,std::vector<const recob::PFParticle*> > LArSoftTreeC
 
   if (debug)
     std::cout << "4. SliceMapHelper " << std::endl;
-  
+
   // Get the particles
   //  auto pfParticles = evt.getValidHandle<std::vector<recob::PFParticle>>(particleLabel);
 
@@ -2443,7 +2443,7 @@ const std::map<unsigned int,std::vector<const recob::PFParticle*> > LArSoftTreeC
 
     //  Only the primary particles have the slice association
     if(primaryOnly && particle->fParent != std::numeric_limits<size_t>::max()) continue;
-    
+
     unsigned int thisSlice = GetPFParticleSliceIndex(*particle,particleLabel);
     if (debug)
       std::cout << "  4.a. SliceMapHelper: " << thisSlice << std::endl;
@@ -2459,7 +2459,7 @@ const std::map<unsigned int,std::vector<const recob::PFParticle*> > LArSoftTreeC
     for (it = sliceMap.begin();it!=sliceMap.end(); it++)
       std::cout << "  - " <<  it->first << " " << it->second.size() << std::endl;
 
-  
+
 
   return sliceMap;
 }
@@ -2469,7 +2469,7 @@ const std::map<unsigned int,std::vector<const recob::PFParticle*> > LArSoftTreeC
 //*****************************************************************************
 unsigned short LArSoftTreeConverter::GetPFParticleSliceIndex(const recob::PFParticle &particle, const std::string particleLabel) const{
 //*****************************************************************************
-  
+
   // Try to use slices if we can
   /*
   try{
@@ -2483,17 +2483,17 @@ unsigned short LArSoftTreeConverter::GetPFParticleSliceIndex(const recob::PFPart
 
   if (debug)
     std::cout << "  5. GetPFParticleSliceIndex " << std::endl;
-  
+
   std::map<std::string,float> mdMap = GetPFParticleMetaData(particle,particleLabel);
 
   if (debug)
     std::cout << "  5.a. GetPFParticleSliceIndex: " << particle.fSelf << " " << particleLabel << std::endl;
   std::map<std::string,float>::iterator it;
   if (debug)
-    for (it = mdMap.begin(); it != mdMap.end(); it++)    
+    for (it = mdMap.begin(); it != mdMap.end(); it++)
       std::cout << "    - " << it->first << " " << it->second << std::endl;
-  
-  
+
+
   std::string search = "SliceIndex";
   if(mdMap.find(search) != mdMap.end()){
     return static_cast<unsigned short>(mdMap.at(search));
@@ -2502,7 +2502,7 @@ unsigned short LArSoftTreeConverter::GetPFParticleSliceIndex(const recob::PFPart
     //    std::cerr << "Object has no slice index... returning 9999" << std::endl;
     return 9999;
   }
-  
+
   //  }
 
 }
@@ -2514,8 +2514,8 @@ unsigned short LArSoftTreeConverter::GetPFParticleSliceIndex(const recob::PFPart
 //const recob::Slice* LArSoftTreeConverter::GetPFParticleSlice(const recob::PFParticle &particle, const std::string particleLabel) const{
 //*****************************************************************************
 
-/*  
-  // Perhaps we should use the associations to do this? 
+/*
+  // Perhaps we should use the associations to do this?
   auto pfParticles = evt.getValidHandle<std::vector<recob::PFParticle>>(particleLabel);
   const art::FindOneP<recob::Slice> findSlice(pfParticles,evt,particleLabel);
 
@@ -2554,15 +2554,15 @@ unsigned short LArSoftTreeConverter::GetPFParticleSliceIndex(const recob::PFPart
 //*****************************************************************************
 /*
 cnnOutput2D LArSoftTreeConverter::GetCNNOutputFromPFParticle( const recob::PFParticle & part,
-                                                              //                                                              const art::Event & evt, 
+                                                              //                                                              const art::Event & evt,
                                                               const anab::MVAReader<recob::Hit,4> & CNN_results,
                                                               //                                                              protoana::ProtoDUNEPFParticleUtils & pfpUtil,
                                                               std::string fPFParticleTag ){
 */
 //*****************************************************************************
-/*  
+/*
     cnnOutput2D output;
-    const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits; //= pfpUtil.GetPFParticleHits_Ptrs( part, evt, fPFParticleTag );    
+    const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits; //= pfpUtil.GetPFParticleHits_Ptrs( part, evt, fPFParticleTag );
 
     for( size_t h = 0; h < daughterPFP_hits.size(); ++h ){
       std::array<float,4> cnn_out = CNN_results.getOutput( daughterPFP_hits[h] );
@@ -2593,7 +2593,7 @@ cnnOutput2D LArSoftTreeConverter::GetCNNOutputFromPFParticle( const recob::PFPar
   // Association between hits and clusters
   const art::FindManyP<recob::Hit> findHits(allClusters,evt,particleLabel);
 
-  // Store all of the hits in a single vector 
+  // Store all of the hits in a single vector
   std::vector< art::Ptr< recob::Hit > > pfpHits;
   for(auto cluster : pfpClusters){
     const std::vector<art::Ptr<recob::Hit>> clusterHits = findHits.at(cluster->ID());
@@ -2608,7 +2608,7 @@ cnnOutput2D LArSoftTreeConverter::GetCNNOutputFromPFParticle( const recob::PFPar
 //*****************************************************************************
 //const std::vector<const recob::Cluster*> LArSoftTreeConverter::GetPFParticleClusters(const recob::PFParticle &particle, art::Event const &evt, const std::string particleLabel) const{
 //*****************************************************************************
-/*  
+/*
   // Get the particles and their associations
   //  auto particles = evt.getValidHandle<std::vector<recob::PFParticle>>(particleLabel);
 
@@ -2624,7 +2624,7 @@ cnnOutput2D LArSoftTreeConverter::GetCNNOutputFromPFParticle( const recob::PFPar
   std::vector<const recob::Cluster*> clusters;
   for(auto pointer : pfpClusters){
     clusters.push_back(pointer.get());
-  }  
+  }
 
   return clusters;
 }
@@ -2633,9 +2633,9 @@ cnnOutput2D LArSoftTreeConverter::GetCNNOutputFromPFParticle( const recob::PFPar
 //*****************************************************************************
 const std::vector< short > & LArSoftTreeConverter::GetActiveFibers(const std::vector<std::pair<std::string,beam::FBM> >& fiberMonitors,  const std::string& FBMName) 	{
 //*****************************************************************************
-  
+
   for (int i=0;i<fiberMonitors.size();i++){
-    if (fiberMonitors[0].first == FBMName) return fiberMonitors[0].second.active; 
+    if (fiberMonitors[0].first == FBMName) return fiberMonitors[0].second.active;
   }
 
   std::cout << "FBM " << FBMName << " not found in list" << std::endl;
@@ -2648,11 +2648,11 @@ std::pair< double, int > LArSoftTreeConverter::GetChi2PID( const recob::Track &t
 //*****************************************************************************
 
   UInt_t planeID = 0;
-  
+
 
   std::vector< double > cali_dEdX_SCE = GetCalibratedCalorimetry(track, planeID, "pandora2Track", caloModule );
-  
-  std::vector< anab::Calorimetry* > dummy_calo = GetRecoTrackCalorimetry(track, "pandora2Track", "pandora2calo");  
+
+  std::vector< anab::Calorimetry* > dummy_calo = GetRecoTrackCalorimetry(track, "pandora2Track", "pandora2calo");
   auto dummy_Range = dummy_calo[0]->fResidualRange;
 
   std::vector<anab::Calorimetry*> calovector = GetRecoTrackCalorimetry(track,"pandora2Track", "pandora2calo");
@@ -2671,18 +2671,18 @@ std::pair< double, int > LArSoftTreeConverter::GetChi2PID( const recob::Track &t
   std::pair< double, int > this_chi2_ndof = Chi2PID( cali_dEdX_SCE, dummy_Range, profile );
   return this_chi2_ndof;
 }
-    
+
 //*****************************************************************************
 std::pair< double, int > LArSoftTreeConverter::Chi2PID( const std::vector< double > & track_dedx, const std::vector< float > & range, TProfile * profile ){
-//*****************************************************************************	
+//*****************************************************************************
 
-  double pid_chi2 = 0.; 
+  double pid_chi2 = 0.;
   int npt = 0;
 
-  
+
   if( track_dedx.size() < 1 || range.size() < 1 )
     return std::make_pair(9999., -1);
-  
+
   //Ignore first and last point
   for( size_t i = 1; i < track_dedx.size()-1; ++i ){
     //Skip large pulse heights
@@ -2692,36 +2692,36 @@ std::pair< double, int > LArSoftTreeConverter::Chi2PID( const std::vector< doubl
     int bin = profile->FindBin( range[i] );
 
     if( bin >= 1 && bin <= profile->GetNbinsX() ){
-      
+
       double template_dedx = profile->GetBinContent( bin );
       if( template_dedx < 1.e-6 ){
-        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;        
+        template_dedx = ( profile->GetBinContent( bin - 1 ) + profile->GetBinContent( bin + 1 ) ) / 2.;
       }
-      
-      
+
+
       double template_dedx_err = profile->GetBinError( bin );
       if( template_dedx_err < 1.e-6 ){
-        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;        
+        template_dedx_err = ( profile->GetBinError( bin - 1 ) + profile->GetBinError( bin + 1 ) ) / 2.;
       }
 
-      double dedx_res = 0.04231 + 0.0001783 * track_dedx[i] * track_dedx[i];      
-      dedx_res *= track_dedx[i]; 
-      
-      
-      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )      
-      pid_chi2 += ( pow( (track_dedx[i] - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) ); 
-            
-      ++npt;      
-    }	
+      double dedx_res = 0.04231 + 0.0001783 * track_dedx[i] * track_dedx[i];
+      dedx_res *= track_dedx[i];
+
+
+      //Chi2 += ( track_dedx - template_dedx )^2  / ( (template_dedx_err)^2 + (dedx_res)^2 )
+      pid_chi2 += ( pow( (track_dedx[i] - template_dedx), 2 ) / ( pow(template_dedx_err, 2) + pow(dedx_res, 2) ) );
+
+      ++npt;
+    }
   }
-		
-  if( npt == 0 )	
+
+  if( npt == 0 )
     return std::make_pair(9999., -1);
-	  		
-  return std::make_pair(pid_chi2, npt); 	
+
+  return std::make_pair(pid_chi2, npt);
 }
 
-  
+
 //*pandora2Track, "pandora2Track", "pandora2calo"){
 //*****************************************************************************
 std::vector<anab::Calorimetry*> LArSoftTreeConverter::GetRecoTrackCalorimetry(const recob::Track &track,
@@ -2735,7 +2735,7 @@ std::vector<anab::Calorimetry*> LArSoftTreeConverter::GetRecoTrackCalorimetry(co
   calovector.clear();
 
   Int_t itrk = track.fID;
-  
+
   if (caloModule == "pandora2calo"){
     // Loop over the map with association between tracks and CALOs
     for (UInt_t i=0;i<Tracks_CALOs->obj.ptr_data_2_.size();i++){
@@ -2758,12 +2758,12 @@ std::vector<anab::Calorimetry*> LArSoftTreeConverter::GetRecoTrackCalorimetry(co
       }
     }
   }
-  
+
   return calovector;
 }
 
 /*
-const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( part, evt, fPFParticleTag );    
+const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( part, evt, fPFParticleTag );
 
 for( size_t h = 0; h < daughterPFP_hits.size(); ++h ){
   std::array<float,4> cnn_out = CNN_results.getOutput( daughterPFP_hits[h] );
@@ -2784,90 +2784,90 @@ std::array<float, N> anab::FVectorReader< T, N >::getVector 	( 	size_t  	key	) 	
 
 //***************************************************************
 std::vector< double >  LArSoftTreeConverter::GetCalibratedCalorimetry(const recob::Track &track,
-                                                                     UInt_t planeID, 
+                                                                     UInt_t planeID,
                                                                      //                                                                     art::Event const &evt,
                                                                      const std::string trackModule,
                                                                      const std::string caloModule ) {
-//***************************************************************	
-	
+//***************************************************************
 
 
-  
+
+
   std::vector< double > calibrated_dEdx;
-  
-  //Get the Calorimetry vector from the track
-  
-  std::vector< anab::Calorimetry* > caloVector = GetRecoTrackCalorimetry( track, trackModule, caloModule );       
-  size_t calo_position;  
-  bool found_plane = false;
-  
-  for( size_t i = 0; i < caloVector.size(); ++i ){	
-    unsigned int thePlane = caloVector[i]->fPlaneID.Plane;	
-    if( thePlane == planeID ){      
-      calo_position = i;      
-      found_plane = true;      
-      break;      
-    }	
-  }
-  
-  
-  if( !found_plane ){	
-    std::cout << "Could not find the correct plane in the calorimetry vector" << std::endl;	
-    return calibrated_dEdx;	
-  }
-  
 
-  std::vector< float > dQdX = caloVector[calo_position]->fdQdx;  
-  auto theXYZPoints = caloVector[calo_position]->fXYZ; 
+  //Get the Calorimetry vector from the track
+
+  std::vector< anab::Calorimetry* > caloVector = GetRecoTrackCalorimetry( track, trackModule, caloModule );
+  size_t calo_position;
+  bool found_plane = false;
+
+  for( size_t i = 0; i < caloVector.size(); ++i ){
+    unsigned int thePlane = caloVector[i]->fPlaneID.Plane;
+    if( thePlane == planeID ){
+      calo_position = i;
+      found_plane = true;
+      break;
+    }
+  }
+
+
+  if( !found_plane ){
+    std::cout << "Could not find the correct plane in the calorimetry vector" << std::endl;
+    return calibrated_dEdx;
+  }
+
+
+  std::vector< float > dQdX = caloVector[calo_position]->fdQdx;
+  auto theXYZPoints = caloVector[calo_position]->fXYZ;
   std::vector< float > resRange = caloVector[calo_position]->fResidualRange;
-    
+
   //Get the hits from the track from a specific plane
 
   /*
-  const std::vector< const recob::Hit* > hits;// = trackUtil.GetRecoTrackHitsFromPlane( track, trackModule, planeID ); 
-  
+  const std::vector< const recob::Hit* > hits;// = trackUtil.GetRecoTrackHitsFromPlane( track, trackModule, planeID );
+
   if( hits.size() == 0 ){
-	
+
     std::cout << "Got empty hits vector" << std::endl;
-	
+
     return calibrated_dEdx;
-	
+
   }
   */
 
-  //Do Ajib's correction 
-  
-  for( size_t i = 0; i < dQdX.size(); ++i ){ 
+  //Do Ajib's correction
+
+  for( size_t i = 0; i < dQdX.size(); ++i ){
     float hit_x = theXYZPoints[i].X();
     float hit_y = theXYZPoints[i].Y();
     float hit_z = theXYZPoints[i].Z();
-	
+
     if( hit_y < 0. || hit_y > 600. ) continue;
     if( hit_z < 0. || hit_z > 695. ) continue;
-	
+
     int X_bin = X_correction_hist->FindBin( hit_x );
     float X_correction = X_correction_hist->GetBinContent(X_bin);
-	
+
     double YZ_correction = (
                             ( hit_x < 0 )
-                            ? YZ_neg->GetBinContent( YZ_neg->FindBin( hit_z, hit_y ) ) 
-                            : YZ_pos->GetBinContent( YZ_pos->FindBin( hit_z, hit_y ) )  
+                            ? YZ_neg->GetBinContent( YZ_neg->FindBin( hit_z, hit_y ) )
+                            : YZ_pos->GetBinContent( YZ_pos->FindBin( hit_z, hit_y ) )
                             );
 
     float norm_factor = 0.983; // for plane 2
     double calib_factor =6.155e-3; //right cali constant for the run 5387. This converts from ADC to e
-    float corrected_dq_dx = dQdX[i] * X_correction * YZ_correction * norm_factor;	
-    float scaled_corrected_dq_dx = corrected_dq_dx / calib_factor;		
+    float corrected_dq_dx = dQdX[i] * X_correction * YZ_correction * norm_factor;
+    float scaled_corrected_dq_dx = corrected_dq_dx / calib_factor;
     double Efield = tot_Ef( hit_x, hit_y, hit_z );
-    
+
     //    float cal_de_dx = calc_dEdX( scaled_corrected_dq_dx,  betap,  Rho,  Efield,  Wion,  alpha );
     float cal_de_dx = ComputedEdxfromdQdx(scaled_corrected_dq_dx, Efield);
 
-    calibrated_dEdx.push_back( cal_de_dx );	
+    calibrated_dEdx.push_back( cal_de_dx );
   }
-	
-	
-	
+
+
+
  return calibrated_dEdx;
 
 }
@@ -2878,7 +2878,7 @@ std::vector< double >  LArSoftTreeConverter::GetCalibratedCalorimetry(const reco
 //***************************************************************
 double LArSoftTreeConverter::tot_Ef( double x, double y, double z ){
 //***************************************************************
-  
+
   if( x >= 0 ){
     double ex = 0.5 + 0.5 * ex_pos->GetBinContent( ex_pos->FindBin( x, y, z ) );
     double ey = 0.5 * ey_pos->GetBinContent( ey_pos->FindBin( x, y, z ) );
@@ -2888,19 +2888,19 @@ double LArSoftTreeConverter::tot_Ef( double x, double y, double z ){
   else if( x < 0 ){
     double ex= 0.5 + 0.5 * ex_neg->GetBinContent( ex_neg->FindBin( x, y, z ) );
     double ey= 0.5 * ey_neg->GetBinContent( ey_neg->FindBin( x, y, z ) );
-    double ez= 0.5 * ez_neg->GetBinContent( ez_neg->FindBin( x, y, z ) );	
-    return sqrt( (ex*ex) + (ey*ey) + (ez*ez) );	
+    double ez= 0.5 * ez_neg->GetBinContent( ez_neg->FindBin( x, y, z ) );
+    return sqrt( (ex*ex) + (ey*ey) + (ez*ez) );
   }
-  
+
   else return 0.5;
-	
+
 }
 
 
 //***************************************************************
 //const std::vector<const recob::Hit*> LArSoftTreeConverter::GetRecoTrackHitsFromPlane(const recob::Track &track,  const std::string trackModule, unsigned int planeID ) const{
 //***************************************************************
-/*  
+/*
   std::vector<const recob::Hit*> trackHits;
   if( planeID > 2 ){
     std::cout << "Please input plane 0, 1, or 2" << std::endl;
@@ -2914,7 +2914,7 @@ double LArSoftTreeConverter::tot_Ef( double x, double y, double z ){
   for(const art::Ptr<recob::Hit> hit : inputHits){
     unsigned int thePlane = hit.get()->WireID().asPlaneID().Plane;
     if( thePlane != planeID ) continue;
-       
+
     trackHits.push_back(hit.get());
 
   }
@@ -2934,8 +2934,8 @@ double LArSoftTreeConverter::tot_Ef( double x, double y, double z ){
   }
 
 
-  
-  return trackHits;  
+
+  return trackHits;
 
 }
 
@@ -2947,7 +2947,7 @@ std::vector< int > LArSoftTreeConverter::GetPID( beam::ProtoDUNEBeamEvent const 
 //***************************************************************
   const auto& thePIDCands = GetPIDCandidates(beamevt, nominal_momentum);
   std::vector< int > thePIDs = thePIDCands.getPDGCodes();
-  return thePIDs;        
+  return thePIDs;
 }
 
 //***************************************************************
@@ -2962,7 +2962,7 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
 
 
   bool fUseCERNCalibSelection=true;
-  
+
   //Check if momentum is in valid set
   std::vector< double > valid_momenta = {1., 2., 3., 6., 7.};
   if( std::find(valid_momenta.begin(), valid_momenta.end(), nominal_momentum) == valid_momenta.end() ){
@@ -2970,7 +2970,7 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
     return candidates;
   }
   //Get the high/low pressure Cerenkov info
-  //int high_pressure_status, low_pressure_status; 
+  //int high_pressure_status, low_pressure_status;
   int high_pressure_status = beamevt.CKov0.trigger;
   int low_pressure_status  = beamevt.CKov1.trigger;
   //std::cout << "Pressures: " << beamevt.GetCKov0Pressure() << " " << beamevt.GetCKov1Pressure() << std::endl;
@@ -2994,22 +2994,22 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
       return candidates;
     }
     const double & tof = beamevt.theTOF;
-    if ( 
-        ((fUseCERNCalibSelection && tof < 105.) 
+    if (
+        ((fUseCERNCalibSelection && tof < 105.)
             || (!fUseCERNCalibSelection && tof < 170.))
-        && low_pressure_status == 1 
+        && low_pressure_status == 1
        ) {
       candidates.electron = true;
     }
-    else if ( 
-        ((fUseCERNCalibSelection && tof < 110.) 
+    else if (
+        ((fUseCERNCalibSelection && tof < 110.)
             || (!fUseCERNCalibSelection && tof < 170.))
         && low_pressure_status == 0 ){
       candidates.muon = true;
       candidates.pion = true;
     }
-    else if ( 
-        ((fUseCERNCalibSelection && tof > 110. && tof < 160.) 
+    else if (
+        ((fUseCERNCalibSelection && tof > 110. && tof < 160.)
             || (!fUseCERNCalibSelection && tof > 170.))
         && low_pressure_status == 0 ) {
       candidates.proton = true;
@@ -3025,22 +3025,22 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
       return candidates;
     }
     const double & tof = beamevt.theTOF;
-    if ( 
-        ((fUseCERNCalibSelection && tof < 105.) 
+    if (
+        ((fUseCERNCalibSelection && tof < 105.)
             || (!fUseCERNCalibSelection && tof < 160.))
-        && low_pressure_status == 1 
+        && low_pressure_status == 1
        ) {
       candidates.electron = true;
     }
-    else if ( 
-        ((fUseCERNCalibSelection && tof < 103.) 
+    else if (
+        ((fUseCERNCalibSelection && tof < 103.)
             || (!fUseCERNCalibSelection && tof < 160.))
         && low_pressure_status == 0 ){
       candidates.muon = true;
       candidates.pion = true;
     }
-    else if ( 
-        ((fUseCERNCalibSelection && tof > 103. && tof < 160.) 
+    else if (
+        ((fUseCERNCalibSelection && tof > 103. && tof < 160.)
             || (!fUseCERNCalibSelection && tof > 160.))
         && low_pressure_status == 0 ) {
       candidates.proton = true;
@@ -3052,7 +3052,7 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
       std::cout << "High: " << high_pressure_status << " Low: " << low_pressure_status << std::endl;
       return candidates;
     }
-    else if ( low_pressure_status == 1 && high_pressure_status == 1 ) 
+    else if ( low_pressure_status == 1 && high_pressure_status == 1 )
       candidates.electron = true;
     else if ( low_pressure_status == 0 && high_pressure_status == 1 ){
       candidates.muon = true;
@@ -3060,7 +3060,7 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
     }
     else{ // low, high = 0, 0
       candidates.proton = true;
-      candidates.kaon = true; 
+      candidates.kaon = true;
     }
   }
   else if( nominal_momentum == 6. || nominal_momentum == 7. ){
@@ -3074,8 +3074,8 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
       candidates.muon = true;
       candidates.pion = true;
     }
-    else if ( low_pressure_status == 0 && high_pressure_status == 1 ) 
-      candidates.kaon = true; 
+    else if ( low_pressure_status == 0 && high_pressure_status == 1 )
+      candidates.kaon = true;
     else  // low, high = 0, 0
       candidates.proton = true;
   }
@@ -3088,30 +3088,30 @@ PossibleParticleCands LArSoftTreeConverter::GetPIDCandidates_CERNCalib( beam::Pr
 
 //*****************************************************************************
 cnnOutput2D LArSoftTreeConverter::GetCNNOutputFromPFParticle( const recob::PFParticle & part,
-                                                              //                                                              const art::Event & evt, 
+                                                              //                                                              const art::Event & evt,
                                                               //                                                              const anab::MVAReader<recob::Hit,4> & CNN_results,
                                                               //                                                              protoana::ProtoDUNEPFParticleUtils & pfpUtil,
                                                               std::string fPFParticleTag ){
 //*****************************************************************************
-  
+
   cnnOutput2D output;
-  
+
   int itrack  = GetMVAIndex("emtrkmichelrecobHit","track");
   int iem     = GetMVAIndex("emtrkmichelrecobHit","em");
   int imichel = GetMVAIndex("emtrkmichelrecobHit","michel");
   int inone   = GetMVAIndex("emtrkmichelrecobHit","none");
-  
+
   const std::vector<int> PFParticle_hits_indices = GetPFParticleHitsIndices(part);
-  
-  for( size_t h = 0; h < PFParticle_hits_indices.size(); ++h ){      
+
+  for( size_t h = 0; h < PFParticle_hits_indices.size(); ++h ){
     output.track  += MVA->obj[h].fData[itrack];
     output.em     += MVA->obj[h].fData[iem];
     output.none   += MVA->obj[h].fData[imichel];
-    output.michel += MVA->obj[h].fData[inone];      
+    output.michel += MVA->obj[h].fData[inone];
   }
 
   output.nHits = PFParticle_hits_indices.size();
-  
+
   return output;
 }
 

@@ -532,6 +532,9 @@ public:
   /// Vector containing the particles associated with this vertex
   std::vector<AnaParticlePD*> Particles;
 
+  /// Original distance between the particles in the vertex
+  Float_t OriginalDistance;
+
   /// 3D coordinates of the vertex
   Float_t Position[3];
 
@@ -540,10 +543,18 @@ public:
 
   /// Reaction/process that originated this vertex (interaction type)
   Int_t Process;
+
+  /// Fitted line parameters for daughter particles used in vertex reconstruction
+  /// Each line is represented by 6 parameters: [x0, y0, z0, dx, dy, dz]
+  /// Line equation: P(t) = (x0, y0, z0) + t * (dx, dy, dz)
+  std::vector<std::vector<double>> FittedLineParams;
+
+  /// Minimum distance between the two fitted lines (distance between closest points)
+  Float_t MinimumDistance;
 };
 
 // Extension for neutral particle analysis in ProtoDUNE
-class AnaNeutralParticlePD{
+class AnaNeutralParticlePD: public AnaParticleB{
 public :
 
   AnaNeutralParticlePD();
@@ -573,17 +584,14 @@ public:
   /// The parent particle that decayed into this neutral particle
   AnaParticlePD* Parent;
 
+  /// The impact parameter of the neutral particle
+  Float_t ImpactParameter;
+
   /// Mass of the neutral particle (in GeV/c²)
   Float_t Mass;
 
   /// Momentum of the neutral particle (in GeV/c)
   Float_t Momentum;
-
-  /// 3D direction of the neutral particle
-  Float_t Direction[3];
-
-  /// 3D position of the neutral particle (usually the vertex position)
-  Float_t Position[3];
 
   /// PDG code of the neutral particle
   Int_t PDG;

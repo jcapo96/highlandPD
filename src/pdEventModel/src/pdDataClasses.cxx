@@ -671,11 +671,13 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   UniqueID = kIntUnassigned;
   NParticles = 0;
   Particles.clear();
+  OriginalDistance = kFloatUnassigned;
   Position[0] = kFloatUnassigned;
   Position[1] = kFloatUnassigned;
   Position[2] = kFloatUnassigned;
   Generation = kIntUnassigned;
   Process = kIntUnassigned;
+  MinimumDistance = kFloatUnassigned;
 }
 
 //********************************************************************
@@ -691,11 +693,13 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   UniqueID = vertex.UniqueID;
   NParticles = vertex.NParticles;
   Particles = vertex.Particles;
+  OriginalDistance = vertex.OriginalDistance;
   Position[0] = vertex.Position[0];
   Position[1] = vertex.Position[1];
   Position[2] = vertex.Position[2];
   Generation = vertex.Generation;
   Process = vertex.Process;
+  MinimumDistance = vertex.MinimumDistance;
 }
 
 //********************************************************************
@@ -708,27 +712,22 @@ void AnaVertexPD::Print() const{
   std::cout << "UniqueID:              " << UniqueID << std::endl;
   std::cout << "NParticles:            " << NParticles << std::endl;
   std::cout << "Particles size:        " << Particles.size() << std::endl;
+  std::cout << "OriginalDistance:      " << OriginalDistance << " cm" << std::endl;
   std::cout << "Position:              " << Position[0] << " " << Position[1] << " " << Position[2] << std::endl;
   std::cout << "Generation:            " << Generation << std::endl;
   std::cout << "Process:          " << Process << std::endl;
 }
 
 //********************************************************************
-AnaNeutralParticlePD::AnaNeutralParticlePD(){
+AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
 //********************************************************************
 
   UniqueID = kIntUnassigned;
   Vertex = NULL;
   Parent = NULL;
-
+  ImpactParameter = kFloatUnassigned;
   Mass = kFloatUnassigned;
   Momentum = kFloatUnassigned;
-
-  for(int i = 0; i < 3; i++){
-    Direction[i] = kFloatUnassigned;
-    Position[i] = kFloatUnassigned;
-  }
-
   PDG = kIntUnassigned;
   Lifetime = kFloatUnassigned;
   DecayLength = kFloatUnassigned;
@@ -741,21 +740,16 @@ AnaNeutralParticlePD::~AnaNeutralParticlePD(){
 }
 
 //********************************************************************
-AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralParticle){
+AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralParticle): AnaParticleB(neutralParticle){
 //********************************************************************
 
   UniqueID = neutralParticle.UniqueID;
   Vertex = neutralParticle.Vertex;
   Parent = neutralParticle.Parent;
 
+  ImpactParameter = neutralParticle.ImpactParameter;
   Mass = neutralParticle.Mass;
   Momentum = neutralParticle.Momentum;
-
-  for(int i = 0; i < 3; i++){
-    Direction[i] = neutralParticle.Direction[i];
-    Position[i] = neutralParticle.Position[i];
-  }
-
   PDG = neutralParticle.PDG;
   Lifetime = neutralParticle.Lifetime;
   DecayLength = neutralParticle.DecayLength;
@@ -767,13 +761,14 @@ void AnaNeutralParticlePD::Print() const{
 
   std::cout << "-------- AnaNeutralParticlePD --------- " << std::endl;
 
+  AnaParticleB::Print();
+
   std::cout << "UniqueID:              " << UniqueID << std::endl;
   std::cout << "Vertex:                " << (Vertex ? "Yes" : "No") << std::endl;
   std::cout << "Parent:                " << (Parent ? "Yes" : "No") << std::endl;
+  std::cout << "ImpactParameter:       " << ImpactParameter << " cm" << std::endl;
   std::cout << "Mass:                  " << Mass << " GeV/c²" << std::endl;
   std::cout << "Momentum:              " << Momentum << " GeV/c" << std::endl;
-  std::cout << "Direction:             " << Direction[0] << " " << Direction[1] << " " << Direction[2] << std::endl;
-  std::cout << "Position:              " << Position[0] << " " << Position[1] << " " << Position[2] << std::endl;
   std::cout << "PDG:                   " << PDG << std::endl;
   std::cout << "Lifetime:              " << Lifetime << " ns" << std::endl;
   std::cout << "DecayLength:           " << DecayLength << " cm" << std::endl;

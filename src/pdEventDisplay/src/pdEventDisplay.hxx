@@ -4,16 +4,24 @@
 #include "pdDataClasses.hxx"
 #include "TCanvas.h"
 #include "TH2F.h"
+#include "TH3F.h"
 #include "TGraph.h"
+#include "TGraph2D.h"
 #include "TLine.h"
 #include "TMarker.h"
 #include "TText.h"
 #include "TLegend.h"
 #include "TStyle.h"
 #include "TEllipse.h"
+#include "TPolyLine3D.h"
+#include "TMarker.h"
+#include "TView3D.h"
 #include <string>
 #include <vector>
 #include <map>
+
+// Forward declaration
+class ToyBoxNeutralKaon;
 
 // Structure to hold vertex information for display
 struct DisplayVertex {
@@ -41,7 +49,7 @@ public:
                     int minVertexDaughters = 2);
 
     // Main method to create event display
-    void CreateEventDisplay(AnaEventB& event, int eventNumber);
+    void CreateEventDisplay(AnaEventB& event, int eventNumber, const ToyBoxNeutralKaon& box);
 
     // Check if event display should be created
     bool ShouldCreateEventDisplay() const { return _CreateEventDisplay; }
@@ -51,6 +59,9 @@ public:
 
     // Check if event contains required particle types
     bool EventContainsRequiredParticles(AnaEventB& event) const;
+
+    // Helper method to set 3D axis ranges for zooming
+    void Set3DAxisRanges(TH3F* h3d, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
 
 private:
     // Event display parameters
@@ -68,7 +79,8 @@ private:
 
     // Event display methods
     void InitializeParticleColors();
-    void DrawEventProjections(AnaEventB& event, int eventNumber);
+    void DrawEventProjections(AnaEventB& event, int eventNumber, const ToyBoxNeutralKaon& box);
+    void DrawEvent3D(AnaEventB& event, int eventNumber, const ToyBoxNeutralKaon& box);
     void SaveCanvasToRootFile(TCanvas* canvas, int eventNumber);
     std::vector<DisplayVertex> CreateVertices(std::vector<AnaParticlePD*>& validParticles, AnaTrueParticleB* beamTrue);
 

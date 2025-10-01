@@ -9,9 +9,11 @@ namespace neutralKaonAnaUtils{
   void AddCustomCategories();
 
   void AddNeutralParticleSignalBackgroundCategory();
+  void AddNeutralParticleDetailedBackgroundCategory();
 
   // Fill Custom categories
-  void FillNeutralParticleSignalBackgroundCategory(AnaNeutralParticlePD* neutralParticle);
+  void FillNeutralParticleSignalBackgroundCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
+  void FillNeutralParticleDetailedBackgroundCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
 }
 
 #endif

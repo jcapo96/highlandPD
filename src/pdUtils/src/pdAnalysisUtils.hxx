@@ -105,19 +105,30 @@ namespace pdAnaUtils{
 
   /// Fit a line to 3D hits within 15 cm of the position defined by DefinePosition
   /// @param part The particle to analyze
+  /// @param part Input: Particle to extrapolate
   /// @param fitParams Output: Vector with 6 parameters [x0, y0, z0, dx, dy, dz] for line fit (point + direction)
-  /// The function fits a 3D line to hits within 15 cm of the position returned by DefinePosition
-  void ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams);
+  /// @param trackLength Input: Length of track used for line fitting (cm)
+  /// @param useStartPosition If true, use start position as reference; if false, use end position
+  /// The function fits a 3D line to hits within trackLength cm of the position returned by DefinePosition
+  void ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams, double trackLength, bool useStartPosition);
+
+  /// Overloaded version for backward compatibility (defaults to start position)
+  void ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams, double trackLength = 15.0);
 
   /// Helper function to fit a line to a set of 3D points using PCA
   /// @param points Vector of 3D points to fit
   /// @param fitParams Output: Vector with 6 parameters [x0, y0, z0, dx, dy, dz] (point + direction)
   void FitLineToPoints(const std::vector<TVector3>& points, std::vector<double>& fitParams);
+  void FitLineToPointsPCA(const std::vector<TVector3>& points, std::vector<double>& fitParams);
 
   /// Define the position to use for calculations (distance, line fitting, etc.)
   /// @param particle The particle to get position from
+  /// @param useStartPosition If true, use start position; if false, use end position
   /// @return TVector3 with the position to use for calculations
   /// This function can be modified to return different positions (e.g., extrapolated positions)
+  TVector3 DefinePosition(AnaParticlePD* particle, bool useStartPosition);
+
+  /// Overloaded version for backward compatibility (defaults to start position)
   TVector3 DefinePosition(AnaParticlePD* particle);
 
   /// Find the closest points between two 3D lines

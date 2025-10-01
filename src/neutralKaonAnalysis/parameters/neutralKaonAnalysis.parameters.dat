@@ -1,5 +1,5 @@
 --- Cut levels --------
- < neutralKaonAnalysis.MinAccumLevelToSave = -1 >   // minimum accum level to save the event
+ < neutralKaonAnalysis.MinAccumLevelToSave = 3 >   // minimum accum level to save the event
 
 --- Systematics ------------
 
@@ -18,16 +18,18 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.SaveToRootFile = 1 >
  < neutralKaonAnalysis.OutputDirectory = "/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/plots" >
  < neutralKaonAnalysis.MaxEventsToDisplay = 100 >
- < neutralKaonAnalysis.EventDisplayPercentage = 10 >
+ < neutralKaonAnalysis.EventDisplayPercentage = 100 >
  < neutralKaonAnalysis.RequiredParticlePDGs = "310" >
  < neutralKaonAnalysis.OnlySignalEvents = 1 >
 
 --- Vertex Finder ------------
- < neutralKaonAnalysis.VertexRadius = 50.0 >
- < neutralKaonAnalysis.DaughterDistance = 2.5 >
- < neutralKaonAnalysis.ImpactParameter = 5.0 >
+ < neutralKaonAnalysis.VertexRadius = 45.0 > //selection level ??
+ < neutralKaonAnalysis.DaughterDistance = 15.0 >
+ < neutralKaonAnalysis.ImpactParameter = 0.0 > //selection level
  < neutralKaonAnalysis.MinVertexDaughters = 2 >
  < neutralKaonAnalysis.MaxVertexDaughters = 2 >
+ < neutralKaonAnalysis.TrackFitLength = 15.0 > //length of track used for line fitting (cm)
+ < neutralKaonAnalysis.UseROOTFitting = 1 > //use ROOT fitting instead of PCA for track fitting (1=ROOT, 0=PCA)
 
 --- Other Parameters -----------
 

@@ -6,17 +6,17 @@
 #include "standardPDTree.hxx"
 #include "neutralKaonTree.hxx"
 #include "neutralKaonAnalysisUtils.hxx"
+#include "pdEventDisplay.hxx"
 
 namespace neutralKaonAnalysisConstants{
 
-  const UInt_t NMAXSAVEDCANDIDATES     = 10;
+  const UInt_t NMAXSAVEDCANDIDATES     = 200;
 }
 
 class neutralKaonAnalysis: public pdBaseAnalysis {
  public:
  neutralKaonAnalysis(AnalysisAlgorithm* ana=NULL);
-  virtual ~neutralKaonAnalysis(){
-  }
+  virtual ~neutralKaonAnalysis();
 
   //---- These are mandatory functions
   void DefineSelections();
@@ -55,6 +55,9 @@ private:
   // SCE correction and systematic parameters
   bool _ApplySCECorrection;
   bool _ApplySCESystematic;
+
+  // Event display
+  pdEventDisplay* _EventDisplay;
 
 
 public:
