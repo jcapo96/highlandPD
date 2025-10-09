@@ -2,6 +2,7 @@
 
 #include "pdDataClasses.hxx"
 #include "AnalysisUtils.hxx"
+#include "pdAnalysisUtils.hxx"
 
 
 // define a constant value for uninitialised parameters
@@ -623,45 +624,54 @@ void AnaEventInfoPD::Print() const{
 }
 
 //********************************************************************
-AnaTrueVertexPD::AnaTrueVertexPD():AnaTrueVertexB(){
+AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(){
 //********************************************************************
 
-  NTrueParticles = 0;
   TrueParticles.clear();
-  Parent = NULL;
-  Generation = kIntUnassigned;
-  Process = kIntUnassigned;
+  OriginalDistance = kFloatUnassigned;
+  MinimumDistance = kFloatUnassigned;
+  OpeningAngle = kFloatUnassigned;
+  Position[0] = kFloatUnassigned;
+  Position[1] = kFloatUnassigned;
+  Position[2] = kFloatUnassigned;
+  Direction[0] = kFloatUnassigned;
+  Direction[1] = kFloatUnassigned;
+  Direction[2] = kFloatUnassigned;
 }
 
 //********************************************************************
-AnaTrueVertexPD::~AnaTrueVertexPD(){
+AnaTrueEquivalentVertexPD::~AnaTrueEquivalentVertexPD(){
 //********************************************************************
 
 }
 
 //********************************************************************
-AnaTrueVertexPD::AnaTrueVertexPD(const AnaTrueVertexPD& vertex):AnaTrueVertexB(vertex){
+AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVertexPD& vertex){
 //********************************************************************
 
-  NTrueParticles = vertex.NTrueParticles;
   TrueParticles = vertex.TrueParticles;
-  Parent = vertex.Parent;
-  Generation = vertex.Generation;
-  Process = vertex.Process;
+  OriginalDistance = vertex.OriginalDistance;
+  MinimumDistance = vertex.MinimumDistance;
+  OpeningAngle = vertex.OpeningAngle;
+  Position[0] = vertex.Position[0];
+  Position[1] = vertex.Position[1];
+  Position[2] = vertex.Position[2];
+  Direction[0] = vertex.Direction[0];
+  Direction[1] = vertex.Direction[1];
+  Direction[2] = vertex.Direction[2];
 }
 
 //********************************************************************
-void AnaTrueVertexPD::Print() const{
+void AnaTrueEquivalentVertexPD::Print() const{
 //********************************************************************
 
-  std::cout << "-------- AnaTrueVertexPD --------- " << std::endl;
-
-  AnaTrueVertexB::Print();
-  std::cout << "NTrueParticles:        " << NTrueParticles << std::endl;
+  std::cout << "-------- AnaTrueEquivalentVertexPD --------- " << std::endl;
   std::cout << "TrueParticles size:    " << TrueParticles.size() << std::endl;
-  std::cout << "Parent:                " << (Parent ? "Yes" : "No") << std::endl;
-  std::cout << "Generation:            " << Generation << std::endl;
-  std::cout << "Process:          " << Process << std::endl;
+  std::cout << "OriginalDistance:      " << OriginalDistance << " cm" << std::endl;
+  std::cout << "MinimumDistance:       " << MinimumDistance << " cm" << std::endl;
+  std::cout << "OpeningAngle:          " << OpeningAngle << " degrees" << std::endl;
+  std::cout << "Position:              " << Position[0] << " " << Position[1] << " " << Position[2] << std::endl;
+  std::cout << "Direction:             " << Direction[0] << " " << Direction[1] << " " << Direction[2] << std::endl;
 }
 
 //********************************************************************
@@ -675,6 +685,16 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   Position[0] = kFloatUnassigned;
   Position[1] = kFloatUnassigned;
   Position[2] = kFloatUnassigned;
+  Momentum[0] = kFloatUnassigned;
+  Momentum[1] = kFloatUnassigned;
+  Momentum[2] = kFloatUnassigned;
+  Direction[0] = kFloatUnassigned;
+  Direction[1] = kFloatUnassigned;
+  Direction[2] = kFloatUnassigned;
+  Energy = kFloatUnassigned;
+  OpeningAngle = kFloatUnassigned;
+  AngleWithBeam = kFloatUnassigned;
+  NPotentialParents = kIntUnassigned;
   Generation = kIntUnassigned;
   Process = kIntUnassigned;
   MinimumDistance = kFloatUnassigned;
@@ -697,6 +717,16 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   Position[0] = vertex.Position[0];
   Position[1] = vertex.Position[1];
   Position[2] = vertex.Position[2];
+  Momentum[0] = vertex.Momentum[0];
+  Momentum[1] = vertex.Momentum[1];
+  Momentum[2] = vertex.Momentum[2];
+  Direction[0] = vertex.Direction[0];
+  Direction[1] = vertex.Direction[1];
+  Direction[2] = vertex.Direction[2];
+  Energy = vertex.Energy;
+  OpeningAngle = vertex.OpeningAngle;
+  AngleWithBeam = vertex.AngleWithBeam;
+  NPotentialParents = vertex.NPotentialParents;
   Generation = vertex.Generation;
   Process = vertex.Process;
   MinimumDistance = vertex.MinimumDistance;
@@ -714,8 +744,72 @@ void AnaVertexPD::Print() const{
   std::cout << "Particles size:        " << Particles.size() << std::endl;
   std::cout << "OriginalDistance:      " << OriginalDistance << " cm" << std::endl;
   std::cout << "Position:              " << Position[0] << " " << Position[1] << " " << Position[2] << std::endl;
+  std::cout << "Momentum:              " << Momentum[0] << " " << Momentum[1] << " " << Momentum[2] << std::endl;
+  std::cout << "Direction:             " << Direction[0] << " " << Direction[1] << " " << Direction[2] << std::endl;
+  std::cout << "Energy:                " << Energy << " GeV" << std::endl;
+  std::cout << "OpeningAngle:          " << OpeningAngle << " rad" << std::endl;
+  std::cout << "AngleWithBeam:         " << AngleWithBeam << " rad" << std::endl;
+  std::cout << "NPotentialParents:      " << NPotentialParents << std::endl;
   std::cout << "Generation:            " << Generation << std::endl;
-  std::cout << "Process:          " << Process << std::endl;
+  std::cout << "Process:               " << Process << std::endl;
+  std::cout << "MinimumDistance:       " << MinimumDistance << " cm" << std::endl;
+}
+
+//********************************************************************
+void AnaVertexPD::EnsureParticleMomentum(){
+
+  // Check each particle in the vertex
+  for (size_t i = 0; i < Particles.size(); i++) {
+    AnaParticlePD* particle = Particles[i];
+    if (!particle) continue;
+
+    // First, calculate RangeMomentum if not available from input tree
+    // This happens for secondary particles or particles not in the beam daughter list
+    if ((particle->RangeMomentum[0] == -999 || particle->RangeMomentum[0] <= 0) &&
+        particle->Length > 0 && particle->Length != -999) {
+      particle->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 2212);
+    }
+    if ((particle->RangeMomentum[1] == -999 || particle->RangeMomentum[1] <= 0) &&
+        particle->Length > 0 && particle->Length != -999) {
+      particle->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 13);
+    }
+
+    // Check if particle already has valid momentum
+    if (particle->Momentum > 0 && particle->Momentum != -999) {
+      // Particle already has valid momentum, skip
+      continue;
+    }
+
+    Float_t calculatedMomentum = -999;
+
+    // Priority 1: Use average of proton and muon range momenta as approximation for pion
+    // Pion mass (139.57 MeV) is between muon (105.7 MeV) and proton (938.3 MeV)
+    // so averaging gives a reasonable estimate
+    if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999 &&
+        particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
+      // Average the muon and proton momentum estimates
+      calculatedMomentum = (particle->RangeMomentum[0] + particle->RangeMomentum[1]) / 2.0;
+    }
+    // Priority 2: Use muon range momentum if available (closer to pion mass than proton)
+    else if (particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
+      calculatedMomentum = particle->RangeMomentum[1];
+    }
+    // Priority 3: Use proton range momentum if available
+    else if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999) {
+      calculatedMomentum = particle->RangeMomentum[0];
+    }
+    // Priority 4: Use calorimetric method as last resort (only works for stopping particles)
+    else if (!particle->Hits[2].empty()) {
+      bool hasDecayProducts = (particle->Daughters.size() > 0);
+      calculatedMomentum = pdAnaUtils::ComputeCalorimetricMomentum(particle, 211, hasDecayProducts);
+    }
+
+    // If we successfully calculated momentum, assign it
+    if (calculatedMomentum > 0 && calculatedMomentum != -999) {
+      particle->Momentum = calculatedMomentum;
+    }
+
+  }
 }
 
 //********************************************************************
@@ -725,12 +819,14 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
   UniqueID = kIntUnassigned;
   Vertex = NULL;
   Parent = NULL;
+  TrueEquivalentNeutralParticle = NULL;
   ImpactParameter = kFloatUnassigned;
   Mass = kFloatUnassigned;
   Momentum = kFloatUnassigned;
   PDG = kIntUnassigned;
   Lifetime = kFloatUnassigned;
   DecayLength = kFloatUnassigned;
+  NRecoHitsInVertex = kIntUnassigned;
 }
 
 //********************************************************************
@@ -746,13 +842,15 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
   UniqueID = neutralParticle.UniqueID;
   Vertex = neutralParticle.Vertex;
   Parent = neutralParticle.Parent;
-
+  TrueEquivalentNeutralParticle = neutralParticle.TrueEquivalentNeutralParticle;
+  RecoParticle = neutralParticle.RecoParticle;
   ImpactParameter = neutralParticle.ImpactParameter;
   Mass = neutralParticle.Mass;
   Momentum = neutralParticle.Momentum;
   PDG = neutralParticle.PDG;
   Lifetime = neutralParticle.Lifetime;
   DecayLength = neutralParticle.DecayLength;
+  NRecoHitsInVertex = neutralParticle.NRecoHitsInVertex;
 }
 
 //********************************************************************
@@ -766,11 +864,92 @@ void AnaNeutralParticlePD::Print() const{
   std::cout << "UniqueID:              " << UniqueID << std::endl;
   std::cout << "Vertex:                " << (Vertex ? "Yes" : "No") << std::endl;
   std::cout << "Parent:                " << (Parent ? "Yes" : "No") << std::endl;
+  std::cout << "TrueEquivalentNeutralParticle:   " << (TrueEquivalentNeutralParticle ? "Yes" : "No") << std::endl;
+  std::cout << "RecoParticle:          " << (RecoParticle ? "Yes" : "No") << std::endl;
   std::cout << "ImpactParameter:       " << ImpactParameter << " cm" << std::endl;
   std::cout << "Mass:                  " << Mass << " GeV/c²" << std::endl;
   std::cout << "Momentum:              " << Momentum << " GeV/c" << std::endl;
   std::cout << "PDG:                   " << PDG << std::endl;
   std::cout << "Lifetime:              " << Lifetime << " ns" << std::endl;
   std::cout << "DecayLength:           " << DecayLength << " cm" << std::endl;
+  std::cout << "NRecoHitsInVertex:     " << NRecoHitsInVertex << std::endl;
+  std::cout << "RecoParticle:          " << (RecoParticle ? "Yes" : "No") << std::endl;
+}
+
+//********************************************************************
+AnaTrueEquivalentNeutralParticlePD::AnaTrueEquivalentNeutralParticlePD(){
+//********************************************************************
+
+  TrueEquivalentVertex = NULL;
+  TrueParent = NULL;
+  Position[0] = kFloatUnassigned;
+  Position[1] = kFloatUnassigned;
+  Position[2] = kFloatUnassigned;
+  Direction[0] = kFloatUnassigned;
+  Direction[1] = kFloatUnassigned;
+  Direction[2] = kFloatUnassigned;
+  PositionEnd[0] = kFloatUnassigned;
+  PositionEnd[1] = kFloatUnassigned;
+  PositionEnd[2] = kFloatUnassigned;
+  DirectionEnd[0] = kFloatUnassigned;
+  DirectionEnd[1] = kFloatUnassigned;
+  DirectionEnd[2] = kFloatUnassigned;
+  Length = kFloatUnassigned;
+  Momentum = kFloatUnassigned;
+  PDG = kIntUnassigned;
+  Generation = kIntUnassigned;
+  Process = kIntUnassigned;
+  Mass = kFloatUnassigned;
+}
+
+//********************************************************************
+AnaTrueEquivalentNeutralParticlePD::~AnaTrueEquivalentNeutralParticlePD(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaTrueEquivalentNeutralParticlePD::AnaTrueEquivalentNeutralParticlePD(const AnaTrueEquivalentNeutralParticlePD& trueEquivalentNeutralPart){
+//********************************************************************
+
+  TrueEquivalentVertex = trueEquivalentNeutralPart.TrueEquivalentVertex;
+  TrueParent = trueEquivalentNeutralPart.TrueParent;
+  Position[0] = trueEquivalentNeutralPart.Position[0];
+  Position[1] = trueEquivalentNeutralPart.Position[1];
+  Position[2] = trueEquivalentNeutralPart.Position[2];
+  Direction[0] = trueEquivalentNeutralPart.Direction[0];
+  Direction[1] = trueEquivalentNeutralPart.Direction[1];
+  Direction[2] = trueEquivalentNeutralPart.Direction[2];
+  PositionEnd[0] = trueEquivalentNeutralPart.PositionEnd[0];
+  PositionEnd[1] = trueEquivalentNeutralPart.PositionEnd[1];
+  PositionEnd[2] = trueEquivalentNeutralPart.PositionEnd[2];
+  DirectionEnd[0] = trueEquivalentNeutralPart.DirectionEnd[0];
+  DirectionEnd[1] = trueEquivalentNeutralPart.DirectionEnd[1];
+  DirectionEnd[2] = trueEquivalentNeutralPart.DirectionEnd[2];
+  Length = trueEquivalentNeutralPart.Length;
+  Momentum = trueEquivalentNeutralPart.Momentum;
+  PDG = trueEquivalentNeutralPart.PDG;
+  Generation = trueEquivalentNeutralPart.Generation;
+  Process = trueEquivalentNeutralPart.Process;
+  Mass = trueEquivalentNeutralPart.Mass;
+}
+
+//********************************************************************
+void AnaTrueEquivalentNeutralParticlePD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaTrueNeutralParticlePD --------- " << std::endl;
+  std::cout << "TrueEquivalentVertex:   " << (TrueEquivalentVertex ? "Set" : "NULL") << std::endl;
+  std::cout << "TrueParent:             " << (TrueParent ? "Set" : "NULL") << std::endl;
+  std::cout << "Position:               " << Position[0] << " " << Position[1] << " " << Position[2] << std::endl;
+  std::cout << "Direction:              " << Direction[0] << " " << Direction[1] << " " << Direction[2] << std::endl;
+  std::cout << "PositionEnd:            " << PositionEnd[0] << " " << PositionEnd[1] << " " << PositionEnd[2] << std::endl;
+  std::cout << "DirectionEnd:           " << DirectionEnd[0] << " " << DirectionEnd[1] << " " << DirectionEnd[2] << std::endl;
+  std::cout << "Length:                 " << Length << " cm" << std::endl;
+  std::cout << "Momentum:               " << Momentum << " GeV/c" << std::endl;
+  std::cout << "PDG:                    " << PDG << std::endl;
+  std::cout << "Generation:             " << Generation << std::endl;
+  std::cout << "Process:                " << Process << std::endl;
+  std::cout << "Mass:                   " << Mass << " GeV/c²" << std::endl;
 }
 

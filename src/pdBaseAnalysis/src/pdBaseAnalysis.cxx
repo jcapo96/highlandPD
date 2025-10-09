@@ -180,7 +180,6 @@ void pdBaseAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
   output().FillVar(run,    GetSpill().EventInfo->Run);
   output().FillVar(subrun, GetSpill().EventInfo->SubRun);
   output().FillVar(evt,    GetSpill().EventInfo->Event);
-
 }
 
 //********************************************************************

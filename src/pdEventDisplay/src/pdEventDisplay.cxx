@@ -813,13 +813,6 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
 
     DrawLegend(legend);
 
-
-
-
-
-
-
-
     // Draw neutral particles from the ToyBox
     const std::vector<AnaNeutralParticlePD*>& neutralParticles = box.neutralParticleCandidates;
     std::vector<TLine*> neutralParticleLinesXY;
@@ -840,52 +833,101 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
         // Get the true particle associated with the neutral particle itself
         AnaTrueParticleB* trueParticle = nullptr;
 
-        // Check if the neutral particle has an associated true object
-        if (neutralParticle->TrueObject != nullptr) {
-            trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
-        }
-
-        if (!trueParticle) continue;
-
-        // Use the particle color based on the true PDG code
-        int particleColor = GetParticleColor(trueParticle->PDG);
-
-        // Get true start and end positions
-        TVector3 startPos(trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
-        TVector3 endPos(trueParticle->PositionEnd[0], trueParticle->PositionEnd[1], trueParticle->PositionEnd[2]);
+        // Get reconstructed start and end positions from neutral particle
+        TVector3 startPos(neutralParticle->PositionStart[0], neutralParticle->PositionStart[1], neutralParticle->PositionStart[2]);
+        TVector3 endPos(neutralParticle->PositionEnd[0], neutralParticle->PositionEnd[1], neutralParticle->PositionEnd[2]);
 
         // Check if positions are valid
         if (startPos.X() < -900 || endPos.X() < -900) continue;
 
-        // Draw line in XY projection
+        // Determine color based on whether neutral particle has true object
+        int particleColor = kGray+1; // Default to light grey if no true object
+        bool hasTrueObject = false;
+        if (neutralParticle->TrueObject != nullptr) {
+            AnaTrueParticleB* trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
+            if (trueParticle) {
+                particleColor = GetParticleColor(trueParticle->PDG);
+                hasTrueObject = true;
+            }
+        }
+
+        // Draw dashed line in XY projection
         TLine* lineXY = new TLine(startPos.X(), startPos.Y(), endPos.X(), endPos.Y());
-        lineXY->SetLineColor(particleColor);
-        lineXY->SetLineWidth(2);
-        lineXY->SetLineStyle(1); // Solid line
+        if (hasTrueObject) {
+            lineXY->SetLineColor(particleColor);
+            lineXY->SetLineWidth(4); // Thick, matching true trajectory
+        } else {
+            lineXY->SetLineColorAlpha(particleColor, 0.1); // Light grey with 10% transparency
+            lineXY->SetLineWidth(2); // Thinner than truth-matched
+        }
+        lineXY->SetLineStyle(2); // Dashed line
         lineXY->Draw();
         neutralParticleLinesXY.push_back(lineXY);
 
         // Draw start marker (circle) in XY projection
         TMarker* startMarkerXY = new TMarker(startPos.X(), startPos.Y(), 20); // Circle marker
-        startMarkerXY->SetMarkerColor(particleColor);
-        startMarkerXY->SetMarkerSize(1.2);
+        if (hasTrueObject) {
+            startMarkerXY->SetMarkerColor(particleColor);
+        } else {
+            startMarkerXY->SetMarkerColorAlpha(particleColor, 0.1);
+        }
+        startMarkerXY->SetMarkerSize(1.8);
         startMarkerXY->Draw();
         neutralStartMarkersXY.push_back(startMarkerXY);
 
         // Draw end marker (square) in XY projection
         TMarker* endMarkerXY = new TMarker(endPos.X(), endPos.Y(), 21); // Square marker
-        endMarkerXY->SetMarkerColor(particleColor);
-        endMarkerXY->SetMarkerSize(1.2);
+        if (hasTrueObject) {
+            endMarkerXY->SetMarkerColor(particleColor);
+        } else {
+            endMarkerXY->SetMarkerColorAlpha(particleColor, 0.1);
+        }
+        endMarkerXY->SetMarkerSize(1.8);
         endMarkerXY->Draw();
         neutralEndMarkersXY.push_back(endMarkerXY);
+
+        // Additionally draw true particle trajectory if it's a neutral particle (K0, eta, pi0, gamma)
+        if (neutralParticle->TrueObject != nullptr) {
+            AnaTrueParticleB* trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
+            int absPDG = abs(trueParticle->PDG);
+            if (trueParticle && (absPDG == 310 || absPDG == 130 || absPDG == 221 || absPDG == 111 || absPDG == 22)) {
+                // Draw true K0 trajectory as solid line
+                TVector3 trueStartPos(trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
+                TVector3 trueEndPos(trueParticle->PositionEnd[0], trueParticle->PositionEnd[1], trueParticle->PositionEnd[2]);
+
+                if (trueStartPos.X() > -900 && trueEndPos.X() > -900) {
+                    // Draw solid line for true trajectory (thicker)
+                    TLine* trueLineXY = new TLine(trueStartPos.X(), trueStartPos.Y(), trueEndPos.X(), trueEndPos.Y());
+                    trueLineXY->SetLineColor(particleColor);
+                    trueLineXY->SetLineWidth(4); // Thicker than dashed reco line
+                    trueLineXY->SetLineStyle(1); // Solid line for true trajectory
+                    trueLineXY->Draw();
+                    neutralParticleLinesXY.push_back(trueLineXY);
+
+                    // Draw true start marker (filled circle)
+                    TMarker* trueStartMarkerXY = new TMarker(trueStartPos.X(), trueStartPos.Y(), 20);
+                    trueStartMarkerXY->SetMarkerColor(particleColor);
+                    trueStartMarkerXY->SetMarkerSize(1.5);
+                    trueStartMarkerXY->Draw();
+                    neutralStartMarkersXY.push_back(trueStartMarkerXY);
+
+                    // Draw true end marker (filled square)
+                    TMarker* trueEndMarkerXY = new TMarker(trueEndPos.X(), trueEndPos.Y(), 21);
+                    trueEndMarkerXY->SetMarkerColor(particleColor);
+                    trueEndMarkerXY->SetMarkerSize(1.5);
+                    trueEndMarkerXY->Draw();
+                    neutralEndMarkersXY.push_back(trueEndMarkerXY);
+                }
+            }
+        }
 
         // Draw parent particle fitted line if it exists
         AnaParticlePD* parentParticle = neutralParticle->Parent;
         if (parentParticle) {
             AnaTrueParticleB* parentTrueParticle = parentParticle->GetTrueParticle();
             if (parentTrueParticle) {
-                // Use the same color as the neutral particle for consistency
-                int parentColor = particleColor;
+                // Use the parent particle's color based on its PDG
+                int parentColor = GetParticleColor(parentTrueParticle->PDG);
 
                 // Get parent particle end position (for parent particles, use end position)
                 TVector3 parentStartPos = pdAnaUtils::DefinePosition(parentParticle, false);
@@ -920,52 +962,101 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
         // Get the true particle associated with the neutral particle itself
         AnaTrueParticleB* trueParticle = nullptr;
 
-        // Check if the neutral particle has an associated true object
-        if (neutralParticle->TrueObject != nullptr) {
-            trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
-        }
-
-        if (!trueParticle) continue;
-
-        // Use the particle color based on the true PDG code
-        int particleColor = GetParticleColor(trueParticle->PDG);
-
-        // Get true start and end positions
-        TVector3 startPos(trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
-        TVector3 endPos(trueParticle->PositionEnd[0], trueParticle->PositionEnd[1], trueParticle->PositionEnd[2]);
+        // Get reconstructed start and end positions from neutral particle
+        TVector3 startPos(neutralParticle->PositionStart[0], neutralParticle->PositionStart[1], neutralParticle->PositionStart[2]);
+        TVector3 endPos(neutralParticle->PositionEnd[0], neutralParticle->PositionEnd[1], neutralParticle->PositionEnd[2]);
 
         // Check if positions are valid
         if (startPos.X() < -900 || endPos.X() < -900) continue;
 
-        // Draw line in XZ projection
+        // Determine color based on whether neutral particle has true object
+        int particleColor = kGray+1; // Default to light grey if no true object
+        bool hasTrueObject = false;
+        if (neutralParticle->TrueObject != nullptr) {
+            AnaTrueParticleB* trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
+            if (trueParticle) {
+                particleColor = GetParticleColor(trueParticle->PDG);
+                hasTrueObject = true;
+            }
+        }
+
+        // Draw dashed line in XZ projection
         TLine* lineXZ = new TLine(startPos.X(), startPos.Z(), endPos.X(), endPos.Z());
-        lineXZ->SetLineColor(particleColor);
-        lineXZ->SetLineWidth(2);
-        lineXZ->SetLineStyle(1); // Solid line
+        if (hasTrueObject) {
+            lineXZ->SetLineColor(particleColor);
+            lineXZ->SetLineWidth(4); // Thick, matching true trajectory
+        } else {
+            lineXZ->SetLineColorAlpha(particleColor, 0.1); // Light grey with 10% transparency
+            lineXZ->SetLineWidth(2); // Thinner than truth-matched
+        }
+        lineXZ->SetLineStyle(2); // Dashed line
         lineXZ->Draw();
         neutralParticleLinesXZ.push_back(lineXZ);
 
         // Draw start marker (circle) in XZ projection
         TMarker* startMarkerXZ = new TMarker(startPos.X(), startPos.Z(), 20); // Circle marker
-        startMarkerXZ->SetMarkerColor(particleColor);
-        startMarkerXZ->SetMarkerSize(1.2);
+        if (hasTrueObject) {
+            startMarkerXZ->SetMarkerColor(particleColor);
+        } else {
+            startMarkerXZ->SetMarkerColorAlpha(particleColor, 0.1);
+        }
+        startMarkerXZ->SetMarkerSize(1.8);
         startMarkerXZ->Draw();
         neutralStartMarkersXZ.push_back(startMarkerXZ);
 
         // Draw end marker (square) in XZ projection
         TMarker* endMarkerXZ = new TMarker(endPos.X(), endPos.Z(), 21); // Square marker
-        endMarkerXZ->SetMarkerColor(particleColor);
-        endMarkerXZ->SetMarkerSize(1.2);
+        if (hasTrueObject) {
+            endMarkerXZ->SetMarkerColor(particleColor);
+        } else {
+            endMarkerXZ->SetMarkerColorAlpha(particleColor, 0.1);
+        }
+        endMarkerXZ->SetMarkerSize(1.8);
         endMarkerXZ->Draw();
         neutralEndMarkersXZ.push_back(endMarkerXZ);
+
+        // Additionally draw true particle trajectory if it's a neutral particle (K0, eta, pi0, gamma)
+        if (neutralParticle->TrueObject != nullptr) {
+            AnaTrueParticleB* trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
+            int absPDG = abs(trueParticle->PDG);
+            if (trueParticle && (absPDG == 310 || absPDG == 130 || absPDG == 221 || absPDG == 111 || absPDG == 22)) {
+                // Draw true K0 trajectory as solid line
+                TVector3 trueStartPos(trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
+                TVector3 trueEndPos(trueParticle->PositionEnd[0], trueParticle->PositionEnd[1], trueParticle->PositionEnd[2]);
+
+                if (trueStartPos.X() > -900 && trueEndPos.X() > -900) {
+                    // Draw solid line for true trajectory (thicker)
+                    TLine* trueLineXZ = new TLine(trueStartPos.X(), trueStartPos.Z(), trueEndPos.X(), trueEndPos.Z());
+                    trueLineXZ->SetLineColor(particleColor);
+                    trueLineXZ->SetLineWidth(4); // Thicker than dashed reco line
+                    trueLineXZ->SetLineStyle(1); // Solid line for true trajectory
+                    trueLineXZ->Draw();
+                    neutralParticleLinesXZ.push_back(trueLineXZ);
+
+                    // Draw true start marker (filled circle)
+                    TMarker* trueStartMarkerXZ = new TMarker(trueStartPos.X(), trueStartPos.Z(), 20);
+                    trueStartMarkerXZ->SetMarkerColor(particleColor);
+                    trueStartMarkerXZ->SetMarkerSize(1.5);
+                    trueStartMarkerXZ->Draw();
+                    neutralStartMarkersXZ.push_back(trueStartMarkerXZ);
+
+                    // Draw true end marker (filled square)
+                    TMarker* trueEndMarkerXZ = new TMarker(trueEndPos.X(), trueEndPos.Z(), 21);
+                    trueEndMarkerXZ->SetMarkerColor(particleColor);
+                    trueEndMarkerXZ->SetMarkerSize(1.5);
+                    trueEndMarkerXZ->Draw();
+                    neutralEndMarkersXZ.push_back(trueEndMarkerXZ);
+                }
+            }
+        }
 
         // Draw parent particle fitted line if it exists
         AnaParticlePD* parentParticle = neutralParticle->Parent;
         if (parentParticle) {
             AnaTrueParticleB* parentTrueParticle = parentParticle->GetTrueParticle();
             if (parentTrueParticle) {
-                // Use the same color as the neutral particle for consistency
-                int parentColor = particleColor;
+                // Use the parent particle's color based on its PDG
+                int parentColor = GetParticleColor(parentTrueParticle->PDG);
 
                 // Get parent particle end position (for parent particles, use end position)
                 TVector3 parentStartPos = pdAnaUtils::DefinePosition(parentParticle, false);
@@ -1023,37 +1114,10 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
         legend->Draw();
     }
 
-    // Add individual legend entries for each neutral particle
-    for (size_t i = 0; i < neutralParticles.size(); i++) {
-        const auto& neutralParticle = neutralParticles[i];
-        if (!neutralParticle) continue;
+    // Note: Neutral particles are not included in the legend per user request
 
-        // Get the true particle associated with the neutral particle itself
-        AnaTrueParticleB* trueParticle = nullptr;
-        if (neutralParticle->TrueObject != nullptr) {
-            trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
-        }
-
-        if (!trueParticle) continue;
-
-        // Use the particle color based on the true PDG code
-        int particleColor = GetParticleColor(trueParticle->PDG);
-
-        // Create legend entry with particle information
-        TLine* dummyNeutralLine = new TLine();
-        dummyNeutralLine->SetLineStyle(1); // Solid line
-        dummyNeutralLine->SetLineColor(particleColor);
-        dummyNeutralLine->SetLineWidth(2);
-
-        // Create legend text with particle PDG and index
-        std::string legendText = "Neutral Particle #" + std::to_string(i+1) + " (PDG: " + std::to_string(trueParticle->PDG) + ")";
-        legend->AddEntry(dummyNeutralLine, legendText.c_str(), "L");
-    }
-
-    // Redraw legend with all neutral particle entries
-    if (!neutralParticleLinesXY.empty()) {
-        legend->Draw();
-    }
+    // Redraw legend
+    legend->Draw();
 
     // Update canvas
     c1->Update();
@@ -1425,51 +1489,120 @@ void pdEventDisplay::DrawEvent3D(AnaEventB& event, int eventNumber, const ToyBox
         const auto& neutralParticle = neutralParticles[i];
         if (!neutralParticle) continue;
 
-        // Get the true particle associated with the neutral particle itself
-        AnaTrueParticleB* trueParticle = nullptr;
+        // Get reconstructed start and end positions from neutral particle
+        TVector3 startPos(neutralParticle->PositionStart[0], neutralParticle->PositionStart[1], neutralParticle->PositionStart[2]);
+        TVector3 endPos(neutralParticle->PositionEnd[0], neutralParticle->PositionEnd[1], neutralParticle->PositionEnd[2]);
+
+        // Check if positions are valid
+        if (startPos.X() < -900 || endPos.X() < -900) continue;
+
+        // Determine color based on whether neutral particle has true object
+        int particleColor = kGray+1; // Default to light grey if no true object
+        bool hasTrueObject = false;
         if (neutralParticle->TrueObject != nullptr) {
-            trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
+            AnaTrueParticleB* trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
+            if (trueParticle) {
+                particleColor = GetParticleColor(trueParticle->PDG);
+                hasTrueObject = true;
+            }
         }
 
-        if (!trueParticle) continue;
-
-        // Use the particle color based on the true PDG code
-        int particleColor = GetParticleColor(trueParticle->PDG);
-
-        // Draw true neutral particle line
+        // Draw dashed neutral particle line
         TPolyLine3D* neutralLine = new TPolyLine3D(2);
-        neutralLine->SetPoint(0, trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
-        neutralLine->SetPoint(1, trueParticle->PositionEnd[0], trueParticle->PositionEnd[1], trueParticle->PositionEnd[2]);
-        neutralLine->SetLineColor(particleColor);
-        neutralLine->SetLineWidth(3);
-        neutralLine->SetLineStyle(1);
+        neutralLine->SetPoint(0, startPos.X(), startPos.Y(), startPos.Z());
+        neutralLine->SetPoint(1, endPos.X(), endPos.Y(), endPos.Z());
+        if (hasTrueObject) {
+            neutralLine->SetLineColor(particleColor);
+            neutralLine->SetLineWidth(5); // Thick, matching true trajectory
+        } else {
+            neutralLine->SetLineColorAlpha(particleColor, 0.1); // Light grey with 10% transparency
+            neutralLine->SetLineWidth(3); // Thinner than truth-matched
+        }
+        neutralLine->SetLineStyle(2); // Dashed line
         neutralLine->Draw();
         neutralParticleLines3D.push_back(neutralLine);
 
         // Draw start and end markers
         TGraph2D* startMarker = new TGraph2D();
-        startMarker->SetPoint(0, trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
+        startMarker->SetPoint(0, startPos.X(), startPos.Y(), startPos.Z());
         startMarker->SetMarkerStyle(kFullCircle);
-        startMarker->SetMarkerColor(particleColor);
-        startMarker->SetMarkerSize(1.0);
+        if (hasTrueObject) {
+            startMarker->SetMarkerColor(particleColor);
+        } else {
+            startMarker->SetMarkerColorAlpha(particleColor, 0.1);
+        }
+        startMarker->SetMarkerSize(1.5);
         startMarker->Draw("P SAME");
         neutralStartMarkers3D.push_back(startMarker);
 
         TGraph2D* endMarker = new TGraph2D();
-        endMarker->SetPoint(0, trueParticle->PositionEnd[0], trueParticle->PositionEnd[1], trueParticle->PositionEnd[2]);
+        endMarker->SetPoint(0, endPos.X(), endPos.Y(), endPos.Z());
         endMarker->SetMarkerStyle(kFullSquare);
-        endMarker->SetMarkerColor(particleColor);
-        endMarker->SetMarkerSize(1.0);
+        if (hasTrueObject) {
+            endMarker->SetMarkerColor(particleColor);
+        } else {
+            endMarker->SetMarkerColorAlpha(particleColor, 0.1);
+        }
+        endMarker->SetMarkerSize(1.5);
         endMarker->Draw("P SAME");
         neutralEndMarkers3D.push_back(endMarker);
+
+        // Additionally draw true particle trajectory if it's a neutral particle (K0, eta, pi0, gamma)
+        if (neutralParticle->TrueObject != nullptr) {
+            AnaTrueParticleB* trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
+            int absPDG = abs(trueParticle->PDG);
+            if (trueParticle && (absPDG == 310 || absPDG == 130 || absPDG == 221 || absPDG == 111 || absPDG == 22)) {
+                // Draw true K0 trajectory as solid line
+                TVector3 trueStartPos(trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
+                TVector3 trueEndPos(trueParticle->PositionEnd[0], trueParticle->PositionEnd[1], trueParticle->PositionEnd[2]);
+
+                if (trueStartPos.X() > -900 && trueEndPos.X() > -900) {
+                    // Draw solid line for true trajectory (thicker)
+                    TPolyLine3D* trueLine3D = new TPolyLine3D(2);
+                    trueLine3D->SetPoint(0, trueStartPos.X(), trueStartPos.Y(), trueStartPos.Z());
+                    trueLine3D->SetPoint(1, trueEndPos.X(), trueEndPos.Y(), trueEndPos.Z());
+                    trueLine3D->SetLineColor(particleColor);
+                    trueLine3D->SetLineWidth(5); // Thicker than dashed reco line
+                    trueLine3D->SetLineStyle(1); // Solid line for true trajectory
+                    trueLine3D->Draw();
+                    neutralParticleLines3D.push_back(trueLine3D);
+
+                    // Draw true start marker (filled circle)
+                    TGraph2D* trueStartMarker = new TGraph2D();
+                    trueStartMarker->SetPoint(0, trueStartPos.X(), trueStartPos.Y(), trueStartPos.Z());
+                    trueStartMarker->SetMarkerStyle(kFullCircle);
+                    trueStartMarker->SetMarkerColor(particleColor);
+                    trueStartMarker->SetMarkerSize(1.5);
+                    trueStartMarker->Draw("P SAME");
+                    neutralStartMarkers3D.push_back(trueStartMarker);
+
+                    // Draw true end marker (filled square)
+                    TGraph2D* trueEndMarker = new TGraph2D();
+                    trueEndMarker->SetPoint(0, trueEndPos.X(), trueEndPos.Y(), trueEndPos.Z());
+                    trueEndMarker->SetMarkerStyle(kFullSquare);
+                    trueEndMarker->SetMarkerColor(particleColor);
+                    trueEndMarker->SetMarkerSize(1.5);
+                    trueEndMarker->Draw("P SAME");
+                    neutralEndMarkers3D.push_back(trueEndMarker);
+                }
+            }
+        }
 
         // Draw parent line if available
         if (neutralParticle->Parent) {
             AnaParticlePD* parent = neutralParticle->Parent;
+            AnaTrueParticleB* parentTrueParticle = parent->GetTrueParticle();
+
+            // Determine parent color
+            int parentColor = kBlack;
+            if (parentTrueParticle) {
+                parentColor = GetParticleColor(parentTrueParticle->PDG);
+            }
+
             TPolyLine3D* parentLine = new TPolyLine3D(2);
             parentLine->SetPoint(0, parent->PositionStart[0], parent->PositionStart[1], parent->PositionStart[2]);
             parentLine->SetPoint(1, parent->PositionEnd[0], parent->PositionEnd[1], parent->PositionEnd[2]);
-            parentLine->SetLineColor(particleColor);
+            parentLine->SetLineColor(parentColor);
             parentLine->SetLineWidth(2);
             parentLine->SetLineStyle(3); // Dotted line
             parentLine->Draw();
@@ -1490,29 +1623,7 @@ void pdEventDisplay::DrawEvent3D(AnaEventB& event, int eventNumber, const ToyBox
         }
     }
 
-    // Add neutral particle legend entries
-    for (size_t i = 0; i < neutralParticles.size(); i++) {
-        const auto& neutralParticle = neutralParticles[i];
-        if (!neutralParticle) continue;
-
-        AnaTrueParticleB* trueParticle = nullptr;
-        if (neutralParticle->TrueObject != nullptr) {
-            trueParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
-        }
-
-        if (!trueParticle) continue;
-
-        int particleColor = GetParticleColor(trueParticle->PDG);
-
-        // Create legend entry for neutral particle
-        TPolyLine3D* dummyNeutralLine = new TPolyLine3D(2);
-        dummyNeutralLine->SetLineStyle(1);
-        dummyNeutralLine->SetLineColor(particleColor);
-        dummyNeutralLine->SetLineWidth(2);
-
-        std::string legendText = "Neutral Particle #" + std::to_string(i+1) + " (PDG: " + std::to_string(trueParticle->PDG) + ")";
-        legend3D->AddEntry(dummyNeutralLine, legendText.c_str(), "L");
-    }
+    // Note: Neutral particles are not included in the legend per user request
 
     // Add vertex legend entry
     if (vertexMarkers3D.size() > 0) {

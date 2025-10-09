@@ -463,44 +463,49 @@ public:
   Bool_t HasPandora; //this should probably go in DataQuality
 };
 
-// Extension of AnaTrueVertexB for ProtoDUNE analysis
-class AnaTrueVertexPD: public AnaTrueVertexB{
-public :
+//** ------------------------------------------------------------ */
+// True equivalent vertex class for ProtoDUNE
+class AnaTrueEquivalentVertexPD{
+  public :
 
-  AnaTrueVertexPD();
-  virtual ~AnaTrueVertexPD();
+    AnaTrueEquivalentVertexPD();
+    virtual ~AnaTrueEquivalentVertexPD();
 
-  /// Clone this object.
-  virtual AnaTrueVertexPD* Clone() {
-    return new AnaTrueVertexPD(*this);
-  }
+    /// Clone this object.
+    virtual AnaTrueEquivalentVertexPD* Clone() {
+      return new AnaTrueEquivalentVertexPD(*this);
+    }
 
-  /// Dump the object to screen.
-  virtual void Print() const;
+    /// Dump the object to screen.
+    virtual void Print() const;
 
-protected:
+  protected:
 
-  /// Copy constructor is protected, as Clone() should be used to copy this object.
-  AnaTrueVertexPD(const AnaTrueVertexPD& vertex);
+    /// Copy constructor is protected, as Clone() should be used to copy this object.
+    AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVertexPD& vertex);
 
-public:
+  public:
 
-  /// Number of true particles associated with this vertex
-  Int_t NTrueParticles;
+    /// Vector containing the true particles associated with this vertex
+    std::vector<AnaTrueParticlePD*> TrueParticles;
 
-  /// Vector containing the true particles associated with this vertex
-  std::vector<AnaTrueParticlePD*> TrueParticles;
+    /// True Original distance between the two true particles
+    Float_t OriginalDistance;
 
-  /// Parent particle of this vertex
-  AnaTrueParticlePD* Parent;
+    /// Minimum distance between the two true particles
+    Float_t MinimumDistance;
 
-  /// Generation of the vertex (0=beam, 1=primary, 2=secondary, etc.)
-  Int_t Generation;
+    /// Opening angle between the two true particles
+    Float_t OpeningAngle;
 
-  /// Reaction/process that originated this vertex (interaction type)
-  Int_t Process;
-};
+    /// 3D coordinates of the vertex
+    Float_t Position[3];
 
+    /// 3D direction of the vertex
+    Float_t Direction[3];
+  };
+
+//** ------------------------------------------------------------ */
 // Extension of AnaVertexB for ProtoDUNE analysis
 class AnaVertexPD: public AnaVertexB{
 public :
@@ -532,17 +537,35 @@ public:
   /// Vector containing the particles associated with this vertex
   std::vector<AnaParticlePD*> Particles;
 
-  /// Original distance between the particles in the vertex
-  Float_t OriginalDistance;
-
   /// 3D coordinates of the vertex
   Float_t Position[3];
 
-  /// Generation of the vertex (0=beam, 1=primary, 2=secondary, etc.)
+  /// 3D momentum of the vertex
+  Float_t Momentum[3];
+
+  /// 3D direction of the vertex
+  Float_t Direction[3];
+
+  /// Energy of the vertex
+  Float_t Energy;
+
+  /// Opening angle of the vertex
+  Float_t OpeningAngle;
+
+  /// Angle with respect to the beam direction
+  Float_t AngleWithBeam;
+
+  /// Number of potential parents
+  Int_t NPotentialParents;
+
+  /// Generation of the vertex (1=primary, 2=secondary, etc.)
   Int_t Generation;
 
   /// Reaction/process that originated this vertex (interaction type)
   Int_t Process;
+
+  /// Original distance between the particles in the vertex
+  Float_t OriginalDistance;
 
   /// Fitted line parameters for daughter particles used in vertex reconstruction
   /// Each line is represented by 6 parameters: [x0, y0, z0, dx, dy, dz]
@@ -551,8 +574,20 @@ public:
 
   /// Minimum distance between the two fitted lines (distance between closest points)
   Float_t MinimumDistance;
+
+  AnaTrueEquivalentVertexPD* TrueEquivalentVertex;
+
+  /// Ensure particles in this vertex have proper momentum assigned
+  /// Uses the most robust momentum calculation method available
+  void EnsureParticleMomentum();
 };
 
+
+//** ------------------------------------------------------------ */
+// Forward declarations
+class AnaTrueEquivalentNeutralParticlePD;
+
+//** ------------------------------------------------------------ */
 // Extension for neutral particle analysis in ProtoDUNE
 class AnaNeutralParticlePD: public AnaParticleB{
 public :
@@ -601,6 +636,75 @@ public:
 
   /// Decay length of the neutral particle (in cm)
   Float_t DecayLength;
+
+  /// Number of reconstructed hits in the vertex
+  Int_t NRecoHitsInVertex;
+
+  /// The reconstructed neutral particle associated with this neutral particle
+  AnaParticlePD* RecoParticle;
+
+  /// The true neutral particle associated with this reconstructed neutral particle
+  AnaTrueEquivalentNeutralParticlePD* TrueEquivalentNeutralParticle;
+};
+
+//** ------------------------------------------------------------ */
+// True neutral particle class for ProtoDUNE
+class AnaTrueEquivalentNeutralParticlePD{
+public:
+
+  AnaTrueEquivalentNeutralParticlePD();
+  virtual ~AnaTrueEquivalentNeutralParticlePD();
+
+  /// Clone this object.
+  virtual AnaTrueEquivalentNeutralParticlePD* Clone() {
+    return new AnaTrueEquivalentNeutralParticlePD(*this);
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaTrueEquivalentNeutralParticlePD(const AnaTrueEquivalentNeutralParticlePD& trueEquivalentNeutralPart);
+
+public:
+
+  /// The true vertex associated with this neutral particle
+  AnaTrueEquivalentVertexPD* TrueEquivalentVertex;
+
+  /// The true parent particle that decayed into this neutral particle
+  AnaTrueParticlePD* TrueParent;
+
+  /// 3D coordinates of the particle
+  Float_t Position[3];
+
+  /// 3D direction of the particle
+  Float_t Direction[3];
+
+  /// 3D end position of the particle
+  Float_t PositionEnd[3];
+
+  /// 3D end direction of the particle
+  Float_t DirectionEnd[3];
+
+  /// Length of the particle
+  Float_t Length;
+
+  /// Momentum of the particle
+  Float_t Momentum;
+
+  // Mass of the particle
+  Float_t Mass;
+
+  /// PDG code of the particle
+  Int_t PDG;
+
+  /// Generation of the particle
+  Int_t Generation;
+
+  /// Process of the particle
+  Int_t Process;
 };
 
 

@@ -10,4 +10,8 @@
 #pragma link C++ class AnaHitPD+;
 #pragma link C++ class AnaTrajectoryPointPD+;
 #pragma link C++ class AnaWireID+;
+#pragma link C++ class AnaVertexPD+;
+#pragma link C++ class AnaTrueEquivalentVertexPD+;
+#pragma link C++ class AnaNeutralParticlePD+;
+#pragma link C++ class AnaTrueEquivalentNeutralParticlePD+;
 #endif

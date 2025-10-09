@@ -17,18 +17,19 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.CreateEventDisplay = 1 >
  < neutralKaonAnalysis.SaveToRootFile = 1 >
  < neutralKaonAnalysis.OutputDirectory = "/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/plots" >
- < neutralKaonAnalysis.MaxEventsToDisplay = 100 >
+ < neutralKaonAnalysis.MaxEventsToDisplay = 500 >
  < neutralKaonAnalysis.EventDisplayPercentage = 100 >
  < neutralKaonAnalysis.RequiredParticlePDGs = "310" >
  < neutralKaonAnalysis.OnlySignalEvents = 1 >
 
 --- Vertex Finder ------------
- < neutralKaonAnalysis.VertexRadius = 45.0 > //selection level ??
- < neutralKaonAnalysis.DaughterDistance = 15.0 >
+ < neutralKaonAnalysis.VertexRadius = 100.0 > //selection level ??
+ < neutralKaonAnalysis.DaughterDistance = 25.0 >
+ < neutralKaonAnalysis.CylinderRadius = 5 >
  < neutralKaonAnalysis.ImpactParameter = 0.0 > //selection level
  < neutralKaonAnalysis.MinVertexDaughters = 2 >
  < neutralKaonAnalysis.MaxVertexDaughters = 2 >
- < neutralKaonAnalysis.TrackFitLength = 15.0 > //length of track used for line fitting (cm)
+ < neutralKaonAnalysis.TrackFitLength = 30.0 > //length of track used for line fitting (cm)
  < neutralKaonAnalysis.UseROOTFitting = 1 > //use ROOT fitting instead of PCA for track fitting (1=ROOT, 0=PCA)
 
 --- Other Parameters -----------

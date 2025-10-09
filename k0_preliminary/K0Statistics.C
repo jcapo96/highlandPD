@@ -6,10 +6,12 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <set>
 #include <algorithm>
 #include <TSystem.h>
 #include <TFile.h>
 #include <TTree.h>
+// Data classes should be available through ROOT's dictionary system
 
 void K0Statistics(const char* dataDir = "/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/DATA") {
 
@@ -90,6 +92,16 @@ void K0Statistics(const char* dataDir = "/Users/jcapo/cernbox/DUNE-IFIC/Software
     std::vector<int> k0DecayChains; // Store decay chain information
     std::map<std::string, int> otherDecayModes; // Track specific "other" decay patterns
 
+    // Reconstruction statistics for K0 daughters
+    int totalK0Daughters = 0;
+    int reconstructedK0Daughters = 0;
+    int totalPiPlusDaughters = 0;
+    int reconstructedPiPlusDaughters = 0;
+    int totalPiMinusDaughters = 0;
+    int reconstructedPiMinusDaughters = 0;
+    int totalPiZeroDaughters = 0;
+    int reconstructedPiZeroDaughters = 0;
+
     int fileCounter = 0;
     Long64_t globalEventCounter = 0;
 
@@ -148,6 +160,16 @@ void K0Statistics(const char* dataDir = "/Users/jcapo/cernbox/DUNE-IFIC/Software
         int fileTotalK0FromPion = 0;
         int fileEventsWithK0FromAnyParent = 0;
         int fileTotalK0FromAnyParent = 0;
+
+        // File-specific reconstruction statistics
+        int fileTotalK0Daughters = 0;
+        int fileReconstructedK0Daughters = 0;
+        int fileTotalPiPlusDaughters = 0;
+        int fileReconstructedPiPlusDaughters = 0;
+        int fileTotalPiMinusDaughters = 0;
+        int fileReconstructedPiMinusDaughters = 0;
+        int fileTotalPiZeroDaughters = 0;
+        int fileReconstructedPiZeroDaughters = 0;
 
         for (Long64_t i = 0; i < nEntries; i++) {
             MiniTree->GetEntry(i);
@@ -367,9 +389,26 @@ void K0Statistics(const char* dataDir = "/Users/jcapo/cernbox/DUNE-IFIC/Software
                         AnaTrueParticleB* daughter = k0Daughters[dIdx];
                         int pdg = daughter->PDG;
 
-                        if (pdg == 211) piPlusCount++;
-                        else if (pdg == -211) piMinusCount++;
-                        else if (pdg == 111) piZeroCount++;
+                        // Count total daughters (reconstruction counting moved to separate loop)
+                        totalK0Daughters++;
+                        fileTotalK0Daughters++;
+
+                        // Count by particle type
+                        if (pdg == 211) {
+                            piPlusCount++;
+                            totalPiPlusDaughters++;
+                            fileTotalPiPlusDaughters++;
+                        }
+                        else if (pdg == -211) {
+                            piMinusCount++;
+                            totalPiMinusDaughters++;
+                            fileTotalPiMinusDaughters++;
+                        }
+                        else if (pdg == 111) {
+                            piZeroCount++;
+                            totalPiZeroDaughters++;
+                            fileTotalPiZeroDaughters++;
+                        }
                         else if (pdg == 11 || pdg == -11) electronCount++;
                         else if (pdg == 13 || pdg == -13) muonCount++;
                         else otherCount++;
@@ -486,6 +525,162 @@ void K0Statistics(const char* dataDir = "/Users/jcapo/cernbox/DUNE-IFIC/Software
                 }
             }
 
+            // Now analyze reconstructed particles to find K0 daughters
+            // First, collect all unique K0 daughter true particle IDs that we found
+            std::set<Int_t> k0DaughterTrueIDs;
+            std::set<Int_t> allK0IDs;
+
+            // Debug: Find all K0s first
+            for (UInt_t k = 0; k < nTrueParticles; k++) {
+                AnaTrueParticleB* truePart = spill->TrueParticles[k];
+                if (!truePart) continue;
+                if (truePart->PDG == 310) {
+                    allK0IDs.insert(truePart->ID);
+                }
+            }
+
+            // Debug: Find K0 daughters
+            for (UInt_t k = 0; k < nTrueParticles; k++) {
+                AnaTrueParticleB* truePart = spill->TrueParticles[k];
+                if (!truePart) continue;
+
+                // Check if this true particle is a daughter of a K0
+                for (UInt_t l = 0; l < nTrueParticles; l++) {
+                    AnaTrueParticleB* candidate = spill->TrueParticles[l];
+                    if (!candidate) continue;
+
+                    // Check if this candidate is a K0 and is the parent of our true particle
+                    if (candidate->PDG == 310 && candidate->ID == truePart->ParentID) {
+                        k0DaughterTrueIDs.insert(truePart->ID);
+                        break;
+                    }
+                }
+            }
+
+            // Debug: Show detailed info for first few events
+            if (i < 3) {
+                std::cout << "Debug Event " << i << ": spill->Bunches.size() = " << spill->Bunches.size()
+                          << ", Total K0s found: " << allK0IDs.size()
+                          << ", K0 daughter true IDs found: " << k0DaughterTrueIDs.size() << std::endl;
+
+                // Debug: Show some K0 daughter details
+                if (k0DaughterTrueIDs.size() > 0) {
+                    std::cout << "  K0 daughter true IDs: ";
+                    int count = 0;
+                    for (auto id : k0DaughterTrueIDs) {
+                        if (count < 5) {
+                            std::cout << id << " ";
+                            count++;
+                        }
+                    }
+                    std::cout << std::endl;
+                }
+            }
+
+            // Now look for reconstructed particles that correspond to these K0 daughters
+            std::set<Int_t> alreadyCountedReconParticles; // To avoid double counting across bunches
+            std::map<Int_t, Int_t> trueIDToReconCount; // Track how many reconstructed particles point to each true particle
+
+            for (UInt_t bunchIdx = 0; bunchIdx < spill->Bunches.size(); bunchIdx++) {
+                AnaBunchB* bunch = static_cast<AnaBunchB*>(spill->Bunches[bunchIdx]);
+                UInt_t nReconParticles = bunch->Particles.size();
+
+                for (UInt_t j = 0; j < nReconParticles; j++) {
+                    AnaParticleB* reconPart = bunch->Particles[j];
+                    if (!reconPart) continue;
+
+                    // Check if we already counted this reconstructed particle
+                    if (alreadyCountedReconParticles.find(reconPart->UniqueID) != alreadyCountedReconParticles.end()) {
+                        continue; // Already counted this reconstructed particle
+                    }
+
+                    // Check if this reconstructed particle has an associated true particle
+                    if (!reconPart->TrueObject) continue;
+
+                    // Cast to AnaTrueParticleB to access the true particle info
+                    AnaTrueParticleB* truePart = static_cast<AnaTrueParticleB*>(reconPart->TrueObject);
+                    if (!truePart) continue;
+
+                    // Get PDG for this true particle
+                    int pdg = truePart->PDG;
+
+                    // Debug: Track all reconstructed particles with true objects for first few events
+                    if (i < 3 && reconstructedK0Daughters < 10) {
+                        std::cout << "  Recon particle: UniqueID=" << reconPart->UniqueID
+                                  << ", TrueID=" << truePart->ID << ", PDG=" << pdg
+                                  << ", ParentID=" << truePart->ParentID << std::endl;
+                    }
+
+                    // Track potential particle splitting
+                    trueIDToReconCount[truePart->ID]++;
+
+                    // Check if this true particle is one of the K0 daughters we identified
+                    if (k0DaughterTrueIDs.find(truePart->ID) != k0DaughterTrueIDs.end()) {
+                        // This reconstructed particle corresponds to a K0 daughter
+
+                        // Mark this reconstructed particle as counted
+                        alreadyCountedReconParticles.insert(reconPart->UniqueID);
+
+                        // Count total reconstructed K0 daughters
+                        reconstructedK0Daughters++;
+                        fileReconstructedK0Daughters++;
+
+                        // Count by particle type
+                        if (pdg == 211) {
+                            reconstructedPiPlusDaughters++;
+                            fileReconstructedPiPlusDaughters++;
+                        }
+                        else if (pdg == -211) {
+                            reconstructedPiMinusDaughters++;
+                            fileReconstructedPiMinusDaughters++;
+                        }
+                        else if (pdg == 111) {
+                            reconstructedPiZeroDaughters++;
+                            fileReconstructedPiZeroDaughters++;
+                        }
+
+                        // Debug output for first few reconstructed daughters
+                        if (reconstructedK0Daughters <= 5) {
+                            std::cout << "Reconstructed K0 daughter " << reconstructedK0Daughters
+                                      << " PDG=" << pdg << " TrueID=" << truePart->ID
+                                      << " ReconUniqueID=" << reconPart->UniqueID << std::endl;
+                        }
+                    }
+                    // Debug: Check if we're finding reconstructed particles that should be K0 daughters but aren't in our set
+                    else if (i < 3 && (pdg == 211 || pdg == -211 || pdg == 111)) {
+                        // This is a pion/pion0 that might be a K0 daughter but we didn't identify it
+                        bool foundParent = false;
+                        for (UInt_t m = 0; m < nTrueParticles; m++) {
+                            AnaTrueParticleB* parent = spill->TrueParticles[m];
+                            if (!parent) continue;
+                            if (parent->PDG == 310 && parent->ID == truePart->ParentID) {
+                                foundParent = true;
+                                break;
+                            }
+                        }
+                        if (foundParent) {
+                            std::cout << "  WARNING: Found reconstructed " << pdg
+                                      << " with K0 parent (TrueID=" << truePart->ID
+                                      << ", ParentID=" << truePart->ParentID
+                                      << ") but not in k0DaughterTrueIDs set!" << std::endl;
+                        }
+                    }
+                }
+            }
+
+            // Debug: Check for particle splitting in first few events
+            if (i < 3) {
+                std::cout << "  Particle splitting analysis:" << std::endl;
+                for (auto& pair : trueIDToReconCount) {
+                    if (pair.second > 1) {
+                        std::cout << "    TrueID " << pair.first << " has " << pair.second
+                                  << " reconstructed particles (SPLITTING DETECTED!)" << std::endl;
+                    }
+                }
+                std::cout << "  Total reconstructed particles: " << trueIDToReconCount.size() << std::endl;
+                std::cout << "  Total reconstructed K0 daughters found: " << reconstructedK0Daughters << std::endl;
+            }
+
             // Progress indicator for large files
             if (i % 10000 == 0 && i > 0) {
                 std::cout << "    File progress: " << i << "/" << nEntries << std::endl;
@@ -514,6 +709,18 @@ void K0Statistics(const char* dataDir = "/Users/jcapo/cernbox/DUNE-IFIC/Software
         std::cout << "    Total K0 from any parent: " << fileTotalK0FromAnyParent << std::endl;
         std::cout << "    K0 with π+π- daughters: " << fileTotalK0WithPiDaughters << std::endl;
         std::cout << "    Events with K0→π+π- decays: " << fileEventsWithK0PiDaughters << std::endl;
+        std::cout << "    Total K0 daughters: " << fileTotalK0Daughters << std::endl;
+        std::cout << "    Reconstructed K0 daughters: " << fileReconstructedK0Daughters << std::endl;
+        std::cout << "    K0 daughter reconstruction efficiency: " << (fileTotalK0Daughters > 0 ? (double)fileReconstructedK0Daughters / fileTotalK0Daughters * 100.0 : 0.0) << "%" << std::endl;
+        std::cout << "    Total π+ daughters: " << fileTotalPiPlusDaughters << std::endl;
+        std::cout << "    Reconstructed π+ daughters: " << fileReconstructedPiPlusDaughters << std::endl;
+        std::cout << "    π+ reconstruction efficiency: " << (fileTotalPiPlusDaughters > 0 ? (double)fileReconstructedPiPlusDaughters / fileTotalPiPlusDaughters * 100.0 : 0.0) << "%" << std::endl;
+        std::cout << "    Total π- daughters: " << fileTotalPiMinusDaughters << std::endl;
+        std::cout << "    Reconstructed π- daughters: " << fileReconstructedPiMinusDaughters << std::endl;
+        std::cout << "    π- reconstruction efficiency: " << (fileTotalPiMinusDaughters > 0 ? (double)fileReconstructedPiMinusDaughters / fileTotalPiMinusDaughters * 100.0 : 0.0) << "%" << std::endl;
+        std::cout << "    Total π0 daughters: " << fileTotalPiZeroDaughters << std::endl;
+        std::cout << "    Reconstructed π0 daughters: " << fileReconstructedPiZeroDaughters << std::endl;
+        std::cout << "    π0 reconstruction efficiency: " << (fileTotalPiZeroDaughters > 0 ? (double)fileReconstructedPiZeroDaughters / fileTotalPiZeroDaughters * 100.0 : 0.0) << "%" << std::endl;
         std::cout << std::endl;
 
         // Close the file
@@ -686,6 +893,20 @@ void K0Statistics(const char* dataDir = "/Users/jcapo/cernbox/DUNE-IFIC/Software
               << (totalK0FromAnyKPlus > 0 ? (double)totalK0WithPiDaughters / totalK0FromAnyKPlus * 100.0 : 0.0) << "%)" << std::endl;
     std::cout << "  Of all K0 from any parent, " << k0DecayModesFromAnyParent[1] << " decayed to π+π- ("
               << (totalK0FromAnyParent > 0 ? (double)k0DecayModesFromAnyParent[1] / totalK0FromAnyParent * 100.0 : 0.0) << "%)" << std::endl;
+
+    std::cout << "\nReconstruction statistics for K0 daughters:" << std::endl;
+    std::cout << "  Total K0 daughters: " << totalK0Daughters << std::endl;
+    std::cout << "  Reconstructed K0 daughters: " << reconstructedK0Daughters << std::endl;
+    std::cout << "  Overall K0 daughter reconstruction efficiency: " << (totalK0Daughters > 0 ? (double)reconstructedK0Daughters / totalK0Daughters * 100.0 : 0.0) << "%" << std::endl;
+    std::cout << "  Total π+ daughters: " << totalPiPlusDaughters << std::endl;
+    std::cout << "  Reconstructed π+ daughters: " << reconstructedPiPlusDaughters << std::endl;
+    std::cout << "  π+ reconstruction efficiency: " << (totalPiPlusDaughters > 0 ? (double)reconstructedPiPlusDaughters / totalPiPlusDaughters * 100.0 : 0.0) << "%" << std::endl;
+    std::cout << "  Total π- daughters: " << totalPiMinusDaughters << std::endl;
+    std::cout << "  Reconstructed π- daughters: " << reconstructedPiMinusDaughters << std::endl;
+    std::cout << "  π- reconstruction efficiency: " << (totalPiMinusDaughters > 0 ? (double)reconstructedPiMinusDaughters / totalPiMinusDaughters * 100.0 : 0.0) << "%" << std::endl;
+    std::cout << "  Total π0 daughters: " << totalPiZeroDaughters << std::endl;
+    std::cout << "  Reconstructed π0 daughters: " << reconstructedPiZeroDaughters << std::endl;
+    std::cout << "  π0 reconstruction efficiency: " << (totalPiZeroDaughters > 0 ? (double)reconstructedPiZeroDaughters / totalPiZeroDaughters * 100.0 : 0.0) << "%" << std::endl;
 
     std::cout << "\nAnalysis complete!" << std::endl;
 }

@@ -80,6 +80,16 @@ namespace pdAnaUtils{
 
   Double_t EstimateTrueMomAtAPABorder(AnaParticlePD* part);
 
+  /// Calculate momentum from calorimetric energy, optionally including decay products
+  /// @param part The particle to calculate momentum for
+  /// @param pdg The PDG code of the particle hypothesis
+  /// @param includeDecayProducts If true, add energy from daughter particles
+  /// @return Momentum in MeV/c
+  Float_t ComputeCalorimetricMomentum(AnaParticlePD* part, int pdg, bool includeDecayProducts = false);
+
+  // Compute invariant mass for true particles (helper function)
+  Float_t ComputeTrueInvariantMass(const AnaTrueParticlePD& part1, const AnaTrueParticlePD& part2, Float_t mass1, Float_t mass2);
+
   Double_t ComputeDistanceToClosestParticle(AnaParticlePD* part, AnaParticleB** parts, const int nparts);
 
   void GetBeamQualityCuts(AnaEventPD* event,
@@ -114,6 +124,12 @@ namespace pdAnaUtils{
 
   /// Overloaded version for backward compatibility (defaults to start position)
   void ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams, double trackLength = 15.0);
+
+  /// Extrapolate track for true particles
+  void ExtrapolateTrack(AnaTrueParticlePD* part, std::vector<double>& fitParams, double trackLength, bool useStartPosition);
+
+  /// Overloaded version of ExtrapolateTrack for true particles (defaults to start position)
+  void ExtrapolateTrack(AnaTrueParticlePD* part, std::vector<double>& fitParams, double trackLength = 15.0);
 
   /// Helper function to fit a line to a set of 3D points using PCA
   /// @param points Vector of 3D points to fit
@@ -159,6 +175,10 @@ namespace pdAnaUtils{
   /// Find vertex position by fitting lines to daughter particles and finding closest points
   /// @param vertex The vertex to find position for
   void FindVertexPosition(AnaVertexPD* vertex);
+
+  /// Find vertex position by fitting lines to true daughter particles and finding closest points
+  /// @param vertex The true vertex to find position for
+  void FindVertexPosition(AnaTrueEquivalentVertexPD* vertex);
 }
 
 #endif

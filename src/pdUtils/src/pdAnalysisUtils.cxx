@@ -58,6 +58,7 @@ std::map< int, TProfile* > templates;
 TProfile* ProtonTemplate = (TProfile*)dEdX_template_file->Get( "dedx_range_pro" );
 TProfile* MuonTemplate   = (TProfile*)dEdX_template_file->Get( "dedx_range_mu" );
 TProfile* KaonTemplate   = (TProfile*)dEdX_template_file->Get( "dedx_range_ka" );
+TProfile* PionTemplate   = (TProfile*)dEdX_template_file->Get( "dedx_range_pi" );
 /*
 templates[ 211 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_pi"  );
 templates[ 321 ]  = (TProfile*)dEdX_template_file->Get( "dedx_range_ka"  );
@@ -268,12 +269,16 @@ AnaTrueParticle* pdAnaUtils::GetBeamTrueParticle(const AnaSpillB& spill){
 AnaTrueParticlePD* pdAnaUtils::GetTrueParticle(AnaEventB* event, Int_t ID){
 //*****************************************************************************
 
+  if(!event) return NULL;
+
   // Get all reconstructed tracks in the event
   AnaTrueParticleB** trueParticles = event->TrueParticles;
   Int_t nTrueParts                 = event->nTrueParticles;
 
+  if(!trueParticles || nTrueParts <= 0) return NULL;
+
   for (Int_t i=0;i<nTrueParts;i++){
-    if(trueParticles[i]->ID == ID){
+    if(trueParticles[i] && trueParticles[i]->ID == ID){
 	return static_cast<AnaTrueParticlePD*>(trueParticles[i]);
       }
     }
@@ -323,6 +328,7 @@ std::pair< double, int > pdAnaUtils::Chi2PID(const AnaParticlePD& part, const in
   if(pdg == 2212)profile = ProtonTemplate;
   else if(pdg == 13)profile = MuonTemplate;
   else if(pdg == 321)profile = KaonTemplate;
+  else if(pdg == 211)profile = PionTemplate;
   else{
     std::cout << "no profile for pdg " << pdg << std::endl;
     return std::make_pair(9999., -1);
@@ -623,7 +629,6 @@ void pdAnaUtils::ComputeParticlePositionAndDirection(AnaParticlePD* part){
 
 //***************************************************************
 Float_t pdAnaUtils::ComputeTruncatedMean(float truncate_low, float truncate_high, const std::vector<double> dEdx){
-//***************************************************************
 
   //check levels are ok
   truncate_high = 1 - truncate_high;
@@ -739,9 +744,14 @@ Float_t pdAnaUtils::ComputeAveragedEdxOverResRange(AnaParticlePD* part, double m
   double sumdedx = 0;
   int nhits      = 0;
   for(size_t i = 0; i < part->Hits[2].size(); i++){
+    // std::cout << "DEBUG: Residual range: " << part->Hits[2][i].ResidualRange << std::endl;
+    // std::cout << "DEBUG: Dedx: " << part->Hits[2][i].dEdx << std::endl;
+    // std::cout << "DEBUG: Dedx_calib: " << part->Hits[2][i].dEdx_calib << std::endl;
+    // std::cout << "DEBUG: Dedx_SCE: " << part->Hits[2][i].dEdx_SCE << std::endl;
+    // std::cout << "DEBUG: Dedx_NoSCE: " << part->Hits[2][i].dEdx_NoSCE << std::endl;
     if(part->Hits[2][i].ResidualRange < maxresrange){
-      if(part->Hits[2][i].dEdx_calib != -999 && part->Hits[2][i].dEdx_calib < 1000){
-        sumdedx += part->Hits[2][i].dEdx_calib;
+      if(part->Hits[2][i].dEdx != -999 && part->Hits[2][i].dEdx < 1000){
+        sumdedx += part->Hits[2][i].dEdx;
         nhits++;
       }
     }
@@ -893,6 +903,91 @@ Double_t pdAnaUtils::EstimateTrueMomAtAPABorder(AnaParticlePD* part){
   momf = sqrt(pow(sqrt(momi*momi+mass*mass)-depE,2)-mass*mass);
 
   return momf;
+}
+
+//*****************************************************************************
+Float_t pdAnaUtils::ComputeCalorimetricMomentum(AnaParticlePD* part, int pdg, bool includeDecayProducts){
+//*****************************************************************************
+
+  if(!part) return -999.0;
+
+  // Always use pion mass hypothesis for the main particle
+  const double pionMass = 0.13957; // GeV/c^2
+
+  int plane = 2; // Collection plane
+
+  // Check if particle has hits
+  if(part->Hits[plane].empty()) {
+    // No hits available
+    return -999.0;
+  }
+
+  // Calculate deposited kinetic energy from dE/dx integration
+  // Note: framework base units are MeV for energy
+  double kineticEnergy = 0.0;
+  // std::cout << "DEBUG: Hits size: " << part->Hits[plane].size() << std::endl;
+  for(size_t i = 0; i < part->Hits[plane].size(); i++){
+    // Skip invalid hits
+    // std::cout << "DEBUG: Dedx: " << part->Hits[plane][i].dEdx << std::endl;
+    // std::cout << "DEBUG: Dedx_NoSCE: " << part->Hits[plane][i].dEdx_NoSCE << std::endl;
+    // std::cout << "DEBUG: Dedx: " << part->Hits[plane][i].dEdx_SCE << std::endl;
+    // std::cout << "DEBUG: Pitch: " << part->Hits[plane][i].Pitch << std::endl;
+    if(part->Hits[plane][i].dEdx == -999 ||
+       part->Hits[plane][i].Pitch < 0) {
+      continue;
+    }
+
+    double dedx = part->Hits[plane][i].dEdx;
+    double pitch = part->Hits[plane][i].Pitch;
+
+    // std::cout << "DEBUG: Dedx: " << dedx << std::endl;
+    // std::cout << "DEBUG: Pitch: " << pitch << std::endl;
+
+    // Add energy deposited in this hit
+    kineticEnergy += dedx * pitch;
+  }
+
+  // If requested, add energy from decay products (daughters)
+  // Do NOT assume daughter mass - just add their deposited kinetic energy directly
+  if(includeDecayProducts && !part->Daughters.empty()) {
+    for(size_t i = 0; i < part->Daughters.size(); i++) {
+      AnaParticlePD* daughter = static_cast<AnaParticlePD*>(part->Daughters[i]);
+      if(!daughter) continue;
+
+      // Calculate daughter's deposited kinetic energy without mass assumption
+      if(!daughter->Hits[plane].empty()) {
+        for(size_t j = 0; j < daughter->Hits[plane].size(); j++){
+          // Skip invalid hits
+          if(daughter->Hits[plane][j].dEdx == -999 ||
+             daughter->Hits[plane][j].Pitch < 0) {
+            continue;
+          }
+
+          double dedx = daughter->Hits[plane][j].dEdx;
+          double pitch = daughter->Hits[plane][j].Pitch;
+
+          // Add energy deposited in this daughter hit
+          kineticEnergy += dedx * pitch;
+        }
+      }
+    }
+  }
+
+  // Calculate total energy in MeV: E = KE + m
+  // Note: pionMass is in GeV, convert to MeV
+  double totalEnergy = kineticEnergy/1000 + pionMass; // GeV
+  // std::cout << "DEBUG: Kinetic energy: " << kineticEnergy << std::endl;
+  // std::cout << "DEBUG: Pion mass: " << pionMass << std::endl;
+  // std::cout << "DEBUG: Total energy: " << totalEnergy << std::endl;
+
+  // Calculate momentum in MeV: p = sqrt(E^2 - m^2)
+  double momentumGeV = sqrt(totalEnergy*totalEnergy - pionMass*pionMass); // GeV
+  // std::cout << "DEBUG: Momentum GeV: " << momentumGeV << std::endl;
+
+  // Convert to GeV/c for consistency with framework
+  double momentum = momentumGeV; // GeV
+
+  return (Float_t)momentum;
 }
 
 //***************************************************************
@@ -1329,13 +1424,12 @@ std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaPart
 // Usage example:
 //   std::vector<AnaVertexPD*> vertices = pdAnaUtils::CreateReconstructedVertices(event, 5.0);
 //   std::vector<AnaNeutralParticlePD*> neutralParticles = pdAnaUtils::CreateAnaNeutralParticles(event, vertices, 10.0, 2.0);
-//   // This will find particles whose end positions are within 10cm of any vertex,
-//   // extrapolate their trajectories, and create neutral particles for those with
-//   // impact parameter >= 2.0cm (i.e., particles that don't pass too close to the vertex)
-//   // A single particle can be assigned to multiple vertices if it meets the criteria for multiple vertices
+  // This will find particles whose end positions are within 10cm of any vertex,
+  // extrapolate their trajectories, and create neutral particles for those with
+  // impact parameter >= 2.0cm (i.e., particles that don't pass too close to the vertex)
+  // A single particle can be assigned to multiple vertices if it meets the criteria for multiple vertices
 //***************************************************************
 std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEventB& event, const std::vector<AnaVertexPD*>& vertices, double VertexRadius, double ImpactParameter){
-//***************************************************************
 
   std::vector<AnaNeutralParticlePD*> neutralParticles;
 
@@ -1344,26 +1438,25 @@ std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEven
   int nParts = event.nParticles;
   int neutralParticleID = 0; // Counter for unique neutral particle IDs
 
-  // Loop over all particles
-  for(int i = 0; i < nParts; i++){
-    AnaParticlePD* particle = static_cast<AnaParticlePD*>(parts[i]);
-    if(!particle) continue;
+  // Extrapolate the particle trajectory first
+  double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+  double daughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
+  double cylinderRadius = ND::params().GetParameterD("neutralKaonAnalysis.CylinderRadius");
 
-    // Check if particle has valid end position
-    if (particle->PositionEnd[0] < -900 || particle->PositionEnd[1] < -900 || particle->PositionEnd[2] < -900) {
-      continue; // Skip particles with invalid end positions
-    }
+  // Loop over vertices first, then particles
+  for(size_t v = 0; v < vertices.size(); v++){
+    AnaVertexPD* vertex = vertices[v];
+    if(!vertex) continue;
 
-    // Extrapolate the particle trajectory first
-    double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+    // Loop over all particles for this vertex
+    for(int i = 0; i < nParts; i++){
+      AnaParticlePD* particle = static_cast<AnaParticlePD*>(parts[i]);
+      if(!particle) continue;
 
-    // Check if this particle's end position is within any vertex sphere
-    // and if impact parameter is sufficient
-
-    // Loop over all vertices to check if particle end is within sphere
-    for(size_t v = 0; v < vertices.size(); v++){
-      AnaVertexPD* vertex = vertices[v];
-      if(!vertex) continue;
+      // Check if particle has valid end position
+      if (particle->PositionEnd[0] < -900 || particle->PositionEnd[1] < -900 || particle->PositionEnd[2] < -900) {
+        continue; // Skip particles with invalid end positions
+      }
 
       // Calculate distance from particle end position to vertex position
       TVector3 particleEnd(particle->PositionEnd[0], particle->PositionEnd[1], particle->PositionEnd[2]);
@@ -1387,12 +1480,65 @@ std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEven
 
         // Create neutral particle for this vertex
         AnaNeutralParticlePD* neutralParticle = new AnaNeutralParticlePD();
-        neutralParticle->ImpactParameter = impactParameter;
-        neutralParticle->UniqueID = neutralParticleID++;
+
+        // Initialize potential parent counter for this particle
+        // Looks for other particles ending within the daughter distance from the vertex, being potentially the parent of the vertex
+        Int_t NPotentialParents = 0;
+        Int_t NRecoHitsInVertex = 0;
+        for(size_t j = 0; j < nParts; j++){
+          AnaParticlePD* potentialParent = static_cast<AnaParticlePD*>(parts[j]);
+          if(potentialParent){
+            // Skip if the potential parent is one of the particles in the vertex or the current parent particle
+            if(potentialParent->UniqueID == vertex->Particles[0]->UniqueID || potentialParent->UniqueID == vertex->Particles[1]->UniqueID || potentialParent->UniqueID == particle->UniqueID)continue;
+            TVector3 potentialParentEnd(potentialParent->PositionEnd[0], potentialParent->PositionEnd[1], potentialParent->PositionEnd[2]);
+            double potentialParentDistance = (potentialParentEnd - vertexPos).Mag();
+            if(potentialParentDistance < daughterDistance){
+              NPotentialParents++;
+              Int_t nHits = potentialParent->Hits[2].size();
+              for(size_t k = 0; k < nHits; k++){
+                AnaHitPD* hit = &potentialParent->Hits[2][k];
+
+                // Define cylinder from particle->PositionEnd to vertex->Position
+                TVector3 cylinderStart(particle->PositionEnd[0], particle->PositionEnd[1], particle->PositionEnd[2]);
+                TVector3 cylinderEnd(vertex->Position[0], vertex->Position[1], vertex->Position[2]);
+                TVector3 cylinderAxis = cylinderEnd - cylinderStart;
+                double cylinderLength = cylinderAxis.Mag();
+
+                // Get hit position
+                TVector3 hitPos = hit->Position;
+
+                // Vector from cylinder start to hit
+                TVector3 startToHit = hitPos - cylinderStart;
+
+                // Project onto cylinder axis to check if hit is within cylinder length
+                double projection = startToHit.Dot(cylinderAxis) / cylinderLength;
+
+                // Check if projection is within cylinder bounds (0 to cylinderLength)
+                if(projection >= 0 && projection <= cylinderLength){
+                  // Calculate perpendicular distance from hit to cylinder axis
+                  TVector3 axisDirection = cylinderAxis.Unit();
+                  TVector3 projectionVector = axisDirection * startToHit.Dot(axisDirection);
+                  TVector3 perpendicularVector = startToHit - projectionVector;
+                  double perpendicularDistance = perpendicularVector.Mag();
+
+                  // Check if hit is within cylinder radius
+                  if(perpendicularDistance < cylinderRadius){
+                    NRecoHitsInVertex++;
+                  }
+                }
+              }
+            }
+          }
+        }
 
         // Set vertex and parent
         neutralParticle->Vertex = vertex;
         neutralParticle->Parent = particle;
+
+        neutralParticle->Vertex->NPotentialParents = NPotentialParents;
+        neutralParticle->NRecoHitsInVertex = NRecoHitsInVertex;
+        neutralParticle->ImpactParameter = impactParameter;
+        neutralParticle->UniqueID = neutralParticleID++;
 
         neutralParticle->PositionStart[0] = neutralParticle->Parent->PositionEnd[0];
         neutralParticle->PositionStart[1] = neutralParticle->Parent->PositionEnd[1];
@@ -1406,7 +1552,7 @@ std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEven
         //TODO: Here we might add the time component of the composition of the particles in the vertex
         neutralParticle->PositionEnd[3] = -999; // Time component
 
-        // Calculate direction as the vector from PositionStart to PositionEnd
+        // Calculate start direction as the vector from PositionStart to PositionEnd
         Float_t directionStart[3];
         directionStart[0] = neutralParticle->PositionEnd[0] - neutralParticle->PositionStart[0];
         directionStart[1] = neutralParticle->PositionEnd[1] - neutralParticle->PositionStart[1];
@@ -1422,107 +1568,187 @@ std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEven
           directionStart[2] /= norm;
         }
 
-        // Set direction (from extrapolated line) - using inherited DirectionStart from AnaParticleB
+        // Set direction
         neutralParticle->DirectionStart[0] = directionStart[0];
         neutralParticle->DirectionStart[1] = directionStart[1];
         neutralParticle->DirectionStart[2] = directionStart[2];
 
-        // Calculate DirectionEnd as the sum of DirectionStart of the two particles in the vertex
-        if (vertex->NParticles >= 2) {
-          AnaParticlePD* part1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
-          AnaParticlePD* part2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
+        // Set the end direction from the vertex direction
+        neutralParticle->DirectionEnd[0] = vertex->Direction[0];
+        neutralParticle->DirectionEnd[1] = vertex->Direction[1];
+        neutralParticle->DirectionEnd[2] = vertex->Direction[2];
 
-          if (part1 && part2) {
-            // Sum the direction vectors of the two particles
-            Float_t directionEnd[3];
-            directionEnd[0] = part1->DirectionStart[0] + part2->DirectionStart[0];
-            directionEnd[1] = part1->DirectionStart[1] + part2->DirectionStart[1];
-            directionEnd[2] = part1->DirectionStart[2] + part2->DirectionStart[2];
+        neutralParticle->Length = sqrt(pow(neutralParticle->PositionEnd[0]-neutralParticle->PositionStart[0],2)+pow(neutralParticle->PositionEnd[1]-neutralParticle->PositionStart[1],2)+pow(neutralParticle->PositionEnd[2]-neutralParticle->PositionStart[2],2));
 
-            // Normalize the resulting direction vector
-            Float_t normEnd = sqrt(directionEnd[0]*directionEnd[0] +
-                                  directionEnd[1]*directionEnd[1] +
-                                  directionEnd[2]*directionEnd[2]);
-            if (normEnd > 0) {
-              directionEnd[0] /= normEnd;
-              directionEnd[1] /= normEnd;
-              directionEnd[2] /= normEnd;
-            }
+        //Create true equivalentneutral particle
+        AnaTrueEquivalentNeutralParticlePD* trueEquivalentNeutralParticle = new AnaTrueEquivalentNeutralParticlePD();
+        //Add the true vertex and true parent (cast to correct types)
+        trueEquivalentNeutralParticle->TrueEquivalentVertex = static_cast<AnaTrueEquivalentVertexPD*>(vertex->TrueEquivalentVertex);
+        trueEquivalentNeutralParticle->TrueParent = static_cast<AnaTrueParticlePD*>(particle->TrueObject);
+        //Add the position and direction of the true particle
+        if (particle->TrueObject) {
+          AnaTrueParticlePD* trueParticle = static_cast<AnaTrueParticlePD*>(particle->TrueObject);
+          trueEquivalentNeutralParticle->Position[0] = trueParticle->PositionEnd[0];
+          trueEquivalentNeutralParticle->Position[1] = trueParticle->PositionEnd[1];
+          trueEquivalentNeutralParticle->Position[2] = trueParticle->PositionEnd[2];
+        }
+        //Add the end position of the true vertex
+        if (vertex->TrueEquivalentVertex) {
+          trueEquivalentNeutralParticle->PositionEnd[0] = vertex->TrueEquivalentVertex->Position[0];
+          trueEquivalentNeutralParticle->PositionEnd[1] = vertex->TrueEquivalentVertex->Position[1];
+          trueEquivalentNeutralParticle->PositionEnd[2] = vertex->TrueEquivalentVertex->Position[2];
+        }
 
-            // Set the end direction
-            neutralParticle->DirectionEnd[0] = directionEnd[0];
-            neutralParticle->DirectionEnd[1] = directionEnd[1];
-            neutralParticle->DirectionEnd[2] = directionEnd[2];
+        // Calculate the direction of the true particle
+        Float_t trueDirectionStart[3];
+        trueDirectionStart[0] = trueEquivalentNeutralParticle->PositionEnd[0] - trueEquivalentNeutralParticle->Position[0];
+        trueDirectionStart[1] = trueEquivalentNeutralParticle->PositionEnd[1] - trueEquivalentNeutralParticle->Position[1];
+        trueDirectionStart[2] = trueEquivalentNeutralParticle->PositionEnd[2] - trueEquivalentNeutralParticle->Position[2];
 
-            if(part1->ParentID == part2->ParentID){
-              // Check if the vertex particles have truth information
-              AnaTrueParticlePD* trueParticle1 = static_cast<AnaTrueParticlePD*>(part1->TrueObject);
-              AnaTrueParticlePD* trueParticle2 = static_cast<AnaTrueParticlePD*>(part2->TrueObject);
+        // Normalize the direction vector
+        Float_t trueNorm = sqrt(trueDirectionStart[0]*trueDirectionStart[0] +
+                            trueDirectionStart[1]*trueDirectionStart[1] +
+                            trueDirectionStart[2]*trueDirectionStart[2]);
+        if (norm > 0) {
+          trueDirectionStart[0] /= trueNorm;
+          trueDirectionStart[1] /= trueNorm;
+          trueDirectionStart[2] /= trueNorm;
+        }
 
-              if(trueParticle1 && trueParticle2) {
-                // Use the true parent ID instead of reconstructed ParentID
-                if(trueParticle1->ParentID == trueParticle2->ParentID) {
-                  // Find the true object associated with the true parent ID
-                  AnaTrueParticleB** trueParticles = event.TrueParticles;
-                  Int_t nTrueParts = event.nTrueParticles;
-                  AnaTrueParticleB* parentTrueObject = nullptr;
+        // Set direction
+        trueEquivalentNeutralParticle->Direction[0] = trueDirectionStart[0];
+        trueEquivalentNeutralParticle->Direction[1] = trueDirectionStart[1];
+        trueEquivalentNeutralParticle->Direction[2] = trueDirectionStart[2];
 
-                  for (Int_t i = 0; i < nTrueParts; i++) {
-                    if (trueParticles[i] && trueParticles[i]->ID == trueParticle1->ParentID) {
-                      parentTrueObject = trueParticles[i];
-                      break;
-                    }
+        Float_t trueDirectionEnd[3];
+        trueDirectionEnd[0] = vertex->TrueEquivalentVertex->Direction[0];
+        trueDirectionEnd[1] = vertex->TrueEquivalentVertex->Direction[1];
+        trueDirectionEnd[2] = vertex->TrueEquivalentVertex->Direction[2];
+
+        // Normalize the direction vector
+        Float_t trueNormEnd = sqrt(trueDirectionEnd[0]*trueDirectionEnd[0] +
+                            trueDirectionEnd[1]*trueDirectionEnd[1] +
+                            trueDirectionEnd[2]*trueDirectionEnd[2]);
+        if (trueNormEnd > 0) {
+          trueDirectionEnd[0] /= trueNormEnd;
+          trueDirectionEnd[1] /= trueNormEnd;
+          trueDirectionEnd[2] /= trueNormEnd;
+        }
+
+        trueEquivalentNeutralParticle->DirectionEnd[0] = trueDirectionEnd[0];
+        trueEquivalentNeutralParticle->DirectionEnd[1] = trueDirectionEnd[1];
+        trueEquivalentNeutralParticle->DirectionEnd[2] = trueDirectionEnd[2];
+
+        Float_t trueLength = sqrt(pow(trueEquivalentNeutralParticle->PositionEnd[0]-trueEquivalentNeutralParticle->Position[0],2)+pow(trueEquivalentNeutralParticle->PositionEnd[1]-trueEquivalentNeutralParticle->Position[1],2)+pow(trueEquivalentNeutralParticle->PositionEnd[2]-trueEquivalentNeutralParticle->Position[2],2));
+        trueEquivalentNeutralParticle->Length = trueLength;
+
+        // Calculate invariant mass for true equivalent neutral particle
+        // using true particles from the true vertex
+        Float_t trueInvariantMass = -999;
+        if (vertex->TrueEquivalentVertex && vertex->TrueEquivalentVertex->TrueParticles.size() >= 2) {
+          AnaTrueParticlePD* trueParticle1 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[0]);
+          AnaTrueParticlePD* trueParticle2 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[1]);
+
+          // Check if true particles have valid momentum information
+          if (trueParticle1 && trueParticle2 &&
+              trueParticle1->Momentum > 0 && trueParticle2->Momentum > 0 &&
+              trueParticle1->Momentum != -999 && trueParticle2->Momentum != -999) {
+
+            // Pion mass (in GeV/c²)
+            const Float_t pionMass = 0.13957;
+
+            // Use the helper function for true particle invariant mass calculation
+            trueInvariantMass = pdAnaUtils::ComputeTrueInvariantMass(*trueParticle1, *trueParticle2, pionMass, pionMass);
+          }
+        }
+
+        // Set the calculated mass
+        trueEquivalentNeutralParticle->Mass = trueInvariantMass;
+
+        neutralParticle->TrueEquivalentNeutralParticle = trueEquivalentNeutralParticle;
+
+        //Logic to assign Trueobject to the neutral particle
+        if(vertex->TrueEquivalentVertex && vertex->TrueEquivalentVertex->TrueParticles.size() >= 2){
+          AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[0]);
+          AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[1]);
+          AnaTrueParticlePD* trueParent = static_cast<AnaTrueParticlePD*>(particle->TrueObject);
+
+          if(trueDaughter1 && trueDaughter2 && trueParent && trueParent->Daughters.size() > 0){
+            // Both daughters have the same parent
+            if(trueDaughter1->ParentID == trueDaughter2->ParentID){
+              // std::cout << "DEBUG: Both daughters have the same parent" << std::endl;
+              // Find if there is a true particle that is the parent of the two daughters
+              for(size_t i = 0; i < trueParent->Daughters.size(); i++){
+                Int_t daughterID = trueParent->Daughters[i];
+                AnaTrueParticlePD* trueDaughter = pdAnaUtils::GetTrueParticle(&event, daughterID);
+                if(trueDaughter && (trueDaughter->ID == trueDaughter1->ParentID || trueDaughter->ID == trueDaughter2->ParentID)){
+                  // std::cout << "DEBUG: Found the parent of the two daughters" << std::endl;
+                  // If found, assign it to the true object of the neutral particle
+                  neutralParticle->TrueObject = trueDaughter;
+                  // Check if the true object has a reconstructed particle associated to it
+                  if(trueDaughter->ReconParticles.size() > 0){
+                    neutralParticle->RecoParticle = static_cast<AnaParticlePD*>(trueDaughter->ReconParticles[0]);
                   }
-                  // Find the true particle that corresponds to the neutral particle
-                  // It should be the true parent of BOTH vertex particles AND a daughter of the neutral particle's parent
-                  AnaTrueParticleB* neutralTrueObject = nullptr;
-
-                  // First, get the parent's true object if it exists
-                  if (neutralParticle->Parent && neutralParticle->Parent->TrueObject) {
-                    AnaTrueParticleB* parentTrue = static_cast<AnaTrueParticleB*>(neutralParticle->Parent->TrueObject);
-
-                    // Look for a true particle that is both:
-                    // 1. The true parent of BOTH vertex particles (ParentID corresponds to true particle ID)
-                    // 2. A true daughter of the neutral particle's parent (ParentID corresponds to true particle ID)
-                    if (trueParticle1->ParentID == trueParticle2->ParentID) {
-                      for (Int_t i = 0; i < nTrueParts; i++) {
-                        if (trueParticles[i] &&
-                            trueParticles[i]->ID == trueParticle1->ParentID &&  // Is the parent of BOTH vertex particles (by ID)
-                            trueParticles[i]->ParentID == parentTrue->ID) {    // Is a daughter of neutral particle's parent (by ID)
-                          neutralTrueObject = trueParticles[i];
-                          break;
-                        }
-                      }
-                    }
-                  }
-
-                  neutralParticle->TrueObject = neutralTrueObject;
-                } else {
-                  neutralParticle->TrueObject = nullptr;
+                  break;
                 }
-              } else {
-                neutralParticle->TrueObject = nullptr;
               }
             }
             else{
-              // The two particles are not from the same parent, so the true object is not set
+              // If the daughters have different parents, assign nullptr to the true object of the neutral particle
+              // std::cout << "DEBUG: The daughters have different parents" << std::endl;
               neutralParticle->TrueObject = nullptr;
+              neutralParticle->RecoParticle = nullptr;
+              }
             }
+            else{
+              // std::cout << "DEBUG: Daughters or parent not found" << std::endl;
+              neutralParticle->TrueObject = nullptr;
+              neutralParticle->RecoParticle = nullptr;
+            }
+          }
+        else{
+          // std::cout << "DEBUG: Parent not found" << std::endl;
+          neutralParticle->TrueObject = nullptr;
+          neutralParticle->RecoParticle = nullptr;
+        }
+
+        // Ensure particles have reliable momentum values using calorimetric method
+        // This will calculate momentum by integrating dE/dx and including decay products if present
+        vertex->EnsureParticleMomentum();
+
+        // Calculate invariant mass from the two particles in the vertex
+        // assuming both are pions (pi+ and pi-)
+        Float_t invariantMass = -999;
+        if (vertex->Particles.size() >= 2) {
+          // Get the two particles from the vertex
+          AnaParticlePD* particle1 = vertex->Particles[0];
+          AnaParticlePD* particle2 = vertex->Particles[1];
+
+          // Check if particles have valid momentum information
+          if (particle1 && particle2 &&
+              particle1->Momentum > 0 && particle2->Momentum > 0 &&
+              particle1->Momentum != -999 && particle2->Momentum != -999) {
+
+            // Pion mass (in GeV/c²)
+            const Float_t pionMass = 0.13957;
+
+            // Use the highland framework function for invariant mass calculation
+            invariantMass = anaUtils::ComputeInvariantMass(*particle1, *particle2, pionMass, pionMass);
           }
         }
 
         // Set other properties
-        neutralParticle->Mass = -999; // Will be calculated based on particle type
+        neutralParticle->Mass = invariantMass;
         neutralParticle->Momentum = -999;
         neutralParticle->PDG = -999;
         neutralParticle->Lifetime = -999; // Will be calculated based on particle type
-        neutralParticle->DecayLength = -999; // Use impact parameter as decay length
+        neutralParticle->DecayLength = -999;
 
+        // std::cout << neutralParticle->TrueObject << std::endl;
         neutralParticles.push_back(neutralParticle);
 
       }
     }
-    // Note: We don't skip the particle if no vertices found, as it might be assigned to multiple vertices
   }
 
   return neutralParticles;
@@ -1560,7 +1786,7 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
       continue; // Skip daughter1 with invalid end positions
     }
 
-    for(int j = 0; j < nParts; j++){
+    for(int j = i + 1; j < nParts; j++){
       AnaParticlePD* daughter2 = static_cast<AnaParticlePD*>(parts[j]);
       if(!daughter2) continue;
 
@@ -1628,16 +1854,67 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
       // Calculate the vertex position using fitted lines
       pdAnaUtils::FindVertexPosition(reconstructedVertex);
 
+      Float_t direction[3] = {daughter1->DirectionStart[0] + daughter2->DirectionStart[0], daughter1->DirectionStart[1] + daughter2->DirectionStart[1], daughter1->DirectionStart[2] + daughter2->DirectionStart[2]};
+
+      Float_t norm = sqrt(direction[0]*direction[0] + direction[1]*direction[1] + direction[2]*direction[2]);
+      direction[0] = direction[0] / norm;
+      direction[1] = direction[1] / norm;
+      direction[2] = direction[2] / norm;
+
+      reconstructedVertex->Direction[0] = direction[0];
+      reconstructedVertex->Direction[1] = direction[1];
+      reconstructedVertex->Direction[2] = direction[2];
+
+      // Compute the angle between the start directions of the two particles in degrees
+      Float_t cosAngle = daughter1->DirectionStart[0]*daughter2->DirectionStart[0] + daughter1->DirectionStart[1]*daughter2->DirectionStart[1] + daughter1->DirectionStart[2]*daughter2->DirectionStart[2];
+      // Clamp cosAngle to [-1, 1] to avoid numerical errors in acos
+      if (cosAngle > 1.0) cosAngle = 1.0;
+      if (cosAngle < -1.0) cosAngle = -1.0;
+      reconstructedVertex->OpeningAngle = TMath::ACos(cosAngle) * 180.0 / TMath::Pi();
+
+      //Create true vertex
+      AnaTrueEquivalentVertexPD* trueEquivalentVertex = new AnaTrueEquivalentVertexPD();
+      AnaTrueParticlePD* trueParticle1 = static_cast<AnaTrueParticlePD*>(daughter1->TrueObject);
+      AnaTrueParticlePD* trueParticle2 = static_cast<AnaTrueParticlePD*>(daughter2->TrueObject);
+      trueEquivalentVertex->TrueParticles.push_back(trueParticle1);
+      trueEquivalentVertex->TrueParticles.push_back(trueParticle2);
+      float trueDistance = sqrt(pow(trueParticle1->Position[0]-trueParticle2->Position[0],2)+pow(trueParticle1->Position[1]-trueParticle2->Position[1],2)+pow(trueParticle1->Position[2]-trueParticle2->Position[2],2));
+      trueEquivalentVertex->OriginalDistance = trueDistance;
+
+      trueEquivalentVertex->Position[0] = -999.0;
+      trueEquivalentVertex->Position[1] = -999.0;
+      trueEquivalentVertex->Position[2] = -999.0;
+      // trueEquivalentVertex->Position[3] = -999.0; // Position array only has indices 0, 1, 2
+      trueEquivalentVertex->Direction[0] = -999.0;
+      trueEquivalentVertex->Direction[1] = -999.0;
+      trueEquivalentVertex->Direction[2] = -999.0;
+
+      Float_t trueCosAngle = trueParticle1->Direction[0]*trueParticle2->Direction[0] + trueParticle1->Direction[1]*trueParticle2->Direction[1] + trueParticle1->Direction[2]*trueParticle2->Direction[2];
+      if (trueCosAngle > 1.0) trueCosAngle = 1.0;
+      if (trueCosAngle < -1.0) trueCosAngle = -1.0;
+      trueEquivalentVertex->OpeningAngle = TMath::ACos(trueCosAngle) * 180.0 / TMath::Pi();
+
+      //This is calculated based on the true start/end positions of the true particles
+      //it also finds the minimum distance between the two true particles and assigns it to the true equivalent vertex
+      pdAnaUtils::FindVertexPosition(trueEquivalentVertex);
+
+      Float_t trueDirection[3] = {trueParticle1->Direction[0] + trueParticle2->Direction[0], trueParticle1->Direction[1] + trueParticle2->Direction[1], trueParticle1->Direction[2] + trueParticle2->Direction[2]};
+      trueEquivalentVertex->Direction[0] = trueDirection[0];
+      trueEquivalentVertex->Direction[1] = trueDirection[1];
+      trueEquivalentVertex->Direction[2] = trueDirection[2];
+
+      //TODO: Set the generation and process
+      reconstructedVertex->Generation = -999;
+      reconstructedVertex->Process = -999;
+
+      // Set the true equivalent vertex
+      reconstructedVertex->TrueEquivalentVertex = trueEquivalentVertex;
+
       // Only add vertex if line fitting was successful (position is valid)
       if (reconstructedVertex->Position[0] > -900 && reconstructedVertex->Position[1] > -900 && reconstructedVertex->Position[2] > -900) {
-        // Set default values for other properties
-        reconstructedVertex->Generation = -999;
-        reconstructedVertex->Process = -999;
-
         reconstructedVertices.push_back(reconstructedVertex);
-
-        // Mark this pair as used to prevent duplicate vertices
-        usedPairs.insert(currentPair);
+      // Mark this pair as used to prevent duplicate vertices
+      usedPairs.insert(currentPair);
       } else {
         // Delete the vertex if line fitting failed
         delete reconstructedVertex;
@@ -1645,7 +1922,6 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
     }
 
   }
-
   // Return all created vertices without merging
   // The only constraint is that no two vertices can contain the same particle pair
   // (this is already enforced by the usedPairs set in the creation loop above)
@@ -1654,7 +1930,6 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
 
 //***************************************************************
 void pdAnaUtils::FindVertexPosition(AnaVertexPD* vertex){
-//***************************************************************
 
   if (!vertex || vertex->NParticles < 2) {
     return;
@@ -1684,7 +1959,7 @@ void pdAnaUtils::FindVertexPosition(AnaVertexPD* vertex){
   // Find the closest points between the two fitted lines
   TVector3 closestPoint1, closestPoint2;
   double minDistance = pdAnaUtils::FindClosestPointsBetweenLines(line1Params, line2Params,
-                                                                 closestPoint1, closestPoint2);
+                                           closestPoint1, closestPoint2);
 
   // Set the vertex position to the midpoint between the closest points
   TVector3 vertexPosition = 0.5 * (closestPoint1 + closestPoint2);
@@ -1704,13 +1979,57 @@ void pdAnaUtils::FindVertexPosition(AnaVertexPD* vertex){
 }
 
 //***************************************************************
+void pdAnaUtils::FindVertexPosition(AnaTrueEquivalentVertexPD* vertex){
+
+  if (!vertex || vertex->TrueParticles.size() < 2) {
+    return;
+  }
+
+  // Get the first two true particles from the vertex
+  AnaTrueParticlePD* part1 = static_cast<AnaTrueParticlePD*>(vertex->TrueParticles[0]);
+  AnaTrueParticlePD* part2 = static_cast<AnaTrueParticlePD*>(vertex->TrueParticles[1]);
+
+  if (!part1 || !part2) {
+    return;
+  }
+
+  // Get track fit length from parameters
+  double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+
+  // Fit lines to both true particles
+  std::vector<double> line1Params, line2Params;
+  pdAnaUtils::ExtrapolateTrack(part1, line1Params, trackFitLength, true); // Use start position for vertex particles
+  pdAnaUtils::ExtrapolateTrack(part2, line2Params, trackFitLength, true); // Use start position for vertex particles
+
+  // Check if both fits were successful
+  if (line1Params[0] == -999.0 || line2Params[0] == -999.0) {
+    return;
+  }
+
+  // Find the closest points between the two fitted lines
+  TVector3 closestPoint1, closestPoint2;
+  double minDistance = pdAnaUtils::FindClosestPointsBetweenLines(line1Params, line2Params,
+                                                                 closestPoint1, closestPoint2);
+
+  // Set the vertex position to the midpoint between the closest points
+  TVector3 vertexPosition = 0.5 * (closestPoint1 + closestPoint2);
+
+  vertex->Position[0] = vertexPosition.X();
+  vertex->Position[1] = vertexPosition.Y();
+  vertex->Position[2] = vertexPosition.Z();
+  // vertex->Position[3] = -999.0; // Position array only has indices 0, 1, 2
+
+  vertex->MinimumDistance = static_cast<Float_t>(minDistance);
+
+}
+
+//***************************************************************
 // Usage example:
 //   std::vector<double> fitParams;
 //   pdAnaUtils::ExtrapolateTrack(particle, fitParams);
 //   // fitParams: [x0, y0, z0, dx, dy, dz] for hits within 15 cm of DefinePosition
 //***************************************************************
 void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams, double trackLength, bool useStartPosition){
-//***************************************************************
 
   // Initialize output vector with 6 parameters
   fitParams.clear();
@@ -1779,7 +2098,6 @@ void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitP
 // Helper function to fit a line to a set of 3D points using PCA (original method)
 //***************************************************************
 void pdAnaUtils::FitLineToPointsPCA(const std::vector<TVector3>& points, std::vector<double>& fitParams) {
-//***************************************************************
 
   if (points.size() < 2) {
     return;
@@ -1857,7 +2175,6 @@ void pdAnaUtils::FitLineToPointsPCA(const std::vector<TVector3>& points, std::ve
 
 //***************************************************************
 // Functor class for 3D line fitting using ROOT
-//***************************************************************
 class Line3DFitFunction {
 public:
   Line3DFitFunction(TGraph2D* graph) : _graph(graph) {}
@@ -1897,7 +2214,6 @@ private:
 // Helper function to fit a line to a set of 3D points using ROOT fitting
 //***************************************************************
 void pdAnaUtils::FitLineToPoints(const std::vector<TVector3>& points, std::vector<double>& fitParams) {
-//***************************************************************
 
   if (points.size() < 2) {
     return;
@@ -2023,9 +2339,9 @@ TVector3 pdAnaUtils::DefinePosition(AnaParticlePD* particle, bool useStartPositi
   // Choose between start and end position based on parameter
   if (useStartPosition) {
     // Use start position (for vertex particles)
-    return TVector3(particle->PositionStart[0],
-                    particle->PositionStart[1],
-                    particle->PositionStart[2]);
+  return TVector3(particle->PositionStart[0],
+                  particle->PositionStart[1],
+                  particle->PositionStart[2]);
   } else {
     // Use end position (for parent particles)
     return TVector3(particle->PositionEnd[0],
@@ -2034,6 +2350,7 @@ TVector3 pdAnaUtils::DefinePosition(AnaParticlePD* particle, bool useStartPositi
   }
 
 }
+
 
 //***************************************************************
 // Overloaded version for backward compatibility (defaults to start position)
@@ -2052,13 +2369,76 @@ void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitP
 }
 
 //***************************************************************
+void pdAnaUtils::ExtrapolateTrack(AnaTrueParticlePD* part, std::vector<double>& fitParams, double trackLength, bool useStartPosition){
+
+  // Initialize output vector with 6 parameters
+  fitParams.clear();
+  fitParams.resize(6, -999.0);
+
+  if (!part) {
+    return;
+  }
+
+  // Get position and direction based on useStartPosition flag
+  double x0, y0, z0, dx, dy, dz;
+
+  if (useStartPosition) {
+    x0 = part->Position[0];
+    y0 = part->Position[1];
+    z0 = part->Position[2];
+    dx = part->Direction[0];
+    dy = part->Direction[1];
+    dz = part->Direction[2];
+  } else {
+    x0 = part->PositionEnd[0];
+    y0 = part->PositionEnd[1];
+    z0 = part->PositionEnd[2];
+    dx = part->DirectionEnd[0];
+    dy = part->DirectionEnd[1];
+    dz = part->DirectionEnd[2];
+  }
+
+  // Check for valid values
+  if (x0 == -999.0 || y0 == -999.0 || z0 == -999.0 ||
+      dx == -999.0 || dy == -999.0 || dz == -999.0) {
+    return;
+  }
+
+  // Normalize direction vector
+  double norm = sqrt(dx*dx + dy*dy + dz*dz);
+  if (norm > 0) {
+    dx /= norm;
+    dy /= norm;
+    dz /= norm;
+  } else {
+    return; // Invalid direction
+  }
+
+  // Store the line parameters: [x0, y0, z0, dx, dy, dz]
+  fitParams[0] = x0;
+  fitParams[1] = y0;
+  fitParams[2] = z0;
+  fitParams[3] = dx;
+  fitParams[4] = dy;
+  fitParams[5] = dz;
+
+}
+
+//***************************************************************
+// Overloaded version of ExtrapolateTrack for backward compatibility (defaults to start position)
+//***************************************************************
+void pdAnaUtils::ExtrapolateTrack(AnaTrueParticlePD* part, std::vector<double>& fitParams, double trackLength) {
+//***************************************************************
+  ExtrapolateTrack(part, fitParams, trackLength, true); // Default to start position for backward compatibility
+}
+
+//***************************************************************
 // Find the closest points between two 3D lines
 //***************************************************************
 double pdAnaUtils::FindClosestPointsBetweenLines(const std::vector<double>& line1Params,
                                                 const std::vector<double>& line2Params,
                                                 TVector3& closestPoint1,
                                                 TVector3& closestPoint2) {
-//***************************************************************
 
   // Check if both lines have valid parameters
   if (line1Params.size() != 6 || line2Params.size() != 6 ||
@@ -2133,4 +2513,38 @@ double pdAnaUtils::CalculateImpactParameter(const std::vector<double>& lineParam
   TVector3 perpendicular = pointToLine - projection;
 
   return perpendicular.Mag();
+}
+
+//*****************************************************************************
+Float_t pdAnaUtils::ComputeTrueInvariantMass(const AnaTrueParticlePD& part1, const AnaTrueParticlePD& part2, Float_t mass1, Float_t mass2) {
+
+  if (mass1 < 0. || mass2 < 0.)
+    return -999.;
+
+  // Calculate energies using E² = p² + m²
+  Float_t E1 = sqrt(mass1*mass1 + part1.Momentum * part1.Momentum);
+  Float_t E2 = sqrt(mass2*mass2 + part2.Momentum * part2.Momentum);
+
+  // Calculate 3-momentum vectors from momentum magnitude and direction
+  Float_t p1x = part1.Momentum * part1.Direction[0];
+  Float_t p1y = part1.Momentum * part1.Direction[1];
+  Float_t p1z = part1.Momentum * part1.Direction[2];
+
+  Float_t p2x = part2.Momentum * part2.Direction[0];
+  Float_t p2y = part2.Momentum * part2.Direction[1];
+  Float_t p2z = part2.Momentum * part2.Direction[2];
+
+  // Calculate invariant mass: M² = (E1 + E2)² - (p1 + p2)²
+  Float_t totalE = E1 + E2;
+  Float_t totalPx = p1x + p2x;
+  Float_t totalPy = p1y + p2y;
+  Float_t totalPz = p1z + p2z;
+  Float_t totalP2 = totalPx * totalPx + totalPy * totalPy + totalPz * totalPz;
+
+  Float_t M2 = totalE * totalE - totalP2;
+  if (M2 > 0) {
+    return sqrt(M2);
+  }
+
+  return -999.;
 }
