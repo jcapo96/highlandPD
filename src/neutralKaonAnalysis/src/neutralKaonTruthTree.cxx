@@ -250,9 +250,6 @@ void neutralKaonTruthTree::FillVertexReconstructionDebugVariables(OutputManager&
         output.FillVectorVar(k0parentwithinradius, withinRadius ? 1 : 0);
     }
     else{
-        std::cout << "DEBUG: No parent or vertex found" << std::endl;
-        std::cout << "DEBUG: Parent ID: " << part.ID << std::endl;
-        std::cout << "DEBUG: Vertex position: " << vertexPosition.X() << ", " << vertexPosition.Y() << ", " << vertexPosition.Z() << std::endl;
         output.FillVectorVar(k0parentrecodist, static_cast<Float_t>(-999.0));
         output.FillVectorVar(k0parentwithinradius, 0);
     }

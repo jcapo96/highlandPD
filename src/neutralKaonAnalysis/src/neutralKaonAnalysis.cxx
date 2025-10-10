@@ -283,7 +283,6 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
         // Check for K0 (310), Pi0 (111), or Gamma (22)
         if (trueNeutralParticle->PDG == 310 || trueNeutralParticle->PDG == 130 || trueNeutralParticle->PDG == 221 || trueNeutralParticle->PDG == 22 || trueNeutralParticle->PDG == 111) {
           if (trueNeutralParticle->ProcessEnd == 2) {
-            // std::cout << "Event " << GetEvent().EventInfo->Event << " has a neutral particle with a true object that is a K0s, K0l, Eta, Pi0 or gamma and it decayed:" << trueNeutralParticle->PDG << std::endl;
             hasNeutralWithTrue = true;
             break;
           }
@@ -369,7 +368,7 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
     AnaTrueParticlePD* parentTrue = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.ParentID);
     if(parentTrue){
       parentReco = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, parentTrue->ID);
-      
+
       // If not found in regular particles, check if it's the beam particle
       if(!parentReco){
         AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
@@ -393,10 +392,9 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 
     // Fill parent information if it exists
     AnaTrueParticlePD* parent = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.ParentID);
-    // std::cout << "DEBUG: True Parent ID: " << part.ParentID << std::endl;
     if(parent){
       AnaParticlePD* parentRecoObject = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, parent->ID);
-      
+
       // If not found in regular particles, check if it's the beam particle
       if(!parentRecoObject){
         AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
@@ -407,17 +405,10 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
           }
         }
       }
-      
-      // std::cout << "DEBUG: Reco Parent found: " << parent->ID << std::endl;
-      if(!parentRecoObject){
-        std::cout << "DEBUG: Reco Parent not found: " << parent->ID << " PDG: " << parent->PDG << std::endl;
-        std::cout << "DEBUG: Parent ID: " << part.ParentID << " PDG: " << part.ParentPDG << std::endl;
-      }
       neutralKaonTruthTree::FillNeutralKaonParentTruthVariables(output(), *parent, parentRecoObject != nullptr);
     }
     else{
       // Parent not found - fill hasrecoobject with 0
-      std::cout << "DEBUG: True Parent not found: " << part.ParentID << " PDG: " << part.PDG << std::endl;
       output().FillVectorVar(neutralKaonTruthTree::k0parhasrecoobject, 0);
     }
 

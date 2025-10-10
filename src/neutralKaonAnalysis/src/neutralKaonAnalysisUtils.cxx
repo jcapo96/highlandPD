@@ -257,7 +257,6 @@ void neutralKaonAnaUtils::FillNeutralParticleSignalBackgroundCategory(AnaNeutral
           if(dau1 && dau2) {
             // Check for signal: pi+ and pi-
             if((dau1->PDG == 211 && dau2->PDG == -211) || (dau1->PDG == -211 && dau2->PDG == 211)) {
-              // std::cout << "SIGNAL CANDIDATE FOUND: K0 -> pi+ pi- decay" << std::endl;
               anaUtils::_categ->SetObjectCode("isk0", 1, CATOTHER, -1); // k0-decay-pi+pi-
               return;
             }
