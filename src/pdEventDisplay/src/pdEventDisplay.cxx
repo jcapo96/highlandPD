@@ -1,5 +1,6 @@
 #include "pdEventDisplay.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdNeutralUtils.hxx"
 #include "Parameters.hxx"
 #include "TDirectory.h"
 #include "TGraph2D.h"
@@ -120,11 +121,10 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
     //     }
     // }
 
-    // Create vertices using the common utility function
-    // Note: maxVertexRadius parameter is not used in CreateReconstructedVertices
+    // Create vertices using the new fitted approach with scoring
     // The actual vertex creation is controlled by maxDaughterDistance parameter
     const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
-    std::vector<AnaVertexPD*> reconVertices = pdAnaUtils::CreateReconstructedVertices(event, _VertexRadius, maxDaughterDistance);
+    std::vector<AnaVertexPD*> reconVertices = pdNeutralUtils::CreateVertices(event, _VertexRadius, maxDaughterDistance);
 
 
     // Convert AnaVertexPD* to DisplayVertex for the event display
@@ -1212,9 +1212,9 @@ void pdEventDisplay::DrawEvent3D(AnaEventB& event, int eventNumber, const ToyBox
         }
     }
 
-    // Create vertices using the common utility function
+    // Create vertices using the new fitted approach with scoring
     const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
-    std::vector<AnaVertexPD*> reconVertices = pdAnaUtils::CreateReconstructedVertices(event, _VertexRadius, maxDaughterDistance);
+    std::vector<AnaVertexPD*> reconVertices = pdNeutralUtils::CreateVertices(event, _VertexRadius, maxDaughterDistance);
 
     // Convert reconstructed vertices to display vertices
     std::vector<DisplayVertex> vertices;

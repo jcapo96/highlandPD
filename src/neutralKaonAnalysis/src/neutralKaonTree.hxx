@@ -16,13 +16,13 @@ namespace neutralKaonTree {
   void AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax);
   // void AddNeutralKaonVariables_K0VtxPions(OutputManager& output, UInt_t nmax);
 
-  void FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event);
+  void FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event, AnaBeamB* beam = NULL);
   void FillNeutralKaonVariables_K0(OutputManager& output, AnaNeutralParticlePD* candidate);
-  void FillNeutralKaonVariables_K0Par(OutputManager& output, AnaParticlePD* parentCandidate);
+  void FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaBeamB* beam = NULL);
   void FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaParticlePD* parentCandidate);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaVertexPD* vertex);
-  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate);
-  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate);
+  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
+  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
 
   // Enum with unique indexes for output tree variables
   enum enumNeutralKaonMicroTrees{
@@ -41,6 +41,7 @@ namespace neutralKaonTree {
     k0trueenddir, //true end direction: k0hastrueobject=1: true object end direction, k0hastrueobject=0: true vertex start direction
     k0truestartenddir, //true start-end direction scalar product
     k0recostartenddir, //reconstructed start-end direction scalar product
+    k0fitstartenddir, //fitted start-end direction scalar product: fitParent · vertex.FitDirection
     k0recolength, //reconstructed length
     k0truelength, //true length
     k0truestartmom, //true start momentum
@@ -57,6 +58,12 @@ namespace neutralKaonTree {
     k0recopdg, //reconstructed PDG
     k0truegeneration, //true generation
     k0nrecohits, //number of reconstructed hits in cylinder of radius X from parent end to vertex start
+    k0neutralscore, //neutral particle quality score (lower = more neutral-like)
+    k0hitsalignment, //alignment between hits in cylinder and neutral particle direction
+    k0nhitsincylinder, //number of hits in the cylinder around neutral particle
+    k0hitsavgdistance, //average perpendicular distance of hits to neutral particle path
+    k0hitsrmsdistance, //RMS of perpendicular distances of hits
+    k0hitslongspan, //longitudinal span fraction (span along path / total length)
 
     k0truerecodist, //True-vertex-position minus reconstructed-vertex-position
     k0impactparameter, //Impact parameter
@@ -67,6 +74,7 @@ namespace neutralKaonTree {
     k0dau1recoendpos, //reconstructed end position
     k0dau1trueendpos, //true end position
     k0dau1recostartdir,
+    k0dau1fitdir, //fitted direction from vertex fit
     k0dau1truestartdir,
     k0dau1recomom,
     k0dau1recoenddir,
@@ -84,7 +92,16 @@ namespace neutralKaonTree {
     k0dau1istrack, //0: Unknown, 1: Shower, 2: Track
     k0dau1chi2pion, //chi2 for pion PID hypothesis
     k0dau1nptchi2pion, //number of points used in chi2 pion calculation
+    k0dau1chi2proton, //chi2 for proton PID hypothesis
+    k0dau1nptchi2proton, //number of points used in chi2 proton calculation
+    k0dau1chi2kaon, //chi2 for kaon PID hypothesis
+    k0dau1nptchi2kaon, //number of points used in chi2 kaon calculation
+    k0dau1avgdedx5cm, //average dEdx for residual range < 5cm
+    k0dau1avgdedx10cm, //average dEdx for residual range < 10cm
     k0dau1avgdedx15cm, //average dEdx for residual range < 15cm
+    k0dau1avgdedx25cm, //average dEdx for residual range < 25cm
+    k0dau1avgdedx50cm, //average dEdx for residual range < 50cm
+    k0dau1nhits, //number of hits in collection plane
 
     //Variables about K0 daughter2
     k0dau2recostartpos,
@@ -92,6 +109,7 @@ namespace neutralKaonTree {
     k0dau2recoendpos,
     k0dau2trueendpos,
     k0dau2recostartdir,
+    k0dau2fitdir, //fitted direction from vertex fit
     k0dau2truestartdir,
     k0dau2recomom,
     k0dau2recoenddir,
@@ -109,7 +127,16 @@ namespace neutralKaonTree {
     k0dau2istrack, //0: Unknown, 1: Shower, 2: Track
     k0dau2chi2pion, //chi2 for pion PID hypothesis
     k0dau2nptchi2pion, //number of points used in chi2 pion calculation
+    k0dau2chi2proton, //chi2 for proton PID hypothesis
+    k0dau2nptchi2proton, //number of points used in chi2 proton calculation
+    k0dau2chi2kaon, //chi2 for kaon PID hypothesis
+    k0dau2nptchi2kaon, //number of points used in chi2 kaon calculation
+    k0dau2avgdedx5cm, //average dEdx for residual range < 5cm
+    k0dau2avgdedx10cm, //average dEdx for residual range < 10cm
     k0dau2avgdedx15cm, //average dEdx for residual range < 15cm
+    k0dau2avgdedx25cm, //average dEdx for residual range < 25cm
+    k0dau2avgdedx50cm, //average dEdx for residual range < 50cm
+    k0dau2nhits, //number of hits in collection plane
 
     // Variables about K0 parent
     k0parrecostartpos,
@@ -117,6 +144,7 @@ namespace neutralKaonTree {
     k0parrecoendpos,
     k0partrueendpos,
     k0parrecostartdir,
+    k0fitpardir, //fitted parent direction from extrapolated track
     k0partruestartdir,
     k0parrecoenddir,
     k0partrueenddir,
@@ -133,6 +161,7 @@ namespace neutralKaonTree {
     k0partruepdgdau,
     k0parrecopdgdau,
     k0parisbeam,
+    k0beaminstpdg,
     k0partrueproc,
     k0partrueendproc,
     k0partruegeneration,
@@ -143,6 +172,7 @@ namespace neutralKaonTree {
     k0brothreconprot,
     k0brothreconpiplus,
     k0brothreconpiminus,
+    k0brothreconprotchi2, //number of brothers compatible with proton (chi2/ndf<60)
 
      // Variables about the vertex system (two particles)
     k0vtxrecopos,
@@ -164,6 +194,12 @@ namespace neutralKaonTree {
     k0vtxminimumdistance,
     k0vtxtrueoriginaldistance,
     k0vtxtrueminimumdistance,
+    k0vtxscore,
+
+    k0vtxpandorapos, //Pandora-based vertex position
+    k0vtxdegbefore, //Degeneracy count before scoring
+    k0vtxdegafter, //Degeneracy count after scoring
+    k0vtxnrecopart, //Number of unique reco particles in degenerate vertices
 
   enumNeutralKaonMicroTreesLast
   };

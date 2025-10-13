@@ -1453,6 +1453,16 @@ std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEven
       AnaParticlePD* particle = static_cast<AnaParticlePD*>(parts[i]);
       if(!particle) continue;
 
+      // Skip particles that are already in the vertex (decay daughters cannot be the parent)
+      bool isVertexDaughter = false;
+      for(size_t vp = 0; vp < vertex->Particles.size(); vp++){
+        if(vertex->Particles[vp] && particle->UniqueID == vertex->Particles[vp]->UniqueID){
+          isVertexDaughter = true;
+          break;
+        }
+      }
+      if(isVertexDaughter) continue;
+
       // Check if particle has valid end position
       if (particle->PositionEnd[0] < -900 || particle->PositionEnd[1] < -900 || particle->PositionEnd[2] < -900) {
         continue; // Skip particles with invalid end positions
@@ -1756,8 +1766,15 @@ std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEven
 }
 
 //********************************************************************
+// DEPRECATED: Use pdNeutralUtils::CreateVertices instead
+// This function is kept for backward compatibility only
+//********************************************************************
 std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& event, double maxVertexRadius, double maxDaughterDistance){
 //********************************************************************
+
+  // Note: This function has been moved to pdNeutralUtils::CreateVerticesGeometric
+  // and is now called through pdNeutralUtils::CreateVertices
+  // This wrapper is kept for backward compatibility
 
   // Note: maxVertexRadius parameter is not currently used in this implementation
   (void)maxVertexRadius; // Suppress unused parameter warning
@@ -1790,6 +1807,16 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
       AnaParticlePD* daughter2 = static_cast<AnaParticlePD*>(parts[j]);
       if(!daughter2) continue;
 
+      // Skip if daughter1 and daughter2 are the same particle
+      if (daughter1 == daughter2) {
+        continue;
+      }
+
+      // Check if both particles have the same ParentID (EARLY CHECK - avoid useless computation)
+      if (daughter1->ParentID != daughter2->ParentID) {
+        continue; // Skip if parents are different
+      }
+
       // Check if daughter2 has valid start position
       if (daughter2->PositionStart[0] < -900 || daughter2->PositionStart[1] < -900 || daughter2->PositionStart[2] < -900) {
         continue; // Skip daughter2 with invalid start positions
@@ -1797,11 +1824,6 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
       // Check if daughter2 has valid end position
       if (daughter2->PositionEnd[0] < -900 || daughter2->PositionEnd[1] < -900 || daughter2->PositionEnd[2] < -900) {
         continue; // Skip daughter2 with invalid end positions
-      }
-
-      // Skip if daughter1 and daughter2 are the same particle
-      if (daughter1 == daughter2) {
-        continue;
       }
 
       // Create a pair to check for duplicates (order-independent)
@@ -1844,6 +1866,7 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
       reconstructedVertex->NParticles = 2;
       reconstructedVertex->Particles.push_back(daughter1);
       reconstructedVertex->Particles.push_back(daughter2);
+      reconstructedVertex->ParentID = daughter1->ParentID;
 
       // Initialize vertex position and minimum distance to invalid values
       reconstructedVertex->Position[0] = -999.0;
@@ -1853,6 +1876,9 @@ std::vector<AnaVertexPD*> pdAnaUtils::CreateReconstructedVertices(AnaEventB& eve
 
       // Calculate the vertex position using fitted lines
       pdAnaUtils::FindVertexPosition(reconstructedVertex);
+
+      // Set score to minimum distance (lower is better)
+      reconstructedVertex->Score = reconstructedVertex->MinimumDistance;
 
       Float_t direction[3] = {daughter1->DirectionStart[0] + daughter2->DirectionStart[0], daughter1->DirectionStart[1] + daughter2->DirectionStart[1], daughter1->DirectionStart[2] + daughter2->DirectionStart[2]};
 

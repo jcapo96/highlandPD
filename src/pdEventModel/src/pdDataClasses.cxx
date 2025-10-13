@@ -3,6 +3,9 @@
 #include "pdDataClasses.hxx"
 #include "AnalysisUtils.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdMomEstimation.hxx"
+#include "pdMomReconstruction.hxx"
+// #include "pdMomLikelihood.hxx" // Disabled for now, will implement later
 
 
 // define a constant value for uninitialised parameters
@@ -365,6 +368,43 @@ void AnaParticlePD::Print() const{
 }
 
 //********************************************************************
+AnaVertexFittedParticlePD::AnaVertexFittedParticlePD():AnaParticlePD(){
+//********************************************************************
+
+  for(int i = 0; i < 3; i++){
+    FitPosition[i] = kFloatUnassigned;
+    FitDirection[i] = kFloatUnassigned;
+  }
+}
+
+//********************************************************************
+AnaVertexFittedParticlePD::~AnaVertexFittedParticlePD(){
+//********************************************************************
+
+}
+
+//********************************************************************
+AnaVertexFittedParticlePD::AnaVertexFittedParticlePD(const AnaVertexFittedParticlePD& fittedPart):AnaParticlePD(fittedPart){
+//********************************************************************
+
+  for(int i = 0; i < 3; i++){
+    FitPosition[i] = fittedPart.FitPosition[i];
+    FitDirection[i] = fittedPart.FitDirection[i];
+  }
+}
+
+//********************************************************************
+void AnaVertexFittedParticlePD::Print() const{
+//********************************************************************
+
+  AnaParticlePD::Print();
+
+  std::cout << "-------- AnaVertexFittedParticlePD --------- " << std::endl;
+  std::cout << "FitPosition: (" << FitPosition[0] << ", " << FitPosition[1] << ", " << FitPosition[2] << ")" << std::endl;
+  std::cout << "FitDirection: (" << FitDirection[0] << ", " << FitDirection[1] << ", " << FitDirection[2] << ")" << std::endl;
+}
+
+//********************************************************************
 AnaTrueParticlePD::AnaTrueParticlePD():AnaTrueParticle(){
 //********************************************************************
 
@@ -637,6 +677,16 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(){
   Direction[0] = kFloatUnassigned;
   Direction[1] = kFloatUnassigned;
   Direction[2] = kFloatUnassigned;
+  FitParticles.clear();
+  FitDirection[0] = kFloatUnassigned;
+  FitDirection[1] = kFloatUnassigned;
+  FitDirection[2] = kFloatUnassigned;
+  PositionPandora[0] = kFloatUnassigned;
+  PositionPandora[1] = kFloatUnassigned;
+  PositionPandora[2] = kFloatUnassigned;
+  DegeneracyBeforeScoring = 0;
+  DegeneracyAfterScoring = 0;
+  NRecoParticles = 0;
 }
 
 //********************************************************************
@@ -659,6 +709,16 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVert
   Direction[0] = vertex.Direction[0];
   Direction[1] = vertex.Direction[1];
   Direction[2] = vertex.Direction[2];
+  FitParticles = vertex.FitParticles;
+  FitDirection[0] = vertex.FitDirection[0];
+  FitDirection[1] = vertex.FitDirection[1];
+  FitDirection[2] = vertex.FitDirection[2];
+  PositionPandora[0] = vertex.PositionPandora[0];
+  PositionPandora[1] = vertex.PositionPandora[1];
+  PositionPandora[2] = vertex.PositionPandora[2];
+  DegeneracyBeforeScoring = vertex.DegeneracyBeforeScoring;
+  DegeneracyAfterScoring = vertex.DegeneracyAfterScoring;
+  NRecoParticles = vertex.NRecoParticles;
 }
 
 //********************************************************************
@@ -698,6 +758,18 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   Generation = kIntUnassigned;
   Process = kIntUnassigned;
   MinimumDistance = kFloatUnassigned;
+  Score = kFloatUnassigned;
+  ParentID = kIntUnassigned;
+  FitParticles.clear();
+  FitDirection[0] = kFloatUnassigned;
+  FitDirection[1] = kFloatUnassigned;
+  FitDirection[2] = kFloatUnassigned;
+  PositionPandora[0] = kFloatUnassigned;
+  PositionPandora[1] = kFloatUnassigned;
+  PositionPandora[2] = kFloatUnassigned;
+  DegeneracyBeforeScoring = 0;
+  DegeneracyAfterScoring = 0;
+  NRecoParticles = 0;
 }
 
 //********************************************************************
@@ -730,6 +802,18 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   Generation = vertex.Generation;
   Process = vertex.Process;
   MinimumDistance = vertex.MinimumDistance;
+  Score = vertex.Score;
+  ParentID = vertex.ParentID;
+  FitParticles = vertex.FitParticles;
+  FitDirection[0] = vertex.FitDirection[0];
+  FitDirection[1] = vertex.FitDirection[1];
+  FitDirection[2] = vertex.FitDirection[2];
+  PositionPandora[0] = vertex.PositionPandora[0];
+  PositionPandora[1] = vertex.PositionPandora[1];
+  PositionPandora[2] = vertex.PositionPandora[2];
+  DegeneracyBeforeScoring = vertex.DegeneracyBeforeScoring;
+  DegeneracyAfterScoring = vertex.DegeneracyAfterScoring;
+  NRecoParticles = vertex.NRecoParticles;
 }
 
 //********************************************************************
@@ -753,6 +837,8 @@ void AnaVertexPD::Print() const{
   std::cout << "Generation:            " << Generation << std::endl;
   std::cout << "Process:               " << Process << std::endl;
   std::cout << "MinimumDistance:       " << MinimumDistance << " cm" << std::endl;
+  std::cout << "Score:                 " << Score << std::endl;
+  std::cout << "ParentID:              " << ParentID << std::endl;
 }
 
 //********************************************************************
@@ -763,17 +849,6 @@ void AnaVertexPD::EnsureParticleMomentum(){
     AnaParticlePD* particle = Particles[i];
     if (!particle) continue;
 
-    // First, calculate RangeMomentum if not available from input tree
-    // This happens for secondary particles or particles not in the beam daughter list
-    if ((particle->RangeMomentum[0] == -999 || particle->RangeMomentum[0] <= 0) &&
-        particle->Length > 0 && particle->Length != -999) {
-      particle->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 2212);
-    }
-    if ((particle->RangeMomentum[1] == -999 || particle->RangeMomentum[1] <= 0) &&
-        particle->Length > 0 && particle->Length != -999) {
-      particle->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 13);
-    }
-
     // Check if particle already has valid momentum
     if (particle->Momentum > 0 && particle->Momentum != -999) {
       // Particle already has valid momentum, skip
@@ -782,26 +857,46 @@ void AnaVertexPD::EnsureParticleMomentum(){
 
     Float_t calculatedMomentum = -999;
 
-    // Priority 1: Use average of proton and muon range momenta as approximation for pion
-    // Pion mass (139.57 MeV) is between muon (105.7 MeV) and proton (938.3 MeV)
-    // so averaging gives a reasonable estimate
-    if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999 &&
-        particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
-      // Average the muon and proton momentum estimates
-      calculatedMomentum = (particle->RangeMomentum[0] + particle->RangeMomentum[1]) / 2.0;
+    // Priority 1: Calorimetric method (best for interacting pions from K0 decay)
+    // Sums all deposited energy from particle + daughters using pitch-corrected path lengths
+    if (!particle->Hits[2].empty()) {
+      calculatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
     }
-    // Priority 2: Use muon range momentum if available (closer to pion mass than proton)
-    else if (particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
-      calculatedMomentum = particle->RangeMomentum[1];
+
+    // Priority 2: Track-length extension method (fallback for through-going pions)
+    // This method fits the dE/dx shape to estimate how much further the particle would travel
+    if (calculatedMomentum <= 0 || calculatedMomentum == -999) {
+      if (!particle->Hits[2].empty() && particle->Length > 0) {
+        calculatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
+      }
     }
-    // Priority 3: Use proton range momentum if available
-    else if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999) {
-      calculatedMomentum = particle->RangeMomentum[0];
-    }
-    // Priority 4: Use calorimetric method as last resort (only works for stopping particles)
-    else if (!particle->Hits[2].empty()) {
-      bool hasDecayProducts = (particle->Daughters.size() > 0);
-      calculatedMomentum = pdAnaUtils::ComputeCalorimetricMomentum(particle, 211, hasDecayProducts);
+
+    // Fallback methods if calorimetric and extension methods both fail
+    if (calculatedMomentum <= 0 || calculatedMomentum == -999) {
+
+      // Calculate RangeMomentum if not available from input tree
+      if ((particle->RangeMomentum[0] == -999 || particle->RangeMomentum[0] <= 0) &&
+          particle->Length > 0 && particle->Length != -999) {
+        particle->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 2212);
+      }
+      if ((particle->RangeMomentum[1] == -999 || particle->RangeMomentum[1] <= 0) &&
+          particle->Length > 0 && particle->Length != -999) {
+        particle->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 13);
+      }
+
+      // Priority 2: Use average of proton and muon range momenta as approximation for pion
+      if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999 &&
+          particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
+        calculatedMomentum = (particle->RangeMomentum[0] + particle->RangeMomentum[1]) / 2.0;
+      }
+      // Priority 3: Use muon range momentum if available (closer to pion mass than proton)
+      else if (particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
+        calculatedMomentum = particle->RangeMomentum[1];
+      }
+      // Priority 4: Use proton range momentum if available
+      else if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999) {
+        calculatedMomentum = particle->RangeMomentum[0];
+      }
     }
 
     // If we successfully calculated momentum, assign it
@@ -827,6 +922,13 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
   Lifetime = kFloatUnassigned;
   DecayLength = kFloatUnassigned;
   NRecoHitsInVertex = kIntUnassigned;
+  NeutralScore = kFloatUnassigned;
+  HitsAlignment = kFloatUnassigned;
+  NHitsInCylinder = kIntUnassigned;
+  HitsAvgDistance = kFloatUnassigned;
+  HitsRMSDistance = kFloatUnassigned;
+  HitsLongitudinalSpan = kFloatUnassigned;
+  FitParent = NULL;
 }
 
 //********************************************************************
@@ -851,6 +953,13 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
   Lifetime = neutralParticle.Lifetime;
   DecayLength = neutralParticle.DecayLength;
   NRecoHitsInVertex = neutralParticle.NRecoHitsInVertex;
+  NeutralScore = neutralParticle.NeutralScore;
+  HitsAlignment = neutralParticle.HitsAlignment;
+  NHitsInCylinder = neutralParticle.NHitsInCylinder;
+  HitsAvgDistance = neutralParticle.HitsAvgDistance;
+  HitsRMSDistance = neutralParticle.HitsRMSDistance;
+  HitsLongitudinalSpan = neutralParticle.HitsLongitudinalSpan;
+  FitParent = neutralParticle.FitParent;
 }
 
 //********************************************************************

@@ -264,7 +264,7 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   // Fill individual candidate data
   if(neutralKaonBox.neutralParticleCandidates.size() > 0){
     for(size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++){
-      neutralKaonTree::FillNeutralKaonVariables(output(), neutralKaonBox.neutralParticleCandidates[i], GetEvent());
+      neutralKaonTree::FillNeutralKaonVariables(output(), neutralKaonBox.neutralParticleCandidates[i], GetEvent(), GetSpill().Beam);
       output().IncrementCounter(neutralKaonTree::nk0);
     }
   }
@@ -281,7 +281,7 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
       if (neutralParticle->TrueObject != nullptr) {
         AnaTrueParticleB* trueNeutralParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
         // Check for K0 (310), Pi0 (111), or Gamma (22)
-        if (trueNeutralParticle->PDG == 310 || trueNeutralParticle->PDG == 130 || trueNeutralParticle->PDG == 221 || trueNeutralParticle->PDG == 22 || trueNeutralParticle->PDG == 111) {
+        if (trueNeutralParticle->PDG == 310 || trueNeutralParticle->PDG == 130) {
           if (trueNeutralParticle->ProcessEnd == 2) {
             hasNeutralWithTrue = true;
             break;

@@ -24,13 +24,23 @@ need to be enabled in baseAnalysis parameter file
 
 --- Vertex Finder ------------
  < neutralKaonAnalysis.VertexRadius = 100.0 > //selection level ??
- < neutralKaonAnalysis.DaughterDistance = 25.0 >
- < neutralKaonAnalysis.CylinderRadius = 5 >
+ < neutralKaonAnalysis.DaughterDistance = 10.0 >
+ < neutralKaonAnalysis.CylinderRadius = 7.5 >
  < neutralKaonAnalysis.ImpactParameter = 0.0 > //selection level
  < neutralKaonAnalysis.MinVertexDaughters = 2 >
  < neutralKaonAnalysis.MaxVertexDaughters = 2 >
+
  < neutralKaonAnalysis.TrackFitLength = 30.0 > //length of track used for line fitting (cm)
  < neutralKaonAnalysis.UseROOTFitting = 1 > //use ROOT fitting instead of PCA for track fitting (1=ROOT, 0=PCA)
+ < neutralKaonAnalysis.VertexFindingMethod = 2 > //vertex position finding method: 0=Geometric(PCA), 1=Fitted(TMinuit-default), 2=Kalman
+ < neutralKaonAnalysis.MaxChi2NdfProton = 0.0 > //max chi2/ndf for proton hypothesis (particles with lower values are rejected)
+ < neutralKaonAnalysis.MaxChi2NdfKaon = 0.0 > //max chi2/ndf for kaon hypothesis (particles with lower values are rejected)
+ < neutralKaonAnalysis.MaxKalmanChi2Ndf = 10.0 > //max chi2/ndf for Kalman vertex fit quality (vertices with higher values are rejected)
+
+ < neutralKaonAnalysis.MinBrotherLength = 50.0 > //minimum length (cm) for counting brother particles (protons/pions)
+
+ < neutralKaonAnalysis.DegeneracyDistance = 2.5 > //distance threshold (cm) for vertex degeneracy calculation
+ < neutralKaonAnalysis.UsePandoraForDegeneracy = 0 > //use Pandora position (1) or fitted position (0) for degeneracy calculation
 
 --- Other Parameters -----------
 

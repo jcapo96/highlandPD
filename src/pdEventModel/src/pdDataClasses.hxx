@@ -242,6 +242,33 @@ public:
   bool forced_daughter_matched;
 };
 
+/// AnaVertexFittedParticle - stores fitted parameters from vertex reconstruction
+class AnaVertexFittedParticlePD: public AnaParticlePD{
+public :
+
+  AnaVertexFittedParticlePD();
+  virtual ~AnaVertexFittedParticlePD();
+
+  /// Clone this object.
+  virtual AnaVertexFittedParticlePD* Clone() {
+    return new AnaVertexFittedParticlePD(*this);
+  }
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+protected:
+
+  /// Copy constructor is protected, as Clone() should be used to copy this object.
+  AnaVertexFittedParticlePD(const AnaVertexFittedParticlePD& fittedPart);
+
+public:
+
+  /// Fitted parameters from vertex reconstruction
+  Float_t FitPosition[3];   // Vertex position from fit
+  Float_t FitDirection[3];  // Track direction from fit
+};
+
 /// AnaTrueParticle
 class AnaTrueParticlePD: public AnaTrueParticle{
 public :
@@ -503,6 +530,24 @@ class AnaTrueEquivalentVertexPD{
 
     /// 3D direction of the vertex
     Float_t Direction[3];
+
+  /// Fitted daughter particles from vertex reconstruction
+  std::vector<AnaVertexFittedParticlePD*> FitParticles;
+
+  /// Fitted vertex direction (sum of daughter fit directions)
+  Float_t FitDirection[3];
+
+  /// Pandora-based vertex position (from DirectionStart/PositionStart)
+  Float_t PositionPandora[3];
+
+  /// Degeneracy count before scoring (vertices within threshold)
+  Int_t DegeneracyBeforeScoring;
+
+  /// Degeneracy count after scoring (vertices within threshold)
+  Int_t DegeneracyAfterScoring;
+
+  /// Total unique particles in degenerate vertices
+  Int_t NRecoParticles;
   };
 
 //** ------------------------------------------------------------ */
@@ -575,6 +620,30 @@ public:
   /// Minimum distance between the two fitted lines (distance between closest points)
   Float_t MinimumDistance;
 
+  /// Quality score from vertex fit (lower is better, from Chi2/minimization)
+  Float_t Score;
+
+  /// Parent ID of the vertex (both particles must have same parent)
+  Int_t ParentID;
+
+  /// Fitted daughter particles from vertex reconstruction
+  std::vector<AnaVertexFittedParticlePD*> FitParticles;
+
+  /// Fitted vertex direction (sum of daughter fit directions)
+  Float_t FitDirection[3];
+
+  /// Pandora-based vertex position (from DirectionStart/PositionStart)
+  Float_t PositionPandora[3];
+
+  /// Degeneracy count before scoring (vertices within threshold)
+  Int_t DegeneracyBeforeScoring;
+
+  /// Degeneracy count after scoring (vertices within threshold)
+  Int_t DegeneracyAfterScoring;
+
+  /// Total unique particles in degenerate vertices
+  Int_t NRecoParticles;
+
   AnaTrueEquivalentVertexPD* TrueEquivalentVertex;
 
   /// Ensure particles in this vertex have proper momentum assigned
@@ -639,6 +708,27 @@ public:
 
   /// Number of reconstructed hits in the vertex
   Int_t NRecoHitsInVertex;
+
+  /// Score for neutral particle compatibility (lower = more neutral-like)
+  Double_t NeutralScore;
+
+  /// Alignment between hits in cylinder and neutral particle direction (dot product)
+  Double_t HitsAlignment;
+
+  /// Number of hits in cylinder around neutral particle path
+  Int_t NHitsInCylinder;
+
+  /// Average perpendicular distance of hits to neutral particle path
+  Double_t HitsAvgDistance;
+
+  /// RMS of perpendicular distances of hits
+  Double_t HitsRMSDistance;
+
+  /// Longitudinal span fraction (span along path / total length)
+  Double_t HitsLongitudinalSpan;
+
+  /// Fitted parent particle from vertex reconstruction
+  AnaVertexFittedParticlePD* FitParent;
 
   /// The reconstructed neutral particle associated with this neutral particle
   AnaParticlePD* RecoParticle;
