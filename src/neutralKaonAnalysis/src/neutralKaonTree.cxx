@@ -10,6 +10,7 @@
 #include <cmath>
 #include <set>
 #include <iostream>
+#include <unordered_map>
 
 namespace {
   // Helper function to get particle mass from PDG code (in GeV/c^2)
@@ -28,6 +29,14 @@ namespace {
       case 22:   return 0.0;       // gamma
       default:   return -999.0;    // Unknown
     }
+  }
+
+  // Helper function to calculate energy from mass and momentum (PERFORMANCE OPTIMIZATION)
+  inline Float_t CalculateEnergy(Float_t mass, Float_t momentum) {
+    if(mass > 0.0 && momentum > 0.0){
+      return sqrt(mass*mass + momentum*momentum);
+    }
+    return -999.0;
   }
 }
 
@@ -1125,6 +1134,25 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     // Get minimum length parameter for counting brothers
     double minBrotherLength = ND::params().GetParameterD("neutralKaonAnalysis.MinBrotherLength");
 
+    // ========== PERFORMANCE OPTIMIZATION: Build hash maps for O(1) particle lookups ==========
+    // Instead of O(n²) nested linear searches, build maps once: O(n)
+    std::unordered_map<Int_t, AnaTrueParticlePD*> trueParticleMap;
+    std::unordered_map<Int_t, AnaParticlePD*> trueIDToRecoMap;
+
+    // Build true particle ID map
+    for(int i = 0; i < event.nTrueParticles; i++){
+      if(event.TrueParticles[i]){
+        trueParticleMap[event.TrueParticles[i]->ID] = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
+      }
+    }
+
+    // Build true-to-reco particle map
+    for(int i = 0; i < event.nParticles; i++){
+      if(event.Particles[i] && event.Particles[i]->TrueObject){
+        trueIDToRecoMap[event.Particles[i]->TrueObject->ID] = static_cast<AnaParticlePD*>(event.Particles[i]);
+      }
+    }
+
     // ========== LOOP 1: TRUE BROTHERS (ALL from trueParent->Daughters) ==========
     Int_t nTrueBrothers = 0;
     Float_t trueBrothersTotalMom = 0.0;
@@ -1156,14 +1184,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       for(int i = 0; i < nAllTrueBrothers; i++){
         Int_t daughterID = trueParentCandidate->Daughters[i];
 
-        // Find true daughter in event
-        AnaTrueParticlePD* trueBrother = nullptr;
-        for(int j = 0; j < event.nTrueParticles; j++){
-          if(event.TrueParticles[j] && event.TrueParticles[j]->ID == daughterID){
-            trueBrother = static_cast<AnaTrueParticlePD*>(event.TrueParticles[j]);
-            break;
-          }
-        }
+        // OPTIMIZED: O(1) hash map lookup instead of O(n) linear search
+        auto it = trueParticleMap.find(daughterID);
+        AnaTrueParticlePD* trueBrother = (it != trueParticleMap.end()) ? it->second : nullptr;
 
         if(trueBrother){
           trueBrothersPDG[nTrueBrothers] = trueBrother->PDG;
@@ -1176,10 +1199,10 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
           Float_t dz = trueBrother->PositionEnd[2] - trueBrother->Position[2];
           trueBrothersLength[nTrueBrothers] = sqrt(dx*dx + dy*dy + dz*dz);
 
-          // Calculate energy
+          // Calculate energy using helper function
           Float_t mass = GetParticleMass(trueBrother->PDG);
-          if(mass > 0.0 && trueBrother->Momentum > 0.0){
-            Float_t energy = sqrt(mass*mass + trueBrother->Momentum*trueBrother->Momentum);
+          Float_t energy = CalculateEnergy(mass, trueBrother->Momentum);
+          if(energy > 0){
             trueBrothersEnergy[nTrueBrothers] = energy;
             trueBrothersTotalEnergy += energy;
 
@@ -1279,26 +1302,14 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       for(int i = 0; i < nAllTrueBrothers; i++){
         Int_t daughterID = trueParentCandidate->Daughters[i];
 
-        // Find true daughter
-        AnaTrueParticlePD* trueBrother = nullptr;
-        for(int j = 0; j < event.nTrueParticles; j++){
-          if(event.TrueParticles[j] && event.TrueParticles[j]->ID == daughterID){
-            trueBrother = static_cast<AnaTrueParticlePD*>(event.TrueParticles[j]);
-            break;
-          }
-        }
+        // OPTIMIZED: O(1) hash map lookup instead of O(n) linear search
+        auto it = trueParticleMap.find(daughterID);
+        AnaTrueParticlePD* trueBrother = (it != trueParticleMap.end()) ? it->second : nullptr;
 
         if(trueBrother){
-          // Check if this true brother is reconstructed
-          AnaParticlePD* recoBrother = nullptr;
-          for(int k = 0; k < event.nParticles; k++){
-            if(event.Particles[k] && event.Particles[k]->TrueObject){
-              if(event.Particles[k]->TrueObject->ID == trueBrother->ID){
-                recoBrother = static_cast<AnaParticlePD*>(event.Particles[k]);
-                break;
-              }
-            }
-          }
+          // OPTIMIZED: O(1) hash map lookup instead of O(n) linear search for reco
+          auto recoit = trueIDToRecoMap.find(trueBrother->ID);
+          AnaParticlePD* recoBrother = (recoit != trueIDToRecoMap.end()) ? recoit->second : nullptr;
 
           if(recoBrother && nTrueBrothersReco < 100){
             // Fill true info
@@ -1306,10 +1317,10 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
             trueBrothersRecoTrueMom[nTrueBrothersReco] = trueBrother->Momentum;
             trueBrothersRecoTrueProcess[nTrueBrothersReco] = static_cast<Int_t>(trueBrother->ProcessStart);
 
-            // Calculate true energy
+            // Calculate true energy using helper function
             Float_t trueMass = GetParticleMass(trueBrother->PDG);
-            if(trueMass > 0.0 && trueBrother->Momentum > 0.0){
-              Float_t trueEnergy = sqrt(trueMass*trueMass + trueBrother->Momentum*trueBrother->Momentum);
+            Float_t trueEnergy = CalculateEnergy(trueMass, trueBrother->Momentum);
+            if(trueEnergy > 0){
               trueBrothersRecoTrueEnergy[nTrueBrothersReco] = trueEnergy;
               trueBrothersRecoTrueTotalEnergy += trueEnergy;
 
@@ -1321,10 +1332,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
                                                     trueBrother->Direction[1],
                                                     trueBrother->Direction[2]);
 
-                // Calculate reco energy for this proton
+                // Calculate reco energy for this proton using helper function
                 Float_t recoMass = GetParticleMass(trueBrother->PDG);
-                if(recoMass > 0.0 && recoBrother->Momentum > 0.0){
-                  trueBrothersRecoProtonMaxRecoEnergy = sqrt(recoMass*recoMass + recoBrother->Momentum*recoBrother->Momentum);
+                Float_t recoEnergy = CalculateEnergy(recoMass, recoBrother->Momentum);
+                if(recoEnergy > 0){
+                  trueBrothersRecoProtonMaxRecoEnergy = recoEnergy;
                   trueBrothersRecoProtonMaxRecoMom = recoBrother->Momentum;
                 }
               }
@@ -1342,10 +1354,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
             trueBrothersRecoMom[nTrueBrothersReco] = recoBrother->Momentum;
             trueBrothersRecoLength[nTrueBrothersReco] = recoBrother->Length;
 
-            // Calculate reco energy
+            // Calculate reco energy using helper function
             Float_t recoMass = GetParticleMass(trueBrother->PDG);
-            if(recoMass > 0.0 && recoBrother->Momentum > 0.0){
-              trueBrothersRecoEnergy[nTrueBrothersReco] = sqrt(recoMass*recoMass + recoBrother->Momentum*recoBrother->Momentum);
+            Float_t recoEnergy = CalculateEnergy(recoMass, recoBrother->Momentum);
+            if(recoEnergy > 0){
+              trueBrothersRecoEnergy[nTrueBrothersReco] = recoEnergy;
             }
 
             // Chi2 for proton hypothesis
@@ -1467,10 +1480,10 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
           recoBrothersTrueMom[nRecoBrothers] = trueBrother->Momentum;
           recoBrothersTrueProcess[nRecoBrothers] = static_cast<Int_t>(trueBrother->ProcessStart);
 
-          // Calculate true energy
+          // Calculate true energy using helper function
           Float_t trueMass = GetParticleMass(trueBrother->PDG);
-          if(trueMass > 0.0 && trueBrother->Momentum > 0.0){
-            Float_t trueEnergy = sqrt(trueMass*trueMass + trueBrother->Momentum*trueBrother->Momentum);
+          Float_t trueEnergy = CalculateEnergy(trueMass, trueBrother->Momentum);
+          if(trueEnergy > 0){
             recoBrothersTrueEnergy[nRecoBrothers] = trueEnergy;
           }
 
@@ -1480,10 +1493,10 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
                               trueBrother->Direction[2] * trueBrother->Momentum);
           recoBrothersTrueTotalDir += trueMomVec;
 
-          // Track max proton (by reco energy)
+          // Track max proton (by reco energy) using helper function
           Float_t recoMass = GetParticleMass(trueBrother->PDG);
-          if(recoMass > 0.0 && recoBrother->Momentum > 0.0){
-            Float_t recoEnergy = sqrt(recoMass*recoMass + recoBrother->Momentum*recoBrother->Momentum);
+          Float_t recoEnergy = CalculateEnergy(recoMass, recoBrother->Momentum);
+          if(recoEnergy > 0){
             recoBrothersEnergy[nRecoBrothers] = recoEnergy;
 
             if(trueBrother->PDG == 2212 && recoEnergy > recoBrothersProtonMaxEnergy){
@@ -1507,7 +1520,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
               if(trueBrother->Momentum > maxProtonMom){
                 maxProtonMom = trueBrother->Momentum;
                 Float_t protonMass = 0.938272;
-                maxProtonEnergy = sqrt(protonMass*protonMass + maxProtonMom*maxProtonMom);
+                maxProtonEnergy = CalculateEnergy(protonMass, maxProtonMom);
               }
             }
             if(trueBrother->PDG == 211) nRecoPiPlus++;

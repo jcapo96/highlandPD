@@ -8,6 +8,7 @@
 #include "TMath.h"
 #include <algorithm>
 #include <set>
+#include <unordered_map>
 #include <iostream>
 
 // Namespace for internal structures and functions
@@ -1123,6 +1124,15 @@ std::vector<AnaVertexPD*> pdNeutralUtils::CreateVerticesCommon(
   AnaParticleB** parts = event.Particles;
   int nParts = event.nParticles;
 
+  // OPTIMIZATION: Build hash map for O(1) particle lookups by UniqueID
+  std::unordered_map<Int_t, AnaParticlePD*> particleByUniqueID;
+  for(int i = 0; i < nParts; i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    if(part){
+      particleByUniqueID[part->UniqueID] = part;
+    }
+  }
+
   // Create reconstructed vertices
   std::vector<AnaVertexPD*> reconstructedVertices;
   int vertexID = 0; // Counter for unique vertex IDs
@@ -1378,15 +1388,20 @@ std::vector<AnaVertexPD*> pdNeutralUtils::CreateVerticesCommon(
 }
 
 //***************************************************************
-void pdNeutralUtils::CalculateNeutralScore(
+std::pair<Int_t, Int_t> pdNeutralUtils::CalculateNeutralScore(
     AnaNeutralParticlePD* neutralParticle,
     AnaVertexPD* vertex,
     AnaParticlePD* parentParticle,
-    AnaEventB& event) {
+    AnaEventB& event,
+    const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID) {
 //***************************************************************
 
+  // Initialize return values
+  Int_t NPotentialParents = 0;
+  Int_t NRecoHitsInVertex = 0;
+
   if (!neutralParticle || !vertex || !parentParticle) {
-    return;
+    return std::make_pair(NPotentialParents, NRecoHitsInVertex);
   }
 
   // Get array of particles from the event
@@ -1437,6 +1452,9 @@ void pdNeutralUtils::CalculateNeutralScore(
     double potentialParentDistance = (potentialParentEnd - vertexPos).Mag();
 
     if(potentialParentDistance < daughterDistance){
+      // OPTIMIZATION: Count potential parents (merged from CreateNeutral loop)
+      NPotentialParents++;
+
       // Check hits from this particle
       for(int plane = 0; plane < 3; plane++){
         for(size_t k = 0; k < potentialParent->Hits[plane].size(); k++){
@@ -1460,6 +1478,8 @@ void pdNeutralUtils::CalculateNeutralScore(
               perpDistances.push_back(perpDistance);
               longitudinalProjections.push_back(projection);
               totalDistance += perpDistance;
+              // OPTIMIZATION: Count hits in vertex (merged from CreateNeutral loop)
+              NRecoHitsInVertex++;
             }
           }
         }
@@ -1641,6 +1661,9 @@ void pdNeutralUtils::CalculateNeutralScore(
   neutralParticle->HitsAvgDistance = avgDistance;
   neutralParticle->HitsRMSDistance = rmsDistance;
   neutralParticle->HitsLongitudinalSpan = longitudinalSpan;
+
+  // OPTIMIZATION: Return counts that were previously calculated in a separate loop
+  return std::make_pair(NPotentialParents, NRecoHitsInVertex);
 }
 
 //***************************************************************
@@ -1757,7 +1780,11 @@ AnaTrueEquivalentNeutralParticlePD* pdNeutralUtils::FillTrueEquivalentNeutralPar
 }
 
 //***************************************************************
-AnaNeutralParticlePD* pdNeutralUtils::CreateNeutral(AnaEventB& event, AnaVertexPD* vertex, int neutralParticleID){
+AnaNeutralParticlePD* pdNeutralUtils::CreateNeutral(
+    AnaEventB& event,
+    AnaVertexPD* vertex,
+    int neutralParticleID,
+    const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID){
 //***************************************************************
 
   if (!vertex || vertex->NParticles < 2) {
@@ -1767,15 +1794,10 @@ AnaNeutralParticlePD* pdNeutralUtils::CreateNeutral(AnaEventB& event, AnaVertexP
   // Find the parent particle using the vertex's ParentID
   AnaParticlePD* parentParticle = nullptr;
 
-  // First search in regular particles
-  AnaParticleB** parts = event.Particles;
-  int nParts = event.nParticles;
-  for(int i = 0; i < nParts; i++){
-    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
-    if(part && part->UniqueID == vertex->ParentID){
-      parentParticle = part;
-      break;
-    }
+  // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
+  auto it = particleByUniqueID.find(vertex->ParentID);
+  if(it != particleByUniqueID.end()){
+    parentParticle = it->second;
   }
 
   // If not found in regular particles, check beam particle
@@ -1878,80 +1900,13 @@ AnaNeutralParticlePD* pdNeutralUtils::CreateNeutral(AnaEventB& event, AnaVertexP
   double protonCreationVtxDist = ND::params().GetParameterD("neutralKaonAnalysis.ProtonCreationVtxDistance");
   CalculateNProtonInCreationVtx(neutralParticle, parentParticle, protonCreationVtxDist);
 
-  // Calculate NPotentialParents and NRecoHitsInVertex
-  // These count particles and hits within a cylinder from parent end to vertex
-  Int_t NPotentialParents = 0;
-  Int_t NRecoHitsInVertex = 0;
-
-  // Get parameters for the cylinder
-  double daughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
-  double cylinderRadius = ND::params().GetParameterD("neutralKaonAnalysis.CylinderRadius");
-
-  // Reuse parts and nParts variables already declared at the beginning of this function
-  TVector3 vertexPos(vertex->Position[0], vertex->Position[1], vertex->Position[2]);
-
-  // Loop over all particles to find potential parents
-  for(int j = 0; j < nParts; j++){
-    AnaParticlePD* potentialParent = static_cast<AnaParticlePD*>(parts[j]);
-    if(!potentialParent) continue;
-
-    // Skip if the potential parent is one of the particles in the vertex or the current parent particle
-    if(vertex->Particles.size() >= 2){
-      if(potentialParent->UniqueID == vertex->Particles[0]->UniqueID ||
-         potentialParent->UniqueID == vertex->Particles[1]->UniqueID ||
-         potentialParent->UniqueID == parentParticle->UniqueID) continue;
-    }
-
-    TVector3 potentialParentEnd(potentialParent->PositionEnd[0], potentialParent->PositionEnd[1], potentialParent->PositionEnd[2]);
-    double potentialParentDistance = (potentialParentEnd - vertexPos).Mag();
-
-    if(potentialParentDistance < daughterDistance){
-      NPotentialParents++;
-
-      // Count hits from this particle within the cylinder
-      Int_t nHits = potentialParent->Hits[2].size();
-      for(size_t k = 0; k < nHits; k++){
-        AnaHitPD* hit = &potentialParent->Hits[2][k];
-
-        // Define cylinder from parent->PositionEnd to vertex->Position
-        TVector3 cylinderStart(parentParticle->PositionEnd[0], parentParticle->PositionEnd[1], parentParticle->PositionEnd[2]);
-        TVector3 cylinderEnd(vertex->Position[0], vertex->Position[1], vertex->Position[2]);
-        TVector3 cylinderAxis = cylinderEnd - cylinderStart;
-        double cylinderLength = cylinderAxis.Mag();
-
-        if(cylinderLength <= 0) continue; // Skip if cylinder has no length
-
-        // Get hit position
-        TVector3 hitPos = hit->Position;
-
-        // Vector from cylinder start to hit
-        TVector3 startToHit = hitPos - cylinderStart;
-
-        // Project onto cylinder axis to check if hit is within cylinder length
-        double projection = startToHit.Dot(cylinderAxis) / cylinderLength;
-
-        // Check if projection is within cylinder bounds (0 to cylinderLength)
-        if(projection >= 0 && projection <= cylinderLength){
-          // Calculate perpendicular distance from hit to cylinder axis
-          TVector3 axisDirection = cylinderAxis.Unit();
-          TVector3 projectionVector = axisDirection * startToHit.Dot(axisDirection);
-          TVector3 perpendicularVector = startToHit - projectionVector;
-          double perpendicularDistance = perpendicularVector.Mag();
-
-          // Check if hit is within cylinder radius
-          if(perpendicularDistance < cylinderRadius){
-            NRecoHitsInVertex++;
-          }
-        }
-      }
-    }
-  }
+  // OPTIMIZATION: Calculate neutral particle score and get counts in a single pass
+  // This replaces the duplicate loop that was previously here (lines 1903-1973)
+  auto [NPotentialParents, NRecoHitsInVertex] = CalculateNeutralScore(
+      neutralParticle, vertex, parentParticle, event, particleByUniqueID);
 
   neutralParticle->Vertex->NPotentialParents = NPotentialParents;
   neutralParticle->NRecoHitsInVertex = NRecoHitsInVertex;
-
-  // Calculate neutral particle score using helper function
-  CalculateNeutralScore(neutralParticle, vertex, parentParticle, event);
 
   // Create and fill true equivalent neutral particle using helper function
   neutralParticle->TrueEquivalentNeutralParticle = FillTrueEquivalentNeutralParticle(vertex, parentParticle);
@@ -2030,12 +1985,23 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
 
   int neutralParticleID = 0;
 
+  // OPTIMIZATION: Build hash map once for all neutral particles
+  AnaParticleB** parts = event.Particles;
+  int nParts = event.nParticles;
+  std::unordered_map<Int_t, AnaParticlePD*> particleByUniqueID;
+  for(int i = 0; i < nParts; i++){
+    AnaParticlePD* part = static_cast<AnaParticlePD*>(parts[i]);
+    if(part){
+      particleByUniqueID[part->UniqueID] = part;
+    }
+  }
+
   // Loop over all vertices and create one neutral particle per vertex
   for(size_t v = 0; v < vertices.size(); v++){
     AnaVertexPD* vertex = vertices[v];
     if(!vertex) continue;
 
-    AnaNeutralParticlePD* neutralParticle = CreateNeutral(event, vertex, neutralParticleID);
+    AnaNeutralParticlePD* neutralParticle = CreateNeutral(event, vertex, neutralParticleID, particleByUniqueID);
     if(neutralParticle){
       neutralParticles.push_back(neutralParticle);
       neutralParticleID++;

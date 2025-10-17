@@ -12,6 +12,7 @@
 #include "standardPDTree.hxx"
 #include <sstream>
 #include <iostream>
+#include <unordered_map>
 
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
@@ -321,42 +322,89 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
     // The truth tree is meant for individual particle information, not analysis results
     // Vertex candidates are analysis results and belong in the ana tree only
 
-    // Check if K0 has a reconstructed object
-    AnaParticlePD* k0RecoObject = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, part.ID);
+    // OPTIMIZATION: Build hash maps once for O(1) lookups
+    std::unordered_map<Int_t, AnaTrueParticlePD*> trueParticleByID;
+    std::unordered_map<Int_t, AnaParticlePD*> recoParticleByTrueID;
+
+    // Build true particle map
+    for(int i = 0; i < GetSpill().TrueParticles.size(); i++){
+      AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[i]);
+      if(truePart){
+        trueParticleByID[truePart->ID] = truePart;
+      }
+    }
+
+    // Build reco particle map (by associated true ID)
+    for(size_t i = 0; i < GetBunch().Particles.size(); i++){
+      AnaParticlePD* recoPart = static_cast<AnaParticlePD*>(GetBunch().Particles[i]);
+      if(recoPart && recoPart->TrueObject){
+        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(recoPart->TrueObject);
+        if(truePart){
+          recoParticleByTrueID[truePart->ID] = recoPart;
+        }
+      }
+    }
+
+    // Check if K0 has a reconstructed object - O(1) hash map lookup
+    AnaParticlePD* k0RecoObject = nullptr;
+    auto it_k0 = recoParticleByTrueID.find(part.ID);
+    if(it_k0 != recoParticleByTrueID.end()){
+      k0RecoObject = it_k0->second;
+    }
     neutralKaonTruthTree::FillNeutralKaonTruthVariables(output(), part, k0RecoObject != nullptr);
 
     // Fill vertex reconstruction debugging variables
-    // Get reco particles for K0 daughters (if they exist)
+    // Get reco particles for K0 daughters (if they exist) - O(1) hash map lookups
     AnaParticlePD* daughter1Reco = nullptr;
     AnaParticlePD* daughter2Reco = nullptr;
     AnaParticlePD* parentReco = nullptr;
 
     if(part.Daughters.size() > 0){
-      AnaTrueParticlePD* daughter1True = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.Daughters[0]);
-      if(daughter1True){
-        daughter1Reco = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, daughter1True->ID);
+      // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
+      auto it_d1 = trueParticleByID.find(part.Daughters[0]);
+      if(it_d1 != trueParticleByID.end()){
+        AnaTrueParticlePD* daughter1True = it_d1->second;
+        if(daughter1True){
+          auto it_d1r = recoParticleByTrueID.find(daughter1True->ID);
+          if(it_d1r != recoParticleByTrueID.end()){
+            daughter1Reco = it_d1r->second;
+          }
+        }
       }
 
       if(part.Daughters.size() > 1){
-        AnaTrueParticlePD* daughter2True = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.Daughters[1]);
-        if(daughter2True){
-          daughter2Reco = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, daughter2True->ID);
+        // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
+        auto it_d2 = trueParticleByID.find(part.Daughters[1]);
+        if(it_d2 != trueParticleByID.end()){
+          AnaTrueParticlePD* daughter2True = it_d2->second;
+          if(daughter2True){
+            auto it_d2r = recoParticleByTrueID.find(daughter2True->ID);
+            if(it_d2r != recoParticleByTrueID.end()){
+              daughter2Reco = it_d2r->second;
+            }
+          }
         }
       }
     }
 
-    // Get parent reco particle if it exists
-    AnaTrueParticlePD* parentTrue = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.ParentID);
-    if(parentTrue){
-      parentReco = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, parentTrue->ID);
+    // Get parent reco particle if it exists - O(1) hash map lookup
+    auto it_par = trueParticleByID.find(part.ParentID);
+    if(it_par != trueParticleByID.end()){
+      AnaTrueParticlePD* parentTrue = it_par->second;
+      if(parentTrue){
+        auto it_parr = recoParticleByTrueID.find(parentTrue->ID);
+        if(it_parr != recoParticleByTrueID.end()){
+          parentReco = it_parr->second;
+        }
 
-      // If not found in regular particles, check if it's the beam particle
-      if(!parentReco){
-        AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
-        if(beamParticle && beamParticle->TrueObject){
-          AnaTrueParticlePD* trueBeam = static_cast<AnaTrueParticlePD*>(beamParticle->TrueObject);
-          if(trueBeam && trueBeam->ID == parentTrue->ID){
-            parentReco = beamParticle;
+        // If not found in regular particles, check if it's the beam particle
+        if(!parentReco){
+          AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
+          if(beamParticle && beamParticle->TrueObject){
+            AnaTrueParticlePD* trueBeam = static_cast<AnaTrueParticlePD*>(beamParticle->TrueObject);
+            if(trueBeam && trueBeam->ID == parentTrue->ID){
+              parentReco = beamParticle;
+            }
           }
         }
       }
@@ -371,34 +419,58 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
     neutralKaonTruthTree::FillVertexReconstructionDebugVariables(output(), part, daughter1Reco, daughter2Reco,
                                                                  parentReco, maxDaughterDistance, trackFitLength, vertexRadius);
 
-    // Fill parent information if it exists
-    AnaTrueParticlePD* parent = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.ParentID);
-    if(parent){
-      AnaParticlePD* parentRecoObject = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, parent->ID);
+    // Fill parent information if it exists - O(1) hash map lookup
+    auto it_parent = trueParticleByID.find(part.ParentID);
+    if(it_parent != trueParticleByID.end()){
+      AnaTrueParticlePD* parent = it_parent->second;
+      if(parent){
+        // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
+        AnaParticlePD* parentRecoObject = nullptr;
+        auto it_parentr = recoParticleByTrueID.find(parent->ID);
+        if(it_parentr != recoParticleByTrueID.end()){
+          parentRecoObject = it_parentr->second;
+        }
 
-      // If not found in regular particles, check if it's the beam particle
-      if(!parentRecoObject){
-        AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
-        if(beamParticle && beamParticle->TrueObject){
-          AnaTrueParticlePD* trueBeam = static_cast<AnaTrueParticlePD*>(beamParticle->TrueObject);
-          if(trueBeam && trueBeam->ID == parent->ID){
-            parentRecoObject = beamParticle;
+        // If not found in regular particles, check if it's the beam particle
+        if(!parentRecoObject){
+          AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
+          if(beamParticle && beamParticle->TrueObject){
+            AnaTrueParticlePD* trueBeam = static_cast<AnaTrueParticlePD*>(beamParticle->TrueObject);
+            if(trueBeam && trueBeam->ID == parent->ID){
+              parentRecoObject = beamParticle;
+            }
           }
         }
+        neutralKaonTruthTree::FillNeutralKaonParentTruthVariables(output(), *parent, parentRecoObject != nullptr);
       }
-      neutralKaonTruthTree::FillNeutralKaonParentTruthVariables(output(), *parent, parentRecoObject != nullptr);
+      else{
+        // Parent not found - fill hasrecoobject with 0
+        output().FillVectorVar(neutralKaonTruthTree::k0parhasrecoobject, 0);
+      }
     }
     else{
       // Parent not found - fill hasrecoobject with 0
       output().FillVectorVar(neutralKaonTruthTree::k0parhasrecoobject, 0);
     }
 
-    // Fill daughter information if daughters exist
+    // Fill daughter information if daughters exist - O(1) hash map lookups
     if(part.Daughters.size() > 0){
-      AnaTrueParticlePD* daughter1 = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.Daughters[0]);
-      if(daughter1){
-        AnaParticlePD* daughter1RecoObject = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, daughter1->ID);
-        neutralKaonTruthTree::FillNeutralKaonDaughter1TruthVariables(output(), *daughter1, daughter1RecoObject != nullptr);
+      // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
+      auto it_dau1 = trueParticleByID.find(part.Daughters[0]);
+      if(it_dau1 != trueParticleByID.end()){
+        AnaTrueParticlePD* daughter1 = it_dau1->second;
+        if(daughter1){
+          AnaParticlePD* daughter1RecoObject = nullptr;
+          auto it_dau1r = recoParticleByTrueID.find(daughter1->ID);
+          if(it_dau1r != recoParticleByTrueID.end()){
+            daughter1RecoObject = it_dau1r->second;
+          }
+          neutralKaonTruthTree::FillNeutralKaonDaughter1TruthVariables(output(), *daughter1, daughter1RecoObject != nullptr);
+        }
+        else{
+          // Daughter1 not found - fill hasrecoobject with 0
+          output().FillVectorVar(neutralKaonTruthTree::k0dau1hasrecoobject, 0);
+        }
       }
       else{
         // Daughter1 not found - fill hasrecoobject with 0
@@ -406,10 +478,22 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
       }
 
       if(part.Daughters.size() > 1){
-        AnaTrueParticlePD* daughter2 = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, part.Daughters[1]);
-        if(daughter2){
-          AnaParticlePD* daughter2RecoObject = pdAnaUtils::GetRecoParticleWithAssociatedTrueID(GetBunch().Particles, daughter2->ID);
-          neutralKaonTruthTree::FillNeutralKaonDaughter2TruthVariables(output(), *daughter2, daughter2RecoObject != nullptr);
+        // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
+        auto it_dau2 = trueParticleByID.find(part.Daughters[1]);
+        if(it_dau2 != trueParticleByID.end()){
+          AnaTrueParticlePD* daughter2 = it_dau2->second;
+          if(daughter2){
+            AnaParticlePD* daughter2RecoObject = nullptr;
+            auto it_dau2r = recoParticleByTrueID.find(daughter2->ID);
+            if(it_dau2r != recoParticleByTrueID.end()){
+              daughter2RecoObject = it_dau2r->second;
+            }
+            neutralKaonTruthTree::FillNeutralKaonDaughter2TruthVariables(output(), *daughter2, daughter2RecoObject != nullptr);
+          }
+          else{
+            // Daughter2 not found - fill hasrecoobject with 0
+            output().FillVectorVar(neutralKaonTruthTree::k0dau2hasrecoobject, 0);
+          }
         }
         else{
           // Daughter2 not found - fill hasrecoobject with 0

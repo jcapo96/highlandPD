@@ -4,6 +4,8 @@
 #include "pdDataClasses.hxx"
 #include "BaseDataClasses.hxx"
 #include <vector>
+#include <unordered_map>
+#include <utility>
 
 namespace pdNeutralUtils {
 
@@ -33,14 +35,20 @@ namespace pdNeutralUtils {
       AnaParticlePD* parentParticle);
 
   // Calculate neutral particle score and metrics
-  void CalculateNeutralScore(
+  // Returns: {NPotentialParents, NRecoHitsInVertex}
+  std::pair<Int_t, Int_t> CalculateNeutralScore(
       AnaNeutralParticlePD* neutralParticle,
       AnaVertexPD* vertex,
       AnaParticlePD* parentParticle,
-      AnaEventB& event);
+      AnaEventB& event,
+      const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID);
 
   // Create single neutral particle from a vertex
-  AnaNeutralParticlePD* CreateNeutral(AnaEventB& event, AnaVertexPD* vertex, int neutralParticleID);
+  AnaNeutralParticlePD* CreateNeutral(
+      AnaEventB& event,
+      AnaVertexPD* vertex,
+      int neutralParticleID,
+      const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID);
 
   // Create neutral particles from all vertices
   std::vector<AnaNeutralParticlePD*> CreateNeutrals(AnaEventB& event, const std::vector<AnaVertexPD*>& vertices);
