@@ -208,12 +208,14 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Brother(OutputManager& output, U
    output.AddMatrixVar(k0truebrothmomentum, "k0truebrothmomentum", "F", "True brothers momentum", nk0, "nk0", -nmax, 100);
    output.AddMatrixVar(k0truebrothenergy, "k0truebrothenergy", "F", "True brothers energy", nk0, "nk0", -nmax, 100);
    output.AddMatrixVar(k0truebrothprocessstart, "k0truebrothprocessstart", "I", "True brothers ProcessStart", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothlength, "k0truebrothlength", "F", "True brothers length", nk0, "nk0", -nmax, 100);
    AddVarMaxSizeVF(output, k0truebrothtotalmom, "Total momentum of true brothers", nk0, nmax);
    AddVarMaxSizeVF(output, k0truebrothtotalenergy, "Total energy of true brothers", nk0, nmax);
    AddVarMaxSize3MF(output, k0truebrothtruetotaldir, "Resultant true direction of true brothers", nk0, nmax);
    AddVarMaxSizeVF(output, k0truebrothprotonmaxenergy, "Max proton energy in true brothers", nk0, nmax);
    AddVarMaxSizeVF(output, k0truebrothprotonmaxmomentum, "Max proton momentum in true brothers", nk0, nmax);
    AddVarMaxSize3MF(output, k0truebrothprotonmaxdir, "Direction of max proton in true brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothalign, "Alignment between K+ and K0+proton (all true)", nk0, nmax);
 
    // True brothers with reco - subset with reconstructed objects
    AddVarMaxSizeVI(output, k0ntruebrothreco, "Number of true brothers with reco", nk0, nmax);
@@ -234,6 +236,7 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Brother(OutputManager& output, U
    AddVarMaxSizeVF(output, k0truebrothrecoprotonmaxrecoenergy, "Max true proton reco energy in reco brothers", nk0, nmax);
    AddVarMaxSizeVF(output, k0truebrothrecoprotonmaxrecomom, "Max true proton reco momentum in reco brothers", nk0, nmax);
    AddVarMaxSize3MF(output, k0truebrothrecoprotonmaxdir, "True direction of max proton in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothrecoalign, "Alignment between K+ and K0+proton (true parent/K0 + reco proton)", nk0, nmax);
 
    // Reco brothers - ALL from Parent->Daughters
    AddVarMaxSizeVI(output, k0nrecobroth, "Number of reco brothers", nk0, nmax);
@@ -254,6 +257,8 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Brother(OutputManager& output, U
    AddVarMaxSizeVF(output, k0recobrothprotonmaxtruemom, "Max reco proton true momentum in reco brothers", nk0, nmax);
    AddVarMaxSize3MF(output, k0recobrothprotonmaxdir, "Reco direction of max proton in reco brothers", nk0, nmax);
    AddVarMaxSize3MF(output, k0recobrothprotonmaxtruedir, "True direction of max proton in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0recobrothalign, "Alignment between K+ and K0+proton (all reco)", nk0, nmax);
+   AddVarMaxSizeVF(output, k0recobrothtruealign, "Alignment between K+ and K0+proton (true from reco particles)", nk0, nmax);
 }
 
 //********************************************************************
@@ -312,7 +317,7 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
     if(candidate){
       neutralKaonTree::FillNeutralKaonVariables_K0(output, candidate);
       neutralKaonTree::FillNeutralKaonVariables_K0Par(output, candidate, event, beam);
-      neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate->Parent, event);
+      neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate, candidate->Parent, event);
       AnaVertexPD* vertex = candidate->Vertex;
       neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex);
       AnaParticlePD* daughter1Candidate = candidate->Vertex->Particles[0];
@@ -1111,7 +1116,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaV
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaParticlePD* parentCandidate, const AnaEventB& event){
+void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaParticlePD* parentCandidate, const AnaEventB& event){
     // Fill all variables for a single K0 brother
   if(parentCandidate){
     output.FillVectorVar(k0reconbrother, (Int_t)parentCandidate->Daughters.size());
@@ -1133,6 +1138,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     Float_t trueBrothersMom[100];
     Float_t trueBrothersEnergy[100];
     Int_t trueBrothersProcess[100];
+    Float_t trueBrothersLength[100];
 
     // Initialize arrays
     for(int i = 0; i < 100; i++){
@@ -1140,6 +1146,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       trueBrothersMom[i] = -999.0;
       trueBrothersEnergy[i] = -999.0;
       trueBrothersProcess[i] = -999;
+      trueBrothersLength[i] = -999.0;
     }
 
     if(trueParentCandidate){
@@ -1163,6 +1170,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
           trueBrothersMom[nTrueBrothers] = trueBrother->Momentum;
           trueBrothersProcess[nTrueBrothers] = static_cast<Int_t>(trueBrother->ProcessStart);
 
+          // Calculate true length from positions
+          Float_t dx = trueBrother->PositionEnd[0] - trueBrother->Position[0];
+          Float_t dy = trueBrother->PositionEnd[1] - trueBrother->Position[1];
+          Float_t dz = trueBrother->PositionEnd[2] - trueBrother->Position[2];
+          trueBrothersLength[nTrueBrothers] = sqrt(dx*dx + dy*dy + dz*dz);
+
           // Calculate energy
           Float_t mass = GetParticleMass(trueBrother->PDG);
           if(mass > 0.0 && trueBrother->Momentum > 0.0){
@@ -1180,13 +1193,49 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
             }
           }
 
-          // Accumulate direction and momentum
+          // Accumulate momentum and momentum vector
           trueBrothersTotalMom += trueBrother->Momentum;
-          TVector3 dir(trueBrother->Direction[0], trueBrother->Direction[1], trueBrother->Direction[2]);
-          trueBrothersTotalDir += dir;
+          TVector3 momVec(trueBrother->Direction[0] * trueBrother->Momentum,
+                          trueBrother->Direction[1] * trueBrother->Momentum,
+                          trueBrother->Direction[2] * trueBrother->Momentum);
+          trueBrothersTotalDir += momVec;
 
           nTrueBrothers++;
         }
+      }
+    }
+
+    // Calculate k0truebrothalign (alignment between K+ and K0+proton using all true quantities)
+    Float_t k0truebrothalign_val = -999.0;
+    if(neutralCandidate && neutralCandidate->TrueObject && parentCandidate &&
+       parentCandidate->TrueObject && trueBrothersProtonMaxMom > 0) {
+
+      AnaTrueParticlePD* trueK0 = static_cast<AnaTrueParticlePD*>(neutralCandidate->TrueObject);
+      AnaTrueParticlePD* trueParent = static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject);
+
+      // Parent momentum vector (K+ end momentum)
+      TVector3 parentMomVec(trueParent->DirectionEnd[0] * trueParent->MomentumEnd,
+                            trueParent->DirectionEnd[1] * trueParent->MomentumEnd,
+                            trueParent->DirectionEnd[2] * trueParent->MomentumEnd);
+
+      // K0 momentum vector (true start momentum)
+      TVector3 k0MomVec(trueK0->Direction[0] * trueK0->Momentum,
+                        trueK0->Direction[1] * trueK0->Momentum,
+                        trueK0->Direction[2] * trueK0->Momentum);
+
+      // Max proton momentum vector
+      TVector3 protonMomVec = trueBrothersProtonMaxDir * trueBrothersProtonMaxMom;
+
+      // Sum of daughters (K0 + proton)
+      TVector3 daughterSum = k0MomVec + protonMomVec;
+
+      // Cache magnitudes to avoid recalculation (OPTIMIZED)
+      Float_t parentMag = parentMomVec.Mag();
+      Float_t daughterMag = daughterSum.Mag();
+
+      // Calculate normalized dot product (cosine of angle)
+      if(parentMag > 0 && daughterMag > 0) {
+        k0truebrothalign_val = parentMomVec.Dot(daughterSum) / (parentMag * daughterMag);
       }
     }
 
@@ -1281,10 +1330,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
               }
             }
 
-            // Accumulate direction
+            // Accumulate momentum vector
             trueBrothersRecoTrueTotalMom += trueBrother->Momentum;
-            TVector3 dir(trueBrother->Direction[0], trueBrother->Direction[1], trueBrother->Direction[2]);
-            trueBrothersRecoTrueTotalDir += dir;
+            TVector3 momVec(trueBrother->Direction[0] * trueBrother->Momentum,
+                            trueBrother->Direction[1] * trueBrother->Momentum,
+                            trueBrother->Direction[2] * trueBrother->Momentum);
+            trueBrothersRecoTrueTotalDir += momVec;
 
             // Fill reco info
             trueBrothersRecoPDG[nTrueBrothersReco] = recoBrother->isPandora; // Pandora ID
@@ -1307,6 +1358,40 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       }
     }
 
+    // Calculate k0truebrothrecoalign (alignment using true parent/K0 and reco proton)
+    Float_t k0truebrothrecoalign_val = -999.0;
+    if(neutralCandidate && neutralCandidate->TrueObject && parentCandidate &&
+       parentCandidate->TrueObject && trueBrothersRecoProtonMaxRecoMom > 0) {
+
+      AnaTrueParticlePD* trueK0 = static_cast<AnaTrueParticlePD*>(neutralCandidate->TrueObject);
+      AnaTrueParticlePD* trueParent = static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject);
+
+      // Parent momentum vector (K+ end momentum - true)
+      TVector3 parentMomVec(trueParent->DirectionEnd[0] * trueParent->MomentumEnd,
+                            trueParent->DirectionEnd[1] * trueParent->MomentumEnd,
+                            trueParent->DirectionEnd[2] * trueParent->MomentumEnd);
+
+      // K0 momentum vector (true start momentum)
+      TVector3 k0MomVec(trueK0->Direction[0] * trueK0->Momentum,
+                        trueK0->Direction[1] * trueK0->Momentum,
+                        trueK0->Direction[2] * trueK0->Momentum);
+
+      // Max proton momentum vector (reco momentum with true direction)
+      TVector3 protonMomVec = trueBrothersRecoProtonMaxDir * trueBrothersRecoProtonMaxRecoMom;
+
+      // Sum of daughters (K0 + proton)
+      TVector3 daughterSum = k0MomVec + protonMomVec;
+
+      // Cache magnitudes to avoid recalculation (OPTIMIZED)
+      Float_t parentMag = parentMomVec.Mag();
+      Float_t daughterMag = daughterSum.Mag();
+
+      // Calculate normalized dot product (cosine of angle)
+      if(parentMag > 0 && daughterMag > 0) {
+        k0truebrothrecoalign_val = parentMomVec.Dot(daughterSum) / (parentMag * daughterMag);
+      }
+    }
+
     // ========== LOOP 3: RECO BROTHERS (ALL from Parent->Daughters) ==========
     Int_t nRecoBrothers = 0;
     TVector3 recoBrothersTrueTotalDir(0, 0, 0);
@@ -1323,6 +1408,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     Float_t recoBrothersEnergy[100];
     Float_t recoBrothersLength[100];
     Float_t recoBrothersChi2Prot[100];
+    Float_t recoBrothersDir[100][3];  // Cache reco directions for performance
     Int_t recoBrothersTruePDG[100];
     Float_t recoBrothersTrueEnergy[100];
     Float_t recoBrothersTrueMom[100];
@@ -1335,6 +1421,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       recoBrothersEnergy[i] = -999.0;
       recoBrothersLength[i] = -999.0;
       recoBrothersChi2Prot[i] = -999.0;
+      recoBrothersDir[i][0] = -999.0;
+      recoBrothersDir[i][1] = -999.0;
+      recoBrothersDir[i][2] = -999.0;
       recoBrothersTruePDG[i] = -999;
       recoBrothersTrueEnergy[i] = -999.0;
       recoBrothersTrueMom[i] = -999.0;
@@ -1352,17 +1441,24 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       AnaParticlePD* recoBrother = static_cast<AnaParticlePD*>(parentCandidate->Daughters[i]);
       if(recoBrother){
         // Fill reco info
-        recoBrothersPDG[nRecoBrothers] = recoBrother->isPandora;
-        recoBrothersMom[nRecoBrothers] = recoBrother->Momentum;
+        recoBrothersPDG[nRecoBrothers] = (recoBrother->ReconPDG[0] != -999) ? recoBrother->ReconPDG[0] : -999;
+        recoBrothersMom[nRecoBrothers] = recoBrother->RangeMomentum[1];  // Proton CSDA range momentum
         recoBrothersLength[nRecoBrothers] = recoBrother->Length;
+
+        // Cache direction for performance (avoid re-accessing later)
+        recoBrothersDir[nRecoBrothers][0] = recoBrother->DirectionStart[0];
+        recoBrothersDir[nRecoBrothers][1] = recoBrother->DirectionStart[1];
+        recoBrothersDir[nRecoBrothers][2] = recoBrother->DirectionStart[2];
 
         // Chi2 for proton hypothesis
         std::pair<double, int> chi2Prot = pdAnaUtils::Chi2PID(*recoBrother, 2212);
         recoBrothersChi2Prot[nRecoBrothers] = (chi2Prot.second > 0) ? chi2Prot.first / chi2Prot.second : -999.0;
 
-        // Accumulate reco direction
-        TVector3 recoDir(recoBrother->DirectionStart[0], recoBrother->DirectionStart[1], recoBrother->DirectionStart[2]);
-        recoBrothersRecoTotalDir += recoDir;
+        // Accumulate reco momentum vector
+        TVector3 recoMomVec(recoBrother->DirectionStart[0] * recoBrother->Momentum,
+                            recoBrother->DirectionStart[1] * recoBrother->Momentum,
+                            recoBrother->DirectionStart[2] * recoBrother->Momentum);
+        recoBrothersRecoTotalDir += recoMomVec;
 
         // Get true info
         AnaTrueParticlePD* trueBrother = static_cast<AnaTrueParticlePD*>(recoBrother->TrueObject);
@@ -1378,9 +1474,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
             recoBrothersTrueEnergy[nRecoBrothers] = trueEnergy;
           }
 
-          // Accumulate true direction
-          TVector3 trueDir(trueBrother->Direction[0], trueBrother->Direction[1], trueBrother->Direction[2]);
-          recoBrothersTrueTotalDir += trueDir;
+          // Accumulate true momentum vector
+          TVector3 trueMomVec(trueBrother->Direction[0] * trueBrother->Momentum,
+                              trueBrother->Direction[1] * trueBrother->Momentum,
+                              trueBrother->Direction[2] * trueBrother->Momentum);
+          recoBrothersTrueTotalDir += trueMomVec;
 
           // Track max proton (by reco energy)
           Float_t recoMass = GetParticleMass(trueBrother->PDG);
@@ -1422,6 +1520,114 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       }
     }
 
+    // Calculate k0recobrothalign (alignment using all reco quantities) - OPTIMIZED
+    Float_t k0recobrothalign_val = -999.0;
+    if(neutralCandidate && parentCandidate && nRecoBrothers > 0) {
+      // Find max energetic proton in SINGLE pass
+      Float_t maxProtonRecoEnergy = -999.0;
+      Float_t maxProtonRecoMom = -999.0;
+      TVector3 maxProtonRecoDir(-999.0, -999.0, -999.0);
+      Float_t minChi2 = 999999.0;
+      int minChi2Index = -1;
+
+      // Single loop through all brothers (OPTIMIZED: was 2 loops before)
+      for(int i = 0; i < nRecoBrothers; i++){
+        // Try PDG first
+        if(recoBrothersPDG[i] == 2212 && recoBrothersEnergy[i] > maxProtonRecoEnergy){
+          maxProtonRecoEnergy = recoBrothersEnergy[i];
+          maxProtonRecoMom = recoBrothersMom[i];
+          maxProtonRecoDir.SetXYZ(recoBrothersDir[i][0],
+                                  recoBrothersDir[i][1],
+                                  recoBrothersDir[i][2]);
+        }
+        // Track best chi2 as fallback (computed in parallel)
+        if(recoBrothersChi2Prot[i] > 0 && recoBrothersChi2Prot[i] < minChi2){
+          minChi2 = recoBrothersChi2Prot[i];
+          minChi2Index = i;
+        }
+      }
+
+      // Use chi2 fallback if no PDG match found
+      if(maxProtonRecoEnergy < 0 && minChi2Index >= 0){
+        maxProtonRecoEnergy = recoBrothersEnergy[minChi2Index];
+        maxProtonRecoMom = recoBrothersMom[minChi2Index];
+        maxProtonRecoDir.SetXYZ(recoBrothersDir[minChi2Index][0],
+                                recoBrothersDir[minChi2Index][1],
+                                recoBrothersDir[minChi2Index][2]);
+      }
+
+      if(maxProtonRecoMom > 0){
+        // Parent momentum magnitude (use true if available, otherwise reco)
+        Float_t parentMom = parentCandidate->TrueObject ?
+                            static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject)->MomentumEnd :
+                            parentCandidate->Momentum;
+
+        // K0 momentum magnitude (use true if available, otherwise fallback)
+        Float_t k0Mom = neutralCandidate->TrueObject ?
+                        static_cast<AnaTrueParticlePD*>(neutralCandidate->TrueObject)->Momentum :
+                        -999.0;
+
+        if(parentMom > 0 && k0Mom > 0){
+          // Parent momentum vector (reco end direction with true end momentum)
+          TVector3 parentMomVec(parentCandidate->DirectionEnd[0] * parentMom,
+                                parentCandidate->DirectionEnd[1] * parentMom,
+                                parentCandidate->DirectionEnd[2] * parentMom);
+
+          // K0 momentum vector (reco start direction with true start momentum)
+          TVector3 k0MomVec(neutralCandidate->DirectionStart[0] * k0Mom,
+                            neutralCandidate->DirectionStart[1] * k0Mom,
+                            neutralCandidate->DirectionStart[2] * k0Mom);
+
+          // Proton momentum vector
+          TVector3 protonMomVec = maxProtonRecoDir * maxProtonRecoMom;
+
+          // Sum of daughters
+          TVector3 daughterSum = k0MomVec + protonMomVec;
+
+          // Cache magnitudes to avoid recalculation (OPTIMIZED)
+          Float_t parentMag = parentMomVec.Mag();
+          Float_t daughterMag = daughterSum.Mag();
+
+          if(parentMag > 0 && daughterMag > 0){
+            k0recobrothalign_val = parentMomVec.Dot(daughterSum) / (parentMag * daughterMag);
+          }
+        }
+      }
+    }
+
+    // Calculate k0recobrothtruealign (alignment using true info from reco particles)
+    Float_t k0recobrothtruealign_val = -999.0;
+    if(neutralCandidate && neutralCandidate->TrueObject && parentCandidate &&
+       parentCandidate->TrueObject && recoBrothersProtonMaxTrueMom > 0){
+
+      AnaTrueParticlePD* trueK0 = static_cast<AnaTrueParticlePD*>(neutralCandidate->TrueObject);
+      AnaTrueParticlePD* trueParent = static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject);
+
+      // Parent momentum vector (true end)
+      TVector3 parentMomVec(trueParent->DirectionEnd[0] * trueParent->MomentumEnd,
+                            trueParent->DirectionEnd[1] * trueParent->MomentumEnd,
+                            trueParent->DirectionEnd[2] * trueParent->MomentumEnd);
+
+      // K0 momentum vector (true start)
+      TVector3 k0MomVec(trueK0->Direction[0] * trueK0->Momentum,
+                        trueK0->Direction[1] * trueK0->Momentum,
+                        trueK0->Direction[2] * trueK0->Momentum);
+
+      // Max proton momentum vector (from reco brothers with true info)
+      TVector3 protonMomVec = recoBrothersProtonMaxTrueDir * recoBrothersProtonMaxTrueMom;
+
+      // Sum of daughters
+      TVector3 daughterSum = k0MomVec + protonMomVec;
+
+      // Cache magnitudes to avoid recalculation (OPTIMIZED)
+      Float_t parentMag = parentMomVec.Mag();
+      Float_t daughterMag = daughterSum.Mag();
+
+      if(parentMag > 0 && daughterMag > 0){
+        k0recobrothtruealign_val = parentMomVec.Dot(daughterSum) / (parentMag * daughterMag);
+      }
+    }
+
     // Fill summary counters (backward compatibility)
     output.FillVectorVar(k0brothreconprot, (Int_t)nReconProtons);
     output.FillVectorVar(k0brothrecoprotenergy, maxProtonEnergy);
@@ -1436,6 +1642,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     output.FillMatrixVarFromArray(k0truebrothmomentum, trueBrothersMom, 100);
     output.FillMatrixVarFromArray(k0truebrothenergy, trueBrothersEnergy, 100);
     output.FillMatrixVarFromArray(k0truebrothprocessstart, trueBrothersProcess, 100);
+    output.FillMatrixVarFromArray(k0truebrothlength, trueBrothersLength, 100);
     output.FillVectorVar(k0truebrothtotalmom, trueBrothersTotalMom);
     output.FillVectorVar(k0truebrothtotalenergy, trueBrothersTotalEnergy);
 
@@ -1453,6 +1660,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
                                                  static_cast<Float_t>(trueBrothersProtonMaxDir.Y()),
                                                  static_cast<Float_t>(trueBrothersProtonMaxDir.Z())};
     output.FillMatrixVarFromArray(k0truebrothprotonmaxdir, trueBrothersProtonMaxDirArray, 3);
+    output.FillVectorVar(k0truebrothalign, k0truebrothalign_val);
 
     // Fill true brothers with reco arrays
     output.FillVectorVar(k0ntruebrothreco, nTrueBrothersReco);
@@ -1484,6 +1692,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
                                                      static_cast<Float_t>(trueBrothersRecoProtonMaxDir.Y()),
                                                      static_cast<Float_t>(trueBrothersRecoProtonMaxDir.Z())};
     output.FillMatrixVarFromArray(k0truebrothrecoprotonmaxdir, trueBrothersRecoProtonMaxDirArray, 3);
+    output.FillVectorVar(k0truebrothrecoalign, k0truebrothrecoalign_val);
 
     // Fill reco brothers arrays
     output.FillVectorVar(k0nrecobroth, nRecoBrothers);
@@ -1526,6 +1735,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
                                                      static_cast<Float_t>(recoBrothersProtonMaxTrueDir.Y()),
                                                      static_cast<Float_t>(recoBrothersProtonMaxTrueDir.Z())};
     output.FillMatrixVarFromArray(k0recobrothprotonmaxtruedir, recoBrothersProtonMaxTrueDirArray, 3);
+    output.FillVectorVar(k0recobrothalign, k0recobrothalign_val);
+    output.FillVectorVar(k0recobrothtruealign, k0recobrothtruealign_val);
 
   } else {
     // If no parent candidate, fill with default values
@@ -1544,6 +1755,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     output.FillVectorVar(k0truebrothtotalenergy, -999.0);
     output.FillVectorVar(k0truebrothprotonmaxenergy, -999.0);
     output.FillVectorVar(k0truebrothprotonmaxmomentum, -999.0);
+    output.FillVectorVar(k0truebrothalign, -999.0);
 
     output.FillVectorVar(k0ntruebrothreco, -999);
     output.FillVectorVar(k0truebrothrecotruetotalmom, -999.0);
@@ -1552,12 +1764,15 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     output.FillVectorVar(k0truebrothrecoprotonmaxmomentum, -999.0);
     output.FillVectorVar(k0truebrothrecoprotonmaxrecoenergy, -999.0);
     output.FillVectorVar(k0truebrothrecoprotonmaxrecomom, -999.0);
+    output.FillVectorVar(k0truebrothrecoalign, -999.0);
 
     output.FillVectorVar(k0nrecobroth, -999);
     output.FillVectorVar(k0recobrothprotonmaxenergy, -999.0);
     output.FillVectorVar(k0recobrothprotonmaxmomentum, -999.0);
     output.FillVectorVar(k0recobrothprotonmaxtrueenergy, -999.0);
     output.FillVectorVar(k0recobrothprotonmaxtruemom, -999.0);
+    output.FillVectorVar(k0recobrothalign, -999.0);
+    output.FillVectorVar(k0recobrothtruealign, -999.0);
   }
 }
 

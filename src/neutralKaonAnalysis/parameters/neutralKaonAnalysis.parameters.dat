@@ -30,7 +30,7 @@ need to be enabled in baseAnalysis parameter file
 
  < neutralKaonAnalysis.TrackFitLength = 30.0 > //length of track used for line fitting (cm)
  < neutralKaonAnalysis.UseROOTFitting = 1 > //use ROOT fitting instead of PCA for track fitting (1=ROOT, 0=PCA)
- < neutralKaonAnalysis.VertexFindingMethod = 2 > //vertex position finding method: 0=Geometric(PCA), 1=Fitted(TMinuit-default), 2=Kalman
+ < neutralKaonAnalysis.VertexFindingMethod = 0 > //vertex position finding method: 0=Geometric(PCA), 1=Fitted(TMinuit-default), 2=Kalman
  < neutralKaonAnalysis.MaxChi2NdfProton = 100.0 > //max chi2/ndf for proton hypothesis (particles with lower values are rejected)
  < neutralKaonAnalysis.MaxChi2NdfKaon = 20.0 > //max chi2/ndf for kaon hypothesis (particles with lower values are rejected)
  < neutralKaonAnalysis.MaxKalmanChi2Ndf = 10.0 > //max chi2/ndf for Kalman vertex fit quality (vertices with higher values are rejected)

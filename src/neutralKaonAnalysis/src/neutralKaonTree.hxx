@@ -19,7 +19,7 @@ namespace neutralKaonTree {
   void FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event, AnaBeamB* beam = NULL);
   void FillNeutralKaonVariables_K0(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, const AnaEventB& event, AnaBeamB* beam = NULL);
-  void FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaParticlePD* parentCandidate, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaParticlePD* parentCandidate, const AnaEventB& event);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaVertexPD* vertex);
   void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
   void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
@@ -188,12 +188,14 @@ namespace neutralKaonTree {
     k0truebrothmomentum,
     k0truebrothenergy,
     k0truebrothprocessstart,
+    k0truebrothlength,
     k0truebrothtotalmom,
     k0truebrothtotalenergy,
     k0truebrothtruetotaldir,
     k0truebrothprotonmaxenergy,
     k0truebrothprotonmaxmomentum,
     k0truebrothprotonmaxdir,
+    k0truebrothalign,
 
     // True brothers with reco - subset with reconstructed objects
     k0ntruebrothreco,
@@ -214,6 +216,7 @@ namespace neutralKaonTree {
     k0truebrothrecoprotonmaxrecoenergy,
     k0truebrothrecoprotonmaxrecomom,
     k0truebrothrecoprotonmaxdir,
+    k0truebrothrecoalign,
 
     // Reco brothers - ALL from Parent->Daughters
     k0nrecobroth,
@@ -234,6 +237,8 @@ namespace neutralKaonTree {
     k0recobrothprotonmaxtruemom,
     k0recobrothprotonmaxdir,
     k0recobrothprotonmaxtruedir,
+    k0recobrothalign,
+    k0recobrothtruealign,
 
      // Variables about the vertex system (two particles)
     k0vtxrecopos,
