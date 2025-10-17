@@ -368,43 +368,6 @@ void AnaParticlePD::Print() const{
 }
 
 //********************************************************************
-AnaVertexFittedParticlePD::AnaVertexFittedParticlePD():AnaParticlePD(){
-//********************************************************************
-
-  for(int i = 0; i < 3; i++){
-    FitPosition[i] = kFloatUnassigned;
-    FitDirection[i] = kFloatUnassigned;
-  }
-}
-
-//********************************************************************
-AnaVertexFittedParticlePD::~AnaVertexFittedParticlePD(){
-//********************************************************************
-
-}
-
-//********************************************************************
-AnaVertexFittedParticlePD::AnaVertexFittedParticlePD(const AnaVertexFittedParticlePD& fittedPart):AnaParticlePD(fittedPart){
-//********************************************************************
-
-  for(int i = 0; i < 3; i++){
-    FitPosition[i] = fittedPart.FitPosition[i];
-    FitDirection[i] = fittedPart.FitDirection[i];
-  }
-}
-
-//********************************************************************
-void AnaVertexFittedParticlePD::Print() const{
-//********************************************************************
-
-  AnaParticlePD::Print();
-
-  std::cout << "-------- AnaVertexFittedParticlePD --------- " << std::endl;
-  std::cout << "FitPosition: (" << FitPosition[0] << ", " << FitPosition[1] << ", " << FitPosition[2] << ")" << std::endl;
-  std::cout << "FitDirection: (" << FitDirection[0] << ", " << FitDirection[1] << ", " << FitDirection[2] << ")" << std::endl;
-}
-
-//********************************************************************
 AnaTrueParticlePD::AnaTrueParticlePD():AnaTrueParticle(){
 //********************************************************************
 
@@ -677,16 +640,32 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(){
   Direction[0] = kFloatUnassigned;
   Direction[1] = kFloatUnassigned;
   Direction[2] = kFloatUnassigned;
-  FitParticles.clear();
-  FitDirection[0] = kFloatUnassigned;
-  FitDirection[1] = kFloatUnassigned;
-  FitDirection[2] = kFloatUnassigned;
+  DirectionFit[0] = kFloatUnassigned;
+  DirectionFit[1] = kFloatUnassigned;
+  DirectionFit[2] = kFloatUnassigned;
   PositionPandora[0] = kFloatUnassigned;
   PositionPandora[1] = kFloatUnassigned;
   PositionPandora[2] = kFloatUnassigned;
+  PositionFit[0] = kFloatUnassigned;
+  PositionFit[1] = kFloatUnassigned;
+  PositionFit[2] = kFloatUnassigned;
+  DirectionFit[0] = kFloatUnassigned;
+  DirectionFit[1] = kFloatUnassigned;
+  DirectionFit[2] = kFloatUnassigned;
+  IsJustAverage = 0;
   DegeneracyBeforeScoring = 0;
   DegeneracyAfterScoring = 0;
   NRecoParticles = 0;
+  DegeneracyDistances.clear();
+  IsolationDistances.clear();
+  IsolationDistancesFit.clear();
+  IsolationStartDistances.clear();
+  IsolationNProton = 0;
+  IsolationNPion = 0;
+  IsolationIsProton.clear();
+  IsolationChi2Proton.clear();
+  IsolationLength.clear();
+  IsolationIsLongest = 0;
 }
 
 //********************************************************************
@@ -709,16 +688,32 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVert
   Direction[0] = vertex.Direction[0];
   Direction[1] = vertex.Direction[1];
   Direction[2] = vertex.Direction[2];
-  FitParticles = vertex.FitParticles;
-  FitDirection[0] = vertex.FitDirection[0];
-  FitDirection[1] = vertex.FitDirection[1];
-  FitDirection[2] = vertex.FitDirection[2];
+  DirectionFit[0] = vertex.DirectionFit[0];
+  DirectionFit[1] = vertex.DirectionFit[1];
+  DirectionFit[2] = vertex.DirectionFit[2];
   PositionPandora[0] = vertex.PositionPandora[0];
   PositionPandora[1] = vertex.PositionPandora[1];
   PositionPandora[2] = vertex.PositionPandora[2];
+  PositionFit[0] = vertex.PositionFit[0];
+  PositionFit[1] = vertex.PositionFit[1];
+  PositionFit[2] = vertex.PositionFit[2];
+  DirectionFit[0] = vertex.DirectionFit[0];
+  DirectionFit[1] = vertex.DirectionFit[1];
+  DirectionFit[2] = vertex.DirectionFit[2];
+  IsJustAverage = vertex.IsJustAverage;
   DegeneracyBeforeScoring = vertex.DegeneracyBeforeScoring;
   DegeneracyAfterScoring = vertex.DegeneracyAfterScoring;
   NRecoParticles = vertex.NRecoParticles;
+  DegeneracyDistances = vertex.DegeneracyDistances;
+  IsolationDistances = vertex.IsolationDistances;
+  IsolationDistancesFit = vertex.IsolationDistancesFit;
+  IsolationStartDistances = vertex.IsolationStartDistances;
+  IsolationNProton = vertex.IsolationNProton;
+  IsolationNPion = vertex.IsolationNPion;
+  IsolationIsProton = vertex.IsolationIsProton;
+  IsolationChi2Proton = vertex.IsolationChi2Proton;
+  IsolationLength = vertex.IsolationLength;
+  IsolationIsLongest = vertex.IsolationIsLongest;
 }
 
 //********************************************************************
@@ -760,16 +755,32 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   MinimumDistance = kFloatUnassigned;
   Score = kFloatUnassigned;
   ParentID = kIntUnassigned;
-  FitParticles.clear();
-  FitDirection[0] = kFloatUnassigned;
-  FitDirection[1] = kFloatUnassigned;
-  FitDirection[2] = kFloatUnassigned;
+  DirectionFit[0] = kFloatUnassigned;
+  DirectionFit[1] = kFloatUnassigned;
+  DirectionFit[2] = kFloatUnassigned;
   PositionPandora[0] = kFloatUnassigned;
   PositionPandora[1] = kFloatUnassigned;
   PositionPandora[2] = kFloatUnassigned;
+  PositionFit[0] = kFloatUnassigned;
+  PositionFit[1] = kFloatUnassigned;
+  PositionFit[2] = kFloatUnassigned;
+  DirectionFit[0] = kFloatUnassigned;
+  DirectionFit[1] = kFloatUnassigned;
+  DirectionFit[2] = kFloatUnassigned;
+  IsJustAverage = 0;
   DegeneracyBeforeScoring = 0;
   DegeneracyAfterScoring = 0;
   NRecoParticles = 0;
+  DegeneracyDistances.clear();
+  IsolationDistances.clear();
+  IsolationDistancesFit.clear();
+  IsolationStartDistances.clear();
+  IsolationNProton = 0;
+  IsolationNPion = 0;
+  IsolationIsProton.clear();
+  IsolationChi2Proton.clear();
+  IsolationLength.clear();
+  IsolationIsLongest = 0;
 }
 
 //********************************************************************
@@ -804,16 +815,32 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   MinimumDistance = vertex.MinimumDistance;
   Score = vertex.Score;
   ParentID = vertex.ParentID;
-  FitParticles = vertex.FitParticles;
-  FitDirection[0] = vertex.FitDirection[0];
-  FitDirection[1] = vertex.FitDirection[1];
-  FitDirection[2] = vertex.FitDirection[2];
+  DirectionFit[0] = vertex.DirectionFit[0];
+  DirectionFit[1] = vertex.DirectionFit[1];
+  DirectionFit[2] = vertex.DirectionFit[2];
   PositionPandora[0] = vertex.PositionPandora[0];
   PositionPandora[1] = vertex.PositionPandora[1];
   PositionPandora[2] = vertex.PositionPandora[2];
+  PositionFit[0] = vertex.PositionFit[0];
+  PositionFit[1] = vertex.PositionFit[1];
+  PositionFit[2] = vertex.PositionFit[2];
+  DirectionFit[0] = vertex.DirectionFit[0];
+  DirectionFit[1] = vertex.DirectionFit[1];
+  DirectionFit[2] = vertex.DirectionFit[2];
+  IsJustAverage = vertex.IsJustAverage;
   DegeneracyBeforeScoring = vertex.DegeneracyBeforeScoring;
   DegeneracyAfterScoring = vertex.DegeneracyAfterScoring;
   NRecoParticles = vertex.NRecoParticles;
+  DegeneracyDistances = vertex.DegeneracyDistances;
+  IsolationDistances = vertex.IsolationDistances;
+  IsolationDistancesFit = vertex.IsolationDistancesFit;
+  IsolationStartDistances = vertex.IsolationStartDistances;
+  IsolationNProton = vertex.IsolationNProton;
+  IsolationNPion = vertex.IsolationNPion;
+  IsolationIsProton = vertex.IsolationIsProton;
+  IsolationChi2Proton = vertex.IsolationChi2Proton;
+  IsolationLength = vertex.IsolationLength;
+  IsolationIsLongest = vertex.IsolationIsLongest;
 }
 
 //********************************************************************
@@ -928,7 +955,11 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
   HitsAvgDistance = kFloatUnassigned;
   HitsRMSDistance = kFloatUnassigned;
   HitsLongitudinalSpan = kFloatUnassigned;
-  FitParent = NULL;
+  NProtonInCreationVtx = 0;
+  NParticlesInCreationVtx = 0;
+  CreationVtxChi2Proton.clear();
+  CreationVtxDistances.clear();
+  CreationVtxTruePDG.clear();
 }
 
 //********************************************************************
@@ -959,7 +990,11 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
   HitsAvgDistance = neutralParticle.HitsAvgDistance;
   HitsRMSDistance = neutralParticle.HitsRMSDistance;
   HitsLongitudinalSpan = neutralParticle.HitsLongitudinalSpan;
-  FitParent = neutralParticle.FitParent;
+  NProtonInCreationVtx = neutralParticle.NProtonInCreationVtx;
+  NParticlesInCreationVtx = neutralParticle.NParticlesInCreationVtx;
+  CreationVtxChi2Proton = neutralParticle.CreationVtxChi2Proton;
+  CreationVtxDistances = neutralParticle.CreationVtxDistances;
+  CreationVtxTruePDG = neutralParticle.CreationVtxTruePDG;
 }
 
 //********************************************************************
@@ -1005,6 +1040,7 @@ AnaTrueEquivalentNeutralParticlePD::AnaTrueEquivalentNeutralParticlePD(){
   DirectionEnd[2] = kFloatUnassigned;
   Length = kFloatUnassigned;
   Momentum = kFloatUnassigned;
+  MomentumEnd = kFloatUnassigned;
   PDG = kIntUnassigned;
   Generation = kIntUnassigned;
   Process = kIntUnassigned;
@@ -1037,6 +1073,7 @@ AnaTrueEquivalentNeutralParticlePD::AnaTrueEquivalentNeutralParticlePD(const Ana
   DirectionEnd[2] = trueEquivalentNeutralPart.DirectionEnd[2];
   Length = trueEquivalentNeutralPart.Length;
   Momentum = trueEquivalentNeutralPart.Momentum;
+  MomentumEnd = trueEquivalentNeutralPart.MomentumEnd;
   PDG = trueEquivalentNeutralPart.PDG;
   Generation = trueEquivalentNeutralPart.Generation;
   Process = trueEquivalentNeutralPart.Process;

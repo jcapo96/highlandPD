@@ -44,7 +44,6 @@ public:
                     const std::string& outputDirectory = "/plots",
                     int maxEventsToDisplay = 100,
                     double eventPercentage = 100.0,
-                    const std::vector<int>& requiredParticlePDGs = std::vector<int>(),
                     double vertexRadius = 30.0,
                     int minVertexDaughters = 2);
 
@@ -57,9 +56,6 @@ public:
     // Check if this specific event should be saved based on percentage
     bool ShouldSaveThisEvent(int eventNumber) const;
 
-    // Check if event contains required particle types
-    bool EventContainsRequiredParticles(AnaEventB& event) const;
-
     // Helper method to set 3D axis ranges for zooming
     void Set3DAxisRanges(TH3F* h3d, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
 
@@ -70,7 +66,6 @@ private:
     std::string _OutputDirectory;
     int _MaxEventsToDisplay;
     double _EventPercentage;
-    std::vector<int> _RequiredParticlePDGs;
     double _VertexRadius;
     int _MinVertexDaughters;
 

@@ -11,6 +11,26 @@
 #include <set>
 #include <iostream>
 
+namespace {
+  // Helper function to get particle mass from PDG code (in GeV/c^2)
+  Float_t GetParticleMass(Int_t pdg) {
+    switch(abs(pdg)) {
+      case 211:  return 0.13957;   // pi+/-
+      case 111:  return 0.134977;  // pi0
+      case 2212: return 0.938272;  // proton
+      case 2112: return 0.939565;  // neutron
+      case 321:  return 0.493677;  // K+/-
+      case 310:  return 0.497611;  // K0s
+      case 311:  return 0.497611;  // K0
+      case 130:  return 0.497611;  // K0L
+      case 11:   return 0.000511;  // e+/-
+      case 13:   return 0.105658;  // mu+/-
+      case 22:   return 0.0;       // gamma
+      default:   return -999.0;    // Unknown
+    }
+  }
+}
+
 //********************************************************************
 void neutralKaonTree::AddNeutralKaonVariables_K0(OutputManager& output, UInt_t nmax){
 //********************************************************************
@@ -31,7 +51,6 @@ void neutralKaonTree::AddNeutralKaonVariables_K0(OutputManager& output, UInt_t n
   AddVarMaxSize3MF(output, k0trueenddir, "K0 true end direction", nk0, nmax);
   AddVarMaxSizeVF(output, k0truestartenddir, "K0 true start-end direction scalar product", nk0, nmax);
   AddVarMaxSizeVF(output, k0recostartenddir, "K0 reconstructed start-end direction scalar product", nk0, nmax);
-  AddVarMaxSizeVF(output, k0fitstartenddir, "K0 fitted start-end direction scalar product", nk0, nmax);
   AddVarMaxSizeVF(output, k0recolength, "K0 reconstructed length", nk0, nmax);
   AddVarMaxSizeVF(output, k0truelength, "K0 true length", nk0, nmax);
   AddVarMaxSizeVF(output, k0truestartmom, "K0 true start momentum", nk0, nmax);
@@ -43,6 +62,11 @@ void neutralKaonTree::AddNeutralKaonVariables_K0(OutputManager& output, UInt_t n
   AddVarMaxSizeVI(output, k0trueendproc, "K0 true end process", nk0, nmax);
   AddVarMaxSizeVF(output, k0truerecodist, "K0 true-reco distance", nk0, nmax);
   AddVarMaxSizeVF(output, k0impactparameter, "K0 impact parameter", nk0, nmax);
+  AddVarMaxSizeVI(output, k0nprotonincreationvtx, "K0 number of parent daughter protons near neutral start", nk0, nmax);
+  AddVarMaxSizeVI(output, k0nparticlesincreationvtx, "K0 total number of parent daughters near neutral start", nk0, nmax);
+  output.AddMatrixVar(k0creationvtxchi2proton, "k0creationvtxchi2proton", "F", "K0 creation vtx chi2 proton (5 closest)", nk0, "nk0", -nmax, 5);
+  output.AddMatrixVar(k0creationvtxdistances, "k0creationvtxdistances", "F", "K0 creation vtx distances (5 closest)", nk0, "nk0", -nmax, 5);
+  output.AddMatrixVar(k0creationvtxtruepdg, "k0creationvtxtruepdg", "I", "K0 creation vtx true PDG (5 closest)", nk0, "nk0", -nmax, 5);
   AddVarMaxSizeVI(output, k0truepdg, "K0 true PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0recopdg, "K0 reconstructed PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0truegeneration, "K0 true generation", nk0, nmax);
@@ -60,7 +84,6 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Par(OutputManager& output, UInt_
   AddVarMaxSize3MF(output, k0parrecoendpos, "K0 parent reconstructed end position", nk0, nmax);
   AddVarMaxSize3MF(output, k0partrueendpos, "K0 parent true end position", nk0, nmax);
   AddVarMaxSize3MF(output, k0parrecostartdir, "K0 parent reconstructed start direction", nk0, nmax);
-  AddVarMaxSize3MF(output, k0fitpardir, "K0 fitted parent direction from extrapolated track", nk0, nmax);
   AddVarMaxSize3MF(output, k0partruestartdir, "K0 parent true start direction", nk0, nmax);
   AddVarMaxSize3MF(output, k0parrecoenddir, "K0 parent reconstructed end direction", nk0, nmax);
   AddVarMaxSize3MF(output, k0partrueenddir, "K0 parent true end direction", nk0, nmax);
@@ -70,12 +93,15 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Par(OutputManager& output, UInt_
   AddVarMaxSizeVF(output, k0partruelength, "K0 parent true length", nk0, nmax);
   AddVarMaxSizeVF(output, k0partruestartmom, "K0 parent true start momentum", nk0, nmax);
   AddVarMaxSizeVF(output, k0partrueendmom, "K0 parent true end momentum", nk0, nmax);
+  AddVarMaxSizeVF(output, k0partrueendenergy, "K0 parent true end energy", nk0, nmax);
+  AddVarMaxSizeVF(output, k0partruestartenergy, "K0 parent true start energy", nk0, nmax);
   AddVarMaxSizeVI(output, k0partruendau, "K0 parent true number of daughters", nk0, nmax);
   AddVarMaxSizeVI(output, k0parrecondau, "K0 parent reconstructed number of daughters", nk0, nmax);
   AddVarMaxSizeVI(output, k0partruepdg, "K0 parent true PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0parrecopdg, "K0 parent reconstructed PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0partruepdgdau, "K0 parent true daughters PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0parrecopdgdau, "K0 parent reconstructed daughters PDG", nk0, nmax);
+
   AddVarMaxSizeVI(output, k0parisbeam, "K0 parent is beam particle", nk0, nmax);
   AddVarMaxSizeVI(output, k0beaminstpdg, "Beam instrumentation PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0partrueproc, "K0 parent true process", nk0, nmax);
@@ -95,7 +121,6 @@ void neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(OutputManager& outp
     AddVarMaxSize3MF(output, k0dau1trueendpos, "K0 daughter1 true end position", nk0, nmax);
     AddVarMaxSizeVF(output, k0dau1recomom, "K0 daughter1 reconstructed momentum magnitude", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau1recostartdir, "K0 daughter1 reconstructed start direction", nk0, nmax);
-    AddVarMaxSize3MF(output, k0dau1fitdir, "K0 daughter1 fitted direction from vertex fit", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau1truestartdir, "K0 daughter1 true start direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau1recoenddir, "K0 daughter1 reconstructed end direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau1trueenddir, "K0 daughter1 true end direction", nk0, nmax);
@@ -134,7 +159,6 @@ void neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(OutputManager& outp
     AddVarMaxSize3MF(output, k0dau2trueendpos, "K0 daughter2 true end position", nk0, nmax);
     AddVarMaxSizeVF(output, k0dau2recomom, "K0 daughter2 reconstructed momentum magnitude", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau2recostartdir, "K0 daughter2 reconstructed start direction", nk0, nmax);
-    AddVarMaxSize3MF(output, k0dau2fitdir, "K0 daughter2 fitted direction from vertex fit", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau2truestartdir, "K0 daughter2 true start direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau2recoenddir, "K0 daughter2 reconstructed end direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau2trueenddir, "K0 daughter2 true end direction", nk0, nmax);
@@ -168,12 +192,68 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Brother(OutputManager& output, U
 //********************************************************************
 
    // Brother variables - using 2D matrix variables
+   // Summary counters (backward compatibility)
    AddVarMaxSizeVI(output, k0reconbrother, "Number of K0 brothers", nk0, nmax);
    AddVarMaxSizeVI(output, k0truenbrother, "Number of K0 brothers", nk0, nmax);
    AddVarMaxSizeVI(output, k0brothreconprot, "Number of K0 brothers that are reconstructed protons", nk0, nmax);
+   AddVarMaxSizeVF(output, k0brothrecoprotenergy, "Energy of K0 brother proton with highest momentum", nk0, nmax);
+   AddVarMaxSizeVF(output, k0brothrecoprotmom, "Momentum of K0 brother proton with highest momentum", nk0, nmax);
    AddVarMaxSizeVI(output, k0brothreconpiplus, "Number of K0 brothers that are reconstructed pi+", nk0, nmax);
    AddVarMaxSizeVI(output, k0brothreconpiminus, "Number of K0 brothers that are reconstructed pi-", nk0, nmax);
    AddVarMaxSizeVI(output, k0brothreconprotchi2, "Number of K0 brothers compatible with proton (chi2/ndf<60)", nk0, nmax);
+
+   // True brothers - ALL from trueParent->Daughters
+   AddVarMaxSizeVI(output, k0ntruebroth, "Number of true brothers", nk0, nmax);
+   output.AddMatrixVar(k0truebrothpdg, "k0truebrothpdg", "I", "True brothers PDG", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothmomentum, "k0truebrothmomentum", "F", "True brothers momentum", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothenergy, "k0truebrothenergy", "F", "True brothers energy", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothprocessstart, "k0truebrothprocessstart", "I", "True brothers ProcessStart", nk0, "nk0", -nmax, 100);
+   AddVarMaxSizeVF(output, k0truebrothtotalmom, "Total momentum of true brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothtotalenergy, "Total energy of true brothers", nk0, nmax);
+   AddVarMaxSize3MF(output, k0truebrothtruetotaldir, "Resultant true direction of true brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothprotonmaxenergy, "Max proton energy in true brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothprotonmaxmomentum, "Max proton momentum in true brothers", nk0, nmax);
+   AddVarMaxSize3MF(output, k0truebrothprotonmaxdir, "Direction of max proton in true brothers", nk0, nmax);
+
+   // True brothers with reco - subset with reconstructed objects
+   AddVarMaxSizeVI(output, k0ntruebrothreco, "Number of true brothers with reco", nk0, nmax);
+   output.AddMatrixVar(k0truebrothrecotruepdg, "k0truebrothrecotruepdg", "I", "True brothers with reco - true PDG", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecotruemom, "k0truebrothrecotruemom", "F", "True brothers with reco - true momentum", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecotrueenergy, "k0truebrothrecotrueenergy", "F", "True brothers with reco - true energy", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecotrueprocessstart, "k0truebrothrecotrueprocessstart", "I", "True brothers with reco - true ProcessStart", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecopdg, "k0truebrothrecopdg", "I", "True brothers with reco - reco PDG", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecomom, "k0truebrothrecomom", "F", "True brothers with reco - reco momentum", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecoenergy, "k0truebrothrecoenergy", "F", "True brothers with reco - reco energy", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecolength, "k0truebrothrecolength", "F", "True brothers with reco - reco length", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0truebrothrecochi2prot, "k0truebrothrecochi2prot", "F", "True brothers with reco - chi2/ndf proton", nk0, "nk0", -nmax, 100);
+   AddVarMaxSizeVF(output, k0truebrothrecotruetotalmom, "Total true momentum of reco true brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothrecotruetotalenergy, "Total true energy of reco true brothers", nk0, nmax);
+   AddVarMaxSize3MF(output, k0truebrothrecotruetotaldir, "Resultant true direction of reco true brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothrecoprotonmaxenergy, "Max true proton energy in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothrecoprotonmaxmomentum, "Max true proton momentum in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothrecoprotonmaxrecoenergy, "Max true proton reco energy in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0truebrothrecoprotonmaxrecomom, "Max true proton reco momentum in reco brothers", nk0, nmax);
+   AddVarMaxSize3MF(output, k0truebrothrecoprotonmaxdir, "True direction of max proton in reco brothers", nk0, nmax);
+
+   // Reco brothers - ALL from Parent->Daughters
+   AddVarMaxSizeVI(output, k0nrecobroth, "Number of reco brothers", nk0, nmax);
+   output.AddMatrixVar(k0recobrothpdg, "k0recobrothpdg", "I", "Reco brothers PDG", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothmom, "k0recobrothmom", "F", "Reco brothers momentum", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothenergy, "k0recobrothenergy", "F", "Reco brothers energy", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothlength, "k0recobrothlength", "F", "Reco brothers length", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothchi2prot, "k0recobrothchi2prot", "F", "Reco brothers chi2/ndf proton", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothtruepdg, "k0recobrothtruepdg", "I", "Reco brothers true PDG", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothtrueenergy, "k0recobrothtrueenergy", "F", "Reco brothers true energy", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothtruemom, "k0recobrothtruemom", "F", "Reco brothers true momentum", nk0, "nk0", -nmax, 100);
+   output.AddMatrixVar(k0recobrothtrueprocessstart, "k0recobrothtrueprocessstart", "I", "Reco brothers true ProcessStart", nk0, "nk0", -nmax, 100);
+   AddVarMaxSize3MF(output, k0recobrothtruetotaldir, "Resultant true direction of reco brothers", nk0, nmax);
+   AddVarMaxSize3MF(output, k0recobrothrecototaldir, "Resultant reco direction of reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0recobrothprotonmaxenergy, "Max reco proton energy in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0recobrothprotonmaxmomentum, "Max reco proton momentum in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0recobrothprotonmaxtrueenergy, "Max reco proton true energy in reco brothers", nk0, nmax);
+   AddVarMaxSizeVF(output, k0recobrothprotonmaxtruemom, "Max reco proton true momentum in reco brothers", nk0, nmax);
+   AddVarMaxSize3MF(output, k0recobrothprotonmaxdir, "Reco direction of max proton in reco brothers", nk0, nmax);
+   AddVarMaxSize3MF(output, k0recobrothprotonmaxtruedir, "True direction of max proton in reco brothers", nk0, nmax);
 }
 
 //********************************************************************
@@ -195,9 +275,22 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_
   AddVarMaxSizeVF(output, k0hitsrmsdistance, "RMS of perpendicular distances of hits (cm)", nk0, nmax);
   AddVarMaxSizeVF(output, k0hitslongspan, "Longitudinal span fraction of hits along path", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxpandorapos, "K0 vertex Pandora position", nk0, nmax);
+  AddVarMaxSize3MF(output, k0vtxfitpos, "K0 vertex fitted position (geometric/TMinuit/Kalman)", nk0, nmax);
+  AddVarMaxSize3MF(output, k0vtxfitdir, "K0 vertex fitted direction (geometric/TMinuit/Kalman)", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxisjustavg, "K0 vertex Pandora used simple average (1) or line intersection (0)", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdegbefore, "K0 vertex degeneracy before scoring", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdegafter, "K0 vertex degeneracy after scoring", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxnrecopart, "K0 vertex number of unique reco particles", nk0, nmax);
+  output.AddMatrixVar(k0vtxdegdistances, "k0vtxdegdistances", "F", "K0 vertex degeneracy distances (5 minimum)", nk0, "nk0", -nmax, 5);
+  output.AddMatrixVar(k0vtxisolationdistances, "k0vtxisolationdistances", "F", "K0 vertex isolation distances Pandora (5 minimum)", nk0, "nk0", -nmax, 5);
+  output.AddMatrixVar(k0vtxisolationdistancesfit, "k0vtxisolationdistancesfit", "F", "K0 vertex isolation distances fitted (5 minimum)", nk0, "nk0", -nmax, 5);
+  output.AddMatrixVar(k0vtxisolationstartdistances, "k0vtxisolationstartdistances", "F", "K0 vertex isolation start distances (5 minimum)", nk0, "nk0", -nmax, 5);
+  AddVarMaxSizeVI(output, k0vtxisolnproton, "K0 vertex number of isolation protons", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxisolnpion, "K0 vertex number of isolation pions", nk0, nmax);
+  output.AddMatrixVar(k0vtxisolisproton, "k0vtxisolisproton", "I", "K0 vertex isolation is proton flags (5 closest)", nk0, "nk0", -nmax, 5);
+  output.AddMatrixVar(k0vtxisolchi2proton, "k0vtxisolchi2proton", "F", "K0 vertex isolation chi2 proton (5 closest)", nk0, "nk0", -nmax, 5);
+  output.AddMatrixVar(k0vtxisollength, "k0vtxisollength", "F", "K0 vertex isolation lengths (5 closest)", nk0, "nk0", -nmax, 5);
+  AddVarMaxSizeVI(output, k0vtxisolislongest, "K0 vertex any isolation particle longer than both vtx particles", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxrecomom, "Vertex system reconstructed momentum magnitude", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxtruemom, "Vertex system true momentum magnitude", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxrecoenergy, "Vertex system reconstructed energy", nk0, nmax);
@@ -218,8 +311,8 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
     // Fill all variables for all candidates
     if(candidate){
       neutralKaonTree::FillNeutralKaonVariables_K0(output, candidate);
-      neutralKaonTree::FillNeutralKaonVariables_K0Par(output, candidate, beam);
-      neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate->Parent);
+      neutralKaonTree::FillNeutralKaonVariables_K0Par(output, candidate, event, beam);
+      neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate->Parent, event);
       AnaVertexPD* vertex = candidate->Vertex;
       neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex);
       AnaParticlePD* daughter1Candidate = candidate->Vertex->Particles[0];
@@ -294,15 +387,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     Float_t k0recostartenddir_val = k0recostartdir_val[0]*k0recoenddir_val[0] + k0recostartdir_val[1]*k0recoenddir_val[1] + k0recostartdir_val[2]*k0recoenddir_val[2];
     output.FillVectorVar(k0recostartenddir, k0recostartenddir_val);
 
-    // Calculate fitted start-end scalar product
-    Float_t k0fitstartenddir_val = -999.0;
-    if(candidate->FitParent && candidate->Vertex){
-      k0fitstartenddir_val = candidate->FitParent->FitDirection[0]*candidate->Vertex->FitDirection[0] +
-                             candidate->FitParent->FitDirection[1]*candidate->Vertex->FitDirection[1] +
-                             candidate->FitParent->FitDirection[2]*candidate->Vertex->FitDirection[2];
-    }
-    output.FillVectorVar(k0fitstartenddir, k0fitstartenddir_val);
-
     // K0 reconstructed length
     Float_t k0recolength_val = -999.0;
     k0recolength_val = sqrt(pow(k0recoendpos_val[0] - k0recostartpos_val[0], 2) + pow(k0recoendpos_val[1] - k0recostartpos_val[1], 2) + pow(k0recoendpos_val[2] - k0recostartpos_val[2], 2));
@@ -349,6 +433,45 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     // K0 impact parameter
     Float_t k0impactparameter_val = candidate->ImpactParameter;
     output.FillVectorVar(k0impactparameter, k0impactparameter_val);
+
+    // K0 number of protons in creation vertex
+    output.FillVectorVar(k0nprotonincreationvtx, candidate->NProtonInCreationVtx);
+
+    // K0 total number of particles in creation vertex
+    output.FillVectorVar(k0nparticlesincreationvtx, candidate->NParticlesInCreationVtx);
+
+    // Fill creation vertex chi2/ndf under proton hypothesis (up to 5)
+    Float_t creationChi2Proton[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)candidate->CreationVtxChi2Proton.size()) {
+        creationChi2Proton[i] = candidate->CreationVtxChi2Proton[i];
+      } else {
+        creationChi2Proton[i] = -999.0;
+      }
+    }
+    output.FillMatrixVarFromArray(k0creationvtxchi2proton, creationChi2Proton, 5);
+
+    // Fill creation vertex distances (up to 5)
+    Float_t creationDistances[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)candidate->CreationVtxDistances.size()) {
+        creationDistances[i] = candidate->CreationVtxDistances[i];
+      } else {
+        creationDistances[i] = -999.0;
+      }
+    }
+    output.FillMatrixVarFromArray(k0creationvtxdistances, creationDistances, 5);
+
+    // Fill creation vertex true PDG codes (up to 5)
+    Int_t creationTruePDG[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)candidate->CreationVtxTruePDG.size()) {
+        creationTruePDG[i] = candidate->CreationVtxTruePDG[i];
+      } else {
+        creationTruePDG[i] = -999;
+      }
+    }
+    output.FillMatrixVarFromArray(k0creationvtxtruepdg, creationTruePDG, 5);
 
     // K0 number of reconstructed hits in cylinder
     Int_t k0nrecohits_val = candidate->NRecoHitsInVertex;
@@ -413,7 +536,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
             k0trueenddir_val[2] = trueNeutralParticle->DirectionEnd[2];
             k0truelength_val = sqrt(pow(k0trueendpos_val[0] - k0truestartpos_val[0], 2) + pow(k0trueendpos_val[1] - k0truestartpos_val[1], 2) + pow(k0trueendpos_val[2] - k0truestartpos_val[2], 2));
             k0truestartmom_val = trueNeutralParticle->Momentum;
-          k0trueendmom_val = trueNeutralParticle->Momentum;
+            k0trueendmom_val = trueNeutralParticle->MomentumEnd;
             k0truendau_val = trueNeutralParticle->Daughters.size();
             k0trueproc_val = static_cast<Int_t>(trueNeutralParticle->ProcessStart);
             k0trueendproc_val = static_cast<Int_t>(trueNeutralParticle->ProcessEnd);
@@ -512,7 +635,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
           k0trueenddir_val[2] = trueEquivalentNeutralParticle->DirectionEnd[2];
           k0truelength_val = sqrt(pow(k0trueendpos_val[0] - k0truestartpos_val[0], 2) + pow(k0trueendpos_val[1] - k0truestartpos_val[1], 2) + pow(k0trueendpos_val[2] - k0truestartpos_val[2], 2));
           k0truestartmom_val = trueEquivalentNeutralParticle->Momentum;
-          k0trueendmom_val = trueEquivalentNeutralParticle->Momentum;
+          k0trueendmom_val = trueEquivalentNeutralParticle->MomentumEnd;
           k0truendau_val = trueEquivalentNeutralParticle->TrueEquivalentVertex->TrueParticles.size();
           k0trueproc_val = trueEquivalentNeutralParticle->Process;
           // Note: AnaTrueEquivalentNeutralParticlePD only has Process, not ProcessStart/ProcessEnd
@@ -583,10 +706,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaBeamB* beam){
+void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, const AnaEventB& event, AnaBeamB* beam){
 //********************************************************************
     // Fill all variables for a single K0 parent
     AnaParticlePD* parentCandidate = neutralCandidate ? neutralCandidate->Parent : NULL;
+
     if(parentCandidate){
 
       Float_t k0parrecostartpos_val[3] = {-999.0, -999.0, -999.0};
@@ -606,15 +730,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
       k0parrecostartdir_val[1] = parentCandidate->DirectionStart[1];
       k0parrecostartdir_val[2] = parentCandidate->DirectionStart[2];
       output.FillMatrixVarFromArray(k0parrecostartdir, k0parrecostartdir_val, 3);
-
-      // K0 fitted parent direction from extrapolated track
-      Float_t k0fitpardir_val[3] = {-999.0, -999.0, -999.0};
-      if(neutralCandidate && neutralCandidate->FitParent){
-        k0fitpardir_val[0] = neutralCandidate->FitParent->FitDirection[0];
-        k0fitpardir_val[1] = neutralCandidate->FitParent->FitDirection[1];
-        k0fitpardir_val[2] = neutralCandidate->FitParent->FitDirection[2];
-      }
-      output.FillMatrixVarFromArray(k0fitpardir, k0fitpardir_val, 3);
 
       Float_t k0parrecoenddir_val[3] = {-999.0, -999.0, -999.0};
       k0parrecoenddir_val[0] = parentCandidate->DirectionEnd[0];
@@ -683,6 +798,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
       Int_t k0partrueproc_val = -999;
       Int_t k0partrueendproc_val = -999;
       Int_t k0partruepdg_val = -999;
+      Float_t k0partrueendenergy_val = -999.0;
+      Float_t k0partruestartenergy_val = -999.0;
 
       AnaTrueParticlePD* trueParentCandidate = static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject);
       if(trueParentCandidate){
@@ -701,12 +818,27 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
       k0partruelength_val = sqrt(pow(k0partrueendpos_val[0] - k0partruestartpos_val[0], 2) + pow(k0partrueendpos_val[1] - k0partruestartpos_val[1], 2) + pow(k0partrueendpos_val[2] - k0partruestartpos_val[2], 2));
       k0partruestartenddir_val = k0partruestartdir_val[0]*k0partrueenddir_val[0] + k0partruestartdir_val[1]*k0partrueenddir_val[1] + k0partruestartdir_val[2]*k0partrueenddir_val[2];
       k0partruestartmom_val = trueParentCandidate->Momentum;
-      k0partrueendmom_val = trueParentCandidate->Momentum;
+      k0partrueendmom_val = trueParentCandidate->MomentumEnd;
       k0partruendau_val = trueParentCandidate->Daughters.size();
       k0partrueproc_val = static_cast<Int_t>(trueParentCandidate->ProcessStart);
       k0partrueendproc_val = static_cast<Int_t>(trueParentCandidate->ProcessEnd);
       k0partruepdg_val = trueParentCandidate->PDG;
       k0partruegeneration_val = trueParentCandidate->Generation;
+
+      // Calculate K0 true end energy: E = sqrt(m^2 + p^2)
+      if(k0partrueendmom_val > 0.0 && k0partruepdg_val != -999){
+        Float_t parentMass = GetParticleMass(k0partruepdg_val);
+        if(parentMass > 0.0){
+          k0partrueendenergy_val = sqrt(parentMass*parentMass + k0partrueendmom_val*k0partrueendmom_val);
+        }
+      }
+      // Calculate K0 true start energy: E = sqrt(m^2 + p^2)
+      if(k0partruestartmom_val > 0.0 && k0partruepdg_val != -999){
+        Float_t parentMass = GetParticleMass(k0partruepdg_val);
+        if(parentMass > 0.0){
+          k0partruestartenergy_val = sqrt(parentMass*parentMass + k0partruestartmom_val*k0partruestartmom_val);
+        }
+      }
   }
 
   output.FillMatrixVarFromArray(k0partruestartpos, k0partruestartpos_val, 3);
@@ -717,6 +849,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
   output.FillVectorVar(k0partruelength, k0partruelength_val);
   output.FillVectorVar(k0partruestartmom, k0partruestartmom_val);
   output.FillVectorVar(k0partrueendmom, k0partrueendmom_val);
+
+
+  output.FillVectorVar(k0partrueendenergy, k0partrueendenergy_val);
+  output.FillVectorVar(k0partruestartenergy, k0partruestartenergy_val);
+
   output.FillVectorVar(k0partruendau, k0partruendau_val);
   output.FillVectorVar(k0partrueproc, k0partrueproc_val);
   output.FillVectorVar(k0partrueendproc, k0partrueendproc_val);
@@ -871,15 +1008,110 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaV
     // Fill Pandora position
     output.FillMatrixVarFromArray(k0vtxpandorapos, vertex->PositionPandora, 3);
 
+    // Fill fitted position
+    output.FillMatrixVarFromArray(k0vtxfitpos, vertex->PositionFit, 3);
+
+    // Fill fitted direction
+    output.FillMatrixVarFromArray(k0vtxfitdir, vertex->DirectionFit, 3);
+
+    // Fill IsJustAverage flag
+    output.FillVectorVar(k0vtxisjustavg, vertex->IsJustAverage);
+
     // Fill degeneracy variables
     output.FillVectorVar(k0vtxdegbefore, vertex->DegeneracyBeforeScoring);
     output.FillVectorVar(k0vtxdegafter, vertex->DegeneracyAfterScoring);
     output.FillVectorVar(k0vtxnrecopart, vertex->NRecoParticles);
+
+    // Fill degeneracy distances (up to 5 minimum distances)
+    Float_t degDistances[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)vertex->DegeneracyDistances.size()) {
+        degDistances[i] = vertex->DegeneracyDistances[i];
+      } else {
+        degDistances[i] = -999.0; // Fill with dummy value if fewer than 5 distances
+      }
+    }
+    output.FillMatrixVarFromArray(k0vtxdegdistances, degDistances, 5);
+
+    // Fill isolation distances (up to 5 minimum distances)
+    Float_t isoDistances[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)vertex->IsolationDistances.size()) {
+        isoDistances[i] = vertex->IsolationDistances[i];
+      } else {
+        isoDistances[i] = -999.0; // Fill with dummy value if fewer than 5 distances
+      }
+    }
+    output.FillMatrixVarFromArray(k0vtxisolationdistances, isoDistances, 5);
+
+    // Fill isolation distances from fitted tracks (up to 5 minimum distances)
+    Float_t isoDistancesFit[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)vertex->IsolationDistancesFit.size()) {
+        isoDistancesFit[i] = vertex->IsolationDistancesFit[i];
+      } else {
+        isoDistancesFit[i] = -999.0; // Fill with dummy value if fewer than 5 distances
+      }
+    }
+    output.FillMatrixVarFromArray(k0vtxisolationdistancesfit, isoDistancesFit, 5);
+
+    // Fill isolation start distances (up to 5 minimum distances)
+    Float_t isoStartDistances[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)vertex->IsolationStartDistances.size()) {
+        isoStartDistances[i] = vertex->IsolationStartDistances[i];
+      } else {
+        isoStartDistances[i] = -999.0; // Fill with dummy value if fewer than 5 distances
+      }
+    }
+    output.FillMatrixVarFromArray(k0vtxisolationstartdistances, isoStartDistances, 5);
+
+    // Fill isolation proton count
+    output.FillVectorVar(k0vtxisolnproton, vertex->IsolationNProton);
+
+    // Fill isolation pion count
+    output.FillVectorVar(k0vtxisolnpion, vertex->IsolationNPion);
+
+    // Fill isolation is-proton flags (up to 5)
+    Int_t isoIsProton[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)vertex->IsolationIsProton.size()) {
+        isoIsProton[i] = vertex->IsolationIsProton[i];
+      } else {
+        isoIsProton[i] = -999; // Fill with dummy value if fewer than 5
+      }
+    }
+    output.FillMatrixVarFromArray(k0vtxisolisproton, isoIsProton, 5);
+
+    // Fill isolation chi2/ndf under proton hypothesis (up to 5)
+    Float_t isoChi2Proton[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)vertex->IsolationChi2Proton.size()) {
+        isoChi2Proton[i] = vertex->IsolationChi2Proton[i];
+      } else {
+        isoChi2Proton[i] = -999.0; // Fill with dummy value if fewer than 5
+      }
+    }
+    output.FillMatrixVarFromArray(k0vtxisolchi2proton, isoChi2Proton, 5);
+
+    // Fill isolation particle lengths (up to 5)
+    Float_t isoLength[5];
+    for (int i = 0; i < 5; i++) {
+      if (i < (int)vertex->IsolationLength.size()) {
+        isoLength[i] = vertex->IsolationLength[i];
+      } else {
+        isoLength[i] = -999.0; // Fill with dummy value if fewer than 5
+      }
+    }
+    output.FillMatrixVarFromArray(k0vtxisollength, isoLength, 5);
+
+    // Fill isolation is-longest flag
+    output.FillVectorVar(k0vtxisolislongest, vertex->IsolationIsLongest);
   }
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaParticlePD* parentCandidate){
+void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaParticlePD* parentCandidate, const AnaEventB& event){
     // Fill all variables for a single K0 brother
   if(parentCandidate){
     output.FillVectorVar(k0reconbrother, (Int_t)parentCandidate->Daughters.size());
@@ -888,54 +1120,444 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     // Get minimum length parameter for counting brothers
     double minBrotherLength = ND::params().GetParameterD("neutralKaonAnalysis.MinBrotherLength");
 
+    // ========== LOOP 1: TRUE BROTHERS (ALL from trueParent->Daughters) ==========
+    Int_t nTrueBrothers = 0;
+    Float_t trueBrothersTotalMom = 0.0;
+    Float_t trueBrothersTotalEnergy = 0.0;
+    TVector3 trueBrothersTotalDir(0, 0, 0);
+    Float_t trueBrothersProtonMaxEnergy = -999.0;
+    Float_t trueBrothersProtonMaxMom = -999.0;
+    TVector3 trueBrothersProtonMaxDir(-999.0, -999.0, -999.0);
+
+    Int_t trueBrothersPDG[100];
+    Float_t trueBrothersMom[100];
+    Float_t trueBrothersEnergy[100];
+    Int_t trueBrothersProcess[100];
+
+    // Initialize arrays
+    for(int i = 0; i < 100; i++){
+      trueBrothersPDG[i] = -999;
+      trueBrothersMom[i] = -999.0;
+      trueBrothersEnergy[i] = -999.0;
+      trueBrothersProcess[i] = -999;
+    }
+
+    if(trueParentCandidate){
+      int nAllTrueBrothers = std::min((int)trueParentCandidate->Daughters.size(), 100);
+      output.FillVectorVar(k0truenbrother, (Int_t)trueParentCandidate->Daughters.size());
+
+      for(int i = 0; i < nAllTrueBrothers; i++){
+        Int_t daughterID = trueParentCandidate->Daughters[i];
+
+        // Find true daughter in event
+        AnaTrueParticlePD* trueBrother = nullptr;
+        for(int j = 0; j < event.nTrueParticles; j++){
+          if(event.TrueParticles[j] && event.TrueParticles[j]->ID == daughterID){
+            trueBrother = static_cast<AnaTrueParticlePD*>(event.TrueParticles[j]);
+            break;
+          }
+        }
+
+        if(trueBrother){
+          trueBrothersPDG[nTrueBrothers] = trueBrother->PDG;
+          trueBrothersMom[nTrueBrothers] = trueBrother->Momentum;
+          trueBrothersProcess[nTrueBrothers] = static_cast<Int_t>(trueBrother->ProcessStart);
+
+          // Calculate energy
+          Float_t mass = GetParticleMass(trueBrother->PDG);
+          if(mass > 0.0 && trueBrother->Momentum > 0.0){
+            Float_t energy = sqrt(mass*mass + trueBrother->Momentum*trueBrother->Momentum);
+            trueBrothersEnergy[nTrueBrothers] = energy;
+            trueBrothersTotalEnergy += energy;
+
+            // Track max proton
+            if(trueBrother->PDG == 2212 && energy > trueBrothersProtonMaxEnergy){
+              trueBrothersProtonMaxEnergy = energy;
+              trueBrothersProtonMaxMom = trueBrother->Momentum;
+              trueBrothersProtonMaxDir.SetXYZ(trueBrother->Direction[0],
+                                              trueBrother->Direction[1],
+                                              trueBrother->Direction[2]);
+            }
+          }
+
+          // Accumulate direction and momentum
+          trueBrothersTotalMom += trueBrother->Momentum;
+          TVector3 dir(trueBrother->Direction[0], trueBrother->Direction[1], trueBrother->Direction[2]);
+          trueBrothersTotalDir += dir;
+
+          nTrueBrothers++;
+        }
+      }
+    }
+
+    // ========== LOOP 2: TRUE BROTHERS WITH RECO ==========
+    Int_t nTrueBrothersReco = 0;
+    Float_t trueBrothersRecoTrueTotalMom = 0.0;
+    Float_t trueBrothersRecoTrueTotalEnergy = 0.0;
+    TVector3 trueBrothersRecoTrueTotalDir(0, 0, 0);
+    Float_t trueBrothersRecoProtonMaxEnergy = -999.0;
+    Float_t trueBrothersRecoProtonMaxMom = -999.0;
+    Float_t trueBrothersRecoProtonMaxRecoEnergy = -999.0;
+    Float_t trueBrothersRecoProtonMaxRecoMom = -999.0;
+    TVector3 trueBrothersRecoProtonMaxDir(-999.0, -999.0, -999.0);
+
+    Int_t trueBrothersRecoTruePDG[100];
+    Float_t trueBrothersRecoTrueMom[100];
+    Float_t trueBrothersRecoTrueEnergy[100];
+    Int_t trueBrothersRecoTrueProcess[100];
+    Int_t trueBrothersRecoPDG[100];
+    Float_t trueBrothersRecoMom[100];
+    Float_t trueBrothersRecoEnergy[100];
+    Float_t trueBrothersRecoLength[100];
+    Float_t trueBrothersRecoChi2Prot[100];
+
+    // Initialize arrays
+    for(int i = 0; i < 100; i++){
+      trueBrothersRecoTruePDG[i] = -999;
+      trueBrothersRecoTrueMom[i] = -999.0;
+      trueBrothersRecoTrueEnergy[i] = -999.0;
+      trueBrothersRecoTrueProcess[i] = -999;
+      trueBrothersRecoPDG[i] = -999;
+      trueBrothersRecoMom[i] = -999.0;
+      trueBrothersRecoEnergy[i] = -999.0;
+      trueBrothersRecoLength[i] = -999.0;
+      trueBrothersRecoChi2Prot[i] = -999.0;
+    }
+
+    if(trueParentCandidate){
+      int nAllTrueBrothers = std::min((int)trueParentCandidate->Daughters.size(), 100);
+
+      for(int i = 0; i < nAllTrueBrothers; i++){
+        Int_t daughterID = trueParentCandidate->Daughters[i];
+
+        // Find true daughter
+        AnaTrueParticlePD* trueBrother = nullptr;
+        for(int j = 0; j < event.nTrueParticles; j++){
+          if(event.TrueParticles[j] && event.TrueParticles[j]->ID == daughterID){
+            trueBrother = static_cast<AnaTrueParticlePD*>(event.TrueParticles[j]);
+            break;
+          }
+        }
+
+        if(trueBrother){
+          // Check if this true brother is reconstructed
+          AnaParticlePD* recoBrother = nullptr;
+          for(int k = 0; k < event.nParticles; k++){
+            if(event.Particles[k] && event.Particles[k]->TrueObject){
+              if(event.Particles[k]->TrueObject->ID == trueBrother->ID){
+                recoBrother = static_cast<AnaParticlePD*>(event.Particles[k]);
+                break;
+              }
+            }
+          }
+
+          if(recoBrother && nTrueBrothersReco < 100){
+            // Fill true info
+            trueBrothersRecoTruePDG[nTrueBrothersReco] = trueBrother->PDG;
+            trueBrothersRecoTrueMom[nTrueBrothersReco] = trueBrother->Momentum;
+            trueBrothersRecoTrueProcess[nTrueBrothersReco] = static_cast<Int_t>(trueBrother->ProcessStart);
+
+            // Calculate true energy
+            Float_t trueMass = GetParticleMass(trueBrother->PDG);
+            if(trueMass > 0.0 && trueBrother->Momentum > 0.0){
+              Float_t trueEnergy = sqrt(trueMass*trueMass + trueBrother->Momentum*trueBrother->Momentum);
+              trueBrothersRecoTrueEnergy[nTrueBrothersReco] = trueEnergy;
+              trueBrothersRecoTrueTotalEnergy += trueEnergy;
+
+              // Track max proton
+              if(trueBrother->PDG == 2212 && trueEnergy > trueBrothersRecoProtonMaxEnergy){
+                trueBrothersRecoProtonMaxEnergy = trueEnergy;
+                trueBrothersRecoProtonMaxMom = trueBrother->Momentum;
+                trueBrothersRecoProtonMaxDir.SetXYZ(trueBrother->Direction[0],
+                                                    trueBrother->Direction[1],
+                                                    trueBrother->Direction[2]);
+
+                // Calculate reco energy for this proton
+                Float_t recoMass = GetParticleMass(trueBrother->PDG);
+                if(recoMass > 0.0 && recoBrother->Momentum > 0.0){
+                  trueBrothersRecoProtonMaxRecoEnergy = sqrt(recoMass*recoMass + recoBrother->Momentum*recoBrother->Momentum);
+                  trueBrothersRecoProtonMaxRecoMom = recoBrother->Momentum;
+                }
+              }
+            }
+
+            // Accumulate direction
+            trueBrothersRecoTrueTotalMom += trueBrother->Momentum;
+            TVector3 dir(trueBrother->Direction[0], trueBrother->Direction[1], trueBrother->Direction[2]);
+            trueBrothersRecoTrueTotalDir += dir;
+
+            // Fill reco info
+            trueBrothersRecoPDG[nTrueBrothersReco] = recoBrother->isPandora; // Pandora ID
+            trueBrothersRecoMom[nTrueBrothersReco] = recoBrother->Momentum;
+            trueBrothersRecoLength[nTrueBrothersReco] = recoBrother->Length;
+
+            // Calculate reco energy
+            Float_t recoMass = GetParticleMass(trueBrother->PDG);
+            if(recoMass > 0.0 && recoBrother->Momentum > 0.0){
+              trueBrothersRecoEnergy[nTrueBrothersReco] = sqrt(recoMass*recoMass + recoBrother->Momentum*recoBrother->Momentum);
+            }
+
+            // Chi2 for proton hypothesis
+            std::pair<double, int> chi2Prot = pdAnaUtils::Chi2PID(*recoBrother, 2212);
+            trueBrothersRecoChi2Prot[nTrueBrothersReco] = (chi2Prot.second > 0) ? chi2Prot.first / chi2Prot.second : -999.0;
+
+            nTrueBrothersReco++;
+          }
+        }
+      }
+    }
+
+    // ========== LOOP 3: RECO BROTHERS (ALL from Parent->Daughters) ==========
+    Int_t nRecoBrothers = 0;
+    TVector3 recoBrothersTrueTotalDir(0, 0, 0);
+    TVector3 recoBrothersRecoTotalDir(0, 0, 0);
+    Float_t recoBrothersProtonMaxEnergy = -999.0;
+    Float_t recoBrothersProtonMaxMom = -999.0;
+    Float_t recoBrothersProtonMaxTrueEnergy = -999.0;
+    Float_t recoBrothersProtonMaxTrueMom = -999.0;
+    TVector3 recoBrothersProtonMaxDir(-999.0, -999.0, -999.0);
+    TVector3 recoBrothersProtonMaxTrueDir(-999.0, -999.0, -999.0);
+
+    Int_t recoBrothersPDG[100];
+    Float_t recoBrothersMom[100];
+    Float_t recoBrothersEnergy[100];
+    Float_t recoBrothersLength[100];
+    Float_t recoBrothersChi2Prot[100];
+    Int_t recoBrothersTruePDG[100];
+    Float_t recoBrothersTrueEnergy[100];
+    Float_t recoBrothersTrueMom[100];
+    Int_t recoBrothersTrueProcess[100];
+
+    // Initialize arrays
+    for(int i = 0; i < 100; i++){
+      recoBrothersPDG[i] = -999;
+      recoBrothersMom[i] = -999.0;
+      recoBrothersEnergy[i] = -999.0;
+      recoBrothersLength[i] = -999.0;
+      recoBrothersChi2Prot[i] = -999.0;
+      recoBrothersTruePDG[i] = -999;
+      recoBrothersTrueEnergy[i] = -999.0;
+      recoBrothersTrueMom[i] = -999.0;
+      recoBrothersTrueProcess[i] = -999;
+    }
+
     UInt_t nReconProtons = 0;
     UInt_t nRecoPiPlus = 0;
     UInt_t nRecoPiMinus = 0;
     UInt_t nReconProtChi2 = 0;
+    Float_t maxProtonMom = -999.0;
+    Float_t maxProtonEnergy = -999.0;
 
-    for(size_t i = 0; i < parentCandidate->Daughters.size(); i++){
-      AnaParticlePD* daughterCandidate = static_cast<AnaParticlePD*>(parentCandidate->Daughters[i]);
-      if(daughterCandidate){
-        // Check if daughter is long enough
-        if(daughterCandidate->Length < minBrotherLength){
-          continue; // Skip short daughters
-        }
+    for(size_t i = 0; i < parentCandidate->Daughters.size() && nRecoBrothers < 100; i++){
+      AnaParticlePD* recoBrother = static_cast<AnaParticlePD*>(parentCandidate->Daughters[i]);
+      if(recoBrother){
+        // Fill reco info
+        recoBrothersPDG[nRecoBrothers] = recoBrother->isPandora;
+        recoBrothersMom[nRecoBrothers] = recoBrother->Momentum;
+        recoBrothersLength[nRecoBrothers] = recoBrother->Length;
 
-        // Count by true PDG
-        AnaTrueParticlePD* trueDaughter = static_cast<AnaTrueParticlePD*>(daughterCandidate->TrueObject);
-        if (trueDaughter && trueDaughter->PDG == 2212){
+        // Chi2 for proton hypothesis
+        std::pair<double, int> chi2Prot = pdAnaUtils::Chi2PID(*recoBrother, 2212);
+        recoBrothersChi2Prot[nRecoBrothers] = (chi2Prot.second > 0) ? chi2Prot.first / chi2Prot.second : -999.0;
+
+        // Accumulate reco direction
+        TVector3 recoDir(recoBrother->DirectionStart[0], recoBrother->DirectionStart[1], recoBrother->DirectionStart[2]);
+        recoBrothersRecoTotalDir += recoDir;
+
+        // Get true info
+        AnaTrueParticlePD* trueBrother = static_cast<AnaTrueParticlePD*>(recoBrother->TrueObject);
+        if(trueBrother){
+          recoBrothersTruePDG[nRecoBrothers] = trueBrother->PDG;
+          recoBrothersTrueMom[nRecoBrothers] = trueBrother->Momentum;
+          recoBrothersTrueProcess[nRecoBrothers] = static_cast<Int_t>(trueBrother->ProcessStart);
+
+          // Calculate true energy
+          Float_t trueMass = GetParticleMass(trueBrother->PDG);
+          if(trueMass > 0.0 && trueBrother->Momentum > 0.0){
+            Float_t trueEnergy = sqrt(trueMass*trueMass + trueBrother->Momentum*trueBrother->Momentum);
+            recoBrothersTrueEnergy[nRecoBrothers] = trueEnergy;
+          }
+
+          // Accumulate true direction
+          TVector3 trueDir(trueBrother->Direction[0], trueBrother->Direction[1], trueBrother->Direction[2]);
+          recoBrothersTrueTotalDir += trueDir;
+
+          // Track max proton (by reco energy)
+          Float_t recoMass = GetParticleMass(trueBrother->PDG);
+          if(recoMass > 0.0 && recoBrother->Momentum > 0.0){
+            Float_t recoEnergy = sqrt(recoMass*recoMass + recoBrother->Momentum*recoBrother->Momentum);
+            recoBrothersEnergy[nRecoBrothers] = recoEnergy;
+
+            if(trueBrother->PDG == 2212 && recoEnergy > recoBrothersProtonMaxEnergy){
+              recoBrothersProtonMaxEnergy = recoEnergy;
+              recoBrothersProtonMaxMom = recoBrother->Momentum;
+              recoBrothersProtonMaxTrueEnergy = recoBrothersTrueEnergy[nRecoBrothers];
+              recoBrothersProtonMaxTrueMom = trueBrother->Momentum;
+              recoBrothersProtonMaxDir.SetXYZ(recoBrother->DirectionStart[0],
+                                              recoBrother->DirectionStart[1],
+                                              recoBrother->DirectionStart[2]);
+              recoBrothersProtonMaxTrueDir.SetXYZ(trueBrother->Direction[0],
+                                                  trueBrother->Direction[1],
+                                                  trueBrother->Direction[2]);
+            }
+          }
+
+          // Summary counters (for backward compatibility)
+          if(recoBrother->Length >= minBrotherLength){
+            if(trueBrother->PDG == 2212){
           nReconProtons++;
-        }
-        if(trueDaughter && trueDaughter->PDG == 211){
-          nRecoPiPlus++;
-        }
-        if(trueDaughter && trueDaughter->PDG == -211){
-          nRecoPiMinus++;
+              if(trueBrother->Momentum > maxProtonMom){
+                maxProtonMom = trueBrother->Momentum;
+                Float_t protonMass = 0.938272;
+                maxProtonEnergy = sqrt(protonMass*protonMass + maxProtonMom*maxProtonMom);
+              }
+            }
+            if(trueBrother->PDG == 211) nRecoPiPlus++;
+            if(trueBrother->PDG == -211) nRecoPiMinus++;
+            if(recoBrothersChi2Prot[nRecoBrothers] < 60.0) nReconProtChi2++;
+          }
         }
 
-        // Count by chi2/ndf for proton hypothesis
-        std::pair<double, int> chi2Proton = pdAnaUtils::Chi2PID(*daughterCandidate, 2212); // Proton PDG
-        double chi2ndfProton = (chi2Proton.second > 0) ? chi2Proton.first / chi2Proton.second : 9999.0;
-        if(chi2ndfProton < 60.0){
-          nReconProtChi2++;
-        }
+        nRecoBrothers++;
       }
     }
+
+    // Fill summary counters (backward compatibility)
     output.FillVectorVar(k0brothreconprot, (Int_t)nReconProtons);
+    output.FillVectorVar(k0brothrecoprotenergy, maxProtonEnergy);
+    output.FillVectorVar(k0brothrecoprotmom, maxProtonMom);
     output.FillVectorVar(k0brothreconpiplus, (Int_t)nRecoPiPlus);
     output.FillVectorVar(k0brothreconpiminus, (Int_t)nRecoPiMinus);
     output.FillVectorVar(k0brothreconprotchi2, (Int_t)nReconProtChi2);
-    if(trueParentCandidate){
-      output.FillVectorVar(k0truenbrother, (Int_t)trueParentCandidate->Daughters.size());
+
+    // Fill true brothers arrays
+    output.FillVectorVar(k0ntruebroth, nTrueBrothers);
+    output.FillMatrixVarFromArray(k0truebrothpdg, trueBrothersPDG, 100);
+    output.FillMatrixVarFromArray(k0truebrothmomentum, trueBrothersMom, 100);
+    output.FillMatrixVarFromArray(k0truebrothenergy, trueBrothersEnergy, 100);
+    output.FillMatrixVarFromArray(k0truebrothprocessstart, trueBrothersProcess, 100);
+    output.FillVectorVar(k0truebrothtotalmom, trueBrothersTotalMom);
+    output.FillVectorVar(k0truebrothtotalenergy, trueBrothersTotalEnergy);
+
+    Float_t trueBrothersTotalDirNorm[3] = {-999.0, -999.0, -999.0};
+    if(nTrueBrothers > 0 && trueBrothersTotalDir.Mag() > 0){
+      trueBrothersTotalDirNorm[0] = trueBrothersTotalDir.X() / trueBrothersTotalDir.Mag();
+      trueBrothersTotalDirNorm[1] = trueBrothersTotalDir.Y() / trueBrothersTotalDir.Mag();
+      trueBrothersTotalDirNorm[2] = trueBrothersTotalDir.Z() / trueBrothersTotalDir.Mag();
     }
+    output.FillMatrixVarFromArray(k0truebrothtruetotaldir, trueBrothersTotalDirNorm, 3);
+    output.FillVectorVar(k0truebrothprotonmaxenergy, trueBrothersProtonMaxEnergy);
+    output.FillVectorVar(k0truebrothprotonmaxmomentum, trueBrothersProtonMaxMom);
+
+    Float_t trueBrothersProtonMaxDirArray[3] = {static_cast<Float_t>(trueBrothersProtonMaxDir.X()),
+                                                 static_cast<Float_t>(trueBrothersProtonMaxDir.Y()),
+                                                 static_cast<Float_t>(trueBrothersProtonMaxDir.Z())};
+    output.FillMatrixVarFromArray(k0truebrothprotonmaxdir, trueBrothersProtonMaxDirArray, 3);
+
+    // Fill true brothers with reco arrays
+    output.FillVectorVar(k0ntruebrothreco, nTrueBrothersReco);
+    output.FillMatrixVarFromArray(k0truebrothrecotruepdg, trueBrothersRecoTruePDG, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecotruemom, trueBrothersRecoTrueMom, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecotrueenergy, trueBrothersRecoTrueEnergy, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecotrueprocessstart, trueBrothersRecoTrueProcess, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecopdg, trueBrothersRecoPDG, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecomom, trueBrothersRecoMom, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecoenergy, trueBrothersRecoEnergy, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecolength, trueBrothersRecoLength, 100);
+    output.FillMatrixVarFromArray(k0truebrothrecochi2prot, trueBrothersRecoChi2Prot, 100);
+    output.FillVectorVar(k0truebrothrecotruetotalmom, trueBrothersRecoTrueTotalMom);
+    output.FillVectorVar(k0truebrothrecotruetotalenergy, trueBrothersRecoTrueTotalEnergy);
+
+    Float_t trueBrothersRecoTrueTotalDirNorm[3] = {-999.0, -999.0, -999.0};
+    if(nTrueBrothersReco > 0 && trueBrothersRecoTrueTotalDir.Mag() > 0){
+      trueBrothersRecoTrueTotalDirNorm[0] = trueBrothersRecoTrueTotalDir.X() / trueBrothersRecoTrueTotalDir.Mag();
+      trueBrothersRecoTrueTotalDirNorm[1] = trueBrothersRecoTrueTotalDir.Y() / trueBrothersRecoTrueTotalDir.Mag();
+      trueBrothersRecoTrueTotalDirNorm[2] = trueBrothersRecoTrueTotalDir.Z() / trueBrothersRecoTrueTotalDir.Mag();
+    }
+    output.FillMatrixVarFromArray(k0truebrothrecotruetotaldir, trueBrothersRecoTrueTotalDirNorm, 3);
+    output.FillVectorVar(k0truebrothrecoprotonmaxenergy, trueBrothersRecoProtonMaxEnergy);
+    output.FillVectorVar(k0truebrothrecoprotonmaxmomentum, trueBrothersRecoProtonMaxMom);
+    output.FillVectorVar(k0truebrothrecoprotonmaxrecoenergy, trueBrothersRecoProtonMaxRecoEnergy);
+    output.FillVectorVar(k0truebrothrecoprotonmaxrecomom, trueBrothersRecoProtonMaxRecoMom);
+
+    Float_t trueBrothersRecoProtonMaxDirArray[3] = {static_cast<Float_t>(trueBrothersRecoProtonMaxDir.X()),
+                                                     static_cast<Float_t>(trueBrothersRecoProtonMaxDir.Y()),
+                                                     static_cast<Float_t>(trueBrothersRecoProtonMaxDir.Z())};
+    output.FillMatrixVarFromArray(k0truebrothrecoprotonmaxdir, trueBrothersRecoProtonMaxDirArray, 3);
+
+    // Fill reco brothers arrays
+    output.FillVectorVar(k0nrecobroth, nRecoBrothers);
+    output.FillMatrixVarFromArray(k0recobrothpdg, recoBrothersPDG, 100);
+    output.FillMatrixVarFromArray(k0recobrothmom, recoBrothersMom, 100);
+    output.FillMatrixVarFromArray(k0recobrothenergy, recoBrothersEnergy, 100);
+    output.FillMatrixVarFromArray(k0recobrothlength, recoBrothersLength, 100);
+    output.FillMatrixVarFromArray(k0recobrothchi2prot, recoBrothersChi2Prot, 100);
+    output.FillMatrixVarFromArray(k0recobrothtruepdg, recoBrothersTruePDG, 100);
+    output.FillMatrixVarFromArray(k0recobrothtrueenergy, recoBrothersTrueEnergy, 100);
+    output.FillMatrixVarFromArray(k0recobrothtruemom, recoBrothersTrueMom, 100);
+    output.FillMatrixVarFromArray(k0recobrothtrueprocessstart, recoBrothersTrueProcess, 100);
+
+    Float_t recoBrothersTrueTotalDirNorm[3] = {-999.0, -999.0, -999.0};
+    if(nRecoBrothers > 0 && recoBrothersTrueTotalDir.Mag() > 0){
+      recoBrothersTrueTotalDirNorm[0] = recoBrothersTrueTotalDir.X() / recoBrothersTrueTotalDir.Mag();
+      recoBrothersTrueTotalDirNorm[1] = recoBrothersTrueTotalDir.Y() / recoBrothersTrueTotalDir.Mag();
+      recoBrothersTrueTotalDirNorm[2] = recoBrothersTrueTotalDir.Z() / recoBrothersTrueTotalDir.Mag();
+    }
+    output.FillMatrixVarFromArray(k0recobrothtruetotaldir, recoBrothersTrueTotalDirNorm, 3);
+
+    Float_t recoBrothersRecoTotalDirNorm[3] = {-999.0, -999.0, -999.0};
+    if(nRecoBrothers > 0 && recoBrothersRecoTotalDir.Mag() > 0){
+      recoBrothersRecoTotalDirNorm[0] = recoBrothersRecoTotalDir.X() / recoBrothersRecoTotalDir.Mag();
+      recoBrothersRecoTotalDirNorm[1] = recoBrothersRecoTotalDir.Y() / recoBrothersRecoTotalDir.Mag();
+      recoBrothersRecoTotalDirNorm[2] = recoBrothersRecoTotalDir.Z() / recoBrothersRecoTotalDir.Mag();
+    }
+    output.FillMatrixVarFromArray(k0recobrothrecototaldir, recoBrothersRecoTotalDirNorm, 3);
+    output.FillVectorVar(k0recobrothprotonmaxenergy, recoBrothersProtonMaxEnergy);
+    output.FillVectorVar(k0recobrothprotonmaxmomentum, recoBrothersProtonMaxMom);
+    output.FillVectorVar(k0recobrothprotonmaxtrueenergy, recoBrothersProtonMaxTrueEnergy);
+    output.FillVectorVar(k0recobrothprotonmaxtruemom, recoBrothersProtonMaxTrueMom);
+
+    Float_t recoBrothersProtonMaxDirArray[3] = {static_cast<Float_t>(recoBrothersProtonMaxDir.X()),
+                                                 static_cast<Float_t>(recoBrothersProtonMaxDir.Y()),
+                                                 static_cast<Float_t>(recoBrothersProtonMaxDir.Z())};
+    output.FillMatrixVarFromArray(k0recobrothprotonmaxdir, recoBrothersProtonMaxDirArray, 3);
+
+    Float_t recoBrothersProtonMaxTrueDirArray[3] = {static_cast<Float_t>(recoBrothersProtonMaxTrueDir.X()),
+                                                     static_cast<Float_t>(recoBrothersProtonMaxTrueDir.Y()),
+                                                     static_cast<Float_t>(recoBrothersProtonMaxTrueDir.Z())};
+    output.FillMatrixVarFromArray(k0recobrothprotonmaxtruedir, recoBrothersProtonMaxTrueDirArray, 3);
+
   } else {
     // If no parent candidate, fill with default values
     output.FillVectorVar(k0reconbrother, -999);
+    output.FillVectorVar(k0truenbrother, -999);
     output.FillVectorVar(k0brothreconprot, -999);
+    output.FillVectorVar(k0brothrecoprotenergy, -999.0);
+    output.FillVectorVar(k0brothrecoprotmom, -999.0);
     output.FillVectorVar(k0brothreconpiplus, -999);
     output.FillVectorVar(k0brothreconpiminus, -999);
     output.FillVectorVar(k0brothreconprotchi2, -999);
-    output.FillVectorVar(k0truenbrother, -999);
+
+    // Fill new variables with defaults
+    output.FillVectorVar(k0ntruebroth, -999);
+    output.FillVectorVar(k0truebrothtotalmom, -999.0);
+    output.FillVectorVar(k0truebrothtotalenergy, -999.0);
+    output.FillVectorVar(k0truebrothprotonmaxenergy, -999.0);
+    output.FillVectorVar(k0truebrothprotonmaxmomentum, -999.0);
+
+    output.FillVectorVar(k0ntruebrothreco, -999);
+    output.FillVectorVar(k0truebrothrecotruetotalmom, -999.0);
+    output.FillVectorVar(k0truebrothrecotruetotalenergy, -999.0);
+    output.FillVectorVar(k0truebrothrecoprotonmaxenergy, -999.0);
+    output.FillVectorVar(k0truebrothrecoprotonmaxmomentum, -999.0);
+    output.FillVectorVar(k0truebrothrecoprotonmaxrecoenergy, -999.0);
+    output.FillVectorVar(k0truebrothrecoprotonmaxrecomom, -999.0);
+
+    output.FillVectorVar(k0nrecobroth, -999);
+    output.FillVectorVar(k0recobrothprotonmaxenergy, -999.0);
+    output.FillVectorVar(k0recobrothprotonmaxmomentum, -999.0);
+    output.FillVectorVar(k0recobrothprotonmaxtrueenergy, -999.0);
+    output.FillVectorVar(k0recobrothprotonmaxtruemom, -999.0);
   }
 }
 
@@ -960,17 +1582,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
     k0dau1recostartdir_val[1] = daughterCandidate->DirectionStart[1];
     k0dau1recostartdir_val[2] = daughterCandidate->DirectionStart[2];
     output.FillMatrixVarFromArray(k0dau1recostartdir, k0dau1recostartdir_val, 3);
-
-    // K0 daughter1 fitted direction from vertex fit
-    Float_t k0dau1fitdir_val[3] = {-999.0, -999.0, -999.0};
-    if(vertex &&
-       vertex->FitParticles.size() >= 1 &&
-       vertex->FitParticles[0]){
-      k0dau1fitdir_val[0] = vertex->FitParticles[0]->FitDirection[0];
-      k0dau1fitdir_val[1] = vertex->FitParticles[0]->FitDirection[1];
-      k0dau1fitdir_val[2] = vertex->FitParticles[0]->FitDirection[2];
-    }
-    output.FillMatrixVarFromArray(k0dau1fitdir, k0dau1fitdir_val, 3);
 
     Float_t k0dau1recoenddir_val[3] = {-999.0, -999.0, -999.0};
     k0dau1recoenddir_val[0] = daughterCandidate->DirectionEnd[0];
@@ -1170,17 +1781,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
     k0dau2recostartdir_val[1] = daughterCandidate->DirectionStart[1];
     k0dau2recostartdir_val[2] = daughterCandidate->DirectionStart[2];
     output.FillMatrixVarFromArray(k0dau2recostartdir, k0dau2recostartdir_val, 3);
-
-    // K0 daughter2 fitted direction from vertex fit
-    Float_t k0dau2fitdir_val[3] = {-999.0, -999.0, -999.0};
-    if(vertex &&
-       vertex->FitParticles.size() >= 2 &&
-       vertex->FitParticles[1]){
-      k0dau2fitdir_val[0] = vertex->FitParticles[1]->FitDirection[0];
-      k0dau2fitdir_val[1] = vertex->FitParticles[1]->FitDirection[1];
-      k0dau2fitdir_val[2] = vertex->FitParticles[1]->FitDirection[2];
-    }
-    output.FillMatrixVarFromArray(k0dau2fitdir, k0dau2fitdir_val, 3);
 
     Float_t k0dau2recoenddir_val[3] = {-999.0, -999.0, -999.0};
     k0dau2recoenddir_val[0] = daughterCandidate->DirectionEnd[0];

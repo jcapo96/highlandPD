@@ -97,11 +97,12 @@ namespace {
 
 //***************************************************************
 // Helper function to calculate Pandora vertex position from two particles
+// Returns: 1 if used simple average (else branch), 0 if used line intersection
 //***************************************************************
-void CalculatePandoraVertexPosition(AnaParticlePD* particle1, AnaParticlePD* particle2, Float_t* position) {
+int CalculatePandoraVertexPosition(AnaParticlePD* particle1, AnaParticlePD* particle2, Float_t* position) {
     if (!particle1 || !particle2) {
         for (int i = 0; i < 3; i++) position[i] = -999.;
-        return;
+        return -999; // Default to "just average" for invalid inputs
     }
 
     TVector3 pos1(particle1->PositionStart[0], particle1->PositionStart[1], particle1->PositionStart[2]);
@@ -123,19 +124,157 @@ void CalculatePandoraVertexPosition(AnaParticlePD* particle1, AnaParticlePD* par
     double denom = a*c - b*b;
 
     TVector3 pandoraVertex;
+    int isJustAverage;
     if (fabs(denom) > 1e-6) {
         double s = (b*e - c*d) / denom;
         double t = (a*e - b*d) / denom;
         TVector3 p1 = pos1 + s * dir1;
         TVector3 p2 = pos2 + t * dir2;
         pandoraVertex = 0.5 * (p1 + p2);
+        isJustAverage = 0; // Used line intersection
     } else {
         pandoraVertex = 0.5 * (pos1 + pos2);
+        isJustAverage = 1; // Used simple average (else branch)
     }
 
     position[0] = pandoraVertex.X();
     position[1] = pandoraVertex.Y();
     position[2] = pandoraVertex.Z();
+
+    return isJustAverage;
+}
+
+//***************************************************************
+// Find improved neutral particle start position by looking for nearby particles
+//***************************************************************
+TVector3 FindNeutralParticleStartPosition(
+    AnaNeutralParticlePD* neutralParticle,
+    AnaParticlePD* parentParticle,
+    AnaEventB& event,
+    double proximityThreshold) {
+
+    // Default: use parent end position
+    TVector3 defaultStart(parentParticle->PositionEnd[0],
+                          parentParticle->PositionEnd[1],
+                          parentParticle->PositionEnd[2]);
+
+    if (!neutralParticle || !parentParticle || !neutralParticle->Vertex) {
+        return defaultStart;
+    }
+
+    // Get parent particle hits
+    std::vector<TVector3> parentHits;
+    for (int plane = 0; plane < 3; plane++) {
+        for (size_t h = 0; h < parentParticle->Hits[plane].size(); h++) {
+            AnaHitPD hit = parentParticle->Hits[plane][h];
+            if (hit.Position.X() > -900) {
+                parentHits.push_back(hit.Position);
+            }
+        }
+    }
+
+    if (parentHits.empty()) {
+        return defaultStart;
+    }
+
+    // Get vertex daughter particles to exclude
+    std::set<AnaParticleB*> vertexParticles;
+    for (int i = 0; i < neutralParticle->Vertex->NParticles; i++) {
+        if (neutralParticle->Vertex->Particles[i]) {
+            vertexParticles.insert(neutralParticle->Vertex->Particles[i]);
+        }
+    }
+
+    // Find nearby particles
+    std::vector<AnaParticlePD*> nearbyParticles;
+    AnaParticleB** allParticles = event.Particles;
+    int nParticles = event.nParticles;
+
+    for (int i = 0; i < nParticles; i++) {
+        AnaParticlePD* particle = static_cast<AnaParticlePD*>(allParticles[i]);
+        if (!particle) continue;
+
+        // Skip if this particle is in the vertex
+        if (vertexParticles.find(particle) != vertexParticles.end()) {
+            continue;
+        }
+
+        // Check if particle start position is close to any parent hit
+        TVector3 particleStart(particle->PositionStart[0],
+                               particle->PositionStart[1],
+                               particle->PositionStart[2]);
+
+        if (particleStart.X() < -900) continue;
+
+        bool isNearby = false;
+        for (const auto& hit : parentHits) {
+            double distance = (particleStart - hit).Mag();
+            if (distance < proximityThreshold) {
+                isNearby = true;
+                break;
+            }
+        }
+
+        if (isNearby) {
+            nearbyParticles.push_back(particle);
+        }
+    }
+
+    if (nearbyParticles.empty()) {
+        return defaultStart;
+    }
+
+    // Find the particle with minimum distance to parent track
+    TVector3 parentPos(parentParticle->PositionStart[0],
+                       parentParticle->PositionStart[1],
+                       parentParticle->PositionStart[2]);
+    TVector3 parentDir(parentParticle->DirectionStart[0],
+                       parentParticle->DirectionStart[1],
+                       parentParticle->DirectionStart[2]);
+    if (parentDir.Mag() > 0) parentDir = parentDir.Unit();
+
+    double minDistance = 999999.0;
+    TVector3 bestNeutralStart = defaultStart;
+
+    for (auto* particle : nearbyParticles) {
+        TVector3 particlePos(particle->PositionStart[0],
+                             particle->PositionStart[1],
+                             particle->PositionStart[2]);
+        TVector3 particleDir(particle->DirectionStart[0],
+                             particle->DirectionStart[1],
+                             particle->DirectionStart[2]);
+
+        if (particleDir.Mag() > 0) particleDir = particleDir.Unit();
+
+        // Find closest approach between two lines (same algorithm as vertex finding)
+        TVector3 w0 = parentPos - particlePos;
+        double a = parentDir.Dot(parentDir);
+        double b = parentDir.Dot(particleDir);
+        double c = particleDir.Dot(particleDir);
+        double d = parentDir.Dot(w0);
+        double e = particleDir.Dot(w0);
+        double denom = a*c - b*b;
+
+        if (fabs(denom) > 1e-6) {
+            double s = (b*e - c*d) / denom;
+            double t = (a*e - b*d) / denom;
+
+            TVector3 p1 = parentPos + s * parentDir;
+            TVector3 p2 = particlePos + t * particleDir;
+
+            // Calculate distance between closest points
+            double distance = (p1 - p2).Mag();
+
+            // Keep track of particle with minimum distance
+            if (distance < minDistance && distance < proximityThreshold) {
+                minDistance = distance;
+                // Use average of closest points as neutral start position
+                bestNeutralStart = 0.5 * (p1 + p2);
+            }
+        }
+    }
+
+    return bestNeutralStart;
 }
 
 //***************************************************************
@@ -159,6 +298,7 @@ void CalculateVertexDegeneracy(std::vector<AnaVertexPD*>& vertices, bool usePand
 
         int degeneracy = 0;
         std::set<AnaParticleB*> uniqueParticles;
+        std::vector<double> distances; // Store all distances within threshold
 
         // Add this vertex's particles to the set
         for (int p = 0; p < vtx1->NParticles; p++) {
@@ -187,6 +327,7 @@ void CalculateVertexDegeneracy(std::vector<AnaVertexPD*>& vertices, bool usePand
             double distance = (pos1 - pos2).Mag();
             if (distance < threshold) {
                 degeneracy++;
+                distances.push_back(distance); // Store the distance
 
                 // Add this vertex's particles to unique set
                 for (int p = 0; p < vtx2->NParticles; p++) {
@@ -199,6 +340,311 @@ void CalculateVertexDegeneracy(std::vector<AnaVertexPD*>& vertices, bool usePand
 
         vtx1->DegeneracyBeforeScoring = degeneracy;
         vtx1->NRecoParticles = uniqueParticles.size();
+
+        // Sort distances and store the 5 minimum values
+        vtx1->DegeneracyDistances.clear();
+        if (!distances.empty()) {
+            std::sort(distances.begin(), distances.end());
+            size_t nToStore = std::min(distances.size(), size_t(5));
+            for (size_t k = 0; k < nToStore; k++) {
+                vtx1->DegeneracyDistances.push_back(static_cast<Float_t>(distances[k]));
+            }
+        }
+    }
+}
+
+//***************************************************************
+// Helper struct to store particle info with distances
+//***************************************************************
+struct IsolationParticleInfo {
+    AnaParticlePD* particle;
+    double pandoraDistance;
+    double fitDistance;
+    double startDistance;
+};
+
+//***************************************************************
+// Helper struct to store creation vertex particle info
+//***************************************************************
+struct CreationVtxParticleInfo {
+    AnaParticlePD* particle;
+    double pandoraDistance;
+    int truePDG;
+    float chi2Proton;
+};
+
+//***************************************************************
+// Helper function to count and characterize particles near neutral particle creation vertex
+//***************************************************************
+void CalculateNProtonInCreationVtx(AnaNeutralParticlePD* neutralParticle,
+                                   AnaParticlePD* parentParticle,
+                                   double protonCreationVtxDist) {
+    // Initialize all attributes
+    neutralParticle->NProtonInCreationVtx = 0;
+    neutralParticle->NParticlesInCreationVtx = 0;
+    neutralParticle->CreationVtxChi2Proton.clear();
+    neutralParticle->CreationVtxDistances.clear();
+    neutralParticle->CreationVtxTruePDG.clear();
+
+    if (!parentParticle || !neutralParticle || neutralParticle->PositionStart[0] < -900) {
+        return;
+    }
+
+    TVector3 neutralStart(neutralParticle->PositionStart[0],
+                         neutralParticle->PositionStart[1],
+                         neutralParticle->PositionStart[2]);
+
+    std::vector<CreationVtxParticleInfo> particlesNearCreation;
+    int nProtons = 0;
+
+    // Iterate through parent's daughters
+    for (size_t iDau = 0; iDau < parentParticle->Daughters.size(); iDau++) {
+        AnaParticlePD* daughter = static_cast<AnaParticlePD*>(parentParticle->Daughters[iDau]);
+        if (!daughter) continue;
+
+        // Check if daughter has valid position and direction
+        if (daughter->PositionStart[0] < -900 || daughter->DirectionStart[0] < -900) continue;
+
+        // Calculate line-to-point distance from daughter's trajectory to neutral start position
+        // Line: L(t) = L0 + t * L_dir (daughter trajectory)
+        // Point: P0 (neutral start position)
+        // Distance: d = ||(P0 - L0) × L_dir|| / ||L_dir||
+        TVector3 L0(daughter->PositionStart[0], daughter->PositionStart[1], daughter->PositionStart[2]);
+        TVector3 L_dir(daughter->DirectionStart[0], daughter->DirectionStart[1], daughter->DirectionStart[2]);
+
+        double L_dir_mag = L_dir.Mag();
+        if (L_dir_mag < 1e-6) continue; // Skip if direction is too small
+
+        TVector3 diff = neutralStart - L0;
+        TVector3 cross = diff.Cross(L_dir);
+        double minDistance = cross.Mag() / L_dir_mag;
+
+        // Check if distance is below threshold
+        if (minDistance < protonCreationVtxDist) {
+            // Count true protons
+            int truePDG = 0;
+            bool isTrueProton = false;
+            if (daughter->TrueObject) {
+                AnaTrueParticlePD* trueDau = static_cast<AnaTrueParticlePD*>(daughter->TrueObject);
+                if (trueDau) {
+                    truePDG = trueDau->PDG;
+                    if (trueDau->PDG == 2212) {
+                        isTrueProton = true;
+                        nProtons++;
+                    }
+                }
+            }
+
+            // Calculate chi2/ndf under proton hypothesis
+            std::pair<double, int> chi2Result = pdAnaUtils::Chi2PID(*daughter, 2212); // 2212 = proton PDG
+            float chi2Proton = (chi2Result.second > 0) ?
+                              static_cast<float>(chi2Result.first) / static_cast<float>(chi2Result.second) : -999.0;
+
+            // Store particle info
+            CreationVtxParticleInfo info;
+            info.particle = daughter;
+            info.pandoraDistance = minDistance;
+            info.truePDG = truePDG;
+            info.chi2Proton = chi2Proton;
+            particlesNearCreation.push_back(info);
+        }
+    }
+
+    // Sort particles by Pandora distance (ascending)
+    std::sort(particlesNearCreation.begin(), particlesNearCreation.end(),
+              [](const CreationVtxParticleInfo& a, const CreationVtxParticleInfo& b) {
+                  return a.pandoraDistance < b.pandoraDistance;
+              });
+
+    // Store counts
+    neutralParticle->NProtonInCreationVtx = nProtons;
+    neutralParticle->NParticlesInCreationVtx = static_cast<int>(particlesNearCreation.size());
+
+    // Store properties of up to 5 closest particles
+    size_t nToStore = std::min(particlesNearCreation.size(), size_t(5));
+    for (size_t k = 0; k < nToStore; k++) {
+        neutralParticle->CreationVtxDistances.push_back(static_cast<Float_t>(particlesNearCreation[k].pandoraDistance));
+        neutralParticle->CreationVtxChi2Proton.push_back(particlesNearCreation[k].chi2Proton);
+        neutralParticle->CreationVtxTruePDG.push_back(particlesNearCreation[k].truePDG);
+    }
+}
+
+//***************************************************************
+// Helper function to calculate isolation distances for all vertices
+//***************************************************************
+void CalculateVertexIsolation(std::vector<AnaVertexPD*>& vertices, double threshold) {
+    // Get track fit length from parameters
+    double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+
+    for (size_t i = 0; i < vertices.size(); i++) {
+        AnaVertexPD* vtx1 = vertices[i];
+        if (!vtx1) continue;
+
+        // Get vertex position (now using Pandora-based position as main Position)
+        TVector3 vtxPos(vtx1->Position[0], vtx1->Position[1], vtx1->Position[2]);
+
+        // Skip if position is invalid
+        if (vtxPos.X() < -900) continue;
+
+        // Get lengths of the two vertex particles for comparison
+        double vtxPart1Length = -999.0;
+        double vtxPart2Length = -999.0;
+        if (vtx1->NParticles >= 2) {
+            AnaParticlePD* part1 = static_cast<AnaParticlePD*>(vtx1->Particles[0]);
+            AnaParticlePD* part2 = static_cast<AnaParticlePD*>(vtx1->Particles[1]);
+            if (part1) vtxPart1Length = part1->Length;
+            if (part2) vtxPart2Length = part2->Length;
+        }
+
+        std::vector<IsolationParticleInfo> isolationParticles;
+        std::set<AnaParticleB*> vtx1Particles;
+
+        // Store this vertex's particles to exclude them
+        for (int p = 0; p < vtx1->NParticles; p++) {
+            if (vtx1->Particles[p]) {
+                vtx1Particles.insert(vtx1->Particles[p]);
+            }
+        }
+
+        // Initialize counters
+        int nProtons = 0;
+        int nPions = 0;
+        int isLongest = 0;
+
+        // Find nearby vertices and collect their unique particles
+        for (size_t j = 0; j < vertices.size(); j++) {
+            if (i == j) continue;
+
+            AnaVertexPD* vtx2 = vertices[j];
+            if (!vtx2) continue;
+
+            TVector3 pos2(vtx2->Position[0], vtx2->Position[1], vtx2->Position[2]);
+            if (pos2.X() < -900) continue;
+
+            // Check if within threshold distance
+            double distance = (vtxPos - pos2).Mag();
+            if (distance < threshold) {
+                // Process particles from this nearby vertex
+                for (int p = 0; p < vtx2->NParticles; p++) {
+                    AnaParticleB* particle = vtx2->Particles[p];
+                    if (!particle) continue;
+
+                    // Skip if this particle belongs to vtx1
+                    if (vtx1Particles.find(particle) != vtx1Particles.end()) continue;
+
+                    AnaParticlePD* particlePD = static_cast<AnaParticlePD*>(particle);
+
+                    // Check if particle has valid position and direction
+                    if (particlePD->PositionStart[0] < -900 || particlePD->DirectionStart[0] < -900) continue;
+
+                    TVector3 L0(particlePD->PositionStart[0], particlePD->PositionStart[1], particlePD->PositionStart[2]);
+
+                    // === 1. Calculate Pandora-based line-to-point distance ===
+                    TVector3 L_dir(particlePD->DirectionStart[0], particlePD->DirectionStart[1], particlePD->DirectionStart[2]);
+
+                    double L_dir_mag = L_dir.Mag();
+                    if (L_dir_mag < 1e-6) continue; // Skip if direction is too small
+
+                    TVector3 diff = vtxPos - L0;
+                    TVector3 cross = diff.Cross(L_dir);
+                    double lineToPointDist = cross.Mag() / L_dir_mag;
+
+                    // === 2. Calculate fitted track line-to-point distance ===
+                    std::vector<double> fittedLineParams;
+                    pdAnaUtils::ExtrapolateTrack(particlePD, fittedLineParams, trackFitLength, true);
+
+                    double lineToPointDistFit = 9999.0;
+                    if (fittedLineParams.size() == 6 && fittedLineParams[0] != -999.0) {
+                        TVector3 L0_fit(fittedLineParams[0], fittedLineParams[1], fittedLineParams[2]);
+                        TVector3 L_dir_fit(fittedLineParams[3], fittedLineParams[4], fittedLineParams[5]);
+
+                        double L_dir_fit_mag = L_dir_fit.Mag();
+                        if (L_dir_fit_mag > 1e-6) {
+                            TVector3 diff_fit = vtxPos - L0_fit;
+                            TVector3 cross_fit = diff_fit.Cross(L_dir_fit);
+                            lineToPointDistFit = cross_fit.Mag() / L_dir_fit_mag;
+                        }
+                    }
+
+                    // === 3. Calculate point-to-point distance to PositionStart ===
+                    double pointToPointDist = (vtxPos - L0).Mag();
+
+                    // Store particle info
+                    IsolationParticleInfo info;
+                    info.particle = particlePD;
+                    info.pandoraDistance = lineToPointDist;
+                    info.fitDistance = lineToPointDistFit;
+                    info.startDistance = pointToPointDist;
+                    isolationParticles.push_back(info);
+
+                    // === Count protons and pions (ALL particles, not just 5) ===
+                    if (particlePD->TrueObject) {
+                        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(particlePD->TrueObject);
+                        if (truePart) {
+                            if (truePart->PDG == 2212) {
+                                nProtons++;
+                            }
+                            if (abs(truePart->PDG) == 211) { // Both pi+ and pi-
+                                nPions++;
+                            }
+                        }
+                    }
+
+                    // === Check if longer than BOTH vertex particles ===
+                    if (particlePD->Length > vtxPart1Length && particlePD->Length > vtxPart2Length) {
+                        isLongest = 1;
+                    }
+                }
+            }
+        }
+
+        // Sort particles by Pandora distance
+        std::sort(isolationParticles.begin(), isolationParticles.end(),
+                  [](const IsolationParticleInfo& a, const IsolationParticleInfo& b) {
+                      return a.pandoraDistance < b.pandoraDistance;
+                  });
+
+        // Clear all isolation vectors
+        vtx1->IsolationDistances.clear();
+        vtx1->IsolationDistancesFit.clear();
+        vtx1->IsolationStartDistances.clear();
+        vtx1->IsolationIsProton.clear();
+        vtx1->IsolationChi2Proton.clear();
+        vtx1->IsolationLength.clear();
+
+        // Store the 5 closest particles' properties
+        size_t nToStore = std::min(isolationParticles.size(), size_t(5));
+        for (size_t k = 0; k < nToStore; k++) {
+            AnaParticlePD* part = isolationParticles[k].particle;
+
+            // Store distances
+            vtx1->IsolationDistances.push_back(static_cast<Float_t>(isolationParticles[k].pandoraDistance));
+            vtx1->IsolationDistancesFit.push_back(static_cast<Float_t>(isolationParticles[k].fitDistance));
+            vtx1->IsolationStartDistances.push_back(static_cast<Float_t>(isolationParticles[k].startDistance));
+
+            // Check if this particle is a true proton
+            int isProton = 0;
+            if (part->TrueObject) {
+                AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+                if (truePart && truePart->PDG == 2212) {
+                    isProton = 1;
+                }
+            }
+            vtx1->IsolationIsProton.push_back(isProton);
+
+            // Calculate chi2/ndf under proton hypothesis
+            std::pair<double, int> chi2Result = pdAnaUtils::Chi2PID(*part, 2212); // 2212 = proton PDG
+            Float_t chi2Proton = static_cast<Float_t>(chi2Result.first)/static_cast<Float_t>(chi2Result.second); // Extract chi2/ndf value
+            vtx1->IsolationChi2Proton.push_back(chi2Proton);
+
+            // Store length
+            vtx1->IsolationLength.push_back(part->Length);
+        }
+
+        // Store total proton count, pion count, and longest flag
+        vtx1->IsolationNProton = nProtons;
+        vtx1->IsolationNPion = nPions;
+        vtx1->IsolationIsLongest = isLongest;
     }
 }
 
@@ -319,10 +765,18 @@ double pdNeutralUtils::FindVertexPositionWithFit(AnaVertexPD* vertex, double tra
   Int_t nvpar, nparx, icstat;
   minuit.mnstat(amin, edm, errdef, nvpar, nparx, icstat);
 
-  // Store fitted vertex position
-  vertex->Position[0] = vx;
-  vertex->Position[1] = vy;
-  vertex->Position[2] = vz;
+  // Store fitted vertex position in PositionFit
+  vertex->PositionFit[0] = vx;
+  vertex->PositionFit[1] = vy;
+  vertex->PositionFit[2] = vz;
+
+  // Calculate Pandora-based vertex position and set flag
+  vertex->IsJustAverage = CalculatePandoraVertexPosition(part1, part2, vertex->PositionPandora);
+
+  // Copy Pandora position to main Position
+  vertex->Position[0] = vertex->PositionPandora[0];
+  vertex->Position[1] = vertex->PositionPandora[1];
+  vertex->Position[2] = vertex->PositionPandora[2];
 
   // Calculate chi2/ndf
   int ndf = (fitData.hits1.size() + fitData.hits2.size()) * 3 - 9;  // 3 coords per hit, 9 parameters
@@ -351,35 +805,12 @@ double pdNeutralUtils::FindVertexPositionWithFit(AnaVertexPD* vertex, double tra
   double denom = a * c - b * b;
   vertex->MinimumDistance = 0.0;  // Both lines emanate from same vertex point
 
-  // Create fitted particle objects to store fit results
-  AnaVertexFittedParticlePD* fitPart1 = new AnaVertexFittedParticlePD();
-  fitPart1->FitPosition[0] = vx;
-  fitPart1->FitPosition[1] = vy;
-  fitPart1->FitPosition[2] = vz;
-  fitPart1->FitDirection[0] = fittedDir1.X();
-  fitPart1->FitDirection[1] = fittedDir1.Y();
-  fitPart1->FitDirection[2] = fittedDir1.Z();
-
-  AnaVertexFittedParticlePD* fitPart2 = new AnaVertexFittedParticlePD();
-  fitPart2->FitPosition[0] = vx;
-  fitPart2->FitPosition[1] = vy;
-  fitPart2->FitPosition[2] = vz;
-  fitPart2->FitDirection[0] = fittedDir2.X();
-  fitPart2->FitDirection[1] = fittedDir2.Y();
-  fitPart2->FitDirection[2] = fittedDir2.Z();
-
-  vertex->FitParticles.push_back(fitPart1);
-  vertex->FitParticles.push_back(fitPart2);
-
   // Calculate vertex fit direction (sum of daughter fit directions, normalized)
   TVector3 fitDirSum = fittedDir1 + fittedDir2;
   if(fitDirSum.Mag() > 0) fitDirSum = fitDirSum.Unit();
-  vertex->FitDirection[0] = fitDirSum.X();
-  vertex->FitDirection[1] = fitDirSum.Y();
-  vertex->FitDirection[2] = fitDirSum.Z();
-
-  // Calculate Pandora-based vertex position
-  CalculatePandoraVertexPosition(part1, part2, vertex->PositionPandora);
+  vertex->DirectionFit[0] = fitDirSum.X();
+  vertex->DirectionFit[1] = fitDirSum.Y();
+  vertex->DirectionFit[2] = fitDirSum.Z();
 
   // Clean up global pointer
   gFitData = nullptr;
@@ -450,53 +881,46 @@ double pdNeutralUtils::FindVertexPositionGeometric(AnaVertexPD* vertex, double t
     return -999.0;
   }
 
-  // Use existing geometric position finding
+  // Use existing geometric position finding (stores result in vertex->Position)
   pdAnaUtils::FindVertexPosition(vertex);
+
+  // Store the geometric fit result in PositionFit
+  vertex->PositionFit[0] = vertex->Position[0];
+  vertex->PositionFit[1] = vertex->Position[1];
+  vertex->PositionFit[2] = vertex->Position[2];
 
   // Set score to minimum distance (lower is better)
   vertex->Score = vertex->MinimumDistance;
 
-  // Create fitted particle objects from the stored line parameters
+  // Calculate fitted direction from the stored line parameters
   if(vertex->FittedLineParams.size() >= 2){
     // Extract line parameters for daughter 1
     std::vector<double> line1 = vertex->FittedLineParams[0];
-    AnaVertexFittedParticlePD* fitPart1 = new AnaVertexFittedParticlePD();
-    fitPart1->FitPosition[0] = line1[0];
-    fitPart1->FitPosition[1] = line1[1];
-    fitPart1->FitPosition[2] = line1[2];
     TVector3 dir1(line1[3], line1[4], line1[5]);
     if(dir1.Mag() > 0) dir1 = dir1.Unit();
-    fitPart1->FitDirection[0] = dir1.X();
-    fitPart1->FitDirection[1] = dir1.Y();
-    fitPart1->FitDirection[2] = dir1.Z();
 
     // Extract line parameters for daughter 2
     std::vector<double> line2 = vertex->FittedLineParams[1];
-    AnaVertexFittedParticlePD* fitPart2 = new AnaVertexFittedParticlePD();
-    fitPart2->FitPosition[0] = line2[0];
-    fitPart2->FitPosition[1] = line2[1];
-    fitPart2->FitPosition[2] = line2[2];
     TVector3 dir2(line2[3], line2[4], line2[5]);
     if(dir2.Mag() > 0) dir2 = dir2.Unit();
-    fitPart2->FitDirection[0] = dir2.X();
-    fitPart2->FitDirection[1] = dir2.Y();
-    fitPart2->FitDirection[2] = dir2.Z();
-
-    vertex->FitParticles.push_back(fitPart1);
-    vertex->FitParticles.push_back(fitPart2);
 
     // Calculate vertex fit direction (sum of daughter fit directions, normalized)
     TVector3 fitDirSum = dir1 + dir2;
     if(fitDirSum.Mag() > 0) fitDirSum = fitDirSum.Unit();
-    vertex->FitDirection[0] = fitDirSum.X();
-    vertex->FitDirection[1] = fitDirSum.Y();
-    vertex->FitDirection[2] = fitDirSum.Z();
+    vertex->DirectionFit[0] = fitDirSum.X();
+    vertex->DirectionFit[1] = fitDirSum.Y();
+    vertex->DirectionFit[2] = fitDirSum.Z();
   }
 
-  // Calculate Pandora-based vertex position
+  // Calculate Pandora-based vertex position and set flag
   AnaParticlePD* part1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
   AnaParticlePD* part2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
-  CalculatePandoraVertexPosition(part1, part2, vertex->PositionPandora);
+  vertex->IsJustAverage = CalculatePandoraVertexPosition(part1, part2, vertex->PositionPandora);
+
+  // Copy Pandora position to main Position
+  vertex->Position[0] = vertex->PositionPandora[0];
+  vertex->Position[1] = vertex->PositionPandora[1];
+  vertex->Position[2] = vertex->PositionPandora[2];
 
   return vertex->MinimumDistance;
 }
@@ -540,7 +964,11 @@ double pdNeutralUtils::FindVertexPositionKalman(AnaVertexPD* vertex, double trac
   double maxKalmanChi2Ndf = ND::params().GetParameterD("neutralKaonAnalysis.MaxKalmanChi2Ndf");
   double chi2ndf = (vertexState.ndf > 0) ? vertexState.chi2 / vertexState.ndf : 9999.0;
   if (chi2ndf > maxKalmanChi2Ndf) {
-    // Mark vertex as invalid by setting position to -999
+    // Mark vertex as invalid by setting fitted position to -999
+    vertex->PositionFit[0] = -999.0;
+    vertex->PositionFit[1] = -999.0;
+    vertex->PositionFit[2] = -999.0;
+    // Also mark main Position as invalid
     vertex->Position[0] = -999.0;
     vertex->Position[1] = -999.0;
     vertex->Position[2] = -999.0;
@@ -548,10 +976,18 @@ double pdNeutralUtils::FindVertexPositionKalman(AnaVertexPD* vertex, double trac
     return 9999.0;
   }
 
-  // Set vertex position from Kalman fit
-  vertex->Position[0] = vertexState.position.X();
-  vertex->Position[1] = vertexState.position.Y();
-  vertex->Position[2] = vertexState.position.Z();
+  // Set fitted vertex position in PositionFit
+  vertex->PositionFit[0] = vertexState.position.X();
+  vertex->PositionFit[1] = vertexState.position.Y();
+  vertex->PositionFit[2] = vertexState.position.Z();
+
+  // Calculate Pandora-based vertex position and set flag
+  vertex->IsJustAverage = CalculatePandoraVertexPosition(daughter1, daughter2, vertex->PositionPandora);
+
+  // Copy Pandora position to main Position
+  vertex->Position[0] = vertex->PositionPandora[0];
+  vertex->Position[1] = vertex->PositionPandora[1];
+  vertex->Position[2] = vertex->PositionPandora[2];
 
   // Set score to chi2 (lower is better)
   vertex->Score = vertexState.chi2;
@@ -564,37 +1000,17 @@ double pdNeutralUtils::FindVertexPositionKalman(AnaVertexPD* vertex, double trac
   double dist2 = (track2ToVtx - track2.direction * track2ToVtx.Dot(track2.direction)).Mag();
   vertex->MinimumDistance = sqrt(dist1*dist1 + dist2*dist2);
 
-  // Create fitted particle objects from Kalman track states
-  AnaVertexFittedParticlePD* fitPart1 = new AnaVertexFittedParticlePD();
-  fitPart1->FitPosition[0] = vertexState.position.X();
-  fitPart1->FitPosition[1] = vertexState.position.Y();
-  fitPart1->FitPosition[2] = vertexState.position.Z();
+  // Calculate vertex fit direction from Kalman track states
   TVector3 dir1 = track1.direction.Unit();
-  fitPart1->FitDirection[0] = dir1.X();
-  fitPart1->FitDirection[1] = dir1.Y();
-  fitPart1->FitDirection[2] = dir1.Z();
-
-  AnaVertexFittedParticlePD* fitPart2 = new AnaVertexFittedParticlePD();
-  fitPart2->FitPosition[0] = vertexState.position.X();
-  fitPart2->FitPosition[1] = vertexState.position.Y();
-  fitPart2->FitPosition[2] = vertexState.position.Z();
   TVector3 dir2 = track2.direction.Unit();
-  fitPart2->FitDirection[0] = dir2.X();
-  fitPart2->FitDirection[1] = dir2.Y();
-  fitPart2->FitDirection[2] = dir2.Z();
-
-  vertex->FitParticles.push_back(fitPart1);
-  vertex->FitParticles.push_back(fitPart2);
 
   // Calculate vertex fit direction (sum of daughter fit directions, normalized)
   TVector3 fitDirSum = dir1 + dir2;
   if(fitDirSum.Mag() > 0) fitDirSum = fitDirSum.Unit();
-  vertex->FitDirection[0] = fitDirSum.X();
-  vertex->FitDirection[1] = fitDirSum.Y();
-  vertex->FitDirection[2] = fitDirSum.Z();
+  vertex->DirectionFit[0] = fitDirSum.X();
+  vertex->DirectionFit[1] = fitDirSum.Y();
+  vertex->DirectionFit[2] = fitDirSum.Z();
 
-  // Calculate Pandora-based vertex position
-  CalculatePandoraVertexPosition(daughter1, daughter2, vertex->PositionPandora);
 
   return vertexState.chi2;
 }
@@ -676,11 +1092,10 @@ AnaTrueEquivalentVertexPD* pdNeutralUtils::FillTrueEquivalentVertex(AnaVertexPD*
     trueEquivalentVertex->Direction[2] = -999.0;
   }
 
-  // Copy fit results from reconstructed vertex
-  trueEquivalentVertex->FitParticles = vertex->FitParticles;
-  trueEquivalentVertex->FitDirection[0] = vertex->FitDirection[0];
-  trueEquivalentVertex->FitDirection[1] = vertex->FitDirection[1];
-  trueEquivalentVertex->FitDirection[2] = vertex->FitDirection[2];
+  // Copy fitted direction from reconstructed vertex
+  trueEquivalentVertex->DirectionFit[0] = vertex->DirectionFit[0];
+  trueEquivalentVertex->DirectionFit[1] = vertex->DirectionFit[1];
+  trueEquivalentVertex->DirectionFit[2] = vertex->DirectionFit[2];
 
   // Initialize Pandora position and degeneracy
   for (int i = 0; i < 3; i++) {
@@ -919,6 +1334,9 @@ std::vector<AnaVertexPD*> pdNeutralUtils::CreateVerticesCommon(
   bool usePandora = (bool)ND::params().GetParameterI("neutralKaonAnalysis.UsePandoraForDegeneracy");
   CalculateVertexDegeneracy(reconstructedVertices, usePandora, degThreshold);
 
+  // Calculate isolation distances for all vertices
+  CalculateVertexIsolation(reconstructedVertices, degThreshold);
+
   // Filter vertices to ensure each particle belongs to at most one vertex
   std::vector<AnaVertexPD*> filteredVertices = FilterVerticesByScore(reconstructedVertices);
 
@@ -1147,15 +1565,13 @@ void pdNeutralUtils::CalculateNeutralScore(
 
   // === 4. CALCULATE SCORE COMPONENTS ===
 
-  // A) Hit count score - normalized by expected hits for charged particle
-  // Expected hits = (length / pitch) * (radius / wire_spacing)
-  // Typical pitch ~0.3 cm, wire spacing ~0.5 cm for collection plane
-  double wireSpacing = 0.5; // cm
-  double pitch = 0.3; // cm
-  double expectedHits = (neutralLength / pitch) * (cylinderRadius / wireSpacing);
-  if(expectedHits < 1.0) expectedHits = 1.0; // Avoid division by zero
-
-  double hitScore = TMath::Min(nHitsInCylinder / expectedHits, 1.0) * 100.0;
+  // A) Hit density (hits per unit distance)
+  // This will be a multiplicative factor for hit-dependent scores
+  // Ensures particles with 0 hits get 0 score for hit-dependent component
+  double hitDensity = 0.0;
+  if(neutralLength > 0){
+    hitDensity = nHitsInCylinder / neutralLength;
+  }
 
   // B) Enhanced distance score - combines average and RMS
   // Scattered hits (high RMS) are more neutral-like
@@ -1176,18 +1592,47 @@ void pdNeutralUtils::CalculateNeutralScore(
   // Low span (localized hits) → could be neutral or random
   double clusterScore = longitudinalSpan * 100.0;
 
-  // === 5. OPTIMIZED WEIGHTING ===
+  // === 5. CALCULATE SIBLING ALIGNMENT SCORE ===
+  // Look at alignment between all parent's daughters (including vertex particles) and neutral direction
 
-  // Physics-motivated weights:
-  // - Hit count: most discriminating (50%)
-  // - Alignment: important for charged tracks (25%)
-  // - Distance: secondary (geometry-dependent) (20%)
-  // - Clustering: additional info (5%)
+  double siblingAlignmentScore = 0.0;
+  int nSiblings = 0;
+  double totalSiblingAlignment = 0.0;
 
-  double neutralScore = 0.50 * hitScore
-                      + 0.25 * alignmentScore
-                      + 0.20 * distanceScore
-                      + 0.05 * clusterScore;
+  if(parentParticle && parentParticle->Daughters.size() > 0){
+    // Loop through parent's daughters (including vertex particles)
+    for(size_t i = 0; i < parentParticle->Daughters.size(); i++){
+      AnaParticlePD* sibling = static_cast<AnaParticlePD*>(parentParticle->Daughters[i]);
+      if(!sibling) continue;
+
+      // Check if sibling has valid direction
+      if(sibling->DirectionStart[0] < -900) continue;
+
+      // Calculate alignment between sibling direction and neutral direction
+      TVector3 siblingDir(sibling->DirectionStart[0],
+                         sibling->DirectionStart[1],
+                         sibling->DirectionStart[2]);
+      if(siblingDir.Mag() > 0){
+        siblingDir = siblingDir.Unit();
+        double alignment = TMath::Abs(siblingDir.Dot(neutralDirection));
+        totalSiblingAlignment += alignment;
+        nSiblings++;
+      }
+    }
+
+    // Average sibling alignment
+    if(nSiblings > 0){
+      siblingAlignmentScore = (totalSiblingAlignment / nSiblings) * 100.0;
+    }
+  }
+
+  // === 6. COMBINED SCORING ===
+  // neutralScore = (nhits/length) * (alignmentScore + distanceScore + clusterScore) + siblingAlignmentScore
+  // Equal weights for hit-dependent components, multiplied by hit density
+  // Sibling alignment is independent of hit density
+
+  double hitDependentScore = hitDensity * (alignmentScore + distanceScore + clusterScore);
+  double neutralScore = hitDependentScore + siblingAlignmentScore;
 
   // Store all metrics in neutral particle
   neutralParticle->NeutralScore = neutralScore;
@@ -1286,8 +1731,10 @@ AnaTrueEquivalentNeutralParticlePD* pdNeutralUtils::FillTrueEquivalentNeutralPar
                             pow(trueEquivalentNeutralParticle->PositionEnd[2]-trueEquivalentNeutralParticle->Position[2],2));
   trueEquivalentNeutralParticle->Length = trueLength;
 
-  // Calculate invariant mass for true equivalent neutral particle
+  // Calculate invariant mass and momentum for true equivalent neutral particle
   Float_t trueInvariantMass = -999;
+  Float_t trueMomentumEnd = -999;
+
   if (vertex->TrueEquivalentVertex && vertex->TrueEquivalentVertex->TrueParticles.size() >= 2) {
     AnaTrueParticlePD* trueParticle1 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[0]);
     AnaTrueParticlePD* trueParticle2 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[1]);
@@ -1297,10 +1744,14 @@ AnaTrueEquivalentNeutralParticlePD* pdNeutralUtils::FillTrueEquivalentNeutralPar
         trueParticle1->Momentum != -999 && trueParticle2->Momentum != -999) {
       const Float_t pionMass = 0.13957;
       trueInvariantMass = pdAnaUtils::ComputeTrueInvariantMass(*trueParticle1, *trueParticle2, pionMass, pionMass);
+
+      // Calculate total momentum (sum of daughter momenta)
+      trueMomentumEnd = trueParticle1->Momentum + trueParticle2->Momentum;
     }
   }
 
   trueEquivalentNeutralParticle->Mass = trueInvariantMass;
+  trueEquivalentNeutralParticle->MomentumEnd = trueMomentumEnd;
 
   return trueEquivalentNeutralParticle;
 }
@@ -1351,11 +1802,25 @@ AnaNeutralParticlePD* pdNeutralUtils::CreateNeutral(AnaEventB& event, AnaVertexP
   neutralParticle->Parent = parentParticle;
   neutralParticle->UniqueID = neutralParticleID;
 
-  // Set positions
-  neutralParticle->PositionStart[0] = parentParticle->PositionEnd[0];
-  neutralParticle->PositionStart[1] = parentParticle->PositionEnd[1];
-  neutralParticle->PositionStart[2] = parentParticle->PositionEnd[2];
-  neutralParticle->PositionStart[3] = parentParticle->PositionEnd[3];
+  // Calculate neutral particle start position
+  bool useRecalculation = (bool)ND::params().GetParameterI("neutralKaonAnalysis.UseNeutralStartRecalculation");
+
+  if (useRecalculation) {
+    // Use improved start position calculation
+    double proximityThreshold = ND::params().GetParameterD("neutralKaonAnalysis.NeutralStartProximityThreshold");
+    TVector3 neutralStart = FindNeutralParticleStartPosition(neutralParticle, parentParticle, event, proximityThreshold);
+
+    neutralParticle->PositionStart[0] = neutralStart.X();
+    neutralParticle->PositionStart[1] = neutralStart.Y();
+    neutralParticle->PositionStart[2] = neutralStart.Z();
+    neutralParticle->PositionStart[3] = parentParticle->PositionEnd[3];
+  } else {
+    // Use parent end position directly
+    neutralParticle->PositionStart[0] = parentParticle->PositionEnd[0];
+    neutralParticle->PositionStart[1] = parentParticle->PositionEnd[1];
+    neutralParticle->PositionStart[2] = parentParticle->PositionEnd[2];
+    neutralParticle->PositionStart[3] = parentParticle->PositionEnd[3];
+  }
 
   neutralParticle->PositionEnd[0] = vertex->Position[0];
   neutralParticle->PositionEnd[1] = vertex->Position[1];
@@ -1406,21 +1871,12 @@ AnaNeutralParticlePD* pdNeutralUtils::CreateNeutral(AnaEventB& event, AnaVertexP
     if(parentLineParams.size() == 6 && parentLineParams[0] != -999.0){
       TVector3 vertexPos(vertex->Position[0], vertex->Position[1], vertex->Position[2]);
       neutralParticle->ImpactParameter = pdAnaUtils::CalculateImpactParameter(parentLineParams, vertexPos);
-
-      // Create FitParent from extrapolated parent track
-      AnaVertexFittedParticlePD* fitParent = new AnaVertexFittedParticlePD();
-      fitParent->FitPosition[0] = parentLineParams[0];
-      fitParent->FitPosition[1] = parentLineParams[1];
-      fitParent->FitPosition[2] = parentLineParams[2];
-      TVector3 parentDir(parentLineParams[3], parentLineParams[4], parentLineParams[5]);
-      if(parentDir.Mag() > 0) parentDir = parentDir.Unit();
-      fitParent->FitDirection[0] = parentDir.X();
-      fitParent->FitDirection[1] = parentDir.Y();
-      fitParent->FitDirection[2] = parentDir.Z();
-
-      neutralParticle->FitParent = fitParent;
     }
   }
+
+  // Calculate creation vertex particle quantities: proton count, total count, chi2, distances, PDGs
+  double protonCreationVtxDist = ND::params().GetParameterD("neutralKaonAnalysis.ProtonCreationVtxDistance");
+  CalculateNProtonInCreationVtx(neutralParticle, parentParticle, protonCreationVtxDist);
 
   // Calculate NPotentialParents and NRecoHitsInVertex
   // These count particles and hits within a cylinder from parent end to vertex

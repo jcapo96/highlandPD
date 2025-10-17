@@ -69,28 +69,12 @@ bool neutralKaonAnalysis::Initialize(){
   int maxEventsToDisplay = ND::params().GetParameterI("neutralKaonAnalysis.MaxEventsToDisplay");
   double eventPercentage = ND::params().GetParameterD("neutralKaonAnalysis.EventDisplayPercentage");
 
-  // Parse required particle PDGs
-  std::vector<int> requiredPDGs;
-  std::string pdgString = ND::params().GetParameterS("neutralKaonAnalysis.RequiredParticlePDGs");
-  if (!pdgString.empty()) {
-    std::istringstream iss(pdgString);
-    std::string token;
-    while (std::getline(iss, token, ',')) {
-      try {
-        int pdg = std::stoi(token);
-        requiredPDGs.push_back(pdg);
-      } catch (const std::exception& e) {
-        std::cout << "Warning: Could not parse PDG code: " << token << std::endl;
-      }
-    }
-  }
-
   double vertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.VertexRadius");
   int minVertexDaughters = ND::params().GetParameterI("neutralKaonAnalysis.MinVertexDaughters");
 
   // Initialize the event display
   _EventDisplay->Initialize(createEventDisplay, saveToRootFile, outputDirectory,
-                           maxEventsToDisplay, eventPercentage, requiredPDGs,
+                           maxEventsToDisplay, eventPercentage,
                            vertexRadius, minVertexDaughters);
 
   // Define categories for color drawing. Have a look at highland/src/highland2/highlandUtils/src/CategoriesUtils.hxx
@@ -271,27 +255,24 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
 
   // Create event display for events that pass the selection and have neutral particles with true objects
   if (_EventDisplay) {
-    // Check if any neutral particle candidate has an associated true particle
-    bool hasNeutralWithTrue = false;
+    // Check if any neutral particle candidate has neutralcharge category code = 2
+    bool hasNeutralChargeCandidate = false;
+    bool hasSignalCandidate = false;
     const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
 
     for (size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++) {
-      // Check if this neutral particle has an associated true particle that is K0, Pi0, or Gamma
-      AnaNeutralParticlePD* neutralParticle = neutralKaonBox.neutralParticleCandidates[i];
-      if (neutralParticle->TrueObject != nullptr) {
-        AnaTrueParticleB* trueNeutralParticle = static_cast<AnaTrueParticleB*>(neutralParticle->TrueObject);
-        // Check for K0 (310), Pi0 (111), or Gamma (22)
-        if (trueNeutralParticle->PDG == 310 || trueNeutralParticle->PDG == 130) {
-          if (trueNeutralParticle->ProcessEnd == 2) {
-            hasNeutralWithTrue = true;
-            break;
-          }
-        }
+      // Get the neutralcharge category code for this neutral particle
+      int signalCode = anaUtils::_categ->GetCategory("signal").GetObjectCode(1, i);
+      // int chargeCode = anaUtils::_categ->GetCategory("neutralcharge").GetObjectCode(1, i);
+      // float neutralScore = neutralKaonBox.neutralParticleCandidates[i]->NeutralScore;
+      if (signalCode == 1) {
+        hasSignalCandidate = true;
+        break;
       }
     }
 
-    // Only create event display if there's at least one neutral particle with a true object
-    if (hasNeutralWithTrue) {
+    // Only create event display if neutralcharge category is 2
+    if (hasSignalCandidate) {
       int eventNumber = GetEvent().EventInfo->Event;
       _EventDisplay->CreateEventDisplay(GetEvent(), eventNumber, neutralKaonBox);
     }

@@ -19,11 +19,9 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.OutputDirectory = "/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/plots" >
  < neutralKaonAnalysis.MaxEventsToDisplay = 500 >
  < neutralKaonAnalysis.EventDisplayPercentage = 100 >
- < neutralKaonAnalysis.RequiredParticlePDGs = "310" >
- < neutralKaonAnalysis.OnlySignalEvents = 1 >
 
 --- Vertex Finder ------------
- < neutralKaonAnalysis.VertexRadius = 100.0 > //selection level ??
+ < neutralKaonAnalysis.VertexRadius = 1000.0 > //selection level ??
  < neutralKaonAnalysis.DaughterDistance = 10.0 >
  < neutralKaonAnalysis.CylinderRadius = 7.5 >
  < neutralKaonAnalysis.ImpactParameter = 0.0 > //selection level
@@ -33,14 +31,18 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.TrackFitLength = 30.0 > //length of track used for line fitting (cm)
  < neutralKaonAnalysis.UseROOTFitting = 1 > //use ROOT fitting instead of PCA for track fitting (1=ROOT, 0=PCA)
  < neutralKaonAnalysis.VertexFindingMethod = 2 > //vertex position finding method: 0=Geometric(PCA), 1=Fitted(TMinuit-default), 2=Kalman
- < neutralKaonAnalysis.MaxChi2NdfProton = 0.0 > //max chi2/ndf for proton hypothesis (particles with lower values are rejected)
- < neutralKaonAnalysis.MaxChi2NdfKaon = 0.0 > //max chi2/ndf for kaon hypothesis (particles with lower values are rejected)
+ < neutralKaonAnalysis.MaxChi2NdfProton = 100.0 > //max chi2/ndf for proton hypothesis (particles with lower values are rejected)
+ < neutralKaonAnalysis.MaxChi2NdfKaon = 20.0 > //max chi2/ndf for kaon hypothesis (particles with lower values are rejected)
  < neutralKaonAnalysis.MaxKalmanChi2Ndf = 10.0 > //max chi2/ndf for Kalman vertex fit quality (vertices with higher values are rejected)
 
  < neutralKaonAnalysis.MinBrotherLength = 50.0 > //minimum length (cm) for counting brother particles (protons/pions)
 
- < neutralKaonAnalysis.DegeneracyDistance = 2.5 > //distance threshold (cm) for vertex degeneracy calculation
+ < neutralKaonAnalysis.DegeneracyDistance = 10 > //distance threshold (cm) for vertex degeneracy calculation
  < neutralKaonAnalysis.UsePandoraForDegeneracy = 0 > //use Pandora position (1) or fitted position (0) for degeneracy calculation
+ < neutralKaonAnalysis.ProtonCreationVtxDistance = 15.0 > //distance threshold (cm) for counting protons near neutral particle creation vertex
+
+ < neutralKaonAnalysis.NeutralStartProximityThreshold = 0 > //cm - max distance from parent hits to consider a particle for start position calculation
+ < neutralKaonAnalysis.UseNeutralStartRecalculation = 0 > //use FindNeutralParticleStartPosition (1) or Parent->PositionEnd (0)
 
 --- Other Parameters -----------
 

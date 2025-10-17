@@ -19,7 +19,6 @@ pdEventDisplay::pdEventDisplay() {
     _OutputDirectory = "/plots";
     _MaxEventsToDisplay = 100;
     _EventPercentage = 100.0;
-    _RequiredParticlePDGs.clear();
     _VertexRadius = 30.0;
     _MinVertexDaughters = 2;
 }
@@ -31,7 +30,7 @@ pdEventDisplay::~pdEventDisplay() {
 }
 
 //********************************************************************
-bool pdEventDisplay::Initialize(bool createEventDisplay, bool saveToRootFile, const std::string& outputDirectory, int maxEventsToDisplay, double eventPercentage, const std::vector<int>& requiredParticlePDGs, double vertexRadius, int minVertexDaughters){
+bool pdEventDisplay::Initialize(bool createEventDisplay, bool saveToRootFile, const std::string& outputDirectory, int maxEventsToDisplay, double eventPercentage, double vertexRadius, int minVertexDaughters){
 //********************************************************************
 
     // Set parameters
@@ -40,7 +39,6 @@ bool pdEventDisplay::Initialize(bool createEventDisplay, bool saveToRootFile, co
     _OutputDirectory = outputDirectory;
     _MaxEventsToDisplay = maxEventsToDisplay;
     _EventPercentage = eventPercentage;
-    _RequiredParticlePDGs = requiredParticlePDGs;
     _VertexRadius = vertexRadius;
     _MinVertexDaughters = minVertexDaughters;
 
@@ -1776,43 +1774,6 @@ void pdEventDisplay::DrawLegend(TLegend* legend){
     legend->SetBorderSize(1);
     legend->SetTextSize(0.03);
     legend->Draw();
-}
-
-//********************************************************************
-bool pdEventDisplay::EventContainsRequiredParticles(AnaEventB& event) const {
-//********************************************************************
-
-    // If no required particles are specified, accept all events
-    if (_RequiredParticlePDGs.empty()) {
-        return true;
-    }
-
-    // Access all true particles in the event
-    AnaTrueParticleB** allTrueParticles = event.TrueParticles;
-    Int_t nTrueParticles = event.nTrueParticles;
-
-    // Check if any of the required particle types are present
-    for (int requiredPDG : _RequiredParticlePDGs) {
-        bool foundParticle = false;
-
-        for (int i = 0; i < nTrueParticles; i++) {
-            AnaTrueParticleB* truePart = allTrueParticles[i];
-            if (!truePart) continue;
-
-            if (truePart->PDG == requiredPDG) {
-                foundParticle = true;
-                break;
-            }
-        }
-
-        // If this required particle type is not found, reject the event
-        if (!foundParticle) {
-            return false;
-        }
-    }
-
-    // All required particle types were found
-    return true;
 }
 
 //********************************************************************
