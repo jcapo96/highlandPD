@@ -960,6 +960,7 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
   CreationVtxChi2Proton.clear();
   CreationVtxDistances.clear();
   CreationVtxTruePDG.clear();
+  CreationVtxIDs.clear();
 }
 
 //********************************************************************
@@ -995,6 +996,7 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
   CreationVtxChi2Proton = neutralParticle.CreationVtxChi2Proton;
   CreationVtxDistances = neutralParticle.CreationVtxDistances;
   CreationVtxTruePDG = neutralParticle.CreationVtxTruePDG;
+  CreationVtxIDs = neutralParticle.CreationVtxIDs;
 }
 
 //********************************************************************

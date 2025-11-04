@@ -39,7 +39,7 @@ need to be enabled in baseAnalysis parameter file
 
  < neutralKaonAnalysis.DegeneracyDistance = 10 > //distance threshold (cm) for vertex degeneracy calculation
  < neutralKaonAnalysis.UsePandoraForDegeneracy = 0 > //use Pandora position (1) or fitted position (0) for degeneracy calculation
- < neutralKaonAnalysis.ProtonCreationVtxDistance = 15.0 > //distance threshold (cm) for counting protons near neutral particle creation vertex
+ < neutralKaonAnalysis.ProtonCreationVtxDistance = 3.25 > //distance threshold (cm) for counting protons near neutral particle creation vertex
 
  < neutralKaonAnalysis.NeutralStartProximityThreshold = 0 > //cm - max distance from parent hits to consider a particle for start position calculation
  < neutralKaonAnalysis.UseNeutralStartRecalculation = 0 > //use FindNeutralParticleStartPosition (1) or Parent->PositionEnd (0)

@@ -386,6 +386,7 @@ void CalculateNProtonInCreationVtx(AnaNeutralParticlePD* neutralParticle,
     neutralParticle->CreationVtxChi2Proton.clear();
     neutralParticle->CreationVtxDistances.clear();
     neutralParticle->CreationVtxTruePDG.clear();
+    neutralParticle->CreationVtxIDs.clear();
 
     if (!parentParticle || !neutralParticle || neutralParticle->PositionStart[0] < -900) {
         return;
@@ -395,10 +396,11 @@ void CalculateNProtonInCreationVtx(AnaNeutralParticlePD* neutralParticle,
                          neutralParticle->PositionStart[1],
                          neutralParticle->PositionStart[2]);
 
-    std::vector<CreationVtxParticleInfo> particlesNearCreation;
+    std::vector<CreationVtxParticleInfo> allParticles;
     int nProtons = 0;
+    int nParticlesWithinThreshold = 0;
 
-    // Iterate through parent's daughters
+    // Iterate through ALL parent's daughters (no distance threshold yet)
     for (size_t iDau = 0; iDau < parentParticle->Daughters.size(); iDau++) {
         AnaParticlePD* daughter = static_cast<AnaParticlePD*>(parentParticle->Daughters[iDau]);
         if (!daughter) continue;
@@ -420,53 +422,54 @@ void CalculateNProtonInCreationVtx(AnaNeutralParticlePD* neutralParticle,
         TVector3 cross = diff.Cross(L_dir);
         double minDistance = cross.Mag() / L_dir_mag;
 
-        // Check if distance is below threshold
-        if (minDistance < protonCreationVtxDist) {
-            // Count true protons
-            int truePDG = 0;
-            bool isTrueProton = false;
-            if (daughter->TrueObject) {
-                AnaTrueParticlePD* trueDau = static_cast<AnaTrueParticlePD*>(daughter->TrueObject);
-                if (trueDau) {
-                    truePDG = trueDau->PDG;
-                    if (trueDau->PDG == 2212) {
-                        isTrueProton = true;
-                        nProtons++;
-                    }
-                }
+        // Get true PDG
+        int truePDG = 0;
+        if (daughter->TrueObject) {
+            AnaTrueParticlePD* trueDau = static_cast<AnaTrueParticlePD*>(daughter->TrueObject);
+            if (trueDau) {
+                truePDG = trueDau->PDG;
             }
+        }
 
-            // Calculate chi2/ndf under proton hypothesis
-            std::pair<double, int> chi2Result = pdAnaUtils::Chi2PID(*daughter, 2212); // 2212 = proton PDG
-            float chi2Proton = (chi2Result.second > 0) ?
-                              static_cast<float>(chi2Result.first) / static_cast<float>(chi2Result.second) : -999.0;
+        // Calculate chi2/ndf under proton hypothesis
+        std::pair<double, int> chi2Result = pdAnaUtils::Chi2PID(*daughter, 2212); // 2212 = proton PDG
+        float chi2Proton = (chi2Result.second > 0) ?
+                          static_cast<float>(chi2Result.first) / static_cast<float>(chi2Result.second) : -999.0;
 
-            // Store particle info
-            CreationVtxParticleInfo info;
-            info.particle = daughter;
-            info.pandoraDistance = minDistance;
-            info.truePDG = truePDG;
-            info.chi2Proton = chi2Proton;
-            particlesNearCreation.push_back(info);
+        // Store ALL particle info (regardless of distance threshold)
+        CreationVtxParticleInfo info;
+        info.particle = daughter;
+        info.pandoraDistance = minDistance;
+        info.truePDG = truePDG;
+        info.chi2Proton = chi2Proton;
+        allParticles.push_back(info);
+
+        // Count particles within threshold (for counting variables)
+        if (minDistance < protonCreationVtxDist) {
+            nParticlesWithinThreshold++;
+            if (truePDG == 2212) {
+                nProtons++;
+            }
         }
     }
 
-    // Sort particles by Pandora distance (ascending)
-    std::sort(particlesNearCreation.begin(), particlesNearCreation.end(),
+    // Sort ALL particles by Pandora distance (ascending)
+    std::sort(allParticles.begin(), allParticles.end(),
               [](const CreationVtxParticleInfo& a, const CreationVtxParticleInfo& b) {
                   return a.pandoraDistance < b.pandoraDistance;
               });
 
-    // Store counts
+    // Store counts (only for particles within threshold)
     neutralParticle->NProtonInCreationVtx = nProtons;
-    neutralParticle->NParticlesInCreationVtx = static_cast<int>(particlesNearCreation.size());
+    neutralParticle->NParticlesInCreationVtx = nParticlesWithinThreshold;
 
-    // Store properties of up to 5 closest particles
-    size_t nToStore = std::min(particlesNearCreation.size(), size_t(5));
+    // Store properties of up to 5 closest particles (from ALL particles, not just those within threshold)
+    size_t nToStore = std::min(allParticles.size(), size_t(5));
     for (size_t k = 0; k < nToStore; k++) {
-        neutralParticle->CreationVtxDistances.push_back(static_cast<Float_t>(particlesNearCreation[k].pandoraDistance));
-        neutralParticle->CreationVtxChi2Proton.push_back(particlesNearCreation[k].chi2Proton);
-        neutralParticle->CreationVtxTruePDG.push_back(particlesNearCreation[k].truePDG);
+        neutralParticle->CreationVtxDistances.push_back(static_cast<Float_t>(allParticles[k].pandoraDistance));
+        neutralParticle->CreationVtxChi2Proton.push_back(allParticles[k].chi2Proton);
+        neutralParticle->CreationVtxTruePDG.push_back(allParticles[k].truePDG);
+        neutralParticle->CreationVtxIDs.push_back(allParticles[k].particle->UniqueID);
     }
 }
 
@@ -1785,7 +1788,6 @@ AnaNeutralParticlePD* pdNeutralUtils::CreateNeutral(
     AnaVertexPD* vertex,
     int neutralParticleID,
     const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID){
-//***************************************************************
 
   if (!vertex || vertex->NParticles < 2) {
     return nullptr;

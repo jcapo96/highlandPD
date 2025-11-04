@@ -199,8 +199,10 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
 
 
     // Create graphs for different particle types
-    std::map<int, TGraph*> eventParticleGraphsXY;
-    std::map<int, TGraph*> eventParticleGraphsXZ;
+    std::map<int, TGraph*> eventParticleGraphsXY; // Collection plane hits (filled circles)
+    std::map<int, TGraph*> eventParticleGraphsXZ; // Collection plane hits (filled circles)
+    std::map<int, TGraph*> inductionGraphsXY; // Induction plane hits (open circles)
+    std::map<int, TGraph*> inductionGraphsXZ; // Induction plane hits (open circles)
 
     // Initialize graphs for each particle type
     for (auto& colorPair : _particleColors) {
@@ -284,7 +286,9 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
     std::vector<TText*> particleLabelsXY;
     std::vector<TText*> particleLabelsXZ;
 
-
+    // Store lines for particles without hits
+    std::vector<TLine*> particleLinesXY;
+    std::vector<TLine*> particleLinesXZ;
 
     // Fill XY and XZ graphs with hit data (using TRUE PDG for identification, RECO positions for display)
     for (const auto& particle : allParticles) {
@@ -313,66 +317,139 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
         }
 
         // Add hits to XY projection (using RECONSTRUCTED hit positions)
+        // Draw ALL hits from all planes: collection plane (2) = filled circles, other planes = open circles
         if (eventParticleGraphsXY.find(particleType) != eventParticleGraphsXY.end()) {
-            for (int plane = 0; plane < 3; plane++) {
-                for (UInt_t h = 0; h < particle->Hits[plane].size(); h++) {
-                    AnaHitPD hit = particle->Hits[plane][h];
-                    if (hit.Position.X() > -900 && hit.Position.Y() > -900) {
-                        int nPointsXY = eventParticleGraphsXY[particleType]->GetN();
-                        eventParticleGraphsXY[particleType]->SetPoint(nPointsXY, hit.Position.X(), hit.Position.Y());
-                    }
+            // Draw collection plane hits (plane 2) with filled circles
+            for (UInt_t h = 0; h < particle->Hits[2].size(); h++) {
+                AnaHitPD hit = particle->Hits[2][h];
+                if (hit.Position.X() > -900 && hit.Position.Y() > -900) {
+                    int nPointsXY = eventParticleGraphsXY[particleType]->GetN();
+                    eventParticleGraphsXY[particleType]->SetPoint(nPointsXY, hit.Position.X(), hit.Position.Y());
+                }
+            }
+        }
+
+        // Create induction plane graphs for this particle type if they don't exist
+        if (inductionGraphsXY.find(particleType) == inductionGraphsXY.end()) {
+            int color = GetParticleColor(particleType);
+            TGraph* graphXY = new TGraph();
+            graphXY->SetMarkerStyle(24); // Open circle
+            graphXY->SetMarkerSize(0.5);
+            graphXY->SetMarkerColor(color);
+            inductionGraphsXY[particleType] = graphXY;
+
+            TGraph* graphXZ = new TGraph();
+            graphXZ->SetMarkerStyle(24); // Open circle
+            graphXZ->SetMarkerSize(0.5);
+            graphXZ->SetMarkerColor(color);
+            inductionGraphsXZ[particleType] = graphXZ;
+        }
+
+        // Draw induction plane hits (planes 0 & 1) with open circles
+        for (int plane = 0; plane < 2; plane++) {
+            for (UInt_t h = 0; h < particle->Hits[plane].size(); h++) {
+                AnaHitPD hit = particle->Hits[plane][h];
+                if (hit.Position.X() > -900 && hit.Position.Y() > -900) {
+                    int nPointsXY = inductionGraphsXY[particleType]->GetN();
+                    inductionGraphsXY[particleType]->SetPoint(nPointsXY, hit.Position.X(), hit.Position.Y());
                 }
             }
         }
 
         // Add hits to XZ projection (using RECONSTRUCTED hit positions)
+        // Draw ALL hits from all planes: collection plane (2) = filled circles, other planes = open circles
         if (eventParticleGraphsXZ.find(particleType) != eventParticleGraphsXZ.end()) {
-            for (int plane = 0; plane < 3; plane++) {
-                for (UInt_t h = 0; h < particle->Hits[plane].size(); h++) {
-                    AnaHitPD hit = particle->Hits[plane][h];
-                    if (hit.Position.X() > -900 && hit.Position.Z() > -900) {
-                        int nPointsXZ = eventParticleGraphsXZ[particleType]->GetN();
-                        eventParticleGraphsXZ[particleType]->SetPoint(nPointsXZ, hit.Position.X(), hit.Position.Z());
-                    }
+            // Draw collection plane hits (plane 2) with filled circles
+            for (UInt_t h = 0; h < particle->Hits[2].size(); h++) {
+                AnaHitPD hit = particle->Hits[2][h];
+                if (hit.Position.X() > -900 && hit.Position.Z() > -900) {
+                    int nPointsXZ = eventParticleGraphsXZ[particleType]->GetN();
+                    eventParticleGraphsXZ[particleType]->SetPoint(nPointsXZ, hit.Position.X(), hit.Position.Z());
                 }
             }
         }
 
-        // Add particle ID labels
-        if (eventParticleGraphsXY.find(particleType) != eventParticleGraphsXY.end() &&
-            eventParticleGraphsXY[particleType]->GetN() > 0) {
-            // Use the first hit position for labeling
-            double labelX, labelY, labelZ;
-            bool foundFirstHit = false;
-
-            for (int plane = 0; plane < 3 && !foundFirstHit; plane++) {
-                for (UInt_t h = 0; h < particle->Hits[plane].size() && !foundFirstHit; h++) {
-                    AnaHitPD hit = particle->Hits[plane][h];
-                    if (hit.Position.X() > -900 && hit.Position.Y() > -900 && hit.Position.Z() > -900) {
-                        labelX = hit.Position.X();
-                        labelY = hit.Position.Y();
-                        labelZ = hit.Position.Z();
-                        foundFirstHit = true;
-                    }
+        // Draw induction plane hits (planes 0 & 1) with open circles
+        for (int plane = 0; plane < 2; plane++) {
+            for (UInt_t h = 0; h < particle->Hits[plane].size(); h++) {
+                AnaHitPD hit = particle->Hits[plane][h];
+                if (hit.Position.X() > -900 && hit.Position.Z() > -900) {
+                    int nPointsXZ = inductionGraphsXZ[particleType]->GetN();
+                    inductionGraphsXZ[particleType]->SetPoint(nPointsXZ, hit.Position.X(), hit.Position.Z());
                 }
             }
+        }
 
-            if (foundFirstHit) {
-                // Create text labels for XY projection
-                std::string labelText = "ID:" + std::to_string(truePart->ID);
-                TText* labelXY = new TText(labelX + 5, labelY + 5, labelText.c_str());
-                labelXY->SetTextSize(0.02);
-                labelXY->SetTextColor(kBlack);
-                labelXY->SetTextFont(42);
-                particleLabelsXY.push_back(labelXY);
-
-                // Create text labels for XZ projection
-                TText* labelXZ = new TText(labelX + 5, labelZ + 5, labelText.c_str());
-                labelXZ->SetTextSize(0.02);
-                labelXZ->SetTextColor(kBlack);
-                labelXZ->SetTextFont(42);
-                particleLabelsXZ.push_back(labelXZ);
+        // For particles WITHOUT hits, draw a line from PositionStart to PositionEnd
+        bool hasHits = false;
+        for (int plane = 0; plane < 3; plane++) {
+            if(particle->Hits[plane].size() > 0) {
+                hasHits = true;
+                break;
             }
+        }
+
+        if(!hasHits && particle->PositionStart[0] > -900 && particle->PositionEnd[0] > -900){
+            int color = GetParticleColor(particleType);
+
+            // Draw line in XY projection
+            TLine* lineXY = new TLine(particle->PositionStart[0], particle->PositionStart[1],
+                                       particle->PositionEnd[0], particle->PositionEnd[1]);
+            lineXY->SetLineColor(color);
+            lineXY->SetLineWidth(2);
+            lineXY->SetLineStyle(2); // Dashed line to distinguish from tracks with hits
+            particleLinesXY.push_back(lineXY);
+
+            // Draw line in XZ projection
+            TLine* lineXZ = new TLine(particle->PositionStart[0], particle->PositionStart[2],
+                                       particle->PositionEnd[0], particle->PositionEnd[2]);
+            lineXZ->SetLineColor(color);
+            lineXZ->SetLineWidth(2);
+            lineXZ->SetLineStyle(2);
+            particleLinesXZ.push_back(lineXZ);
+        }
+
+        // Add particle ID labels for ALL particles (with or without hits)
+        double labelX, labelY, labelZ;
+        bool foundPosition = false;
+
+        // Try to use first hit position
+        for (int plane = 0; plane < 3 && !foundPosition; plane++) {
+            for (UInt_t h = 0; h < particle->Hits[plane].size() && !foundPosition; h++) {
+                AnaHitPD hit = particle->Hits[plane][h];
+                if (hit.Position.X() > -900 && hit.Position.Y() > -900 && hit.Position.Z() > -900) {
+                    labelX = hit.Position.X();
+                    labelY = hit.Position.Y();
+                    labelZ = hit.Position.Z();
+                    foundPosition = true;
+                }
+            }
+        }
+
+        // If no hits, use PositionStart
+        if (!foundPosition && particle->PositionStart[0] > -900) {
+            labelX = particle->PositionStart[0];
+            labelY = particle->PositionStart[1];
+            labelZ = particle->PositionStart[2];
+            foundPosition = true;
+        }
+
+        if (foundPosition) {
+            // Use RECO UniqueID instead of true ID, color matches particle PDG
+            int labelColor = GetParticleColor(particleType);
+            std::string labelText = "ID:" + std::to_string(particle->UniqueID);
+            TText* labelXY = new TText(labelX + 5, labelY + 5, labelText.c_str());
+            labelXY->SetTextSize(0.02);
+            labelXY->SetTextColor(labelColor); // Use particle color instead of black
+            labelXY->SetTextFont(42);
+            particleLabelsXY.push_back(labelXY);
+
+            // Create text labels for XZ projection
+            TText* labelXZ = new TText(labelX + 5, labelZ + 5, labelText.c_str());
+            labelXZ->SetTextSize(0.02);
+            labelXZ->SetTextColor(labelColor); // Use particle color instead of black
+            labelXZ->SetTextFont(42);
+            particleLabelsXZ.push_back(labelXZ);
         }
     }
 
@@ -518,7 +595,15 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
     dummyXY->Draw();
 
     // Draw all particle graphs in XY projection
+    // First draw collection plane hits (filled circles)
     for (auto& pair : eventParticleGraphsXY) {
+        if (pair.second->GetN() > 0) {
+            pair.second->Draw("P SAME");
+        }
+    }
+
+    // Then draw induction plane hits (open circles)
+    for (auto& pair : inductionGraphsXY) {
         if (pair.second->GetN() > 0) {
             pair.second->Draw("P SAME");
         }
@@ -636,6 +721,11 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
 
     }
 
+    // Draw lines for particles without hits in XY projection
+    for (auto* line : particleLinesXY) {
+        if (line) line->Draw("SAME");
+    }
+
     // Draw particle ID labels in XY projection
     for (auto* label : particleLabelsXY) {
         if (label) label->Draw("SAME");
@@ -661,7 +751,15 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
     dummyXZ->Draw();
 
     // Draw all particle graphs in XZ projection
+    // First draw collection plane hits (filled circles)
     for (auto& pair : eventParticleGraphsXZ) {
+        if (pair.second->GetN() > 0) {
+            pair.second->Draw("P SAME");
+        }
+    }
+
+    // Then draw induction plane hits (open circles)
+    for (auto& pair : inductionGraphsXZ) {
         if (pair.second->GetN() > 0) {
             pair.second->Draw("P SAME");
         }
@@ -779,6 +877,11 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
 
     }
 
+    // Draw lines for particles without hits in XZ projection
+    for (auto* line : particleLinesXZ) {
+        if (line) line->Draw("SAME");
+    }
+
     // Draw particle ID labels in XZ projection
     for (auto* label : particleLabelsXZ) {
         if (label) label->Draw("SAME");
@@ -790,10 +893,11 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
     legend->SetNColumns(1);
     legend->SetTextSize(0.025);
 
-    // Add legend entries for particles that have hits
+    // Add legend entries for particles that have collection plane hits
     for (auto& pair : eventParticleGraphsXY) {
         if (pair.second->GetN() > 0) {
-            std::string particleName = GetParticleName(pair.first);
+            int pdg = pair.first;
+            std::string particleName = GetParticleName(pdg);
             legend->AddEntry(pair.second, particleName.c_str(), "P");
         }
     }
@@ -1130,6 +1234,12 @@ void pdEventDisplay::DrawEventProjections(AnaEventB& event, int eventNumber, con
         if (pair.second) delete pair.second;
     }
     for (auto& pair : eventParticleGraphsXZ) {
+        if (pair.second) delete pair.second;
+    }
+    for (auto& pair : inductionGraphsXY) {
+        if (pair.second) delete pair.second;
+    }
+    for (auto& pair : inductionGraphsXZ) {
         if (pair.second) delete pair.second;
     }
 

@@ -781,6 +781,9 @@ public:
   /// True PDG codes of particles near creation vertex (up to 5)
   std::vector<Int_t> CreationVtxTruePDG;
 
+  /// Particle IDs (UniqueID) of particles near creation vertex (up to 5)
+  std::vector<Int_t> CreationVtxIDs;
+
   /// The reconstructed neutral particle associated with this neutral particle
   AnaParticlePD* RecoParticle;
 
