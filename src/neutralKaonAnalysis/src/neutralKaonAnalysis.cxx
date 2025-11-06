@@ -26,7 +26,7 @@
 neutralKaonAnalysis::neutralKaonAnalysis(AnalysisAlgorithm* ana) : pdBaseAnalysis(ana) {
 //********************************************************************
 
-  _EventDisplay = nullptr;
+  _EventDisplayDataTree = nullptr;
 
   // Add the package version
   //  ND::versioning().AddPackage("StoppingProtonAnalysis", anaUtils::GetSoftwareVersionFromPath((std::string)getenv("STOPPINGPROTONANALYSISROOT")));
@@ -35,9 +35,9 @@ neutralKaonAnalysis::neutralKaonAnalysis(AnalysisAlgorithm* ana) : pdBaseAnalysi
 //********************************************************************
 neutralKaonAnalysis::~neutralKaonAnalysis() {
 //********************************************************************
-  if (_EventDisplay) {
-    delete _EventDisplay;
-    _EventDisplay = nullptr;
+  if (_EventDisplayDataTree) {
+    delete _EventDisplayDataTree;
+    _EventDisplayDataTree = nullptr;
   }
 }
 
@@ -60,23 +60,9 @@ bool neutralKaonAnalysis::Initialize(){
   _ApplySCECorrection = ND::params().GetParameterI("neutralKaonAnalysis.ApplySCECorrection");
   _ApplySCESystematic = ND::params().GetParameterI("neutralKaonAnalysis.ApplySCESystematic");
 
-  // Initialize event display
-  _EventDisplay = new pdEventDisplay();
-
-  // Get event display parameters
-  bool createEventDisplay = ND::params().GetParameterI("neutralKaonAnalysis.CreateEventDisplay");
-  bool saveToRootFile = ND::params().GetParameterI("neutralKaonAnalysis.SaveToRootFile");
-  std::string outputDirectory = ND::params().GetParameterS("neutralKaonAnalysis.OutputDirectory");
-  int maxEventsToDisplay = ND::params().GetParameterI("neutralKaonAnalysis.MaxEventsToDisplay");
-  double eventPercentage = ND::params().GetParameterD("neutralKaonAnalysis.EventDisplayPercentage");
-
-  double vertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.VertexRadius");
-  int minVertexDaughters = ND::params().GetParameterI("neutralKaonAnalysis.MinVertexDaughters");
-
-  // Initialize the event display
-  _EventDisplay->Initialize(createEventDisplay, saveToRootFile, outputDirectory,
-                           maxEventsToDisplay, eventPercentage,
-                           vertexRadius, minVertexDaughters);
+  // Initialize event display data tree
+  // This stores data for later visualization via DrawingTools in ROOT macros
+  _EventDisplayDataTree = new EventDisplayDataTree();
 
   // Define categories for color drawing. Have a look at highland/src/highland2/highlandUtils/src/CategoriesUtils.hxx
   anaUtils::AddStandardCategories();
@@ -169,6 +155,12 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(output(), 1000);
   neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(output(), 1000);
 
+  // Create EventDisplayData tree now that ana tree is fully defined
+  // This prevents index conflicts during validation
+  if (_EventDisplayDataTree) {
+    _EventDisplayDataTree->InitializeTree(output());
+  }
+
 }
 
 //********************************************************************
@@ -254,28 +246,22 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
     }
   }
 
-  // Create event display for events that pass the selection and have neutral particles with true objects
-  if (_EventDisplay) {
-    // Check if any neutral particle candidate has neutralcharge category code = 2
-    bool hasNeutralChargeCandidate = false;
-    bool hasSignalCandidate = false;
+  // Create event display data for events with neutral particle candidates
+  if (_EventDisplayDataTree) {
     const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
 
-    for (size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++) {
-      // Get the neutralcharge category code for this neutral particle
-      int signalCode = anaUtils::_categ->GetCategory("signal").GetObjectCode(1, i);
-      // int chargeCode = anaUtils::_categ->GetCategory("neutralcharge").GetObjectCode(1, i);
-      // float neutralScore = neutralKaonBox.neutralParticleCandidates[i]->NeutralScore;
-      if (signalCode == 1) {
-        hasSignalCandidate = true;
-        break;
-      }
-    }
+    // Fill event display data if there are particles in the event (regardless of candidates)
+    // This ensures we capture all events that pass selection for visualization
+    if (GetEvent().nParticles > 0) {
+      // Save event data to EventDisplayData tree for later regeneration
+      _EventDisplayDataTree->FillEventDisplayData(output(), GetEvent(), neutralKaonBox);
 
-    // Only create event display if neutralcharge category is 2
-    if (hasSignalCandidate) {
-      int eventNumber = GetEvent().EventInfo->Event;
-      _EventDisplay->CreateEventDisplay(GetEvent(), eventNumber, neutralKaonBox);
+      // Note: Event displays are now generated post-analysis using DrawingTools in ROOT macros
+      // Example usage:
+      //   DrawingTools draw("output.root");
+      //   pdEventDisplay pdEvtDisplay;
+      //   draw.SetEventDisplay(&pdEvtDisplay);
+      //   draw.EvtDisplay(run, subrun, event);
     }
   }
 

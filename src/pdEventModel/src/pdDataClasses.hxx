@@ -513,47 +513,6 @@ class AnaTrueEquivalentVertexPD{
   /// Fitted vertex direction (from geometric/TMinuit/Kalman fit)
   Float_t DirectionFit[3];
 
-  /// Flag: 1 if Pandora calculation used simple average, 0 if used line intersection
-  Int_t IsJustAverage;
-
-  /// Degeneracy count before scoring (vertices within threshold)
-  Int_t DegeneracyBeforeScoring;
-
-  /// Degeneracy count after scoring (vertices within threshold)
-  Int_t DegeneracyAfterScoring;
-
-  /// Total unique particles in degenerate vertices
-  Int_t NRecoParticles;
-
-  /// Vector storing the 5 minimum distances to vertices within DegeneracyDistance threshold
-  std::vector<Float_t> DegeneracyDistances;
-
-  /// Vector storing the 5 minimum line-to-point distances for isolation calculation (Pandora-based)
-  std::vector<Float_t> IsolationDistances;
-
-  /// Vector storing the 5 minimum line-to-point distances using fitted tracks
-  std::vector<Float_t> IsolationDistancesFit;
-
-  /// Vector storing the 5 minimum point-to-point distances from vertex to particle PositionStart
-  std::vector<Float_t> IsolationStartDistances;
-
-  /// Total number of isolation particles that are true protons
-  Int_t IsolationNProton;
-
-  /// Total number of isolation particles that are true pions (both charges)
-  Int_t IsolationNPion;
-
-  /// Vector of flags (1=true proton, 0=not) for the 5 closest particles
-  std::vector<Int_t> IsolationIsProton;
-
-  /// Vector of chi2/ndf under proton hypothesis for the 5 closest particles
-  std::vector<Float_t> IsolationChi2Proton;
-
-  /// Vector of lengths for the 5 closest particles
-  std::vector<Float_t> IsolationLength;
-
-  /// Flag: 1 if any isolation particle is longer than both vertex particles, 0 otherwise
-  Int_t IsolationIsLongest;
   };
 
 //** ------------------------------------------------------------ */
@@ -644,44 +603,8 @@ public:
   /// Flag: 1 if Pandora calculation used simple average, 0 if used line intersection
   Int_t IsJustAverage;
 
-  /// Degeneracy count before scoring (vertices within threshold)
-  Int_t DegeneracyBeforeScoring;
-
-  /// Degeneracy count after scoring (vertices within threshold)
-  Int_t DegeneracyAfterScoring;
-
-  /// Total unique particles in degenerate vertices
-  Int_t NRecoParticles;
-
-  /// Vector storing the 5 minimum distances to vertices within DegeneracyDistance threshold
-  std::vector<Float_t> DegeneracyDistances;
-
-  /// Vector storing the 5 minimum line-to-point distances for isolation calculation (Pandora-based)
-  std::vector<Float_t> IsolationDistances;
-
-  /// Vector storing the 5 minimum line-to-point distances using fitted tracks
-  std::vector<Float_t> IsolationDistancesFit;
-
-  /// Vector storing the 5 minimum point-to-point distances from vertex to particle PositionStart
-  std::vector<Float_t> IsolationStartDistances;
-
-  /// Total number of isolation particles that are true protons
-  Int_t IsolationNProton;
-
-  /// Total number of isolation particles that are true pions (both charges)
-  Int_t IsolationNPion;
-
-  /// Vector of flags (1=true proton, 0=not) for the 5 closest particles
-  std::vector<Int_t> IsolationIsProton;
-
-  /// Vector of chi2/ndf under proton hypothesis for the 5 closest particles
-  std::vector<Float_t> IsolationChi2Proton;
-
-  /// Vector of lengths for the 5 closest particles
-  std::vector<Float_t> IsolationLength;
-
-  /// Flag: 1 if any isolation particle is longer than both vertex particles, 0 otherwise
-  Int_t IsolationIsLongest;
+  /// Degeneracy: number of particles with startPos within vertex radius (used for filtering)
+  Int_t Degeneracy;
 
   AnaTrueEquivalentVertexPD* TrueEquivalentVertex;
 
@@ -694,6 +617,42 @@ public:
 //** ------------------------------------------------------------ */
 // Forward declarations
 class AnaTrueEquivalentNeutralParticlePD;
+
+//** ------------------------------------------------------------ */
+// Creation vertex class for neutral particle reconstruction
+class AnaCreationVertexPD : public AnaVertexPD {
+public:
+  AnaCreationVertexPD();
+  ~AnaCreationVertexPD();
+
+  /// The beam particle
+  AnaParticlePD* BeamParticle;
+
+  /// The secondary particle paired with beam
+  AnaParticlePD* SecondParticle;
+
+  /// Chi2/ndf of secondary particle under proton hypothesis (lower = more proton-like)
+  Float_t ProtonScore;
+
+  /// Distance from beam end position to secondary particle start position
+  Float_t DistanceScore;
+
+  /// Minimum distance between beam end line and secondary particle line
+  Float_t MinDistanceScore;
+
+  /// 3D position of creation vertex (midpoint of minimum distance between lines)
+  Float_t Position[3];
+};
+
+//** ------------------------------------------------------------ */
+// Annihilation vertex class for neutral particle reconstruction
+class AnaAnnihilationVertexPD : public AnaVertexPD {
+public:
+  AnaAnnihilationVertexPD();
+  ~AnaAnnihilationVertexPD();
+
+  // Inherits all members from AnaVertexPD including Degeneracy
+};
 
 //** ------------------------------------------------------------ */
 // Extension for neutral particle analysis in ProtoDUNE
@@ -721,8 +680,11 @@ public:
   /// Unique ID for this neutral particle within the event
   Int_t UniqueID;
 
-  /// The vertex associated with this neutral particle
-  AnaVertexPD* Vertex;
+  /// The annihilation vertex associated with this neutral particle (V-topology)
+  AnaAnnihilationVertexPD* AnnihilationVertex;
+
+  /// The creation vertex associated with this neutral particle (beam + secondary)
+  AnaCreationVertexPD* CreationVertex;
 
   /// The parent particle that decayed into this neutral particle
   AnaParticlePD* Parent;
@@ -765,24 +727,6 @@ public:
 
   /// Longitudinal span fraction (span along path / total length)
   Double_t HitsLongitudinalSpan;
-
-  /// Number of parent's daughters that are true protons with trajectory close to neutral start position
-  Int_t NProtonInCreationVtx;
-
-  /// Total number of parent's daughters near neutral creation vertex (all particle types)
-  Int_t NParticlesInCreationVtx;
-
-  /// Chi2/ndf under proton hypothesis for particles near creation vertex (up to 5)
-  std::vector<Float_t> CreationVtxChi2Proton;
-
-  /// Minimum distances from Pandora-based lines to neutral start (up to 5)
-  std::vector<Float_t> CreationVtxDistances;
-
-  /// True PDG codes of particles near creation vertex (up to 5)
-  std::vector<Int_t> CreationVtxTruePDG;
-
-  /// Particle IDs (UniqueID) of particles near creation vertex (up to 5)
-  std::vector<Int_t> CreationVtxIDs;
 
   /// The reconstructed neutral particle associated with this neutral particle
   AnaParticlePD* RecoParticle;

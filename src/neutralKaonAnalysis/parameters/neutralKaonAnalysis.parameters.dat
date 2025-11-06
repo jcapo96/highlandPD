@@ -14,6 +14,9 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.ApplySCESystematic = 0 >
 
 --- Event Display ------------
+ # Event display data is always saved to EventDisplayData tree for signal candidates.
+ # This allows regeneration with full OpenGL zoom via DrawingTools::EvtDisplay()
+ # CreateEventDisplay=1 also generates canvases immediately (slower, larger files)
  < neutralKaonAnalysis.CreateEventDisplay = 1 >
  < neutralKaonAnalysis.SaveToRootFile = 1 >
  < neutralKaonAnalysis.OutputDirectory = "/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/plots" >
@@ -22,7 +25,7 @@ need to be enabled in baseAnalysis parameter file
 
 --- Vertex Finder ------------
  < neutralKaonAnalysis.VertexRadius = 1000.0 > //selection level ??
- < neutralKaonAnalysis.DaughterDistance = 10.0 >
+ < neutralKaonAnalysis.DaughterDistance = 5.0 >
  < neutralKaonAnalysis.CylinderRadius = 7.5 >
  < neutralKaonAnalysis.ImpactParameter = 0.0 > //selection level
  < neutralKaonAnalysis.MinVertexDaughters = 2 >
@@ -40,6 +43,7 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.DegeneracyDistance = 10 > //distance threshold (cm) for vertex degeneracy calculation
  < neutralKaonAnalysis.UsePandoraForDegeneracy = 0 > //use Pandora position (1) or fitted position (0) for degeneracy calculation
  < neutralKaonAnalysis.ProtonCreationVtxDistance = 3.25 > //distance threshold (cm) for counting protons near neutral particle creation vertex
+ < neutralKaonAnalysis.CreationVertexRadius = 5.0 > //distance threshold (cm) for creation vertex candidate pairs (beam end to particle start)
 
  < neutralKaonAnalysis.NeutralStartProximityThreshold = 0 > //cm - max distance from parent hits to consider a particle for start position calculation
  < neutralKaonAnalysis.UseNeutralStartRecalculation = 0 > //use FindNeutralParticleStartPosition (1) or Parent->PositionEnd (0)

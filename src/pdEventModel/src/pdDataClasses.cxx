@@ -652,20 +652,6 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(){
   DirectionFit[0] = kFloatUnassigned;
   DirectionFit[1] = kFloatUnassigned;
   DirectionFit[2] = kFloatUnassigned;
-  IsJustAverage = 0;
-  DegeneracyBeforeScoring = 0;
-  DegeneracyAfterScoring = 0;
-  NRecoParticles = 0;
-  DegeneracyDistances.clear();
-  IsolationDistances.clear();
-  IsolationDistancesFit.clear();
-  IsolationStartDistances.clear();
-  IsolationNProton = 0;
-  IsolationNPion = 0;
-  IsolationIsProton.clear();
-  IsolationChi2Proton.clear();
-  IsolationLength.clear();
-  IsolationIsLongest = 0;
 }
 
 //********************************************************************
@@ -700,20 +686,6 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVert
   DirectionFit[0] = vertex.DirectionFit[0];
   DirectionFit[1] = vertex.DirectionFit[1];
   DirectionFit[2] = vertex.DirectionFit[2];
-  IsJustAverage = vertex.IsJustAverage;
-  DegeneracyBeforeScoring = vertex.DegeneracyBeforeScoring;
-  DegeneracyAfterScoring = vertex.DegeneracyAfterScoring;
-  NRecoParticles = vertex.NRecoParticles;
-  DegeneracyDistances = vertex.DegeneracyDistances;
-  IsolationDistances = vertex.IsolationDistances;
-  IsolationDistancesFit = vertex.IsolationDistancesFit;
-  IsolationStartDistances = vertex.IsolationStartDistances;
-  IsolationNProton = vertex.IsolationNProton;
-  IsolationNPion = vertex.IsolationNPion;
-  IsolationIsProton = vertex.IsolationIsProton;
-  IsolationChi2Proton = vertex.IsolationChi2Proton;
-  IsolationLength = vertex.IsolationLength;
-  IsolationIsLongest = vertex.IsolationIsLongest;
 }
 
 //********************************************************************
@@ -768,19 +740,7 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   DirectionFit[1] = kFloatUnassigned;
   DirectionFit[2] = kFloatUnassigned;
   IsJustAverage = 0;
-  DegeneracyBeforeScoring = 0;
-  DegeneracyAfterScoring = 0;
-  NRecoParticles = 0;
-  DegeneracyDistances.clear();
-  IsolationDistances.clear();
-  IsolationDistancesFit.clear();
-  IsolationStartDistances.clear();
-  IsolationNProton = 0;
-  IsolationNPion = 0;
-  IsolationIsProton.clear();
-  IsolationChi2Proton.clear();
-  IsolationLength.clear();
-  IsolationIsLongest = 0;
+  Degeneracy = 0;
 }
 
 //********************************************************************
@@ -828,19 +788,7 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   DirectionFit[1] = vertex.DirectionFit[1];
   DirectionFit[2] = vertex.DirectionFit[2];
   IsJustAverage = vertex.IsJustAverage;
-  DegeneracyBeforeScoring = vertex.DegeneracyBeforeScoring;
-  DegeneracyAfterScoring = vertex.DegeneracyAfterScoring;
-  NRecoParticles = vertex.NRecoParticles;
-  DegeneracyDistances = vertex.DegeneracyDistances;
-  IsolationDistances = vertex.IsolationDistances;
-  IsolationDistancesFit = vertex.IsolationDistancesFit;
-  IsolationStartDistances = vertex.IsolationStartDistances;
-  IsolationNProton = vertex.IsolationNProton;
-  IsolationNPion = vertex.IsolationNPion;
-  IsolationIsProton = vertex.IsolationIsProton;
-  IsolationChi2Proton = vertex.IsolationChi2Proton;
-  IsolationLength = vertex.IsolationLength;
-  IsolationIsLongest = vertex.IsolationIsLongest;
+  Degeneracy = vertex.Degeneracy;
 }
 
 //********************************************************************
@@ -935,11 +883,41 @@ void AnaVertexPD::EnsureParticleMomentum(){
 }
 
 //********************************************************************
+AnaCreationVertexPD::AnaCreationVertexPD() : AnaVertexPD(){
+//********************************************************************
+  BeamParticle = NULL;
+  SecondParticle = NULL;
+  ProtonScore = -999.0;
+  DistanceScore = -999.0;
+  MinDistanceScore = -999.0;
+  Position[0] = -999.0;
+  Position[1] = -999.0;
+  Position[2] = -999.0;
+}
+
+//********************************************************************
+AnaCreationVertexPD::~AnaCreationVertexPD(){
+//********************************************************************
+}
+
+//********************************************************************
+AnaAnnihilationVertexPD::AnaAnnihilationVertexPD() : AnaVertexPD(){
+//********************************************************************
+  // All initialization handled by base class AnaVertexPD
+}
+
+//********************************************************************
+AnaAnnihilationVertexPD::~AnaAnnihilationVertexPD(){
+//********************************************************************
+}
+
+//********************************************************************
 AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
 //********************************************************************
 
   UniqueID = kIntUnassigned;
-  Vertex = NULL;
+  AnnihilationVertex = NULL;
+  CreationVertex = NULL;
   Parent = NULL;
   TrueEquivalentNeutralParticle = NULL;
   ImpactParameter = kFloatUnassigned;
@@ -955,12 +933,6 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
   HitsAvgDistance = kFloatUnassigned;
   HitsRMSDistance = kFloatUnassigned;
   HitsLongitudinalSpan = kFloatUnassigned;
-  NProtonInCreationVtx = 0;
-  NParticlesInCreationVtx = 0;
-  CreationVtxChi2Proton.clear();
-  CreationVtxDistances.clear();
-  CreationVtxTruePDG.clear();
-  CreationVtxIDs.clear();
 }
 
 //********************************************************************
@@ -974,7 +946,8 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
 //********************************************************************
 
   UniqueID = neutralParticle.UniqueID;
-  Vertex = neutralParticle.Vertex;
+  AnnihilationVertex = neutralParticle.AnnihilationVertex;
+  CreationVertex = neutralParticle.CreationVertex;
   Parent = neutralParticle.Parent;
   TrueEquivalentNeutralParticle = neutralParticle.TrueEquivalentNeutralParticle;
   RecoParticle = neutralParticle.RecoParticle;
@@ -991,12 +964,6 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
   HitsAvgDistance = neutralParticle.HitsAvgDistance;
   HitsRMSDistance = neutralParticle.HitsRMSDistance;
   HitsLongitudinalSpan = neutralParticle.HitsLongitudinalSpan;
-  NProtonInCreationVtx = neutralParticle.NProtonInCreationVtx;
-  NParticlesInCreationVtx = neutralParticle.NParticlesInCreationVtx;
-  CreationVtxChi2Proton = neutralParticle.CreationVtxChi2Proton;
-  CreationVtxDistances = neutralParticle.CreationVtxDistances;
-  CreationVtxTruePDG = neutralParticle.CreationVtxTruePDG;
-  CreationVtxIDs = neutralParticle.CreationVtxIDs;
 }
 
 //********************************************************************
@@ -1008,7 +975,8 @@ void AnaNeutralParticlePD::Print() const{
   AnaParticleB::Print();
 
   std::cout << "UniqueID:              " << UniqueID << std::endl;
-  std::cout << "Vertex:                " << (Vertex ? "Yes" : "No") << std::endl;
+  std::cout << "AnnihilationVertex:    " << (AnnihilationVertex ? "Yes" : "No") << std::endl;
+  std::cout << "CreationVertex:        " << (CreationVertex ? "Yes" : "No") << std::endl;
   std::cout << "Parent:                " << (Parent ? "Yes" : "No") << std::endl;
   std::cout << "TrueEquivalentNeutralParticle:   " << (TrueEquivalentNeutralParticle ? "Yes" : "No") << std::endl;
   std::cout << "RecoParticle:          " << (RecoParticle ? "Yes" : "No") << std::endl;

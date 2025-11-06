@@ -89,8 +89,8 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     return;
   }
   else{
-    AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(neutralParticle->Vertex->Particles[0]->TrueObject);
-    AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(neutralParticle->Vertex->Particles[1]->TrueObject);
+    AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(neutralParticle->AnnihilationVertex->Particles[0]->TrueObject);
+    AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(neutralParticle->AnnihilationVertex->Particles[1]->TrueObject);
     AnaTrueParticlePD* trueParent = static_cast<AnaTrueParticlePD*>(neutralParticle->Parent->TrueObject);
 
     if(!trueDaughter1 || !trueDaughter2 || !trueParent) {
@@ -166,13 +166,13 @@ void neutralKaonAnaUtils::FillNeutralParticleSignalBackgroundCategory(AnaNeutral
     // FIRST LEVEL: Check if we have truth information
     if(!trueneutralparticle) {
       // No truth information - check vertex particles
-      if(!neutralParticle->Vertex || neutralParticle->Vertex->Particles.size() < 2) {
+      if(!neutralParticle->AnnihilationVertex || neutralParticle->AnnihilationVertex->Particles.size() < 2) {
         anaUtils::_categ->SetObjectCode("isk0", 17, CATOTHER, -1); // no-truth-no-parent
         return;
       }
 
-      AnaParticlePD* particle1 = neutralParticle->Vertex->Particles[0];
-      AnaParticlePD* particle2 = neutralParticle->Vertex->Particles[1];
+      AnaParticlePD* particle1 = neutralParticle->AnnihilationVertex->Particles[0];
+      AnaParticlePD* particle2 = neutralParticle->AnnihilationVertex->Particles[1];
 
       if(!particle1 || !particle2) {
         anaUtils::_categ->SetObjectCode("isk0", 17, CATOTHER, -1); // no-truth-no-parent
@@ -280,13 +280,13 @@ void neutralKaonAnaUtils::FillNeutralParticleSignalBackgroundCategory(AnaNeutral
         }
       } else {
         // K0 no decay - check vertex content
-        if(!neutralParticle->Vertex || neutralParticle->Vertex->Particles.size() < 2) {
+        if(!neutralParticle->AnnihilationVertex || neutralParticle->AnnihilationVertex->Particles.size() < 2) {
           anaUtils::_categ->SetObjectCode("isk0", 8, CATOTHER, -1); // k0-no-decay-other
           return;
         }
 
-        AnaParticlePD* particle1 = neutralParticle->Vertex->Particles[0];
-        AnaParticlePD* particle2 = neutralParticle->Vertex->Particles[1];
+        AnaParticlePD* particle1 = neutralParticle->AnnihilationVertex->Particles[0];
+        AnaParticlePD* particle2 = neutralParticle->AnnihilationVertex->Particles[1];
 
         if(!particle1 || !particle2) {
           anaUtils::_categ->SetObjectCode("isk0", 8, CATOTHER, -1); // k0-no-decay-other
@@ -320,13 +320,13 @@ void neutralKaonAnaUtils::FillNeutralParticleSignalBackgroundCategory(AnaNeutral
       }
     } else if(trueneutralparticle->PDG == 111) { // pi0
       // Check vertex content for pi0
-      if(!neutralParticle->Vertex || neutralParticle->Vertex->Particles.size() < 2) {
+      if(!neutralParticle->AnnihilationVertex || neutralParticle->AnnihilationVertex->Particles.size() < 2) {
         anaUtils::_categ->SetObjectCode("isk0", 10, CATOTHER, -1); // pi0-decay-other
         return;
       }
 
-      AnaParticlePD* particle1 = neutralParticle->Vertex->Particles[0];
-      AnaParticlePD* particle2 = neutralParticle->Vertex->Particles[1];
+      AnaParticlePD* particle1 = neutralParticle->AnnihilationVertex->Particles[0];
+      AnaParticlePD* particle2 = neutralParticle->AnnihilationVertex->Particles[1];
 
       if(!particle1 || !particle2) {
         anaUtils::_categ->SetObjectCode("isk0", 10, CATOTHER, -1); // pi0-decay-other
@@ -555,13 +555,13 @@ void neutralKaonAnaUtils::FillNeutralParticleNoTruthCategory(AnaNeutralParticleP
   // FIRST LEVEL: Check if neutralParticle has TrueObject
   if(!trueNeutralParticle) {
     // No truth object - analyze vertex particles
-    if(!neutralParticle->Vertex || neutralParticle->Vertex->Particles.size() < 2) {
+    if(!neutralParticle->AnnihilationVertex || neutralParticle->AnnihilationVertex->Particles.size() < 2) {
       anaUtils::_categ->SetObjectCode("notruth", 11, CATOTHER, -1); // no-parent-info
       return;
     }
 
-    AnaParticlePD* particle1 = neutralParticle->Vertex->Particles[0];
-    AnaParticlePD* particle2 = neutralParticle->Vertex->Particles[1];
+    AnaParticlePD* particle1 = neutralParticle->AnnihilationVertex->Particles[0];
+    AnaParticlePD* particle2 = neutralParticle->AnnihilationVertex->Particles[1];
 
     if(!particle1 || !particle2) {
       anaUtils::_categ->SetObjectCode("notruth", 11, CATOTHER, -1); // no-parent-info

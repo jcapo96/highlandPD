@@ -67,12 +67,8 @@ namespace neutralKaonTree {
 
     k0truerecodist, //True-vertex-position minus reconstructed-vertex-position
     k0impactparameter, //Impact parameter
-    k0nprotonincreationvtx, //Number of parent's daughters that are true protons near neutral start position
-    k0nparticlesincreationvtx, //Total number of parent's daughters near neutral start position
-    k0creationvtxchi2proton, //Chi2/ndf under proton hypothesis for particles near creation vertex (5 closest)
-    k0creationvtxdistances, //Pandora-based distances to neutral start (5 closest)
-    k0creationvtxtruepdg, //True PDG codes of particles near creation vertex (5 closest)
-    k0creationvtxid, //Particle IDs (UniqueID) of particles near creation vertex (5 closest)
+    k0creationvtxdegeneracy, //Creation vertex degeneracy
+    k0annihilationvtxdegeneracy, //Annihilation vertex degeneracy
 
     // Variables about K0 daughter1
     k0dau1recostartpos, //reconstructed start position
@@ -286,20 +282,6 @@ namespace neutralKaonTree {
     k0vtxfitpos, //Algorithm-specific fitted vertex position (geometric/TMinuit/Kalman)
     k0vtxfitdir, //Algorithm-specific fitted vertex direction (geometric/TMinuit/Kalman)
     k0vtxisjustavg, //Flag: 1 if Pandora used simple average, 0 if line intersection, -999 if invalid
-    k0vtxdegbefore, //Degeneracy count before scoring
-    k0vtxdegafter, //Degeneracy count after scoring
-    k0vtxnrecopart, //Number of unique reco particles in degenerate vertices
-    k0vtxdegdistances, //5 minimum distances to vertices within degeneracy threshold
-    k0vtxisolationdistances, //5 minimum line-to-point isolation distances (Pandora-based)
-    k0vtxisolationdistancesfit, //5 minimum line-to-point isolation distances (fitted track)
-    k0vtxisolationstartdistances, //5 minimum point-to-point distances to particle PositionStart
-    k0vtxisolnproton, //Total number of isolation particles that are true protons
-    k0vtxisolnpion, //Total number of isolation particles that are true pions (both charges)
-    k0vtxisolisproton, //Flags (1=proton, 0=not) for 5 closest isolation particles
-    k0vtxisolchi2proton, //Chi2/ndf under proton hypothesis for 5 closest isolation particles
-    k0vtxisollength, //Lengths of 5 closest isolation particles
-    k0vtxisolislongest, //Flag: 1 if any isolation particle longer than both vertex particles
-
   enumNeutralKaonMicroTreesLast
   };
 }

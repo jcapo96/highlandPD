@@ -128,7 +128,7 @@ bool FindNeutralCandidatesAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   // First create fitted vertices with scoring (requires same parent for both daughters)
   const double maxVertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.VertexRadius");
   const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
-  std::vector<AnaVertexPD*> vertices = pdNeutralUtils::CreateVertices(*static_cast<AnaEventB*>(&event), maxVertexRadius, maxDaughterDistance);
+  std::vector<AnaAnnihilationVertexPD*> vertices = pdNeutralUtils::CreateVertices(*static_cast<AnaEventB*>(&event), maxVertexRadius, maxDaughterDistance);
 
   // Then create neutral particle candidates from the vertices (one per vertex)
   box.neutralParticleCandidates = pdNeutralUtils::CreateNeutrals(*static_cast<AnaEventB*>(&event), vertices);

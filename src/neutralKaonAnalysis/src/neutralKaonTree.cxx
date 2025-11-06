@@ -71,12 +71,8 @@ void neutralKaonTree::AddNeutralKaonVariables_K0(OutputManager& output, UInt_t n
   AddVarMaxSizeVI(output, k0trueendproc, "K0 true end process", nk0, nmax);
   AddVarMaxSizeVF(output, k0truerecodist, "K0 true-reco distance", nk0, nmax);
   AddVarMaxSizeVF(output, k0impactparameter, "K0 impact parameter", nk0, nmax);
-  AddVarMaxSizeVI(output, k0nprotonincreationvtx, "K0 number of parent daughter protons near neutral start", nk0, nmax);
-  AddVarMaxSizeVI(output, k0nparticlesincreationvtx, "K0 total number of parent daughters near neutral start", nk0, nmax);
-  output.AddMatrixVar(k0creationvtxchi2proton, "k0creationvtxchi2proton", "F", "K0 creation vtx chi2 proton (5 closest)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0creationvtxdistances, "k0creationvtxdistances", "F", "K0 creation vtx distances (5 closest)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0creationvtxtruepdg, "k0creationvtxtruepdg", "I", "K0 creation vtx true PDG (5 closest)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0creationvtxid, "k0creationvtxid", "I", "K0 creation vtx particle IDs (5 closest)", nk0, "nk0", -nmax, 5);
+  AddVarMaxSizeVI(output, k0creationvtxdegeneracy, "K0 creation vtx degeneracy", nk0, nmax);
+  AddVarMaxSizeVI(output, k0annihilationvtxdegeneracy, "K0 annihilation vtx degeneracy", nk0, nmax);
   AddVarMaxSizeVI(output, k0truepdg, "K0 true PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0recopdg, "K0 reconstructed PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0truegeneration, "K0 true generation", nk0, nmax);
@@ -307,19 +303,6 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_
   AddVarMaxSize3MF(output, k0vtxfitpos, "K0 vertex fitted position (geometric/TMinuit/Kalman)", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxfitdir, "K0 vertex fitted direction (geometric/TMinuit/Kalman)", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxisjustavg, "K0 vertex Pandora used simple average (1) or line intersection (0)", nk0, nmax);
-  AddVarMaxSizeVI(output, k0vtxdegbefore, "K0 vertex degeneracy before scoring", nk0, nmax);
-  AddVarMaxSizeVI(output, k0vtxdegafter, "K0 vertex degeneracy after scoring", nk0, nmax);
-  AddVarMaxSizeVI(output, k0vtxnrecopart, "K0 vertex number of unique reco particles", nk0, nmax);
-  output.AddMatrixVar(k0vtxdegdistances, "k0vtxdegdistances", "F", "K0 vertex degeneracy distances (5 minimum)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0vtxisolationdistances, "k0vtxisolationdistances", "F", "K0 vertex isolation distances Pandora (5 minimum)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0vtxisolationdistancesfit, "k0vtxisolationdistancesfit", "F", "K0 vertex isolation distances fitted (5 minimum)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0vtxisolationstartdistances, "k0vtxisolationstartdistances", "F", "K0 vertex isolation start distances (5 minimum)", nk0, "nk0", -nmax, 5);
-  AddVarMaxSizeVI(output, k0vtxisolnproton, "K0 vertex number of isolation protons", nk0, nmax);
-  AddVarMaxSizeVI(output, k0vtxisolnpion, "K0 vertex number of isolation pions", nk0, nmax);
-  output.AddMatrixVar(k0vtxisolisproton, "k0vtxisolisproton", "I", "K0 vertex isolation is proton flags (5 closest)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0vtxisolchi2proton, "k0vtxisolchi2proton", "F", "K0 vertex isolation chi2 proton (5 closest)", nk0, "nk0", -nmax, 5);
-  output.AddMatrixVar(k0vtxisollength, "k0vtxisollength", "F", "K0 vertex isolation lengths (5 closest)", nk0, "nk0", -nmax, 5);
-  AddVarMaxSizeVI(output, k0vtxisolislongest, "K0 vertex any isolation particle longer than both vtx particles", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxrecomom, "Vertex system reconstructed momentum magnitude", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxtruemom, "Vertex system true momentum magnitude", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxrecoenergy, "Vertex system reconstructed energy", nk0, nmax);
@@ -342,11 +325,11 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
       neutralKaonTree::FillNeutralKaonVariables_K0(output, candidate);
       neutralKaonTree::FillNeutralKaonVariables_K0Par(output, candidate, event, beam);
       neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate, candidate->Parent, event);
-      AnaVertexPD* vertex = candidate->Vertex;
+      AnaVertexPD* vertex = candidate->AnnihilationVertex;
       neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex);
-      AnaParticlePD* daughter1Candidate = candidate->Vertex->Particles[0];
+      AnaParticlePD* daughter1Candidate = candidate->AnnihilationVertex->Particles[0];
       neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(output, daughter1Candidate, vertex);
-      AnaParticlePD* daughter2Candidate = candidate->Vertex->Particles[1];
+      AnaParticlePD* daughter2Candidate = candidate->AnnihilationVertex->Particles[1];
       neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(output, daughter2Candidate, vertex);
     }
 }
@@ -393,7 +376,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
 
     //K0 reconstructed end position (vertex position)
     Float_t k0recoendpos_val[3] = {-999.0, -999.0, -999.0};
-    if (candidate->Vertex) {
+    if (candidate->AnnihilationVertex) {
         k0recoendpos_val[0] = candidate->PositionEnd[0];
         k0recoendpos_val[1] = candidate->PositionEnd[1];
         k0recoendpos_val[2] = candidate->PositionEnd[2];
@@ -426,9 +409,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     // K0 reconstructed mass
     Float_t k0recomass_val = -999.0;
     // Calculate invariant mass from vertex daughters assuming pion hypothesis
-    if(candidate->Vertex && candidate->Vertex->Particles.size() >= 2) {
-      AnaParticlePD* daughter1 = candidate->Vertex->Particles[0];
-      AnaParticlePD* daughter2 = candidate->Vertex->Particles[1];
+    if(candidate->AnnihilationVertex && candidate->AnnihilationVertex->Particles.size() >= 2) {
+      AnaParticlePD* daughter1 = candidate->AnnihilationVertex->Particles[0];
+      AnaParticlePD* daughter2 = candidate->AnnihilationVertex->Particles[1];
 
       if(daughter1 && daughter2) {
         // Use framework mass constant (in GeV)
@@ -465,55 +448,13 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     Float_t k0impactparameter_val = candidate->ImpactParameter;
     output.FillVectorVar(k0impactparameter, k0impactparameter_val);
 
-    // K0 number of protons in creation vertex
-    output.FillVectorVar(k0nprotonincreationvtx, candidate->NProtonInCreationVtx);
+    // K0 creation vertex degeneracy
+    Int_t k0creationvtxdegeneracy_val = candidate->CreationVertex ? candidate->CreationVertex->Degeneracy : -999;
+    output.FillVectorVar(k0creationvtxdegeneracy, k0creationvtxdegeneracy_val);
 
-    // K0 total number of particles in creation vertex
-    output.FillVectorVar(k0nparticlesincreationvtx, candidate->NParticlesInCreationVtx);
-
-    // Fill creation vertex chi2/ndf under proton hypothesis (up to 5)
-    Float_t creationChi2Proton[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)candidate->CreationVtxChi2Proton.size()) {
-        creationChi2Proton[i] = candidate->CreationVtxChi2Proton[i];
-      } else {
-        creationChi2Proton[i] = -999.0;
-      }
-    }
-    output.FillMatrixVarFromArray(k0creationvtxchi2proton, creationChi2Proton, 5);
-
-    // Fill creation vertex distances (up to 5)
-    Float_t creationDistances[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)candidate->CreationVtxDistances.size()) {
-        creationDistances[i] = candidate->CreationVtxDistances[i];
-      } else {
-        creationDistances[i] = -999.0;
-      }
-    }
-    output.FillMatrixVarFromArray(k0creationvtxdistances, creationDistances, 5);
-
-    // Fill creation vertex true PDG codes (up to 5)
-    Int_t creationTruePDG[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)candidate->CreationVtxTruePDG.size()) {
-        creationTruePDG[i] = candidate->CreationVtxTruePDG[i];
-      } else {
-        creationTruePDG[i] = -999;
-      }
-    }
-    output.FillMatrixVarFromArray(k0creationvtxtruepdg, creationTruePDG, 5);
-
-    // Fill creation vertex particle IDs (up to 5)
-    Int_t creationIDs[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)candidate->CreationVtxIDs.size()) {
-        creationIDs[i] = candidate->CreationVtxIDs[i];
-      } else {
-        creationIDs[i] = -999;
-      }
-    }
-    output.FillMatrixVarFromArray(k0creationvtxid, creationIDs, 5);
+    // K0 annihilation vertex degeneracy
+    Int_t k0annihilationvtxdegeneracy_val = candidate->AnnihilationVertex ? candidate->AnnihilationVertex->Degeneracy : -999;
+    output.FillVectorVar(k0annihilationvtxdegeneracy, k0annihilationvtxdegeneracy_val);
 
     // K0 number of reconstructed hits in cylinder
     Int_t k0nrecohits_val = candidate->NRecoHitsInVertex;
@@ -588,9 +529,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
           k0truegeneration_val = trueNeutralParticle->Generation;
 
           // Calculate true mass from vertex daughters assuming pion hypothesis
-          if(candidate->Vertex && candidate->Vertex->Particles.size() >= 2) {
-            AnaParticlePD* daughter1 = candidate->Vertex->Particles[0];
-            AnaParticlePD* daughter2 = candidate->Vertex->Particles[1];
+          if(candidate->AnnihilationVertex && candidate->AnnihilationVertex->Particles.size() >= 2) {
+            AnaParticlePD* daughter1 = candidate->AnnihilationVertex->Particles[0];
+            AnaParticlePD* daughter2 = candidate->AnnihilationVertex->Particles[1];
 
             if(daughter1 && daughter2 && daughter1->TrueObject && daughter2->TrueObject) {
               AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(daughter1->TrueObject);
@@ -1062,97 +1003,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaV
 
     // Fill IsJustAverage flag
     output.FillVectorVar(k0vtxisjustavg, vertex->IsJustAverage);
-
-    // Fill degeneracy variables
-    output.FillVectorVar(k0vtxdegbefore, vertex->DegeneracyBeforeScoring);
-    output.FillVectorVar(k0vtxdegafter, vertex->DegeneracyAfterScoring);
-    output.FillVectorVar(k0vtxnrecopart, vertex->NRecoParticles);
-
-    // Fill degeneracy distances (up to 5 minimum distances)
-    Float_t degDistances[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)vertex->DegeneracyDistances.size()) {
-        degDistances[i] = vertex->DegeneracyDistances[i];
-      } else {
-        degDistances[i] = -999.0; // Fill with dummy value if fewer than 5 distances
-      }
-    }
-    output.FillMatrixVarFromArray(k0vtxdegdistances, degDistances, 5);
-
-    // Fill isolation distances (up to 5 minimum distances)
-    Float_t isoDistances[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)vertex->IsolationDistances.size()) {
-        isoDistances[i] = vertex->IsolationDistances[i];
-      } else {
-        isoDistances[i] = -999.0; // Fill with dummy value if fewer than 5 distances
-      }
-    }
-    output.FillMatrixVarFromArray(k0vtxisolationdistances, isoDistances, 5);
-
-    // Fill isolation distances from fitted tracks (up to 5 minimum distances)
-    Float_t isoDistancesFit[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)vertex->IsolationDistancesFit.size()) {
-        isoDistancesFit[i] = vertex->IsolationDistancesFit[i];
-      } else {
-        isoDistancesFit[i] = -999.0; // Fill with dummy value if fewer than 5 distances
-      }
-    }
-    output.FillMatrixVarFromArray(k0vtxisolationdistancesfit, isoDistancesFit, 5);
-
-    // Fill isolation start distances (up to 5 minimum distances)
-    Float_t isoStartDistances[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)vertex->IsolationStartDistances.size()) {
-        isoStartDistances[i] = vertex->IsolationStartDistances[i];
-      } else {
-        isoStartDistances[i] = -999.0; // Fill with dummy value if fewer than 5 distances
-      }
-    }
-    output.FillMatrixVarFromArray(k0vtxisolationstartdistances, isoStartDistances, 5);
-
-    // Fill isolation proton count
-    output.FillVectorVar(k0vtxisolnproton, vertex->IsolationNProton);
-
-    // Fill isolation pion count
-    output.FillVectorVar(k0vtxisolnpion, vertex->IsolationNPion);
-
-    // Fill isolation is-proton flags (up to 5)
-    Int_t isoIsProton[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)vertex->IsolationIsProton.size()) {
-        isoIsProton[i] = vertex->IsolationIsProton[i];
-      } else {
-        isoIsProton[i] = -999; // Fill with dummy value if fewer than 5
-      }
-    }
-    output.FillMatrixVarFromArray(k0vtxisolisproton, isoIsProton, 5);
-
-    // Fill isolation chi2/ndf under proton hypothesis (up to 5)
-    Float_t isoChi2Proton[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)vertex->IsolationChi2Proton.size()) {
-        isoChi2Proton[i] = vertex->IsolationChi2Proton[i];
-      } else {
-        isoChi2Proton[i] = -999.0; // Fill with dummy value if fewer than 5
-      }
-    }
-    output.FillMatrixVarFromArray(k0vtxisolchi2proton, isoChi2Proton, 5);
-
-    // Fill isolation particle lengths (up to 5)
-    Float_t isoLength[5];
-    for (int i = 0; i < 5; i++) {
-      if (i < (int)vertex->IsolationLength.size()) {
-        isoLength[i] = vertex->IsolationLength[i];
-      } else {
-        isoLength[i] = -999.0; // Fill with dummy value if fewer than 5
-      }
-    }
-    output.FillMatrixVarFromArray(k0vtxisollength, isoLength, 5);
-
-    // Fill isolation is-longest flag
-    output.FillVectorVar(k0vtxisolislongest, vertex->IsolationIsLongest);
   }
 }
 
