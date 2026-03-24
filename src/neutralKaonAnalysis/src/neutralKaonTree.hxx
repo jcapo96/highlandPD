@@ -13,6 +13,7 @@ namespace neutralKaonTree {
   void AddNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0Brother(OutputManager& output, UInt_t nmax);
+  void AddNeutralKaonVariables_K0CreationVtx(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax);
   // void AddNeutralKaonVariables_K0VtxPions(OutputManager& output, UInt_t nmax);
 
@@ -20,9 +21,10 @@ namespace neutralKaonTree {
   void FillNeutralKaonVariables_K0(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, const AnaEventB& event, AnaBeamB* beam = NULL);
   void FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaParticlePD* parentCandidate, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaVertexPD* vertex);
-  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
-  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
+  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
 
   // Enum with unique indexes for output tree variables
   enum enumNeutralKaonMicroTrees{
@@ -31,6 +33,7 @@ namespace neutralKaonTree {
     nk0 = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
     // Variables about K0
     k0id, //unique ID of neutral particle candidates
+    k0trueid, //true object ID
     k0recostartpos, //reconstructed start position: from parent end to vertex start
     k0truestartpos, //true start position: k0hastrueobject=1: true object start, k0hastrueobject=0: true parent end
     k0recostartdir, //reconstructed start direction
@@ -66,11 +69,13 @@ namespace neutralKaonTree {
 
     k0truerecodist, //True-vertex-position minus reconstructed-vertex-position
     k0impactparameter, //Impact parameter
-    k0nprotonincreationvtx, //Number of parent's daughters that are true protons near neutral start position
-    k0nparticlesincreationvtx, //Total number of parent's daughters near neutral start position
-    k0creationvtxchi2proton, //Chi2/ndf under proton hypothesis for particles near creation vertex (5 closest)
-    k0creationvtxdistances, //Pandora-based distances to neutral start (5 closest)
-    k0creationvtxtruepdg, //True PDG codes of particles near creation vertex (5 closest)
+    k0creationvtxdeg, //Creation vertex degeneracy
+    k0annvtxdeg, //Annihilation vertex degeneracy
+    k0creationvtxdegdist, //Creation vertex degeneracy distances [5]
+    k0annvtxdegdist, //Annihilation vertex degeneracy distances [5]
+    k0creationvtxprotonscore, //Creation vertex proton score (Chi2/ndf under proton hypothesis)
+    k0creationvtxdistancescore, //Creation vertex distance score (distance from beam end to secondary start)
+    k0creationbeamsecondopening, //Creation: cos(angle) between beam end dir and second start dir (1=parallel, poorly constrained)
 
     // Variables about K0 daughter1
     k0dau1recostartpos, //reconstructed start position
@@ -81,6 +86,7 @@ namespace neutralKaonTree {
     k0dau1truestartdir,
     k0dau1recomom,
     k0dau1recoenddir,
+    k0dau1trajdir,
     k0dau1trueenddir,
     k0dau1recolength,
     k0dau1truelength,
@@ -105,6 +111,12 @@ namespace neutralKaonTree {
     k0dau1avgdedx25cm, //average dEdx for residual range < 25cm
     k0dau1avgdedx50cm, //average dEdx for residual range < 50cm
     k0dau1nhits, //number of hits in collection plane
+    k0dau1trueid, //daughter1 true particle ID
+    k0dau1recoid, //daughter1 reco particle ID
+    k0dau1truedauid, //daughter1 true daughter IDs (granddaughters)
+    k0dau1recodauid, //daughter1 reco daughter IDs (granddaughters)
+    k0dau1truepartrueid, //daughter1 true parent true ID
+    k0dau1truepartruepdg, //daughter1 true parent true PDG
 
     //Variables about K0 daughter2
     k0dau2recostartpos,
@@ -115,6 +127,7 @@ namespace neutralKaonTree {
     k0dau2truestartdir,
     k0dau2recomom,
     k0dau2recoenddir,
+    k0dau2trajdir,
     k0dau2trueenddir,
     k0dau2recolength,
     k0dau2truelength,
@@ -139,6 +152,12 @@ namespace neutralKaonTree {
     k0dau2avgdedx25cm, //average dEdx for residual range < 25cm
     k0dau2avgdedx50cm, //average dEdx for residual range < 50cm
     k0dau2nhits, //number of hits in collection plane
+    k0dau2trueid, //daughter2 true particle ID
+    k0dau2recoid, //daughter2 reco particle ID
+    k0dau2truedauid, //daughter2 true daughter IDs (granddaughters)
+    k0dau2recodauid, //daughter2 reco daughter IDs (granddaughters)
+    k0dau2truepartrueid, //daughter2 true parent true ID
+    k0dau2truepartruepdg, //daughter2 true parent true PDG
 
     // Variables about K0 parent
     k0parrecostartpos,
@@ -163,6 +182,9 @@ namespace neutralKaonTree {
     k0parrecopdg,
     k0partruepdgdau,
     k0parrecopdgdau,
+    k0partrajdir,
+    k0partrajdirhist,
+    k0partrajdirnpts,
 
     //Variables about K0 parent beam
     k0parisbeam,
@@ -170,6 +192,8 @@ namespace neutralKaonTree {
     k0partrueproc,
     k0partrueendproc,
     k0partruegeneration,
+    k0partrueid, //parent true particle ID
+    k0parrecoid, //parent reco particle ID
 
     // Variables about K0 brothers (siblings)
     // Summary counters (kept for backward compatibility)
@@ -196,6 +220,8 @@ namespace neutralKaonTree {
     k0truebrothprotonmaxmomentum,
     k0truebrothprotonmaxdir,
     k0truebrothalign,
+    k0truebrothid, //vector of all true brother IDs
+    k0truebrothprotonmaxid, //ID of highest energy true proton brother
 
     // True brothers with reco - subset with reconstructed objects
     k0ntruebrothreco,
@@ -217,9 +243,12 @@ namespace neutralKaonTree {
     k0truebrothrecoprotonmaxrecomom,
     k0truebrothrecoprotonmaxdir,
     k0truebrothrecoalign,
+    k0truebrothrecoid, //vector of all reco IDs for true brothers with reco
+    k0truebrothrecoprotonmaxid, //ID of highest energy true-reco proton brother
 
     // Reco brothers - ALL from Parent->Daughters
     k0nrecobroth,
+    k0nrecobrothbad, // Number of bad reco brothers (no hits in any plane)
     k0recobrothpdg,
     k0recobrothmom,
     k0recobrothenergy,
@@ -231,6 +260,7 @@ namespace neutralKaonTree {
     k0recobrothtrueprocessstart,
     k0recobrothtruetotaldir,
     k0recobrothrecototaldir,
+    k0recobrothtrajdir,
     k0recobrothprotonmaxenergy,
     k0recobrothprotonmaxmomentum,
     k0recobrothprotonmaxtrueenergy,
@@ -239,6 +269,9 @@ namespace neutralKaonTree {
     k0recobrothprotonmaxtruedir,
     k0recobrothalign,
     k0recobrothtruealign,
+    k0recobrothid, //vector of all reco brother IDs
+    k0recobrothprotonmaxid, //ID of highest energy reco proton brother
+    k0recobrothtrueid, //vector of all true IDs for reco brothers
 
      // Variables about the vertex system (two particles)
     k0vtxrecopos,
@@ -266,20 +299,6 @@ namespace neutralKaonTree {
     k0vtxfitpos, //Algorithm-specific fitted vertex position (geometric/TMinuit/Kalman)
     k0vtxfitdir, //Algorithm-specific fitted vertex direction (geometric/TMinuit/Kalman)
     k0vtxisjustavg, //Flag: 1 if Pandora used simple average, 0 if line intersection, -999 if invalid
-    k0vtxdegbefore, //Degeneracy count before scoring
-    k0vtxdegafter, //Degeneracy count after scoring
-    k0vtxnrecopart, //Number of unique reco particles in degenerate vertices
-    k0vtxdegdistances, //5 minimum distances to vertices within degeneracy threshold
-    k0vtxisolationdistances, //5 minimum line-to-point isolation distances (Pandora-based)
-    k0vtxisolationdistancesfit, //5 minimum line-to-point isolation distances (fitted track)
-    k0vtxisolationstartdistances, //5 minimum point-to-point distances to particle PositionStart
-    k0vtxisolnproton, //Total number of isolation particles that are true protons
-    k0vtxisolnpion, //Total number of isolation particles that are true pions (both charges)
-    k0vtxisolisproton, //Flags (1=proton, 0=not) for 5 closest isolation particles
-    k0vtxisolchi2proton, //Chi2/ndf under proton hypothesis for 5 closest isolation particles
-    k0vtxisollength, //Lengths of 5 closest isolation particles
-    k0vtxisolislongest, //Flag: 1 if any isolation particle longer than both vertex particles
-
   enumNeutralKaonMicroTreesLast
   };
 }

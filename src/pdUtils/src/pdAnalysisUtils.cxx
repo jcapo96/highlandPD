@@ -1541,11 +1541,11 @@ std::vector<AnaNeutralParticlePD*> pdAnaUtils::CreateAnaNeutralParticles(AnaEven
           }
         }
 
-        // Set vertex and parent
-        neutralParticle->Vertex = vertex;
+        // Set vertex and parent (cast to AnaAnnihilationVertexPD as vertices are now this type)
+        neutralParticle->AnnihilationVertex = static_cast<AnaAnnihilationVertexPD*>(vertex);
         neutralParticle->Parent = particle;
 
-        neutralParticle->Vertex->NPotentialParents = NPotentialParents;
+        neutralParticle->AnnihilationVertex->NPotentialParents = NPotentialParents;
         neutralParticle->NRecoHitsInVertex = NRecoHitsInVertex;
         neutralParticle->ImpactParameter = impactParameter;
         neutralParticle->UniqueID = neutralParticleID++;

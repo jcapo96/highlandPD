@@ -7,6 +7,7 @@
 #include "neutralKaonTree.hxx"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "pdEventDisplay.hxx"
+#include "EventDisplayDataTree.hxx"
 
 namespace neutralKaonAnalysisConstants{
 
@@ -56,8 +57,9 @@ private:
   bool _ApplySCECorrection;
   bool _ApplySCESystematic;
 
-  // Event display
-  pdEventDisplay* _EventDisplay;
+  // Event display data tree (for storing event display data)
+  // Note: Visualization is done via DrawingTools in ROOT macros after analysis
+  EventDisplayDataTree* _EventDisplayDataTree;
 
 
 public:

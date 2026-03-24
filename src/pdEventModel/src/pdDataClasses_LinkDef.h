@@ -12,6 +12,8 @@
 #pragma link C++ class AnaWireID+;
 #pragma link C++ class AnaVertexPD+;
 #pragma link C++ class AnaTrueEquivalentVertexPD+;
+#pragma link C++ class AnaCreationVertexPD+;
+#pragma link C++ class AnaAnnihilationVertexPD+;
 #pragma link C++ class AnaNeutralParticlePD+;
 #pragma link C++ class AnaTrueEquivalentNeutralParticlePD+;
 #endif
