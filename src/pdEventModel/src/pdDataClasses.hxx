@@ -195,6 +195,12 @@ public:
   // Vector of trajectory points
   std::vector<AnaTrajectoryPointPD> TrjPoints;
 
+  /// Most-probable trajectory direction derived from TrjPoints
+  TVector3 TrajectoryDirection;
+
+  /// Number of trajectory-point segments used to compute TrajectoryDirection
+  Int_t TrajectoryDirectionNPoints;
+
   /// Libo truncated mean
   Float_t truncLibo_dEdx;
 
@@ -506,6 +512,7 @@ class AnaTrueEquivalentVertexPD{
 
   /// Pandora-based vertex position (from DirectionStart/PositionStart)
   Float_t PositionPandora[3];
+  Float_t DirectionPandora[3];
 
   /// Fitted vertex position (from geometric/Kalman fit)
   Float_t PositionFit[3];
@@ -584,6 +591,18 @@ public:
 
   /// Minimum distance between the two fitted lines (distance between closest points)
   Float_t MinimumDistance;
+  Float_t MinimumDistancePandora;
+  Float_t MinimumDistanceFit;
+
+  /// Closest points for selected vertex definition
+  Float_t ClosestPoint1[3];
+  Float_t ClosestPoint2[3];
+  /// Closest points from Pandora-based estimate
+  Float_t ClosestPoint1Pandora[3];
+  Float_t ClosestPoint2Pandora[3];
+  /// Closest points from fit-based estimate
+  Float_t ClosestPoint1Fit[3];
+  Float_t ClosestPoint2Fit[3];
 
   /// Quality score from vertex fit (lower is better, from Chi2/minimization)
   Float_t Score;
@@ -593,6 +612,7 @@ public:
 
   /// Pandora-based vertex position (from DirectionStart/PositionStart)
   Float_t PositionPandora[3];
+  Float_t DirectionPandora[3];
 
   /// Fitted vertex position (from geometric/Kalman fit)
   Float_t PositionFit[3];
@@ -605,6 +625,9 @@ public:
 
   /// Degeneracy: number of particles with startPos within vertex radius (used for filtering)
   Int_t Degeneracy;
+
+  /// Distances to the nearest particles contributing to degeneracy estimate
+  Float_t DegDist[5];
 
   AnaTrueEquivalentVertexPD* TrueEquivalentVertex;
 
@@ -642,6 +665,10 @@ public:
 
   /// 3D position of creation vertex (midpoint of minimum distance between lines)
   Float_t Position[3];
+
+  /// Closest points between beam and second-particle lines
+  Float_t ClosestPointBeam[3];
+  Float_t ClosestPointSecond[3];
 };
 
 //** ------------------------------------------------------------ */

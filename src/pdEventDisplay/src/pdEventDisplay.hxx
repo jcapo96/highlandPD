@@ -88,7 +88,7 @@ protected:
         edmaxvars = 200  // Reserve space for ProtoDUNE variables
     };
 
-private:
+protected:
     // ========== Helper Methods ==========
 
     /// Initialize particle color map

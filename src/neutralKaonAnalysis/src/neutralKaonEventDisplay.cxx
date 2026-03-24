@@ -39,6 +39,20 @@ std::string ProcessEnumToString(Int_t process){
     return dummy.ConvertProcess(static_cast<AnaTrueParticleB::ProcessEnum>(process));
 }
 
+TEveElementList* PrepareGroup(TEveScene* scene, const char* name) {
+    TEveElementList* group = new TEveElementList(name);
+    if (scene) scene->AddElement(group);
+    return group;
+}
+
+void AppendElementToGroup(TEveScene* /*scene*/, TEveElementList* group, TEveElement* element) {
+    if (group && element) group->AddElement(element);
+}
+
+Bool_t IsGroupVisible(const char* /*groupName*/) {
+    return kTRUE;
+}
+
 void BuildParentTrajectoryHistogram(const AnaParticlePD* parent, Float_t* outHist) {
     if (!outHist) return;
     std::fill(outHist, outHist + (neutralKaonEventDisplay::kParentTrajHistBins * 3), 0.f);

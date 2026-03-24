@@ -226,6 +226,8 @@ AnaParticlePD::AnaParticlePD():AnaParticle(){
   }
 
   TrjPoints.clear();
+  TrajectoryDirection = TVector3(kFloatUnassigned, kFloatUnassigned, kFloatUnassigned);
+  TrajectoryDirectionNPoints = 0;
 
   forced_daughter = false;
   forced_daughter_matched = false;
@@ -298,6 +300,8 @@ AnaParticlePD::AnaParticlePD(const AnaParticlePD& part):AnaParticle(part){
   }
 
   TrjPoints = part.TrjPoints;
+  TrajectoryDirection = part.TrajectoryDirection;
+  TrajectoryDirectionNPoints = part.TrajectoryDirectionNPoints;
 
   forced_daughter = part.forced_daughter;
   forced_daughter_matched = part.forced_daughter_matched;
@@ -646,6 +650,9 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(){
   PositionPandora[0] = kFloatUnassigned;
   PositionPandora[1] = kFloatUnassigned;
   PositionPandora[2] = kFloatUnassigned;
+  DirectionPandora[0] = kFloatUnassigned;
+  DirectionPandora[1] = kFloatUnassigned;
+  DirectionPandora[2] = kFloatUnassigned;
   PositionFit[0] = kFloatUnassigned;
   PositionFit[1] = kFloatUnassigned;
   PositionFit[2] = kFloatUnassigned;
@@ -680,6 +687,9 @@ AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVert
   PositionPandora[0] = vertex.PositionPandora[0];
   PositionPandora[1] = vertex.PositionPandora[1];
   PositionPandora[2] = vertex.PositionPandora[2];
+  DirectionPandora[0] = vertex.DirectionPandora[0];
+  DirectionPandora[1] = vertex.DirectionPandora[1];
+  DirectionPandora[2] = vertex.DirectionPandora[2];
   PositionFit[0] = vertex.PositionFit[0];
   PositionFit[1] = vertex.PositionFit[1];
   PositionFit[2] = vertex.PositionFit[2];
@@ -725,6 +735,14 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   Generation = kIntUnassigned;
   Process = kIntUnassigned;
   MinimumDistance = kFloatUnassigned;
+  MinimumDistancePandora = kFloatUnassigned;
+  MinimumDistanceFit = kFloatUnassigned;
+  ClosestPoint1[0] = ClosestPoint1[1] = ClosestPoint1[2] = kFloatUnassigned;
+  ClosestPoint2[0] = ClosestPoint2[1] = ClosestPoint2[2] = kFloatUnassigned;
+  ClosestPoint1Pandora[0] = ClosestPoint1Pandora[1] = ClosestPoint1Pandora[2] = kFloatUnassigned;
+  ClosestPoint2Pandora[0] = ClosestPoint2Pandora[1] = ClosestPoint2Pandora[2] = kFloatUnassigned;
+  ClosestPoint1Fit[0] = ClosestPoint1Fit[1] = ClosestPoint1Fit[2] = kFloatUnassigned;
+  ClosestPoint2Fit[0] = ClosestPoint2Fit[1] = ClosestPoint2Fit[2] = kFloatUnassigned;
   Score = kFloatUnassigned;
   ParentID = kIntUnassigned;
   DirectionFit[0] = kFloatUnassigned;
@@ -741,6 +759,9 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   DirectionFit[2] = kFloatUnassigned;
   IsJustAverage = 0;
   Degeneracy = 0;
+  for (Int_t i = 0; i < 5; ++i) {
+    DegDist[i] = kFloatUnassigned;
+  }
 }
 
 //********************************************************************
@@ -773,6 +794,26 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   Generation = vertex.Generation;
   Process = vertex.Process;
   MinimumDistance = vertex.MinimumDistance;
+  MinimumDistancePandora = vertex.MinimumDistancePandora;
+  MinimumDistanceFit = vertex.MinimumDistanceFit;
+  ClosestPoint1[0] = vertex.ClosestPoint1[0];
+  ClosestPoint1[1] = vertex.ClosestPoint1[1];
+  ClosestPoint1[2] = vertex.ClosestPoint1[2];
+  ClosestPoint2[0] = vertex.ClosestPoint2[0];
+  ClosestPoint2[1] = vertex.ClosestPoint2[1];
+  ClosestPoint2[2] = vertex.ClosestPoint2[2];
+  ClosestPoint1Pandora[0] = vertex.ClosestPoint1Pandora[0];
+  ClosestPoint1Pandora[1] = vertex.ClosestPoint1Pandora[1];
+  ClosestPoint1Pandora[2] = vertex.ClosestPoint1Pandora[2];
+  ClosestPoint2Pandora[0] = vertex.ClosestPoint2Pandora[0];
+  ClosestPoint2Pandora[1] = vertex.ClosestPoint2Pandora[1];
+  ClosestPoint2Pandora[2] = vertex.ClosestPoint2Pandora[2];
+  ClosestPoint1Fit[0] = vertex.ClosestPoint1Fit[0];
+  ClosestPoint1Fit[1] = vertex.ClosestPoint1Fit[1];
+  ClosestPoint1Fit[2] = vertex.ClosestPoint1Fit[2];
+  ClosestPoint2Fit[0] = vertex.ClosestPoint2Fit[0];
+  ClosestPoint2Fit[1] = vertex.ClosestPoint2Fit[1];
+  ClosestPoint2Fit[2] = vertex.ClosestPoint2Fit[2];
   Score = vertex.Score;
   ParentID = vertex.ParentID;
   DirectionFit[0] = vertex.DirectionFit[0];
@@ -789,6 +830,9 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   DirectionFit[2] = vertex.DirectionFit[2];
   IsJustAverage = vertex.IsJustAverage;
   Degeneracy = vertex.Degeneracy;
+  for (Int_t i = 0; i < 5; ++i) {
+    DegDist[i] = vertex.DegDist[i];
+  }
 }
 
 //********************************************************************
@@ -893,6 +937,12 @@ AnaCreationVertexPD::AnaCreationVertexPD() : AnaVertexPD(){
   Position[0] = -999.0;
   Position[1] = -999.0;
   Position[2] = -999.0;
+  ClosestPointBeam[0] = kFloatUnassigned;
+  ClosestPointBeam[1] = kFloatUnassigned;
+  ClosestPointBeam[2] = kFloatUnassigned;
+  ClosestPointSecond[0] = kFloatUnassigned;
+  ClosestPointSecond[1] = kFloatUnassigned;
+  ClosestPointSecond[2] = kFloatUnassigned;
 }
 
 //********************************************************************

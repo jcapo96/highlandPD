@@ -481,9 +481,15 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
       neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(output, candidate);
       AnaVertexPD* vertex = candidate->AnnihilationVertex;
       neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex);
-      AnaParticlePD* daughter1Candidate = candidate->AnnihilationVertex->Particles[0];
+      AnaParticlePD* daughter1Candidate = nullptr;
+      if (vertex && vertex->Particles.size() > 0) {
+        daughter1Candidate = vertex->Particles[0];
+      }
       neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(output, daughter1Candidate, vertex, event);
-      AnaParticlePD* daughter2Candidate = candidate->AnnihilationVertex->Particles[1];
+      AnaParticlePD* daughter2Candidate = nullptr;
+      if (vertex && vertex->Particles.size() > 1) {
+        daughter2Candidate = vertex->Particles[1];
+      }
       neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(output, daughter2Candidate, vertex, event);
     }
 }
@@ -875,12 +881,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
       output.FillVectorVar(k0parrecolength, k0parrecolength_val);
 
       Float_t k0partruestartmom_val = -999.0;
-      k0partruestartmom_val = parentCandidate->Momentum;
-      output.FillVectorVar(k0partruestartmom, k0partruestartmom_val);
-
       Float_t k0partrueendmom_val = -999.0;
-      k0partrueendmom_val = parentCandidate->MomentumEnd;
-      output.FillVectorVar(k0partrueendmom, k0partrueendmom_val);
 
     Int_t k0parrecondau_val = -999.0;
       k0parrecondau_val = parentCandidate->Daughters.size();
@@ -1718,15 +1719,15 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       }
 
       if(maxProtonRecoMom > 0){
-        // Parent momentum magnitude (use true if available, otherwise reco)
-        Float_t parentMom = parentCandidate->TrueObject ?
-                            static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject)->MomentumEnd :
-                            parentCandidate->Momentum;
-
-        // K0 momentum magnitude (use true if available, otherwise fallback)
-        Float_t k0Mom = neutralCandidate->TrueObject ?
-                        static_cast<AnaTrueParticlePD*>(neutralCandidate->TrueObject)->Momentum :
-                        -999.0;
+        // Reco alignment must remain reco-only (no truth leakage).
+        Float_t parentMom = parentCandidate->Momentum;
+        Float_t k0Mom = -999.0;
+        if (neutralCandidate->AnnihilationVertex) {
+          const Float_t vx = neutralCandidate->AnnihilationVertex->Momentum[0];
+          const Float_t vy = neutralCandidate->AnnihilationVertex->Momentum[1];
+          const Float_t vz = neutralCandidate->AnnihilationVertex->Momentum[2];
+          k0Mom = std::sqrt(vx*vx + vy*vy + vz*vz);
+        }
 
         if(parentMom > 0 && k0Mom > 0){
           // Parent momentum vector (reco end direction with true end momentum)
@@ -1966,7 +1967,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
 void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event){
     // Fill all variables for a single K0 daughter1
   if(daughterCandidate){
-    EnsureTrajectoryDirectionFromPoints(daughterCandidate);
     EnsureTrajectoryDirectionFromPoints(daughterCandidate);
     Float_t k0dau1recostartpos_val[3] = {-999.0, -999.0, -999.0};
     k0dau1recostartpos_val[0] = daughterCandidate->PositionStart[0];

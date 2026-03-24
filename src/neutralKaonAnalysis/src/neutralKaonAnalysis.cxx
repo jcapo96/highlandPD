@@ -398,7 +398,7 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 
     // Fill the debugging variables
     neutralKaonTruthTree::FillVertexReconstructionDebugVariables(output(), part, daughter1Reco, daughter2Reco,
-                                                                 parentReco, maxDaughterDistance, trackFitLength);
+                                                                 parentReco, maxDaughterDistance, trackFitLength, maxDaughterDistance);
 
     // Fill parent information if it exists - O(1) hash map lookup
     auto it_parent = trueParticleByID.find(part.ParentID);
