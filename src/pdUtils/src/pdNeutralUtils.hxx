@@ -3,6 +3,9 @@
 
 #include "pdDataClasses.hxx"
 #include "BaseDataClasses.hxx"
+#include "pdAnnihilationUtils.hxx"
+#include "pdCreationUtils.hxx"
+#include "pdNeutralHelpers.hxx"
 #include <vector>
 #include <unordered_map>
 #include <utility>
@@ -10,26 +13,6 @@
 #include "TVector3.h"
 
 namespace pdNeutralUtils {
-
-  // Create vertices - checks parameter to decide which algorithm to use
-  std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double maxVertexRadius = 30.0, double maxDaughterDistance = 5.0);
-
-  // Common vertex creation logic with selectable position finder
-  std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, double maxVertexRadius, double maxDaughterDistance, double (*positionFinder)(AnaVertexPD*, double));
-
-  // Position finder functions - return score value
-  double FindVertexPositionWithFit(AnaVertexPD* vertex, double trackFitLength);
-  double FindVertexPositionGeometric(AnaVertexPD* vertex, double trackFitLength);
-  double FindVertexPositionKalman(AnaVertexPD* vertex, double trackFitLength);
-
-  // Validate vertex (position and score checks)
-  bool ValidateVertex(AnaVertexPD* vertex);
-
-  // Filter vertices ensuring each particle belongs to at most one vertex
-  std::vector<AnaAnnihilationVertexPD*> FilterVerticesByScore(std::vector<AnaAnnihilationVertexPD*>& vertices);
-
-  // Helper function to create and fill true equivalent vertex
-  AnaTrueEquivalentVertexPD* FillTrueEquivalentVertex(AnaVertexPD* vertex);
 
   // Helper function to create and fill true equivalent neutral particle
   AnaTrueEquivalentNeutralParticlePD* FillTrueEquivalentNeutralParticle(
@@ -45,30 +28,21 @@ namespace pdNeutralUtils {
       AnaEventB& event,
       const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID);
 
-  // Create single neutral particle from a vertex
-  AnaNeutralParticlePD* CreateNeutral(
-      AnaEventB& event,
-      AnaVertexPD* vertex,
-      int neutralParticleID,
-      const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID);
-
   // Create neutral particles from all vertices
-  std::vector<AnaNeutralParticlePD*> CreateNeutrals(AnaEventB& event, const std::vector<AnaAnnihilationVertexPD*>& vertices);
+  std::vector<AnaNeutralParticlePD*> CreateNeutrals(AnaEventB& event,
+                                                     const std::vector<AnaCreationVertexPD*>& creationVertices,
+                                                     const std::vector<AnaAnnihilationVertexPD*>& annihilationVertices);
 
-  // Calculate midpoint of minimum distance between two 3D lines
-  TVector3 CalculateLineMinDistanceMidpoint(
-      const TVector3& pos1, const TVector3& dir1,
-      const TVector3& pos2, const TVector3& dir2);
+  // Filter neutral particles ensuring each annihilation vertex belongs to at most one neutral particle
+  std::vector<AnaNeutralParticlePD*> FilterNeutralsByScore(std::vector<AnaNeutralParticlePD*>& neutralParticles);
 
-  // Calculate scores for a creation vertex (ProtonScore, DistanceScore, MinDistanceScore, Position)
-  void CalculateCreationVertexScores(AnaCreationVertexPD* creationVtx);
+  // Calculate raw score components for a neutral particle (ProtonScore, alignment, NHitsInCylinder)
+  // Returns: {protonScore, alignmentScore, hitsScore}
+  std::tuple<double, double, double> CalculateRawScoreComponents(AnaNeutralParticlePD* neutralParticle);
 
-  // Create all valid creation vertices for an event
-  // excludeParticleIDs: particle IDs to exclude (e.g., annihilation vertex particles)
-  std::vector<AnaCreationVertexPD*> CreateCreationVertices(
-      AnaEventB& event,
-      double creationVertexRadius,
-      const std::set<Int_t>& excludeParticleIDs = {});
+  // Normalize scores using percentile-based normalization across all neutral particles in the event
+  // Each component is normalized to [0,1] where best (lowest) gets 1.0 and worst (highest) gets 0.0
+  void NormalizeNeutralParticleScores(std::vector<AnaNeutralParticlePD*>& neutralParticles);
 
   // Calculate degeneracies for both creation and annihilation vertices
   void CalculateVertexDegeneracies(AnaEventB& event,

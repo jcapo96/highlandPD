@@ -117,4 +117,47 @@ class VtxDaughtersAreDaughtersOfVtxParentCut: public StepBase{
     bool Apply(AnaEventC& event, ToyBoxB& box) const;
     StepBase* MakeClone(){return new VtxDaughtersAreDaughtersOfVtxParentCut();}
   };
+
+// K0 quality cuts
+class K0StartEndDirCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new K0StartEndDirCut();}
+  };
+
+class K0VtxOpeningCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new K0VtxOpeningCut();}
+  };
+
+class K0ParentTruePDGCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new K0ParentTruePDGCut();}
+  };
+
+class K0LengthCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new K0LengthCut();}
+  };
+
+class K0Dau1LengthCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new K0Dau1LengthCut();}
+  };
+
+class K0Dau2LengthCut: public StepBase{
+  public:
+    using StepBase::Apply;
+    bool Apply(AnaEventC& event, ToyBoxB& box) const;
+    StepBase* MakeClone(){return new K0Dau2LengthCut();}
+  };
 #endif

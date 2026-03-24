@@ -13,6 +13,7 @@ namespace neutralKaonTree {
   void AddNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0Brother(OutputManager& output, UInt_t nmax);
+  void AddNeutralKaonVariables_K0CreationVtx(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax);
   // void AddNeutralKaonVariables_K0VtxPions(OutputManager& output, UInt_t nmax);
 
@@ -20,9 +21,10 @@ namespace neutralKaonTree {
   void FillNeutralKaonVariables_K0(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, const AnaEventB& event, AnaBeamB* beam = NULL);
   void FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaParticlePD* parentCandidate, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaVertexPD* vertex);
-  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
-  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex);
+  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
 
   // Enum with unique indexes for output tree variables
   enum enumNeutralKaonMicroTrees{
@@ -67,8 +69,13 @@ namespace neutralKaonTree {
 
     k0truerecodist, //True-vertex-position minus reconstructed-vertex-position
     k0impactparameter, //Impact parameter
-    k0creationvtxdegeneracy, //Creation vertex degeneracy
-    k0annihilationvtxdegeneracy, //Annihilation vertex degeneracy
+    k0creationvtxdeg, //Creation vertex degeneracy
+    k0annvtxdeg, //Annihilation vertex degeneracy
+    k0creationvtxdegdist, //Creation vertex degeneracy distances [5]
+    k0annvtxdegdist, //Annihilation vertex degeneracy distances [5]
+    k0creationvtxprotonscore, //Creation vertex proton score (Chi2/ndf under proton hypothesis)
+    k0creationvtxdistancescore, //Creation vertex distance score (distance from beam end to secondary start)
+    k0creationbeamsecondopening, //Creation: cos(angle) between beam end dir and second start dir (1=parallel, poorly constrained)
 
     // Variables about K0 daughter1
     k0dau1recostartpos, //reconstructed start position
@@ -79,6 +86,7 @@ namespace neutralKaonTree {
     k0dau1truestartdir,
     k0dau1recomom,
     k0dau1recoenddir,
+    k0dau1trajdir,
     k0dau1trueenddir,
     k0dau1recolength,
     k0dau1truelength,
@@ -107,6 +115,8 @@ namespace neutralKaonTree {
     k0dau1recoid, //daughter1 reco particle ID
     k0dau1truedauid, //daughter1 true daughter IDs (granddaughters)
     k0dau1recodauid, //daughter1 reco daughter IDs (granddaughters)
+    k0dau1truepartrueid, //daughter1 true parent true ID
+    k0dau1truepartruepdg, //daughter1 true parent true PDG
 
     //Variables about K0 daughter2
     k0dau2recostartpos,
@@ -117,6 +127,7 @@ namespace neutralKaonTree {
     k0dau2truestartdir,
     k0dau2recomom,
     k0dau2recoenddir,
+    k0dau2trajdir,
     k0dau2trueenddir,
     k0dau2recolength,
     k0dau2truelength,
@@ -145,6 +156,8 @@ namespace neutralKaonTree {
     k0dau2recoid, //daughter2 reco particle ID
     k0dau2truedauid, //daughter2 true daughter IDs (granddaughters)
     k0dau2recodauid, //daughter2 reco daughter IDs (granddaughters)
+    k0dau2truepartrueid, //daughter2 true parent true ID
+    k0dau2truepartruepdg, //daughter2 true parent true PDG
 
     // Variables about K0 parent
     k0parrecostartpos,
@@ -169,6 +182,9 @@ namespace neutralKaonTree {
     k0parrecopdg,
     k0partruepdgdau,
     k0parrecopdgdau,
+    k0partrajdir,
+    k0partrajdirhist,
+    k0partrajdirnpts,
 
     //Variables about K0 parent beam
     k0parisbeam,
@@ -244,6 +260,7 @@ namespace neutralKaonTree {
     k0recobrothtrueprocessstart,
     k0recobrothtruetotaldir,
     k0recobrothrecototaldir,
+    k0recobrothtrajdir,
     k0recobrothprotonmaxenergy,
     k0recobrothprotonmaxmomentum,
     k0recobrothprotonmaxtrueenergy,

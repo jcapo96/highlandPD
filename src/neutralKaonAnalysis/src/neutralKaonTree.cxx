@@ -7,10 +7,12 @@
 #include "AnalysisUtils.hxx"
 #include "ParticleId.hxx"
 #include "HEPConstants.hxx"
+#include <algorithm>
 #include <cmath>
 #include <set>
-#include <iostream>
 #include <unordered_map>
+#include <array>
+#include <cmath>
 
 namespace {
   // Helper function to get particle mass from PDG code (in GeV/c^2)
@@ -37,6 +39,135 @@ namespace {
       return sqrt(mass*mass + momentum*momentum);
     }
     return -999.0;
+  }
+
+  constexpr Int_t kParentTrajDirHistBins = 60;
+  constexpr Float_t kParentTrajDirHistMin = -1.f;
+  constexpr Float_t kParentTrajDirHistMax = 1.f;
+
+  void BuildTrajectoryDirectionHistogram(const AnaParticlePD* parent, Float_t* outHist) {
+    if (!outHist) {
+      return;
+    }
+
+    std::fill(outHist, outHist + (kParentTrajDirHistBins * 3), 0.f);
+    if (!parent) {
+      return;
+    }
+
+    const auto& points = parent->TrjPoints;
+    if (points.empty()) {
+      return;
+    }
+
+    const Float_t binWidth = (kParentTrajDirHistMax - kParentTrajDirHistMin) / kParentTrajDirHistBins;
+    std::array<Int_t, kParentTrajDirHistBins> countsX{};
+    std::array<Int_t, kParentTrajDirHistBins> countsY{};
+    std::array<Int_t, kParentTrajDirHistBins> countsZ{};
+
+    auto fillBin = [&](Float_t value, std::array<Int_t, kParentTrajDirHistBins>& counts) {
+      if (!std::isfinite(value)) return;
+      Float_t clamped = std::max(kParentTrajDirHistMin, std::min(kParentTrajDirHistMax - 1e-6f, value));
+      Int_t bin = static_cast<Int_t>((clamped - kParentTrajDirHistMin) / binWidth);
+      bin = std::max(0, std::min(bin, kParentTrajDirHistBins - 1));
+      counts[bin]++;
+    };
+
+    for (const auto& point : points) {
+      TVector3 dir = point.Direction;
+      if (!std::isfinite(dir.X()) || !std::isfinite(dir.Y()) || !std::isfinite(dir.Z())) {
+        continue;
+      }
+      if (dir.Mag() <= 0) {
+        continue;
+      }
+      dir = dir.Unit();
+      fillBin(dir.X(), countsX);
+      fillBin(dir.Y(), countsY);
+      fillBin(dir.Z(), countsZ);
+    }
+
+    for (Int_t b = 0; b < kParentTrajDirHistBins; ++b) {
+      outHist[b] = static_cast<Float_t>(countsX[b]);
+      outHist[kParentTrajDirHistBins + b] = static_cast<Float_t>(countsY[b]);
+      outHist[2 * kParentTrajDirHistBins + b] = static_cast<Float_t>(countsZ[b]);
+    }
+  }
+
+  struct TrajectoryDirectionComputationResult {
+    TVector3 mpv;
+    Int_t nPoints;
+    TrajectoryDirectionComputationResult()
+      : mpv(-999.f, -999.f, -999.f), nPoints(0) {}
+  };
+
+  TrajectoryDirectionComputationResult ComputeTrajectoryDirectionFromPoints(
+      const std::vector<AnaTrajectoryPointPD>& points) {
+    TrajectoryDirectionComputationResult result;
+    if (points.empty()) {
+      return result;
+    }
+
+    const Float_t binWidth = (kParentTrajDirHistMax - kParentTrajDirHistMin) / kParentTrajDirHistBins;
+    std::array<Int_t, kParentTrajDirHistBins> countsX{};
+    std::array<Int_t, kParentTrajDirHistBins> countsY{};
+    std::array<Int_t, kParentTrajDirHistBins> countsZ{};
+
+    auto fillBin = [&](Float_t value, std::array<Int_t, kParentTrajDirHistBins>& counts) {
+      if (!std::isfinite(value)) return;
+      Float_t clamped = std::max(kParentTrajDirHistMin, std::min(kParentTrajDirHistMax - 1e-6f, value));
+      Int_t bin = static_cast<Int_t>((clamped - kParentTrajDirHistMin) / binWidth);
+      bin = std::max(0, std::min(bin, kParentTrajDirHistBins - 1));
+      counts[bin]++;
+    };
+
+    for (const auto& point : points) {
+      TVector3 dir = point.Direction;
+      if (!std::isfinite(dir.X()) || !std::isfinite(dir.Y()) || !std::isfinite(dir.Z())) {
+        continue;
+      }
+      if (dir.Mag() <= 0) {
+        continue;
+      }
+      dir = dir.Unit();
+      ++result.nPoints;
+
+      fillBin(dir.X(), countsX);
+      fillBin(dir.Y(), countsY);
+      fillBin(dir.Z(), countsZ);
+    }
+
+    if (result.nPoints <= 0) {
+      result.mpv.SetXYZ(-999.f, -999.f, -999.f);
+      return result;
+    }
+
+    auto binToValue = [&](const std::array<Int_t, kParentTrajDirHistBins>& counts) -> Float_t {
+      auto it = std::max_element(counts.begin(), counts.end());
+      if (it == counts.end() || *it == 0) {
+        return -999.f;
+      }
+      Int_t bin = static_cast<Int_t>(std::distance(counts.begin(), it));
+      return kParentTrajDirHistMin + (bin + 0.5f) * binWidth;
+    };
+
+    result.mpv.SetXYZ(binToValue(countsX),
+                      binToValue(countsY),
+                      binToValue(countsZ));
+    return result;
+  }
+
+  void EnsureTrajectoryDirectionFromPoints(AnaParticlePD* particle) {
+    if (!particle) {
+      return;
+    }
+    if (particle->TrajectoryDirectionNPoints > 0) {
+      return;
+    }
+
+    const auto result = ComputeTrajectoryDirectionFromPoints(particle->TrjPoints);
+    particle->TrajectoryDirection = result.mpv;
+    particle->TrajectoryDirectionNPoints = result.nPoints;
   }
 }
 
@@ -71,8 +202,6 @@ void neutralKaonTree::AddNeutralKaonVariables_K0(OutputManager& output, UInt_t n
   AddVarMaxSizeVI(output, k0trueendproc, "K0 true end process", nk0, nmax);
   AddVarMaxSizeVF(output, k0truerecodist, "K0 true-reco distance", nk0, nmax);
   AddVarMaxSizeVF(output, k0impactparameter, "K0 impact parameter", nk0, nmax);
-  AddVarMaxSizeVI(output, k0creationvtxdegeneracy, "K0 creation vtx degeneracy", nk0, nmax);
-  AddVarMaxSizeVI(output, k0annihilationvtxdegeneracy, "K0 annihilation vtx degeneracy", nk0, nmax);
   AddVarMaxSizeVI(output, k0truepdg, "K0 true PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0recopdg, "K0 reconstructed PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0truegeneration, "K0 true generation", nk0, nmax);
@@ -107,6 +236,11 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Par(OutputManager& output, UInt_
   AddVarMaxSizeVI(output, k0parrecopdg, "K0 parent reconstructed PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0partruepdgdau, "K0 parent true daughters PDG", nk0, nmax);
   AddVarMaxSizeVI(output, k0parrecopdgdau, "K0 parent reconstructed daughters PDG", nk0, nmax);
+  AddVarMaxSize3MF(output, k0partrajdir, "K0 parent trajectory direction MPV", nk0, nmax);
+  output.AddMatrixVar(k0partrajdirhist, "k0partrajdirhist", "F",
+                      "K0 parent trajectory direction histograms (XYZ components, 60 bins each)",
+                      nk0, "nk0", -nmax, kParentTrajDirHistBins * 3);
+  AddVarMaxSizeVI(output, k0partrajdirnpts, "K0 parent trajectory direction sample count", nk0, nmax);
 
   AddVarMaxSizeVI(output, k0parisbeam, "K0 parent is beam particle", nk0, nmax);
   AddVarMaxSizeVI(output, k0beaminstpdg, "Beam instrumentation PDG", nk0, nmax);
@@ -130,6 +264,7 @@ void neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(OutputManager& outp
     AddVarMaxSize3MF(output, k0dau1recostartdir, "K0 daughter1 reconstructed start direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau1truestartdir, "K0 daughter1 true start direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau1recoenddir, "K0 daughter1 reconstructed end direction", nk0, nmax);
+    AddVarMaxSize3MF(output, k0dau1trajdir, "K0 daughter1 trajectory direction MPV", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau1trueenddir, "K0 daughter1 true end direction", nk0, nmax);
     AddVarMaxSizeVF(output, k0dau1recolength, "K0 daughter1 reconstructed length", nk0, nmax);
     AddVarMaxSizeVF(output, k0dau1truelength, "K0 daughter1 true length", nk0, nmax);
@@ -158,6 +293,8 @@ void neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(OutputManager& outp
     AddVarMaxSizeVI(output, k0dau1recoid, "Daughter1 reco particle ID", nk0, nmax);
     output.AddMatrixVar(k0dau1truedauid, "k0dau1truedauid", "I", "Daughter1 true daughter IDs", nk0, "nk0", -nmax, 10);
     output.AddMatrixVar(k0dau1recodauid, "k0dau1recodauid", "I", "Daughter1 reco daughter IDs", nk0, "nk0", -nmax, 10);
+    AddVarMaxSizeVI(output, k0dau1truepartrueid, "K0 daughter1 true parent true ID", nk0, nmax);
+    AddVarMaxSizeVI(output, k0dau1truepartruepdg, "K0 daughter1 true parent true PDG", nk0, nmax);
 }
 
 //********************************************************************
@@ -171,6 +308,7 @@ void neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(OutputManager& outp
     AddVarMaxSize3MF(output, k0dau2recostartdir, "K0 daughter2 reconstructed start direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau2truestartdir, "K0 daughter2 true start direction", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau2recoenddir, "K0 daughter2 reconstructed end direction", nk0, nmax);
+    AddVarMaxSize3MF(output, k0dau2trajdir, "K0 daughter2 trajectory direction MPV", nk0, nmax);
     AddVarMaxSize3MF(output, k0dau2trueenddir, "K0 daughter2 true end direction", nk0, nmax);
     AddVarMaxSizeVF(output, k0dau2recolength, "K0 daughter2 reconstructed length", nk0, nmax);
     AddVarMaxSizeVF(output, k0dau2truelength, "K0 daughter2 true length", nk0, nmax);
@@ -199,6 +337,8 @@ void neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(OutputManager& outp
     AddVarMaxSizeVI(output, k0dau2recoid, "Daughter2 reco particle ID", nk0, nmax);
     output.AddMatrixVar(k0dau2truedauid, "k0dau2truedauid", "I", "Daughter2 true daughter IDs", nk0, "nk0", -nmax, 10);
     output.AddMatrixVar(k0dau2recodauid, "k0dau2recodauid", "I", "Daughter2 reco daughter IDs", nk0, "nk0", -nmax, 10);
+    AddVarMaxSizeVI(output, k0dau2truepartrueid, "K0 daughter2 true parent true ID", nk0, nmax);
+    AddVarMaxSizeVI(output, k0dau2truepartruepdg, "K0 daughter2 true parent true PDG", nk0, nmax);
 }
 
 //********************************************************************
@@ -269,6 +409,7 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Brother(OutputManager& output, U
    output.AddMatrixVar(k0recobrothtrueprocessstart, "k0recobrothtrueprocessstart", "I", "Reco brothers true ProcessStart", nk0, "nk0", -nmax, 100);
    AddVarMaxSize3MF(output, k0recobrothtruetotaldir, "Resultant true direction of reco brothers", nk0, nmax);
    AddVarMaxSize3MF(output, k0recobrothrecototaldir, "Resultant reco direction of reco brothers", nk0, nmax);
+  output.AddMatrixVar(k0recobrothtrajdir, "k0recobrothtrajdir", "F", "Reco brother trajectory direction MPV", nk0, "nk0", -nmax, 100 * 3);
    AddVarMaxSizeVF(output, k0recobrothprotonmaxenergy, "Max reco proton energy in reco brothers", nk0, nmax);
    AddVarMaxSizeVF(output, k0recobrothprotonmaxmomentum, "Max reco proton momentum in reco brothers", nk0, nmax);
    AddVarMaxSizeVF(output, k0recobrothprotonmaxtrueenergy, "Max reco proton true energy in reco brothers", nk0, nmax);
@@ -280,6 +421,16 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Brother(OutputManager& output, U
    output.AddMatrixVar(k0recobrothid, "k0recobrothid", "I", "Reco brother IDs", nk0, "nk0", -nmax, 100);
    AddVarMaxSizeVI(output, k0recobrothprotonmaxid, "ID of highest energy reco proton brother", nk0, nmax);
    output.AddMatrixVar(k0recobrothtrueid, "k0recobrothtrueid", "I", "True IDs for reco brothers", nk0, "nk0", -nmax, 100);
+}
+
+//********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(OutputManager& output, UInt_t nmax){
+  // Creation vertex variables
+  AddVarMaxSizeVI(output, k0creationvtxdeg, "K0 creation vtx degeneracy", nk0, nmax);
+  output.AddMatrixVar(k0creationvtxdegdist, "k0creationvtxdegdist", "F", "K0 creation vtx degeneracy distances", nk0, "nk0", -nmax, 5);
+  AddVarMaxSizeVF(output, k0creationvtxprotonscore, "K0 creation vtx proton score (Chi2/ndf)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0creationvtxdistancescore, "K0 creation vtx distance score", nk0, nmax);
+  AddVarMaxSizeVF(output, k0creationbeamsecondopening, "K0 creation cos(angle) beam end vs second start (1=parallel)", nk0, nmax);
 }
 
 //********************************************************************
@@ -316,6 +467,8 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_
   AddVarMaxSizeVF(output, k0vtxrecoangle, "Vertex system reconstructed angle with beam", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxtrueangle, "Vertex system true angle with beam", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxnpotpar, "Number of potential parent particles for vertex", nk0, nmax);
+  AddVarMaxSizeVI(output, k0annvtxdeg, "K0 annihilation vtx degeneracy", nk0, nmax);
+  output.AddMatrixVar(k0annvtxdegdist, "k0annvtxdegdist", "F", "K0 annihilation vtx degeneracy distances", nk0, "nk0", -nmax, 5);
 }
 
 //********************************************************************
@@ -325,12 +478,13 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
       neutralKaonTree::FillNeutralKaonVariables_K0(output, candidate);
       neutralKaonTree::FillNeutralKaonVariables_K0Par(output, candidate, event, beam);
       neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate, candidate->Parent, event);
+      neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(output, candidate);
       AnaVertexPD* vertex = candidate->AnnihilationVertex;
       neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex);
       AnaParticlePD* daughter1Candidate = candidate->AnnihilationVertex->Particles[0];
-      neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(output, daughter1Candidate, vertex);
+      neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(output, daughter1Candidate, vertex, event);
       AnaParticlePD* daughter2Candidate = candidate->AnnihilationVertex->Particles[1];
-      neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(output, daughter2Candidate, vertex);
+      neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(output, daughter2Candidate, vertex, event);
     }
 }
 //********************************************************************
@@ -447,14 +601,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     // K0 impact parameter
     Float_t k0impactparameter_val = candidate->ImpactParameter;
     output.FillVectorVar(k0impactparameter, k0impactparameter_val);
-
-    // K0 creation vertex degeneracy
-    Int_t k0creationvtxdegeneracy_val = candidate->CreationVertex ? candidate->CreationVertex->Degeneracy : -999;
-    output.FillVectorVar(k0creationvtxdegeneracy, k0creationvtxdegeneracy_val);
-
-    // K0 annihilation vertex degeneracy
-    Int_t k0annihilationvtxdegeneracy_val = candidate->AnnihilationVertex ? candidate->AnnihilationVertex->Degeneracy : -999;
-    output.FillVectorVar(k0annihilationvtxdegeneracy, k0annihilationvtxdegeneracy_val);
 
     // K0 number of reconstructed hits in cylinder
     Int_t k0nrecohits_val = candidate->NRecoHitsInVertex;
@@ -694,6 +840,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
     AnaParticlePD* parentCandidate = neutralCandidate ? neutralCandidate->Parent : NULL;
 
     if(parentCandidate){
+      EnsureTrajectoryDirectionFromPoints(parentCandidate);
 
       Float_t k0parrecostartpos_val[3] = {-999.0, -999.0, -999.0};
       k0parrecostartpos_val[0] = parentCandidate->PositionStart[0];
@@ -753,6 +900,19 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
       k0parrecopdg_val = -999;
     }
       output.FillVectorVar(k0parrecopdg, k0parrecopdg_val);
+
+    Float_t k0partrajdir_val[3] = {-999.f, -999.f, -999.f};
+    if (parentCandidate->TrajectoryDirectionNPoints > 0) {
+      k0partrajdir_val[0] = parentCandidate->TrajectoryDirection.X();
+      k0partrajdir_val[1] = parentCandidate->TrajectoryDirection.Y();
+      k0partrajdir_val[2] = parentCandidate->TrajectoryDirection.Z();
+    }
+    output.FillMatrixVarFromArray(k0partrajdir, k0partrajdir_val, 3);
+
+    Float_t k0partrajdirhist_val[kParentTrajDirHistBins * 3];
+    BuildTrajectoryDirectionHistogram(parentCandidate, k0partrajdirhist_val);
+    output.FillMatrixVarFromArray(k0partrajdirhist, k0partrajdirhist_val, kParentTrajDirHistBins * 3);
+    output.FillVectorVar(k0partrajdirnpts, parentCandidate->TrajectoryDirectionNPoints);
 
     Int_t k0parisbeam_val = -999;
     k0parisbeam_val = parentCandidate->isPandora;
@@ -846,6 +1006,49 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Par(OutputManager& output, AnaN
   AnaTrueParticlePD* trueParent = parentCandidate->TrueObject ? static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject) : nullptr;
   output.FillVectorVar(k0partrueid, trueParent ? trueParent->ID : -999);
   output.FillVectorVar(k0parrecoid, parentCandidate->UniqueID);
+  }
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate){
+  // Fill creation vertex variables
+  if(candidate && candidate->CreationVertex){
+    Int_t k0creationvtxdeg_val = candidate->CreationVertex->Degeneracy;
+    output.FillVectorVar(k0creationvtxdeg, k0creationvtxdeg_val);
+
+    // Fill creation vertex degeneracy distances
+    Float_t k0creationvtxdegdist_val[5] = {-999, -999, -999, -999, -999};
+    for (Int_t d = 0; d < 5; d++) {
+      k0creationvtxdegdist_val[d] = candidate->CreationVertex->DegDist[d];
+    }
+    output.FillMatrixVarFromArray(k0creationvtxdegdist, k0creationvtxdegdist_val, 5);
+
+    // Fill creation vertex proton score
+    Float_t k0creationvtxprotonscore_val = candidate->CreationVertex->ProtonScore;
+    output.FillVectorVar(k0creationvtxprotonscore, k0creationvtxprotonscore_val);
+
+    // Fill creation vertex distance score
+    Float_t k0creationvtxdistancescore_val = candidate->CreationVertex->DistanceScore;
+    output.FillVectorVar(k0creationvtxdistancescore, k0creationvtxdistancescore_val);
+
+    // Fill creation beam-second opening: cos(angle) between beam end dir and second start dir
+    Float_t k0creationbeamsecondopening_val = -999.0;
+    AnaCreationVertexPD* cv = candidate->CreationVertex;
+    if (cv->BeamParticle && cv->SecondParticle) {
+      TVector3 beamDir(cv->BeamParticle->DirectionEnd[0], cv->BeamParticle->DirectionEnd[1], cv->BeamParticle->DirectionEnd[2]);
+      TVector3 secondDir(cv->SecondParticle->DirectionStart[0], cv->SecondParticle->DirectionStart[1], cv->SecondParticle->DirectionStart[2]);
+      if (beamDir.Mag() > 1e-6 && secondDir.Mag() > 1e-6) {
+        k0creationbeamsecondopening_val = static_cast<Float_t>(beamDir.Unit().Dot(secondDir.Unit()));
+      }
+    }
+    output.FillVectorVar(k0creationbeamsecondopening, k0creationbeamsecondopening_val);
+  } else {
+    output.FillVectorVar(k0creationvtxdeg, -999);
+    Float_t k0creationvtxdegdist_val[5] = {-999, -999, -999, -999, -999};
+    output.FillMatrixVarFromArray(k0creationvtxdegdist, k0creationvtxdegdist_val, 5);
+    output.FillVectorVar(k0creationvtxprotonscore, -999.0);
+    output.FillVectorVar(k0creationvtxdistancescore, -999.0);
+    output.FillVectorVar(k0creationbeamsecondopening, -999.0);
   }
 }
 
@@ -1003,6 +1206,20 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaV
 
     // Fill IsJustAverage flag
     output.FillVectorVar(k0vtxisjustavg, vertex->IsJustAverage);
+
+    // Fill annihilation vertex degeneracy
+    output.FillVectorVar(k0annvtxdeg, vertex->Degeneracy);
+
+    // Fill annihilation vertex degeneracy distances
+    Float_t k0annvtxdegdist_val[5] = {-999, -999, -999, -999, -999};
+    for (Int_t d = 0; d < 5; d++) {
+      k0annvtxdegdist_val[d] = vertex->DegDist[d];
+    }
+    output.FillMatrixVarFromArray(k0annvtxdegdist, k0annvtxdegdist_val, 5);
+  } else {
+    output.FillVectorVar(k0annvtxdeg, -999);
+    Float_t k0annvtxdegdist_val[5] = {-999, -999, -999, -999, -999};
+    output.FillMatrixVarFromArray(k0annvtxdegdist, k0annvtxdegdist_val, 5);
   }
 }
 
@@ -1012,9 +1229,6 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
   if(parentCandidate){
     output.FillVectorVar(k0reconbrother, (Int_t)parentCandidate->Daughters.size());
     AnaTrueParticlePD* trueParentCandidate = static_cast<AnaTrueParticlePD*>(parentCandidate->TrueObject);
-
-    // Get minimum length parameter for counting brothers
-    double minBrotherLength = ND::params().GetParameterD("neutralKaonAnalysis.MinBrotherLength");
 
     // ========== PERFORMANCE OPTIMIZATION: Build hash maps for O(1) particle lookups ==========
     // Instead of O(n²) nested linear searches, build maps once: O(n)
@@ -1325,6 +1539,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     Float_t recoBrothersLength[100];
     Float_t recoBrothersChi2Prot[100];
     Float_t recoBrothersDir[100][3];  // Cache reco directions for performance
+    Float_t recoBrothersTrajDir[100 * 3];
     Int_t recoBrothersTruePDG[100];
     Float_t recoBrothersTrueEnergy[100];
     Float_t recoBrothersTrueMom[100];
@@ -1348,6 +1563,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       recoBrothersTrueProcess[i] = -999;
       recoBrothersID[i] = -999;
       recoBrothersTrueID[i] = -999;
+      recoBrothersTrajDir[i * 3 + 0] = -999.f;
+      recoBrothersTrajDir[i * 3 + 1] = -999.f;
+      recoBrothersTrajDir[i * 3 + 2] = -999.f;
     }
 
     UInt_t nReconProtons = 0;
@@ -1361,6 +1579,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     for(size_t i = 0; i < parentCandidate->Daughters.size() && nRecoBrothers < 100; i++){
       AnaParticlePD* recoBrother = static_cast<AnaParticlePD*>(parentCandidate->Daughters[i]);
       if(recoBrother){
+        EnsureTrajectoryDirectionFromPoints(recoBrother);
         // Check if recoBrother has hits in any plane (quality check)
         bool hasAnyHits = false;
         for(int p = 0; p < 3; p++){
@@ -1384,6 +1603,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
         recoBrothersDir[nRecoBrothers][0] = recoBrother->DirectionStart[0];
         recoBrothersDir[nRecoBrothers][1] = recoBrother->DirectionStart[1];
         recoBrothersDir[nRecoBrothers][2] = recoBrother->DirectionStart[2];
+
+        if (recoBrother->TrajectoryDirectionNPoints > 0) {
+          recoBrothersTrajDir[nRecoBrothers * 3 + 0] = recoBrother->TrajectoryDirection.X();
+          recoBrothersTrajDir[nRecoBrothers * 3 + 1] = recoBrother->TrajectoryDirection.Y();
+          recoBrothersTrajDir[nRecoBrothers * 3 + 2] = recoBrother->TrajectoryDirection.Z();
+        }
 
         // Chi2 for proton hypothesis
         std::pair<double, int> chi2Prot = pdAnaUtils::Chi2PID(*recoBrother, 2212);
@@ -1437,19 +1662,17 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
           }
 
           // Summary counters (for backward compatibility)
-          if(recoBrother->Length >= minBrotherLength){
-            if(trueBrother->PDG == 2212){
-          nReconProtons++;
-              if(trueBrother->Momentum > maxProtonMom){
-                maxProtonMom = trueBrother->Momentum;
-                Float_t protonMass = 0.938272;
-                maxProtonEnergy = CalculateEnergy(protonMass, maxProtonMom);
-              }
+          if(trueBrother->PDG == 2212){
+            nReconProtons++;
+            if(trueBrother->Momentum > maxProtonMom){
+              maxProtonMom = trueBrother->Momentum;
+              Float_t protonMass = 0.938272;
+              maxProtonEnergy = CalculateEnergy(protonMass, maxProtonMom);
             }
-            if(trueBrother->PDG == 211) nRecoPiPlus++;
-            if(trueBrother->PDG == -211) nRecoPiMinus++;
-            if(recoBrothersChi2Prot[nRecoBrothers] < 60.0) nReconProtChi2++;
           }
+          if(trueBrother->PDG == 211) nRecoPiPlus++;
+          if(trueBrother->PDG == -211) nRecoPiMinus++;
+          if(recoBrothersChi2Prot[nRecoBrothers] < 60.0) nReconProtChi2++;
         }
 
         nRecoBrothers++;
@@ -1673,6 +1896,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       recoBrothersRecoTotalDirNorm[2] = recoBrothersRecoTotalDir.Z() / recoBrothersRecoTotalDir.Mag();
     }
     output.FillMatrixVarFromArray(k0recobrothrecototaldir, recoBrothersRecoTotalDirNorm, 3);
+    output.FillMatrixVarFromArray(k0recobrothtrajdir, recoBrothersTrajDir, 100 * 3);
     output.FillVectorVar(k0recobrothprotonmaxenergy, recoBrothersProtonMaxEnergy);
     output.FillVectorVar(k0recobrothprotonmaxmomentum, recoBrothersProtonMaxMom);
     output.FillVectorVar(k0recobrothprotonmaxtrueenergy, recoBrothersProtonMaxTrueEnergy);
@@ -1729,13 +1953,21 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     output.FillVectorVar(k0recobrothalign, -999.0);
     output.FillVectorVar(k0recobrothtruealign, -999.0);
     output.FillVectorVar(k0recobrothprotonmaxid, -999);
+
+    Float_t defaultRecBrothTrajDir[100 * 3];
+    for (int i = 0; i < 100 * 3; ++i) {
+      defaultRecBrothTrajDir[i] = -999.f;
+    }
+    output.FillMatrixVarFromArray(k0recobrothtrajdir, defaultRecBrothTrajDir, 100 * 3);
   }
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex){
+void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event){
     // Fill all variables for a single K0 daughter1
   if(daughterCandidate){
+    EnsureTrajectoryDirectionFromPoints(daughterCandidate);
+    EnsureTrajectoryDirectionFromPoints(daughterCandidate);
     Float_t k0dau1recostartpos_val[3] = {-999.0, -999.0, -999.0};
     k0dau1recostartpos_val[0] = daughterCandidate->PositionStart[0];
     k0dau1recostartpos_val[1] = daughterCandidate->PositionStart[1];
@@ -1759,6 +1991,14 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
     k0dau1recoenddir_val[1] = daughterCandidate->DirectionEnd[1];
     k0dau1recoenddir_val[2] = daughterCandidate->DirectionEnd[2];
     output.FillMatrixVarFromArray(k0dau1recoenddir, k0dau1recoenddir_val, 3);
+
+    Float_t k0dau1trajdir_val[3] = {-999.f, -999.f, -999.f};
+    if (daughterCandidate->TrajectoryDirectionNPoints > 0) {
+      k0dau1trajdir_val[0] = daughterCandidate->TrajectoryDirection.X();
+      k0dau1trajdir_val[1] = daughterCandidate->TrajectoryDirection.Y();
+      k0dau1trajdir_val[2] = daughterCandidate->TrajectoryDirection.Z();
+    }
+    output.FillMatrixVarFromArray(k0dau1trajdir, k0dau1trajdir_val, 3);
 
     Float_t k0dau1recomom_val = -999.0;
     k0dau1recomom_val = daughterCandidate->Momentum;
@@ -1841,6 +2081,19 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
       }
     }
     output.FillMatrixVarFromArray(k0dau1truedauid, trueDau1GrandDaughterIDs, 10);
+
+    // Fill true parent true ID and PDG
+    Int_t k0dau1truepartrueid_val = -999;
+    Int_t k0dau1truepartruepdg_val = -999;
+    if(trueDaughterCandidate && trueDaughterCandidate->ParentID > 0){
+      AnaTrueParticlePD* trueParent = pdAnaUtils::GetTrueParticle(const_cast<AnaEventB*>(&event), trueDaughterCandidate->ParentID);
+      if(trueParent){
+        k0dau1truepartrueid_val = trueParent->ID;
+        k0dau1truepartruepdg_val = trueParent->PDG;
+      }
+    }
+    output.FillVectorVar(k0dau1truepartrueid, k0dau1truepartrueid_val);
+    output.FillVectorVar(k0dau1truepartruepdg, k0dau1truepartruepdg_val);
 
     if(daughterCandidate->Daughters.size() > 0){
       int nGrandDaughters = std::min((int)daughterCandidate->Daughters.size(), 10);
@@ -1928,6 +2181,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
     output.FillMatrixVarFromArray(k0dau1recoendpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1recostartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1recoenddir, default_3d, 3);
+    output.FillMatrixVarFromArray(k0dau1trajdir, default_3d, 3);
     output.FillVectorVar(k0dau1recomom, -999.0);
     output.FillVectorVar(k0dau1recolength, -999.0);
     output.FillVectorVar(k0dau1recondau, -999);
@@ -1945,9 +2199,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
     output.FillVectorVar(k0dau1avgdedx25cm, -999.0);
     output.FillVectorVar(k0dau1avgdedx50cm, -999.0);
     output.FillVectorVar(k0dau1nhits, -999);
-    output.FillVectorVar(k0dau1trueid, -999);
-    output.FillVectorVar(k0dau1recoid, -999);
-    output.FillMatrixVarFromArray(k0dau1truestartpos, default_3d, 3);
+      output.FillVectorVar(k0dau1trueid, -999);
+      output.FillVectorVar(k0dau1recoid, -999);
+      output.FillVectorVar(k0dau1truepartrueid, -999);
+      output.FillVectorVar(k0dau1truepartruepdg, -999);
+      output.FillMatrixVarFromArray(k0dau1truestartpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1trueendpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1truestartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1trueenddir, default_3d, 3);
@@ -1962,7 +2218,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex){
+void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event){
     // Fill all variables for a single K0 daughter2
   if(daughterCandidate){
     Float_t k0dau2recostartpos_val[3] = {-999.0, -999.0, -999.0};
@@ -1988,6 +2244,14 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
     k0dau2recoenddir_val[1] = daughterCandidate->DirectionEnd[1];
     k0dau2recoenddir_val[2] = daughterCandidate->DirectionEnd[2];
     output.FillMatrixVarFromArray(k0dau2recoenddir, k0dau2recoenddir_val, 3);
+
+    Float_t k0dau2trajdir_val[3] = {-999.f, -999.f, -999.f};
+    if (daughterCandidate->TrajectoryDirectionNPoints > 0) {
+      k0dau2trajdir_val[0] = daughterCandidate->TrajectoryDirection.X();
+      k0dau2trajdir_val[1] = daughterCandidate->TrajectoryDirection.Y();
+      k0dau2trajdir_val[2] = daughterCandidate->TrajectoryDirection.Z();
+    }
+    output.FillMatrixVarFromArray(k0dau2trajdir, k0dau2trajdir_val, 3);
 
     Float_t k0dau2recomom_val = -999.0;
     k0dau2recomom_val = daughterCandidate->Momentum;
@@ -2070,6 +2334,19 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
       }
     }
     output.FillMatrixVarFromArray(k0dau2truedauid, trueDau2GrandDaughterIDs, 10);
+
+    // Fill true parent true ID and PDG
+    Int_t k0dau2truepartrueid_val = -999;
+    Int_t k0dau2truepartruepdg_val = -999;
+    if(trueDaughterCandidate && trueDaughterCandidate->ParentID > 0){
+      AnaTrueParticlePD* trueParent = pdAnaUtils::GetTrueParticle(const_cast<AnaEventB*>(&event), trueDaughterCandidate->ParentID);
+      if(trueParent){
+        k0dau2truepartrueid_val = trueParent->ID;
+        k0dau2truepartruepdg_val = trueParent->PDG;
+      }
+    }
+    output.FillVectorVar(k0dau2truepartrueid, k0dau2truepartrueid_val);
+    output.FillVectorVar(k0dau2truepartruepdg, k0dau2truepartruepdg_val);
 
     if(daughterCandidate->Daughters.size() > 0){
       int nGrandDaughters = std::min((int)daughterCandidate->Daughters.size(), 10);
@@ -2156,6 +2433,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
     output.FillMatrixVarFromArray(k0dau2recoendpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2recostartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2recoenddir, default_3d, 3);
+    output.FillMatrixVarFromArray(k0dau2trajdir, default_3d, 3);
     output.FillVectorVar(k0dau2recomom, -999.0);
     output.FillVectorVar(k0dau2recolength, -999.0);
     output.FillVectorVar(k0dau2recondau, -999);
@@ -2173,9 +2451,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
     output.FillVectorVar(k0dau2avgdedx25cm, -999.0);
     output.FillVectorVar(k0dau2avgdedx50cm, -999.0);
     output.FillVectorVar(k0dau2nhits, -999);
-    output.FillVectorVar(k0dau2trueid, -999);
-    output.FillVectorVar(k0dau2recoid, -999);
-    output.FillMatrixVarFromArray(k0dau2truestartpos, default_3d, 3);
+      output.FillVectorVar(k0dau2trueid, -999);
+      output.FillVectorVar(k0dau2recoid, -999);
+      output.FillVectorVar(k0dau2truepartrueid, -999);
+      output.FillVectorVar(k0dau2truepartruepdg, -999);
+      output.FillMatrixVarFromArray(k0dau2truestartpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2trueendpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2truestartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2trueenddir, default_3d, 3);

@@ -2,7 +2,10 @@
 #include "EventBoxPD.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pdNeutralUtils.hxx"
+#include "pdAnnihilationUtils.hxx"
+#include "pdCreationUtils.hxx"
 #include "pdBaseSelection.hxx"
+#include "pdDataClasses.hxx"
 #include <algorithm>
 #include <set>
 #include <sstream>
@@ -27,6 +30,14 @@ void neutralKaonSelection::DefineSteps(){
   AddStep(StepBase::kCut   , "enough particles" , new HasEnoughParticlesCut(), true);
   AddStep(StepBase::kAction, "find neutral candidates", new FindNeutralCandidatesAction(), true);
   AddStep(StepBase::kCut   , "has neutral candidates" , new HasNeutralCandidatesCut(), true);
+
+  // K0 quality cuts
+  AddStep(StepBase::kCut   , "K0 start-end direction" , new K0StartEndDirCut(), true);
+  AddStep(StepBase::kCut   , "K0 vertex opening" , new K0VtxOpeningCut(), true);
+  AddStep(StepBase::kCut   , "K0 parent true PDG" , new K0ParentTruePDGCut(), true);
+  AddStep(StepBase::kCut   , "K0 length" , new K0LengthCut(), true);
+  AddStep(StepBase::kCut   , "K0 daughter1 length" , new K0Dau1LengthCut(), true);
+  AddStep(StepBase::kCut   , "K0 daughter2 length" , new K0Dau2LengthCut(), true);
 
   // // Split the selection in branches, one for each possible candidate
   // AddSplit(neutralKaonAnalysisConstants::NMAXSAVEDCANDIDATES);
@@ -126,13 +137,47 @@ bool FindNeutralCandidatesAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   box.nNeutralParticleCandidates = 0;
 
   // First create fitted vertices with scoring (requires same parent for both daughters)
-  const double maxVertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.VertexRadius");
-  const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
-  std::vector<AnaAnnihilationVertexPD*> vertices = pdNeutralUtils::CreateVertices(*static_cast<AnaEventB*>(&event), maxVertexRadius, maxDaughterDistance);
+  const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
+  std::vector<AnaAnnihilationVertexPD*> annihilationVertices = pdAnnihilationUtils::CreateVertices(*static_cast<AnaEventB*>(&event), maxDaughterDistance);
 
-  // Then create neutral particle candidates from the vertices (one per vertex)
-  box.neutralParticleCandidates = pdNeutralUtils::CreateNeutrals(*static_cast<AnaEventB*>(&event), vertices);
+  // Create creation vertices (no particle exclusions at this stage)
+  // Filtering by score is done inside CreateCreationVertices
+  // Exclusion of annihilation vertex particles is done inside CreateNeutrals
+  const double creationRadius = ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius");
+  std::vector<AnaCreationVertexPD*> creationVertices = pdCreationUtils::CreateCreationVertices(*static_cast<AnaEventB*>(&event), creationRadius, {});
+
+  // Diagnostic dump for run 22591250 subrun 40 event 4959 (worst creation vertex event)
+  AnaEventB* evb = static_cast<AnaEventB*>(&event);
+  if (evb->EventInfo && evb->EventInfo->Run == 22591250 && evb->EventInfo->SubRun == 40 && evb->EventInfo->Event == 4959) {
+    std::cout << "\n[CreationVertex diagnostic] Run 22591250 SubRun 40 Event 4959:\n";
+    std::cout << "  Creation vertices selected: " << creationVertices.size() << "\n";
+    for (size_t iv = 0; iv < creationVertices.size(); iv++) {
+      AnaCreationVertexPD* cv = creationVertices[iv];
+      if (!cv || !cv->BeamParticle) continue;
+      std::cout << "  CV " << iv << ": beamID=" << cv->BeamParticle->UniqueID
+                << " secondID=" << (cv->SecondParticle ? cv->SecondParticle->UniqueID : -1)
+                << " ProtonScore=" << cv->ProtonScore << " DistanceScore=" << cv->DistanceScore
+                << " MinDistScore=" << cv->MinDistanceScore
+                << " pos=(" << cv->Position[0] << "," << cv->Position[1] << "," << cv->Position[2] << ")\n";
+    }
+  }
+
+  // Then create neutral particle candidates from all combinations, filtered by score
+  box.neutralParticleCandidates = pdNeutralUtils::CreateNeutrals(*static_cast<AnaEventB*>(&event), creationVertices, annihilationVertices);
   box.nNeutralParticleCandidates = box.neutralParticleCandidates.size();
+
+  if (evb->EventInfo && evb->EventInfo->Run == 22591250 && evb->EventInfo->SubRun == 40 && evb->EventInfo->Event == 4959 && box.nNeutralParticleCandidates > 0) {
+    std::cout << "  K0 candidates: " << box.nNeutralParticleCandidates << "\n";
+    for (size_t i = 0; i < box.neutralParticleCandidates.size() && i < 3; i++) {
+      AnaNeutralParticlePD* np = box.neutralParticleCandidates[i];
+      if (!np || !np->CreationVertex) continue;
+      AnaCreationVertexPD* cv = np->CreationVertex;
+      std::cout << "  K0 cand " << i << ": creationVtx beamID=" << (cv->BeamParticle ? cv->BeamParticle->UniqueID : -1)
+                << " secondID=" << (cv->SecondParticle ? cv->SecondParticle->UniqueID : -1)
+                << " creation pos=(" << np->PositionStart[0] << "," << np->PositionStart[1] << "," << np->PositionStart[2] << ")\n";
+    }
+    std::cout << "[CreationVertex diagnostic] end\n\n";
+  }
 
   return true;
 }
@@ -148,5 +193,213 @@ bool HasNeutralCandidatesCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
 
   // Check if we have at least one neutral particle candidate
   return (box.nNeutralParticleCandidates > 0);
+}
+
+//********************************************************************
+bool K0StartEndDirCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+//********************************************************************
+
+  (void)event;
+
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
+
+  // Check if we have any candidates
+  if (box.nNeutralParticleCandidates == 0) {
+    return false;
+  }
+
+  // Check if at least one candidate passes the cut: k0recostartenddir > 0.95
+  for (size_t i = 0; i < box.neutralParticleCandidates.size(); i++) {
+    AnaNeutralParticlePD* candidate = box.neutralParticleCandidates[i];
+    if (!candidate) continue;
+
+    // Calculate dot product between start and end direction vectors
+    Float_t k0recostartenddir = candidate->DirectionStart[0]*candidate->DirectionEnd[0] +
+                                 candidate->DirectionStart[1]*candidate->DirectionEnd[1] +
+                                 candidate->DirectionStart[2]*candidate->DirectionEnd[2];
+
+    if (k0recostartenddir > 0.95) {
+      return true; // At least one candidate passes
+    }
+  }
+
+  return false;
+}
+
+//********************************************************************
+bool K0VtxOpeningCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+//********************************************************************
+
+  (void)event;
+
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
+
+  // Check if we have any candidates
+  if (box.nNeutralParticleCandidates == 0) {
+    return false;
+  }
+
+  // Check if at least one candidate passes the cut: k0vtxrecoopening < 25
+  for (size_t i = 0; i < box.neutralParticleCandidates.size(); i++) {
+    AnaNeutralParticlePD* candidate = box.neutralParticleCandidates[i];
+    if (!candidate) continue;
+
+    // Check if annihilation vertex exists
+    if (!candidate->AnnihilationVertex) continue;
+
+    Float_t k0vtxrecoopening = candidate->AnnihilationVertex->OpeningAngle;
+
+    // Check if opening angle is valid and passes cut
+    if (k0vtxrecoopening > -900 && k0vtxrecoopening < 25.0) {
+      return true; // At least one candidate passes
+    }
+  }
+
+  return false;
+}
+
+//********************************************************************
+bool K0ParentTruePDGCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+//********************************************************************
+
+  (void)event;
+
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
+
+  // Check if we have any candidates
+  if (box.nNeutralParticleCandidates == 0) {
+    return false;
+  }
+
+  // Check if at least one candidate passes the cut: k0partruepdg == 321
+  for (size_t i = 0; i < box.neutralParticleCandidates.size(); i++) {
+    AnaNeutralParticlePD* candidate = box.neutralParticleCandidates[i];
+    if (!candidate) continue;
+
+    // Check if parent exists
+    if (!candidate->Parent) continue;
+
+    // Check if parent has true object
+    if (!candidate->Parent->TrueObject) continue;
+
+    // Get true parent PDG
+    AnaTrueParticlePD* trueParent = static_cast<AnaTrueParticlePD*>(candidate->Parent->TrueObject);
+    if (!trueParent) continue;
+
+    Int_t k0partruepdg = trueParent->PDG;
+
+    if (k0partruepdg == 321) {
+      return true; // At least one candidate passes
+    }
+  }
+
+  return false;
+}
+
+//********************************************************************
+bool K0LengthCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+//********************************************************************
+
+  (void)event;
+
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
+
+  // Check if we have any candidates
+  if (box.nNeutralParticleCandidates == 0) {
+    return false;
+  }
+
+  // Check if at least one candidate passes the cut: k0recolength > 5
+  for (size_t i = 0; i < box.neutralParticleCandidates.size(); i++) {
+    AnaNeutralParticlePD* candidate = box.neutralParticleCandidates[i];
+    if (!candidate) continue;
+
+    Float_t k0recolength = candidate->Length;
+
+    // Check if length is valid and passes cut
+    if (k0recolength > -900 && k0recolength > 5.0) {
+      return true; // At least one candidate passes
+    }
+  }
+
+  return false;
+}
+
+//********************************************************************
+bool K0Dau1LengthCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+//********************************************************************
+
+  (void)event;
+
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
+
+  // Check if we have any candidates
+  if (box.nNeutralParticleCandidates == 0) {
+    return false;
+  }
+
+  // Check if at least one candidate passes the cut: k0dau1recolength > 60
+  for (size_t i = 0; i < box.neutralParticleCandidates.size(); i++) {
+    AnaNeutralParticlePD* candidate = box.neutralParticleCandidates[i];
+    if (!candidate) continue;
+
+    // Check if annihilation vertex exists and has at least one particle
+    if (!candidate->AnnihilationVertex) continue;
+    if (candidate->AnnihilationVertex->Particles.size() < 1) continue;
+
+    AnaParticlePD* daughter1 = static_cast<AnaParticlePD*>(candidate->AnnihilationVertex->Particles[0]);
+    if (!daughter1) continue;
+
+    Float_t k0dau1recolength = daughter1->Length;
+
+    // Check if length is valid and passes cut
+    if (k0dau1recolength > -900 && k0dau1recolength > 60.0) {
+      return true; // At least one candidate passes
+    }
+  }
+
+  return false;
+}
+
+//********************************************************************
+bool K0Dau2LengthCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
+//********************************************************************
+
+  (void)event;
+
+  // Cast the box to the appropriate type
+  ToyBoxNeutralKaon& box = *static_cast<ToyBoxNeutralKaon*>(&boxB);
+
+  // Check if we have any candidates
+  if (box.nNeutralParticleCandidates == 0) {
+    return false;
+  }
+
+  // Check if at least one candidate passes the cut: k0dau2recolength < 180
+  for (size_t i = 0; i < box.neutralParticleCandidates.size(); i++) {
+    AnaNeutralParticlePD* candidate = box.neutralParticleCandidates[i];
+    if (!candidate) continue;
+
+    // Check if annihilation vertex exists and has at least two particles
+    if (!candidate->AnnihilationVertex) continue;
+    if (candidate->AnnihilationVertex->Particles.size() < 2) continue;
+
+    AnaParticlePD* daughter2 = static_cast<AnaParticlePD*>(candidate->AnnihilationVertex->Particles[1]);
+    if (!daughter2) continue;
+
+    Float_t k0dau2recolength = daughter2->Length;
+
+    // Check if length is valid and passes cut
+    if (k0dau2recolength > -900 && k0dau2recolength < 180.0) {
+      return true; // At least one candidate passes
+    }
+  }
+
+  return false;
 }
 

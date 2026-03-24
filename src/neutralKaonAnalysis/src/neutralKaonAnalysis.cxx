@@ -17,6 +17,8 @@
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
 
+#include "CategoryManager.hxx"
+
 #include "ParticlePositionSCECorrection.hxx"
 #include "SCEGeometricVariation.hxx"
 
@@ -150,6 +152,7 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   // neutralKaonTree::AddNeutralKaonVariables_Candidates(output(), 1000);
   neutralKaonTree::AddNeutralKaonVariables_K0(output(), 1000);
   neutralKaonTree::AddNeutralKaonVariables_K0Par(output(), 1000);
+  neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(output(), 1000);
   neutralKaonTree::AddNeutralKaonVariables_K0Vtx(output(), 1000);
   neutralKaonTree::AddNeutralKaonVariables_K0Brother(output(), 1000);
   neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(output(), 1000);
@@ -189,54 +192,8 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   standardPDTree::FillStandardVariables_BeamInstrumentationReco(output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_BeamInstrumentationTrue(output(), GetSpill().Beam);
 
-  // ---------- Additional candidate variables --------------
-  // if(box().MainTrack){
-  //   // Fill beam particle information
-  //   standardPDTree::FillStandardVariables_BeamParticleReco(output(), box().MainTrack);
-  //   standardPDTree::FillStandardVariables_BeamParticleTrue(output(), box().MainTrack);
-  //   standardPDTree::FillStandardVariables_BeamParticleHitsReco(output(), box().MainTrack);
-
-  //   // Fill beam particle daughters information
-  //   int ndau = std::min(50, (int)box().MainTrack->Daughters.size());
-  //   for(int i = 0; i < ndau; i++){
-  //     AnaParticlePD* daughter = static_cast<AnaParticlePD*>(box().MainTrack->Daughters[i]);
-  //     if (!daughter) continue;
-
-  //     standardPDTree::FillStandardVariables_BeamParticleDaughtersReco(output(), daughter);
-  //     standardPDTree::FillStandardVariables_BeamParticleDaughtersTrue(output(), daughter);
-
-  //     // Fill parent PDG information
-  //     if (daughter->TrueObject) {
-  //       AnaTrueParticlePD* trueDaughter = static_cast<AnaTrueParticlePD*>(daughter->TrueObject);
-  //       if (trueDaughter) {
-  //         output().FillVar(seltrk_dau_trueparentpdg, trueDaughter->ParentPDG);
-  //       }
-  //     }
-
-  //     output().IncrementCounter(standardPDTree::seltrk_ndau);
-  //   }
-
-  //   // Fill truth daughter counter (needed by other variables)
-  //   AnaTrueParticlePD* trueBeamPart = static_cast<AnaTrueParticlePD*>(box().MainTrack->TrueObject);
-  //   if (trueBeamPart) {
-  //     int ndau_truth = (int)trueBeamPart->Daughters.size();
-  //     for(int j = 0; j < ndau_truth; j++){
-  //       AnaTrueParticlePD* truthdau = pdAnaUtils::GetTrueParticle(GetSpill().TrueParticles, trueBeamPart->Daughters[j]);
-  //       if (!truthdau) continue;
-  //       output().IncrementCounter(standardPDTree::seltrk_truthdau_ndau);
-  //     }
-  //   }
-  // }
-
-  // Fill vertex candidates information for all events (regardless of main track)
+  // Get neutral kaon box for accessing candidates
   const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
-  // output().FillVar(nAllParticles, neutralKaonBox.nAllParticles);
-
-  // Fill neutral particle candidates data
-  // neutralKaonTree::FillNeutralKaonVariables_Candidates(output(), neutralKaonBox.neutralParticleCandidates, GetEvent());
-
-  // Fill the number of neutral particle candidates
-  // output().FillVar(neutralKaonTree::nk0, static_cast<Int_t>(neutralKaonBox.neutralParticleCandidates.size()));
 
   // Fill individual candidate data
   if(neutralKaonBox.neutralParticleCandidates.size() > 0){
@@ -246,25 +203,29 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
     }
   }
 
-  // Create event display data for events with neutral particle candidates
+  // Save event display data for all events
   if (_EventDisplayDataTree) {
-    const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
-
-    // Fill event display data if there are particles in the event (regardless of candidates)
-    // This ensures we capture all events that pass selection for visualization
-    if (GetEvent().nParticles > 0) {
-      // Save event data to EventDisplayData tree for later regeneration
-      _EventDisplayDataTree->FillEventDisplayData(output(), GetEvent(), neutralKaonBox);
-
-      // Note: Event displays are now generated post-analysis using DrawingTools in ROOT macros
-      // Example usage:
-      //   DrawingTools draw("output.root");
-      //   pdEventDisplay pdEvtDisplay;
-      //   draw.SetEventDisplay(&pdEvtDisplay);
-      //   draw.EvtDisplay(run, subrun, event);
-    }
+    _EventDisplayDataTree->FillEventDisplayData(output(), GetEvent(), neutralKaonBox);
   }
 
+//  // Save event display data only for events with a signal neutral candidate (signal==1)
+//  if (_EventDisplayDataTree && !neutralKaonBox.neutralParticleCandidates.empty()) {
+//    bool hasSignalCandidate = false;
+
+//    if (anaUtils::_categ && anaUtils::_categ->HasCategory("signal")) {
+//      TrackCategoryDefinition& signalCategory = anaUtils::_categ->GetCategory("signal");
+//      for (size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); ++i) {
+//        if (signalCategory.GetObjectCode(1, static_cast<Int_t>(i)) != -999) {
+//          hasSignalCandidate = true;
+//          break;
+//        }
+//      }
+//    }
+
+//    if (hasSignalCandidate) {
+//      _EventDisplayDataTree->FillEventDisplayData(output(), GetEvent(), neutralKaonBox);
+//    }
+//  }
 }
 
 //********************************************************************
@@ -304,6 +265,41 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 //********************************************************************
     // Fill the common variables
     pdBaseAnalysis::FillTruthTree(part);
+
+    // If this is a true K0S/K0L/K0 decaying into 2 pi0, print run/subrun/event
+    const int absPdg = std::abs(part.PDG);
+    const bool isK0S = (absPdg == 310);
+    const bool isK0L = (absPdg == 130);
+    const bool isK0  = (absPdg == 311);
+
+    if ((isK0S || isK0L || isK0) &&
+        part.ProcessEnd == AnaTrueParticleB::Decay &&
+        part.Daughters.size() == 2) {
+
+      AnaTrueParticlePD* dau1 = nullptr;
+      AnaTrueParticlePD* dau2 = nullptr;
+
+      for (int i = 0; i < GetSpill().TrueParticles.size(); ++i) {
+        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[i]);
+        if (!truePart) continue;
+        if (truePart->ID == part.Daughters[0]) dau1 = truePart;
+        if (truePart->ID == part.Daughters[1]) dau2 = truePart;
+      }
+
+      if (dau1 && dau2 && dau1->PDG == 111 && dau2->PDG == 111) {
+        const char* k0Type = isK0S ? "K0S" : (isK0L ? "K0L" : "K0");
+        const AnaEventInfoPD* evtInfo = static_cast<const AnaEventInfoPD*>(GetEvent().EventInfo);
+        if (evtInfo) {
+          std::cout << "[neutralKaonAnalysis] True " << k0Type << " -> pi0 pi0 decay in event: "
+                    << "Run " << evtInfo->Run
+                    << " SubRun " << evtInfo->SubRun
+                    << " Event " << evtInfo->Event
+                    << std::endl;
+        } else {
+          std::cout << "[neutralKaonAnalysis] True " << k0Type << " -> pi0 pi0 decay in current event" << std::endl;
+        }
+      }
+    }
 
     // The truth tree is meant for individual particle information, not analysis results
     // Vertex candidates are analysis results and belong in the ana tree only
@@ -397,13 +393,12 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
     }
 
     // Get parameters for vertex reconstruction
-    double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.DaughterDistance");
+    double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
     double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
-    double vertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.VertexRadius");
 
     // Fill the debugging variables
     neutralKaonTruthTree::FillVertexReconstructionDebugVariables(output(), part, daughter1Reco, daughter2Reco,
-                                                                 parentReco, maxDaughterDistance, trackFitLength, vertexRadius);
+                                                                 parentReco, maxDaughterDistance, trackFitLength);
 
     // Fill parent information if it exists - O(1) hash map lookup
     auto it_parent = trueParticleByID.find(part.ParentID);
@@ -532,13 +527,29 @@ void neutralKaonAnalysis::FillCategories(){
   // For neutral particle candidates
   const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
   if(neutralKaonBox.neutralParticleCandidates.size() > 0){
+    bool hasSignalCandidate = false;
     for(size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++){
-      neutralKaonAnaUtils::FillNeutralParticleSignalBackgroundCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
-      neutralKaonAnaUtils::FillSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i]);
-      neutralKaonAnaUtils::FillNeutralParticlePDGCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
-      neutralKaonAnaUtils::FillNeutralParticleChargeCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
-      neutralKaonAnaUtils::FillNeutralParticleNoTruthCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
+      neutralKaonAnaUtils::FillSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
 
+      if (anaUtils::_categ && anaUtils::_categ->HasCategory("signal")) {
+        const int signalCode = anaUtils::_categ->GetCategory("signal").GetObjectCode(1, static_cast<Int_t>(i));
+        if (signalCode == 1) {
+          hasSignalCandidate = true;
+        }
+      }
+
+    }
+
+    if (hasSignalCandidate) {
+      const AnaEventInfoPD* evtInfo = static_cast<const AnaEventInfoPD*>(GetEvent().EventInfo);
+      if (evtInfo) {
+        std::cout << "[neutralKaonAnalysis] Event contains a signal neutral candidate (signal==1): "
+                  << "Run " << evtInfo->Run
+                  << " SubRun " << evtInfo->SubRun
+                  << " Event " << evtInfo->Event << std::endl;
+      } else {
+        std::cout << "[neutralKaonAnalysis] Event contains a signal neutral candidate (signal==1)" << std::endl;
+      }
     }
   }
 
