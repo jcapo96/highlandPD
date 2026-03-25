@@ -181,18 +181,121 @@ namespace {
 
 namespace pdAnnihilationUtils {
 
+namespace {
+  // Effective score for vertex ordering: lower is better.
+  // Optional terms (all add to score, so higher penalty = worse):
+  // - FilterVerticesFavourTwoPions: mass near K0 + pion PID (weak discriminator; use with care).
+  // - FilterVerticesFavourGeometry: opening angle (prefer small), min daughter length (prefer long),
+  //   min daughter nhits (prefer many). Based on signal vs background diagnostics.
+  double GetEffectiveVertexScore(const AnaAnnihilationVertexPD* v) {
+    double base = (v->Score > -900 && v->Score < 1e6) ? v->Score : 1e6;
+    double total = base;
+
+    // --- Geometry-based terms (diagnostics: signal has smaller opening, longer daughters, more hits) ---
+    if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesFavourGeometry") &&
+        ND::params().GetParameterI("neutralKaonAnalysis.FilterVerticesFavourGeometry") == 1) {
+      double openWeight = 0.01;  // per degree
+      if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesOpeningAngleWeight")) {
+        openWeight = ND::params().GetParameterD("neutralKaonAnalysis.FilterVerticesOpeningAngleWeight");
+      }
+      double lengthWeight = 0.02;  // per cm below threshold
+      if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesMinDaughterLengthWeight")) {
+        lengthWeight = ND::params().GetParameterD("neutralKaonAnalysis.FilterVerticesMinDaughterLengthWeight");
+      }
+      double lengthThreshold = 40.0;  // cm
+      if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesMinDaughterLengthThreshold")) {
+        lengthThreshold = ND::params().GetParameterD("neutralKaonAnalysis.FilterVerticesMinDaughterLengthThreshold");
+      }
+      double nhitsWeight = 0.005;  // per hit below threshold
+      if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesMinDaughterNhitsWeight")) {
+        nhitsWeight = ND::params().GetParameterD("neutralKaonAnalysis.FilterVerticesMinDaughterNhitsWeight");
+      }
+      double nhitsThreshold = 50.0;
+      if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesMinDaughterNhitsThreshold")) {
+        nhitsThreshold = ND::params().GetParameterD("neutralKaonAnalysis.FilterVerticesMinDaughterNhitsThreshold");
+      }
+
+      if (v->OpeningAngle > -900 && v->OpeningAngle < 1e3) {
+        total += openWeight * v->OpeningAngle;  // degrees; signal median ~21, bkg ~56
+      }
+      if (v->NParticles >= 2) {
+        AnaParticlePD* p1 = static_cast<AnaParticlePD*>(v->Particles[0]);
+        AnaParticlePD* p2 = static_cast<AnaParticlePD*>(v->Particles[1]);
+        if (p1 && p2) {
+          double l1 = (p1->Length > -900 && p1->Length < 1e4) ? p1->Length : 0;
+          double l2 = (p2->Length > -900 && p2->Length < 1e4) ? p2->Length : 0;
+          double minLen = std::min(l1, l2);
+          if (minLen >= 0) {
+            total += lengthWeight * std::max(0.0, lengthThreshold - minLen);
+          }
+          int n1 = static_cast<int>(p1->Hits[2].size());
+          int n2 = static_cast<int>(p2->Hits[2].size());
+          int minNhits = std::min(n1, n2);
+          if (minNhits >= 0) {
+            total += nhitsWeight * std::max(0.0, nhitsThreshold - static_cast<double>(minNhits));
+          }
+        }
+      }
+    }
+
+    // --- Mass + PID terms (optional; weak discriminator when background is also pi+ pi-) ---
+    if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesFavourTwoPions") &&
+        ND::params().GetParameterI("neutralKaonAnalysis.FilterVerticesFavourTwoPions") == 1) {
+      double massWeight = 1e-5;
+      if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesK0MassWeight")) {
+        massWeight = ND::params().GetParameterD("neutralKaonAnalysis.FilterVerticesK0MassWeight");
+      }
+      double pidWeight = 0.01;
+      if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesPionChi2Weight")) {
+        pidWeight = ND::params().GetParameterD("neutralKaonAnalysis.FilterVerticesPionChi2Weight");
+      }
+      const double M_K0_MeV = 497.611;
+      double E_MeV = v->Energy;
+      double px = v->Momentum[0], py = v->Momentum[1], pz = v->Momentum[2];
+      double p2_MeV2 = 1e6 * (px*px + py*py + pz*pz);
+      double M2 = E_MeV * E_MeV - p2_MeV2;
+      double M_MeV = (M2 > 0) ? std::sqrt(M2) : 0;
+      total += massWeight * (M_MeV - M_K0_MeV) * (M_MeV - M_K0_MeV);
+      if (v->NParticles >= 2 && pidWeight > 0) {
+        AnaParticlePD* p1 = static_cast<AnaParticlePD*>(v->Particles[0]);
+        AnaParticlePD* p2 = static_cast<AnaParticlePD*>(v->Particles[1]);
+        if (p1 && p2) {
+          std::pair<double, int> c1 = pdAnaUtils::Chi2PID(*p1, 211);
+          std::pair<double, int> c2 = pdAnaUtils::Chi2PID(*p2, 211);
+          double ndf1 = (c1.second > 0) ? c1.first / c1.second : 9999.0;
+          double ndf2 = (c2.second > 0) ? c2.first / c2.second : 9999.0;
+          total += pidWeight * std::max(ndf1, ndf2);
+        }
+      }
+    }
+
+    return total;
+  }
+} // anonymous namespace
+
 //***************************************************************
 std::vector<AnaAnnihilationVertexPD*> FilterVerticesByScore(std::vector<AnaAnnihilationVertexPD*>& vertices) {
     //***************************************************************
 
-      // Sort vertices by Score (ascending - lower is better)
+      static bool once = true;
+      if (once && !vertices.empty()) {
+        once = false;
+        if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesFavourGeometry") &&
+            ND::params().GetParameterI("neutralKaonAnalysis.FilterVerticesFavourGeometry") == 1) {
+          std::cout << "[FilterVerticesByScore] FilterVerticesFavourGeometry=1: ordering by score + opening angle + min daughter length/nhits" << std::endl;
+        }
+        if (ND::params().HasParameter("neutralKaonAnalysis.FilterVerticesFavourTwoPions") &&
+            ND::params().GetParameterI("neutralKaonAnalysis.FilterVerticesFavourTwoPions") == 1) {
+          std::cout << "[FilterVerticesByScore] FilterVerticesFavourTwoPions=1: ordering also by mass near K0 + pion PID" << std::endl;
+        }
+      }
+      // Sort vertices by effective score (ascending - lower is better).
+      // Optionally favour two-pion vertices (mass near K0, pion-like PID) via neutralKaonAnalysis.FilterVerticesFavourTwoPions.
       std::sort(vertices.begin(), vertices.end(),
         [](const AnaAnnihilationVertexPD* a, const AnaAnnihilationVertexPD* b) {
-          // Handle invalid scores
-          if (a->Score < -900 && b->Score < -900) return false;
-          if (a->Score < -900) return false;  // Invalid score goes to back
-          if (b->Score < -900) return true;   // Invalid score goes to back
-          return a->Score < b->Score;
+          double sa = GetEffectiveVertexScore(a);
+          double sb = GetEffectiveVertexScore(b);
+          return sa < sb;
         });
 
       // Track which particles have been used
@@ -596,8 +699,10 @@ double FindVertexPositionGeometric(AnaVertexPD* vertex, double trackFitLength) {
   }
 
   // ========== SECTION 4: Final assignment ==========
-  // Always set Score to MinimumDistance
-  vertex->Score = vertex->MinimumDistance;
+  // Always use Pandora minimum distance for Score when valid, so that FilterVerticesByScore
+  // keeps the same set of vertices (and thus the same truth matching) regardless of UsePandora.
+  // UsePandora only chooses which Position/Direction are written to the tree for resolution studies.
+  vertex->Score = (vertex->MinimumDistancePandora > -900.f) ? vertex->MinimumDistancePandora : vertex->MinimumDistance;
 
   return vertex->MinimumDistance;
 }
@@ -753,6 +858,16 @@ bool ValidateVertex(AnaVertexPD* vertex) {
   // Check valid score
   if (vertex->Score < -900 || vertex->Score > 1e6) {
     return false;
+  }
+
+  // Require the two track lines to actually meet: closest-approach distance must be below threshold.
+  // (PositionStart of each track can be 20+ cm apart in LArTPC because they are "first hit", not the
+  // true decay point; the geometric closest approach is the physically meaningful quantity.)
+  if (ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexMaxClosestApproach")) {
+    double maxClosest = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexMaxClosestApproach");
+    if (vertex->MinimumDistance > -900 && vertex->MinimumDistance > maxClosest) {
+      return false;
+    }
   }
 
   return true;
@@ -949,23 +1064,37 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(
         continue; // Skip if this pair has already been used
       }
 
-      // Check if daughter1 and daughter2 are close enough
-      TVector3 pos1 = pdAnaUtils::DefinePosition(daughter1);
-      TVector3 pos2 = pdAnaUtils::DefinePosition(daughter2);
+      // Check if daughter1 and daughter2 are close enough using closest approach of the two
+      // track lines (not just endpoints). This recovers pairs where the vertex is not at any
+      // of the four endpoints but the lines still pass within maxDaughterDistance.
+      TVector3 s1(daughter1->PositionStart[0], daughter1->PositionStart[1], daughter1->PositionStart[2]);
+      TVector3 e1(daughter1->PositionEnd[0], daughter1->PositionEnd[1], daughter1->PositionEnd[2]);
+      TVector3 s2(daughter2->PositionStart[0], daughter2->PositionStart[1], daughter2->PositionStart[2]);
+      TVector3 e2(daughter2->PositionEnd[0], daughter2->PositionEnd[1], daughter2->PositionEnd[2]);
 
-      // Check if positions are valid
-      if (pos1.X() < -900 || pos2.X() < -900) {
-        continue; // Skip if positions are invalid
+      if (s1.X() < -900 || e1.X() < -900 || s2.X() < -900 || e2.X() < -900) {
+        continue; // Skip if any endpoint invalid
       }
 
-      // Convert TVector3 to arrays for GetSeparationSquared
-      Float_t pos1_array[3] = {static_cast<Float_t>(pos1.X()), static_cast<Float_t>(pos1.Y()), static_cast<Float_t>(pos1.Z())};
-      Float_t pos2_array[3] = {static_cast<Float_t>(pos2.X()), static_cast<Float_t>(pos2.Y()), static_cast<Float_t>(pos2.Z())};
+      std::vector<double> line1Params, line2Params;
+      pdAnaUtils::ExtrapolateTrack(daughter1, line1Params, trackFitLength, true);
+      pdAnaUtils::ExtrapolateTrack(daughter2, line2Params, trackFitLength, true);
 
-      float distance = sqrt(anaUtils::GetSeparationSquared(pos1_array, pos2_array));
+      float distance;
+      if (line1Params.size() >= 6 && line2Params.size() >= 6 &&
+          line1Params[0] != -999.0 && line2Params[0] != -999.0) {
+        TVector3 cp1, cp2;
+        double closestApproach = pdAnaUtils::FindClosestPointsBetweenLines(line1Params, line2Params, cp1, cp2);
+        distance = (closestApproach >= 0.0 && closestApproach < 1e6) ? static_cast<float>(closestApproach) : 1e6f;
+      } else {
+        // Fallback: min of four endpoint distances if track fit failed
+        auto dist = [](const TVector3& a, const TVector3& b) { return (a - b).Mag(); };
+        float d_ss = dist(s1, s2), d_se = dist(s1, e2), d_es = dist(e1, s2), d_ee = dist(e1, e2);
+        distance = std::min({d_ss, d_se, d_es, d_ee});
+      }
 
-      if(distance > maxDaughterDistance){
-        continue; // Skip daughter1 and daughter2 if they are not close enough
+      if (distance > maxDaughterDistance) {
+        continue; // Skip if tracks don't approach within threshold
       }
 
       // Create reconstructed vertex
