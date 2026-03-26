@@ -5,11 +5,38 @@
 #include "standardPDTree.hxx"
 #include "pdAnalysisUtils.hxx"
 
+namespace {
+
+bool GetRecoDaughterTrueObjects(AnaNeutralParticlePD* neutralParticle,
+                                AnaTrueParticlePD*& trueDaughter1,
+                                AnaTrueParticlePD*& trueDaughter2) {
+  trueDaughter1 = nullptr;
+  trueDaughter2 = nullptr;
+
+  if(!neutralParticle || !neutralParticle->AnnihilationVertex ||
+     neutralParticle->AnnihilationVertex->Particles.size() < 2) {
+    return false;
+  }
+
+  AnaParticlePD* daughter1 = neutralParticle->AnnihilationVertex->Particles[0];
+  AnaParticlePD* daughter2 = neutralParticle->AnnihilationVertex->Particles[1];
+  if(!daughter1 || !daughter2) {
+    return false;
+  }
+
+  trueDaughter1 = static_cast<AnaTrueParticlePD*>(daughter1->TrueObject);
+  trueDaughter2 = static_cast<AnaTrueParticlePD*>(daughter2->TrueObject);
+  return trueDaughter1 && trueDaughter2;
+}
+
+}
+
 //********************************************************************
 void neutralKaonAnaUtils::AddCustomCategories(){
 //********************************************************************
 
   AddSignalCandidateCategory();
+  AddLooseSignalCandidateCategory();
 }
 
 
@@ -38,15 +65,69 @@ void neutralKaonAnaUtils::AddSignalCandidateCategory(){
 }
 
 //********************************************************************
+void neutralKaonAnaUtils::AddLooseSignalCandidateCategory(){
+
+  std::string part_types[] = {
+    "loose-signal",              // 1 - reco daughters share a true K0 parent decaying to pi+ pi-
+    "true-k0-other-topology",    // 2 - common true parent is a K0 but topology differs
+    "common-parent-not-k0",      // 3 - reco daughters share a true parent, but it is not a K0
+    "no-common-true-parent",     // 4 - true daughters exist but do not share a parent
+    "background",                // 5 - missing reco or true daughter information
+    NAMEOTHER};
+  int part_codes[]         = {1, 2, 3, 4, 5, CATOTHER};
+  int part_colors[]        = {2, 3, 4, 5, 6, COLOTHER};
+  const int NPART = sizeof(part_types)/sizeof(part_types[0]);
+
+  std::reverse(part_types,  part_types  + NPART);
+  std::reverse(part_codes,  part_codes  + NPART);
+  std::reverse(part_colors, part_colors + NPART);
+
+  anaUtils::_categ->AddObjectCategory("signal_loose", neutralKaonTree::nk0, "nk0",
+              NPART, part_types, part_codes, part_colors,
+              1, -1000);
+}
+
+//********************************************************************
 void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event){
 //********************************************************************
 
   // Default to background
   int signalCode = 5; // background
 
+  int run = -1;
+  int subrun = -1;
+  int evt = -1;
+  if (event.EventInfo) {
+    run = event.EventInfo->Run;
+    subrun = event.EventInfo->SubRun;
+    evt = event.EventInfo->Event;
+  }
+
+  auto printCategoryDecision = [&](const char* reason,
+                                   int code,
+                                   const AnaTrueParticlePD* trueNeutral,
+                                   const AnaTrueParticlePD* trueDau1,
+                                   const AnaTrueParticlePD* trueDau2,
+                                   const AnaTrueParticlePD* parentTrue) {
+    if (code != 1) return;
+    std::cout << "[signal-category] run=" << run
+              << " subrun=" << subrun
+              << " event=" << evt
+              << " neutralID=" << (neutralParticle ? neutralParticle->UniqueID : -1)
+              << " code=" << code
+              << " reason=" << reason
+              << " truePDG=" << (trueNeutral ? trueNeutral->PDG : -999)
+              << " parentRecoID=" << ((neutralParticle && neutralParticle->Parent) ? neutralParticle->Parent->UniqueID : -1)
+              << " parentTrueID=" << (parentTrue ? parentTrue->ID : -1)
+              << " dauPDG=(" << (trueDau1 ? trueDau1->PDG : -999)
+              << "," << (trueDau2 ? trueDau2->PDG : -999) << ")"
+              << std::endl;
+  };
+
   // Check if neutral particle exists
   if(!neutralParticle) {
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("null-neutral-particle", signalCode, nullptr, nullptr, nullptr, nullptr);
     return;
   }
 
@@ -55,6 +136,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
   if(!trueNeutralParticle) {
     // No true object - background
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("no-true-object", signalCode, nullptr, nullptr, nullptr, nullptr);
     return;
   }
 
@@ -62,6 +144,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
   if(trueNeutralParticle->PDG != 310) {
     // Not a K0 - background
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("true-object-not-k0", signalCode, trueNeutralParticle, nullptr, nullptr, nullptr);
     return;
   }
 
@@ -71,6 +154,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // True K0 that does not decay -> code 2
     signalCode = 2; // k0-no-decay
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("k0-no-decay", signalCode, trueNeutralParticle, nullptr, nullptr, nullptr);
     return;
   }
 
@@ -80,6 +164,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // True K0 that decays but not into 2 particles -> code 3
     signalCode = 3; // k0-decay-not-2pi
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("k0-not-two-daughters", signalCode, trueNeutralParticle, nullptr, nullptr, nullptr);
     return;
   }
 
@@ -90,6 +175,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // Can't check daughters - treat as decay but not 2 pions
     signalCode = 3; // k0-decay-not-2pi
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("missing-annihilation-daughters", signalCode, trueNeutralParticle, nullptr, nullptr, nullptr);
     return;
   }
 
@@ -100,6 +186,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
   if(!daughter1 || !daughter2) {
     signalCode = 3; // k0-decay-not-2pi
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("null-reco-daughters", signalCode, trueNeutralParticle, nullptr, nullptr, nullptr);
     return;
   }
 
@@ -110,6 +197,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
   if(!trueDaughter1 || !trueDaughter2) {
     signalCode = 3; // k0-decay-not-2pi
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("missing-true-daughters", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, nullptr);
     return;
   }
 
@@ -121,6 +209,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // True K0 that decays but not into 2 pions -> code 3
     signalCode = 3; // k0-decay-not-2pi
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("daughters-not-pi+-pi-", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, nullptr);
     return;
   }
 
@@ -130,6 +219,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // Can't check parent - treat as no parent match
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("daughter-parentid-invalid", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, nullptr);
     return;
   }
 
@@ -137,6 +227,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // Daughters have different parents - no parent match
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("daughter-parents-differ", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, nullptr);
     return;
   }
 
@@ -145,6 +236,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // No reconstructed parent - no parent match
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("missing-reco-parent", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, nullptr);
     return;
   }
 
@@ -153,6 +245,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // No true object for reconstructed parent - no parent match
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("missing-parent-trueobject", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, nullptr);
     return;
   }
 
@@ -162,6 +255,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // Could not get the true parent of the daughter - no parent match
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("missing-daughter1-true-parent", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, parentTrueObject);
     return;
   }
 
@@ -170,6 +264,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // Could not get the true parent of the daughter - no parent match
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("missing-daughter2-true-parent", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, parentTrueObject);
     return;
   }
 
@@ -178,6 +273,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // Could not get the true grand parent - no parent match
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("missing-true-grandparent", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, parentTrueObject);
     return;
   }
 
@@ -187,22 +283,52 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     // True K0 that decays into two pions but parent doesn't match -> code 4
     signalCode = 4; // k0-decay-2pi-no-parent
     anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+    printCategoryDecision("grandparent-parent-mismatch", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, parentTrueObject);
     return;
   }
 
-  // All checks passed - this is a true K0 signal!
-  // True K0 -> pi+ pi- with parent match -> code 1
-  std::cout << "[FillSignalCandidateCategory] SIGNAL CANDIDATE FOUND: True K0 -> pi+ pi- decay" << std::endl;
-  std::cout << "  - Neutral Particle ID: " << neutralParticle->UniqueID << std::endl;
-  std::cout << "  - True K0 PDG: " << trueNeutralParticle->PDG << std::endl;
-  std::cout << "  - True K0 ProcessEnd: " << trueNeutralParticle->ProcessEnd << " (decay)" << std::endl;
-  std::cout << "  - True K0 Daughters: " << trueNeutralParticle->Daughters.size() << std::endl;
-  std::cout << "  - Daughter 1 PDG: " << trueDaughter1->PDG << " (ParentID: " << trueDaughter1->ParentID << ")" << std::endl;
-  std::cout << "  - Daughter 2 PDG: " << trueDaughter2->PDG << " (ParentID: " << trueDaughter2->ParentID << ")" << std::endl;
-  std::cout << "  - Reconstructed Parent TrueObject ID: " << parentTrueObject->ID << std::endl;
-  std::cout << "  - Parent match: YES" << std::endl;
-
   signalCode = 1; // signal
   anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+  printCategoryDecision("signal", signalCode, trueNeutralParticle, trueDaughter1, trueDaughter2, parentTrueObject);
+}
+
+//********************************************************************
+void neutralKaonAnaUtils::FillLooseSignalCandidateCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event){
+//********************************************************************
+
+  int signalCode = 5;
+
+  AnaTrueParticlePD* trueDaughter1 = nullptr;
+  AnaTrueParticlePD* trueDaughter2 = nullptr;
+  if(!GetRecoDaughterTrueObjects(neutralParticle, trueDaughter1, trueDaughter2)) {
+    anaUtils::_categ->SetObjectCode("signal_loose", signalCode, CATOTHER, -1);
+    return;
+  }
+
+  if(trueDaughter1->ParentID <= 0 || trueDaughter2->ParentID <= 0 ||
+     trueDaughter1->ParentID != trueDaughter2->ParentID) {
+    signalCode = 4;
+    anaUtils::_categ->SetObjectCode("signal_loose", signalCode, CATOTHER, -1);
+    return;
+  }
+
+  AnaTrueParticlePD* trueParent = pdAnaUtils::GetTrueParticle(const_cast<AnaEventB*>(&event), trueDaughter1->ParentID);
+  if(!trueParent) {
+    signalCode = 4;
+    anaUtils::_categ->SetObjectCode("signal_loose", signalCode, CATOTHER, -1);
+    return;
+  }
+
+  const bool arePions =
+      ((trueDaughter1->PDG == 211 && trueDaughter2->PDG == -211) ||
+       (trueDaughter1->PDG == -211 && trueDaughter2->PDG == 211));
+
+  if(trueParent->PDG == 310) {
+    signalCode = arePions ? 1 : 2;
+  } else {
+    signalCode = 3;
+  }
+
+  anaUtils::_categ->SetObjectCode("signal_loose", signalCode, CATOTHER, -1);
 }
 

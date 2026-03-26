@@ -11,7 +11,10 @@
 
 namespace neutralKaonAnalysisConstants{
 
-  const UInt_t NMAXSAVEDCANDIDATES     = 200;
+  const UInt_t NMAXSAVEDCANDIDATES = 200;
+  /// Max K0 candidates per event in ana/EventDisplay micro-tree vectors (must exceed worst-case
+  /// creation x annihilation combinations from CreateNeutrals).
+  const UInt_t NMAX_K0_MICROTREE = 2048;
 }
 
 class neutralKaonAnalysis: public pdBaseAnalysis {

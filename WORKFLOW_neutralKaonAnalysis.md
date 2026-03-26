@@ -1,186 +1,190 @@
-# neutralKaonAnalysis workflow (current)
+# neutralKaon framework workflow (detailed chain)
 
-Technical reference for the current implementation in `highlandPD`.
+Detailed reconstruction reference for neutral-particle building in `highlandPD`, including where each part of the chain lives.
 
-## Scope
+## 1) Entry points and framework plumbing
 
-- Main entry point and execution flow
-- Selection and candidate-building chain
-- Parameters and output path
-- Current risks/mismatches
+- **Binary entrypoint**: `highlandPD/src/neutralKaonAnalysis/app/RunNeutralKaonAnalysis.cxx`
+  - Creates `neutralKaonAnalysis` and runs it through `AnalysisLoop`.
+- **Build target**: `highlandPD/CMakeLists.txt`
+  - Produces `neutralKaon.exe`.
+- **Core loop (framework side)**: `highland/src/highland2/highlandCore/src/AnalysisLoop.cxx`
+  - Handles options (`-o`, `-n`, `-s`, `-p`), event loop, tree lifecycle.
+- **Analysis class**: `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysis.cxx`
+  - `Initialize()`, `DefineSelections()`, `FillMicroTrees()`, `FillToyVarsInMicroTrees()`, truth filling.
 
-## Key files
+## 2) Runtime configuration and parameters
 
-- `src/neutralKaonAnalysis/app/RunNeutralKaonAnalysis.cxx`: binary entry point (`main`).
-- `src/neutralKaonAnalysis/src/neutralKaonAnalysis.cxx`: analysis lifecycle (`Initialize`, microtree/truth filling, categories).
-- `src/neutralKaonAnalysis/src/neutralKaonSelection.cxx`: ordered selection steps and cuts.
-- `src/neutralKaonAnalysis/src/neutralKaonTree.cxx`: neutral kaon microtree variable definitions/filling.
-- `src/neutralKaonAnalysis/src/neutralKaonTruthTree.cxx`: truth-tree variable handling.
-- `src/neutralKaonAnalysis/src/neutralKaonAnalysisUtils.cxx`: signal/category logic.
-- `src/neutralKaonAnalysis/src/EventDisplayDataTree.cxx`: event-display wrapper bridge.
-- `src/neutralKaonAnalysis/src/neutralKaonEventDisplay.cxx`: analysis-specific display content hooks.
-- `src/pdUtils/src/pdAnnihilationUtils.cxx`: annihilation vertex creation/scoring.
-- `src/pdUtils/src/pdNeutralUtils.cxx`: neutral candidate construction/scoring.
-- `src/neutralKaonAnalysis/parameters/neutralKaonAnalysis.parameters.dat`: analysis parameters.
-- `CMakeLists.txt`: executable target declaration (`neutralKaon.exe`).
+- **Default parameter file**:
+  - `highlandPD/src/neutralKaonAnalysis/parameters/neutralKaonAnalysis.parameters.dat`
+- **Override mechanism**:
+  - `neutralKaon.exe -p <override.parameters.dat>`
+- **Typical parameter groups used by reconstruction**:
+  - vertex radii and fit controls (annihilation/creation),
+  - candidate pairing constraints (creation-annihilation separation),
+  - filtering/selection thresholds,
+  - debug and event-display toggles.
 
-## Startup and execution flow
+## 3) Selection chain where reconstruction is triggered
 
-1. `RunNeutralKaonAnalysis.cxx` creates `neutralKaonAnalysis` and passes it to `AnalysisLoop`.
-2. `AnalysisLoop` parses command-line options (`-o`, `-p`, etc.) and loads parameters.
-3. `neutralKaonAnalysis::Initialize()`:
-   - reads neutral-kaon parameters,
-   - sets minimum accumulation level,
-   - initializes event display tree wrapper,
-   - registers custom categories.
-4. Input converters are registered (notably `minitreefiltered` and `PDSPAnalyzerTree` paths).
-5. `DefineSelections()` registers `neutralKaonSelection`.
-6. Per-event selection steps run in sequence:
-   - beam track preselection,
-   - particle finding,
-   - neutral-candidate creation,
-   - K0 quality/geometry cuts.
-7. Candidate building uses:
-   - `pdAnnihilationUtils::CreateVertices(...)`,
-   - `pdCreationUtils::CreateCreationVertices(...)`,
-   - `pdNeutralUtils::CreateNeutrals(...)`.
-8. Output fill phase:
-   - analysis/microtree variables via `neutralKaonTree`,
-   - event display payload (`EventDisplayData`),
-   - truth/config/header trees through the loop lifecycle.
+- **Selection definition**: `highlandPD/src/neutralKaonAnalysis/src/neutralKaonSelection.cxx`
+  - `neutralKaonSelection::DefineSteps()`
+  - Ordered chain:
+    1. beam track actions/cuts,
+    2. particle preconditions,
+    3. `FindNeutralCandidatesAction`,
+    4. event-level K0 quality cuts.
+- **Candidate builder action**:
+  - `FindNeutralCandidatesAction::Apply(...)` in the same file.
+  - This is the main orchestration point for neutral reconstruction.
 
-## Selection chain (neutralKaonSelection)
+## 4) Reconstruction chain (neutral particles) with exact code locations
 
-Current selection path is implemented as a step chain including:
+### 4.1 Input objects and preconditions
 
-- `FindBeamTrackAction`, `BeamTrackExistsCut`
-- `FindAllParticlesAction`, `HasEnoughParticlesCut`
-- `FindNeutralCandidatesAction`, `HasNeutralCandidatesCut`
-- K0 quality cuts such as:
+- **File**: `highlandPD/src/neutralKaonAnalysis/src/neutralKaonSelection.cxx`
+- **Function**: `FindNeutralCandidatesAction::Apply(...)`
+- Reads event particles, beam context, and parameter values (e.g., daughter/creation radii).
+
+### 4.2 Build annihilation vertices (V-like decay side)
+
+- **Orchestrator call** (from selection):
+  - `pdAnnihilationUtils::CreateVertices(event, maxDaughterDistance)`
+- **Implementation file**:
+  - `highlandPD/src/pdUtils/src/pdAnnihilationUtils.cxx`
+- **Main functions**:
+  - `CreateVertices(...)`
+  - `CreateVerticesCommon(...)`
+  - vertex-position strategies:
+    - `FindVertexPositionGeometric(...)`
+    - `FindVertexPositionWithFit(...)`
+    - `FindVertexPositionKalman(...)`
+  - fit utility:
+    - `FindVertexPositionFit(...)`
+- **What happens conceptually**:
+  - particle-pair scan,
+  - quality and topology constraints,
+  - reconstructed annihilation vertex position/direction/fit products,
+  - internal filtering and scoring.
+
+### 4.3 Build creation vertices (beam + partner side)
+
+- **Orchestrator call** (from selection):
+  - `pdCreationUtils::CreateCreationVertices(event, creationRadius, excludeIDs)`
+- **Implementation file**:
+  - `highlandPD/src/pdUtils/src/pdCreationUtils.cxx`
+- **Main functions**:
+  - `CreateCreationVertices(...)`
+  - `CalculateCreationVertexScores(...)`
+  - `FilterCreationVerticesByScore(...)`
+- **Helper math (line closest approach / Pandora vertex helper)**:
+  - `highlandPD/src/pdUtils/src/pdNeutralHelpers.cxx`
+  - `CalculatePandoraVertexPosition(...)`
+  - `CalculateLineMinDistanceMidpoint(...)`
+
+### 4.4 Combine creation + annihilation into neutral candidates
+
+- **Orchestrator call** (from selection):
+  - `pdNeutralUtils::CreateNeutrals(event, creationVertices, annihilationVertices)`
+- **Implementation file**:
+  - `highlandPD/src/pdUtils/src/pdNeutralUtils.cxx`
+- **Main functions**:
+  - `CreateNeutrals(...)`
+  - `CalculateNeutralScore(...)`
+  - `NormalizeNeutralParticleScores(...)`
+  - `FilterNeutralsByScore(...)`
+- **What is built per candidate (`AnaNeutralParticlePD`)**:
+  - creation/annihilation vertex links,
+  - parent association,
+  - neutral trajectory (start/end/direction/length),
+  - impact parameter and derived kinematics,
+  - score components and final ranking,
+  - truth-equivalent association for validation studies.
+
+## 5) Event-level neutral-K0 cuts after candidate creation
+
+- **File**: `highlandPD/src/neutralKaonAnalysis/src/neutralKaonSelection.cxx`
+- **Representative cuts in chain**:
   - `K0StartEndDirCut`
   - `K0VtxOpeningCut`
   - `K0ParentTruePDGCut`
   - `K0LengthCut`
-  - daughter length cuts
+  - daughter-length cuts
+- **Important behavior**:
+  - these are applied as selection steps at event level; event may pass if at least one candidate satisfies the condition.
 
-## Parameters and configuration flow
+## 6) Output writing: where reconstructed content goes
 
-- Parameter override file can be passed with `-p` (processed by `AnalysisLoop`).
-- Neutral-kaon-specific configuration comes from:
-  - `src/neutralKaonAnalysis/parameters/neutralKaonAnalysis.parameters.dat`
-- Representative parameter groups currently used:
-  - accumulation level and SCE toggles,
-  - annihilation/creation vertex geometry thresholds,
-  - creation-annihilation separation,
-  - filtering and track-fit controls.
+### 6.1 Microtree (main analysis output)
 
-## Output model
+- **Variables declaration/fill**:
+  - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.cxx`
+  - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.hxx`
+- **Called from**:
+  - `neutralKaonAnalysis::FillMicroTrees()` in
+    `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysis.cxx`
 
-- Output file is controlled by `AnalysisLoop` (`-o`).
-- Main produced content:
-  - analysis trees (with neutral kaon variables),
-  - `truth`,
-  - `config`,
-  - `header`,
-  - `EventDisplayData`.
-- Operational convention from run docs:
-  - inputs under `/DATA`,
-  - outputs under `/microTrees`.
+### 6.2 Truth-validation tree
 
-## Detailed reconstruction workflow (candidate building)
+- **Implementation**:
+  - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTruthTree.cxx`
+  - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTruthTree.hxx`
+- **Dispatch logic**:
+  - `CheckFillTruthTreePD(...)`, `FillTruthTree(...)` in `neutralKaonAnalysis.cxx`
 
-This section describes the reconstruction logic from raw event particles to selected neutral-kaon candidates.
+### 6.3 Event display payload
 
-1. **Beam and particle preconditions**
-   - `FindBeamTrackAction` + `BeamTrackExistsCut` ensure a beam track in TPC is available.
-   - `FindAllParticlesAction` counts particles with valid start positions.
-   - `HasEnoughParticlesCut` requires at least two valid particles.
+- **Event display tree bridge**:
+  - `highlandPD/src/neutralKaonAnalysis/src/EventDisplayDataTree.cxx`
+- **Analysis-specific event display class**:
+  - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonEventDisplay.cxx`
+  - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonEventDisplay.hxx`
+- **Generic display base (framework side)**:
+  - `highland/src/highland2/highlandTools/src/EventDisplayBase.cxx/.hxx`
+  - `highland/src/highland2/highlandTools/src/DrawingTools.cxx/.hxx`
 
-2. **Annihilation vertex construction**
-   - `pdAnnihilationUtils::CreateVertices(...)` scans particle pairs and applies:
-     - start/end position validity checks,
-     - same-parent prefilter for the two daughter tracks,
-     - PID rejection against proton/kaon-like tracks (`Chi2PID` thresholds),
-     - geometric proximity using fitted line closest approach.
-   - Vertex position is computed with one of three methods (`VertexFindingMethod`):
-     - geometric,
-     - TMinuit fit,
-     - Kalman fit.
-   - Vertex validation includes score sanity and max closest-approach requirement.
-   - Vertices are filtered so one daughter track is not reused in multiple annihilation vertices.
+## 7) Data model classes used by reconstruction
 
-3. **Creation vertex construction**
-   - `pdCreationUtils::CreateCreationVertices(...)` builds creation vertices around beam/secondary topology.
-   - Current call in selection uses creation radius parameter and an empty exclusion list.
-   - Additional filtering consistency is applied later when combining with annihilation vertices.
+- **Main ProtoDUNE data classes**:
+  - `highlandPD/src/pdEventModel/src/pdDataClasses.hxx`
+  - `highlandPD/src/pdEventModel/src/pdDataClasses.cxx`
+- **Backward-compat neutral include wrapper**:
+  - `highlandPD/src/pdEventModel/src/pdNeutralDataClasses.hxx`
+  - `highlandPD/src/pdEventModel/src/pdNeutralDataClasses.cxx`
 
-4. **Neutral candidate generation (`AnaNeutralParticlePD`)**
-   - `pdNeutralUtils::CreateNeutrals(...)` forms combinations of creation and annihilation vertices.
-   - Pair-level guards:
-     - rejects combinations reusing annihilation-vertex particles at creation side,
-     - enforces minimum creation-annihilation separation,
-     - rejects beam-only creation vertices (`DistanceScore < 0.1`).
-   - For each surviving pair:
-     - assigns creation/annihilation vertices and parent,
-     - computes start/end position, directions, length,
-     - computes impact parameter via parent-track extrapolation,
-     - computes neutral score metrics and true-equivalent associations,
-     - computes invariant mass from annihilation daughters (pion-mass hypothesis).
+## 8) Minimal chain you can follow to audit one event
 
-5. **Direction and score filtering**
-   - Candidates are first filtered to positive alignment along beam direction.
-   - Scores are normalized using alignment relative to beam direction.
-   - Final pruning keeps only one neutral candidate per annihilation vertex (best score).
+1. Start in `RunNeutralKaonAnalysis.cxx` (`main`).
+2. Jump to `neutralKaonAnalysis::Initialize()` and `DefineSelections()` in `neutralKaonAnalysis.cxx`.
+3. Open `neutralKaonSelection::DefineSteps()` and `FindNeutralCandidatesAction::Apply(...)`.
+4. Follow the three reconstruction calls in order:
+   - `pdAnnihilationUtils::CreateVertices(...)`
+   - `pdCreationUtils::CreateCreationVertices(...)`
+   - `pdNeutralUtils::CreateNeutrals(...)`
+5. Follow candidate filters/scores in `pdNeutralUtils.cxx`.
+6. Inspect `FillMicroTrees()` in `neutralKaonAnalysis.cxx`.
+7. Inspect per-variable filling in `neutralKaonTree.cxx`.
+8. If validating visually, inspect event-display fill path:
+   - `EventDisplayDataTree.cxx` -> `neutralKaonEventDisplay.cxx`.
 
-6. **Selection-level candidate cuts**
-   - Event passes if at least one candidate satisfies each event-level cut:
-     - start/end direction consistency,
-     - annihilation opening-angle threshold,
-     - true parent PDG requirement,
-     - K0 and daughter length thresholds.
+## 9) Practical run/check commands
 
-7. **Tree filling**
-   - For events that pass selection, all candidates currently in `ToyBoxNeutralKaon` are written to microtree variables.
-   - `EventDisplayData` is also filled per selected event.
+From `/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW`:
 
-## Current branch/commit (template)
+```bash
+source highland/scripts/setup.sh
+source highlandPD/scripts/setup.sh
+neutralKaon.exe -n 20 -o /Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/microTrees/nk_check.root /Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/DATA/6GeV_prod4a_00_minitree_2023-01-27.root
+```
 
-- Branch: `<fill>`
-- Commit: `<fill>`
-- Date checked: `<fill>`
+Event display listing:
 
-## Known gaps/uncertainties
-
-- Executable generated by compilation is `neutralKaon.exe` (from `highlandPD/CMakeLists.txt`).
-- Event display in `highland` is generic base infrastructure; analysis-specific behavior is implemented in `highlandPD`.
-- Some documented run commands are placeholders; manifest entries should capture full command lines per production output.
-
-## Potential errors or bugs to check
-
-1. **Truth-fill coverage inconsistency**
-   - `CheckFillTruthTreePD` currently accepts only `PDG == 310`, while `FillTruthTree` contains logic for `310`, `130`, and `311`.
-   - Risk: `K0L`/`K0` branches in `FillTruthTree` may never execute in practice.
-
-2. **Event-level cuts vs candidate-level output**
-   - Selection cuts are event-level (“at least one candidate passes”), but microtree filling writes all candidates in the box.
-   - Risk: output includes candidates that would fail intended per-candidate quality requirements.
-
-3. **Hardcoded debug print for one event**
-   - `FindNeutralCandidatesAction` includes explicit diagnostics for run/subrun/event `22591250/40/4959`.
-   - Risk: unnecessary stdout spam and non-general behavior in production processing.
-
-4. **Potential null-pointer assumptions in candidate creation**
-   - Candidate filling uses creation-vertex beam members (e.g., timestamp field) with implicit availability.
-   - Risk: crash if a malformed creation vertex lacks expected beam pointer state.
-
-5. **Score meaning can be overwritten**
-   - `CalculateNeutralScore` computes detailed multi-component score, but later normalization rewrites `NeutralScore` from beam-alignment ranking.
-   - Risk: ambiguity between “physics score” and “final ranking score”, making tuning/debugging confusing.
-
-## Next verification actions
-
-1. Confirm whether truth tree should include only `PDG=310` or also `130/311`, then align `CheckFillTruthTreePD` and documentation.
-2. Decide whether candidate cuts should be applied per candidate before writing microtrees.
-3. Guard or remove hardcoded event diagnostics for production runs.
-4. Record one full production command in `RUN_MANIFEST.md` with concrete file names and parameter hash.
-5. Validate that one produced file in `/microTrees` can be fully reproduced from manifest fields.
+```bash
+root -l -b <<'EOF'
+gSystem->Load("libhighland");
+gSystem->Load("libhighlandPD");
+DrawingTools d("/Users/jcapo/cernbox/DUNE-IFIC/Software/HIGHLAND_NEW/microTrees/nk_check.root");
+d.ListEvtDisplay();
+.q
+EOF
+```

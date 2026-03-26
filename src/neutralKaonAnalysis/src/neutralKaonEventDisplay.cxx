@@ -9,6 +9,7 @@
 #include <TGeoSphere.h>
 #include <TGeoVolume.h>
 #include "Parameters.hxx"
+#include <TEveElement.h>
 #include <TEveLine.h>
 #include <TEveScene.h>
 #include <TEveTrans.h>
@@ -49,8 +50,23 @@ void AppendElementToGroup(TEveScene* /*scene*/, TEveElementList* group, TEveElem
     if (group && element) group->AddElement(element);
 }
 
-Bool_t IsGroupVisible(const char* /*groupName*/) {
-    return kTRUE;
+TEveElement* FindElementByNameRecursive(TEveElement* parent, const char* name) {
+    if (!parent || !name) return nullptr;
+
+    const char* parentName = parent->GetElementName();
+    if (parentName && std::string(parentName) == name) {
+        return parent;
+    }
+
+    for (TEveElement::List_ci it = parent->BeginChildren(); it != parent->EndChildren(); ++it) {
+        TEveElement* child = *it;
+        if (!child) continue;
+        if (TEveElement* found = FindElementByNameRecursive(child, name)) {
+            return found;
+        }
+    }
+
+    return nullptr;
 }
 
 void BuildParentTrajectoryHistogram(const AnaParticlePD* parent, Float_t* outHist) {
@@ -225,6 +241,19 @@ void neutralKaonEventDisplay::EnsureSelectionHooks() {
     selection->Connect("SelectionRepeated(TEveElement*)", "neutralKaonEventDisplay", this,
                        "OnSelectionRepeated(TEveElement*)");
     _parentDirSelectionHooked = kTRUE;
+}
+
+Bool_t neutralKaonEventDisplay::IsGroupVisible(const char* groupName) const {
+    if (!_scene3D || !groupName || groupName[0] == '\0') {
+        return kTRUE;
+    }
+
+    TEveElement* found = FindElementByNameRecursive(_scene3D, groupName);
+    if (!found) {
+        return kTRUE;
+    }
+
+    return found->GetRnrSelf();
 }
 
 void neutralKaonEventDisplay::OnSelectionAdded(TEveElement* element) {

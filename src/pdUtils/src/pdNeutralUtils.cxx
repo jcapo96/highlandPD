@@ -689,17 +689,6 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
     }
   }
 
-  // Collect all particles from annihilation vertices to exclude from creation vertices
-  std::set<Int_t> annihilationVertexParticleIDs;
-  for (AnaAnnihilationVertexPD* annihilationVtx : annihilationVertices) {
-    if (!annihilationVtx) continue;
-    for (AnaParticlePD* particle : annihilationVtx->Particles) {
-      if (particle) {
-        annihilationVertexParticleIDs.insert(particle->UniqueID);
-      }
-    }
-  }
-
   // Create neutral particles for ALL combinations of creation and annihilation vertices
   for(size_t a = 0; a < annihilationVertices.size(); a++){
     AnaAnnihilationVertexPD* annihilationVtx = annihilationVertices[a];
@@ -709,32 +698,7 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
       AnaCreationVertexPD* creationVtx = creationVertices[c];
       if(!creationVtx) continue;
 
-      // Skip if creation vertex's beam particle or second particle is already in an annihilation vertex
-      if (creationVtx->BeamParticle &&
-          annihilationVertexParticleIDs.find(creationVtx->BeamParticle->UniqueID) != annihilationVertexParticleIDs.end()) {
-        continue;
-      }
-      if (creationVtx->SecondParticle &&
-          annihilationVertexParticleIDs.find(creationVtx->SecondParticle->UniqueID) != annihilationVertexParticleIDs.end()) {
-        continue;
-      }
-
-      // Sanity check: creation and annihilation vertices must be separated (K0 flight distance)
-      // Reject pairs where they nearly coincide (would indicate track/vertex confusion)
-      double minCreationAnnihilationSep = 5.0;
-      if (ND::params().HasParameter("neutralKaonAnalysis.MinCreationAnnihilationSeparation")) {
-        minCreationAnnihilationSep = ND::params().GetParameterD("neutralKaonAnalysis.MinCreationAnnihilationSeparation");
-      }
-      TVector3 creationPos(creationVtx->Position[0], creationVtx->Position[1], creationVtx->Position[2]);
-      TVector3 annihilationPos(annihilationVtx->Position[0], annihilationVtx->Position[1], annihilationVtx->Position[2]);
-      if ((creationPos - annihilationPos).Mag() < minCreationAnnihilationSep) {
-        continue;
-      }
-
-      // Skip beam-only creation vertices (DistanceScore < 0.1): no proton constraint, poorly defined
-      if (creationVtx->DistanceScore < 0.1) {
-        continue;
-      }
+      // Minimal branch: do not apply creation/annihilation pair filtering here.
 
       // Create neutral particle for this combination
       AnaNeutralParticlePD* neutralParticle = new AnaNeutralParticlePD();
@@ -812,8 +776,9 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
           FillTrueEquivalentNeutralParticle(annihilationVtx, creationVtx->BeamParticle);
 
       // Assign TrueObject
-      // Only assign when both true vertex particles have the same true parent (same true ID)
-      // AND the parent of the daughters' true parent matches the true object of neutralParticle->Parent
+      // Keep the common true parent of the reconstructed daughters whenever it exists.
+      // Reco-parent consistency is checked later in the category logic, but we still want
+      // the candidate to retain its truth label for debugging and efficiency studies.
       if(annihilationVtx->TrueEquivalentVertex && annihilationVtx->TrueEquivalentVertex->TrueParticles.size() >= 2){
         AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(annihilationVtx->TrueEquivalentVertex->TrueParticles[0]);
         AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(annihilationVtx->TrueEquivalentVertex->TrueParticles[1]);
@@ -825,35 +790,10 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
             AnaTrueParticlePD* trueParentParticle = pdAnaUtils::GetTrueParticle(&event, trueDaughter1->ParentID);
 
             if(trueParentParticle){
-              // Verify that the parent of the true parent particle matches
-              // the true object associated to neutralParticle->Parent
-              bool parentMatch = false;
+              neutralParticle->TrueObject = trueParentParticle;
 
-              if(neutralParticle->Parent){
-                AnaTrueParticlePD* parentTrueObject = static_cast<AnaTrueParticlePD*>(neutralParticle->Parent->TrueObject);
-
-                if(parentTrueObject && trueParentParticle->ParentID > 0){
-                  // Get the true grandparent (parent of the daughters' true parent)
-                  AnaTrueParticlePD* trueGrandParent = pdAnaUtils::GetTrueParticle(&event, trueParentParticle->ParentID);
-
-                  if(trueGrandParent && trueGrandParent->ID == parentTrueObject->ID){
-                    parentMatch = true;
-                  }
-                }
-              }
-
-              if(parentMatch){
-                // Assign the true parent to the neutral particle
-                neutralParticle->TrueObject = trueParentParticle;
-                // Check if the true object has a reconstructed particle associated to it
-                if(trueParentParticle->ReconParticles.size() > 0){
-                  neutralParticle->RecoParticle = static_cast<AnaParticlePD*>(trueParentParticle->ReconParticles[0]);
-                }
-              }
-              else{
-                // Parent match failed - don't assign
-                neutralParticle->TrueObject = nullptr;
-                neutralParticle->RecoParticle = nullptr;
+              if(trueParentParticle->ReconParticles.size() > 0){
+                neutralParticle->RecoParticle = static_cast<AnaParticlePD*>(trueParentParticle->ReconParticles[0]);
               }
             }
             else{
@@ -904,50 +844,8 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
     }
   }
 
-  // Filter out neutral particles whose direction along the beam axis is not positive
-  std::vector<AnaNeutralParticlePD*> filteredByDirection;
-  for (AnaNeutralParticlePD* neutralParticle : allNeutralParticles) {
-    if (!neutralParticle || !neutralParticle->CreationVertex || !neutralParticle->CreationVertex->BeamParticle) {
-      delete neutralParticle;
-      continue;
-    }
-
-    AnaParticlePD* beamParticle = neutralParticle->CreationVertex->BeamParticle;
-
-    // Get beam particle direction (use DirectionEnd for beam)
-    TVector3 beamDir(beamParticle->DirectionEnd[0],
-                     beamParticle->DirectionEnd[1],
-                     beamParticle->DirectionEnd[2]);
-
-    // Get neutral direction
-    TVector3 neutralDir(neutralParticle->DirectionStart[0],
-                        neutralParticle->DirectionStart[1],
-                        neutralParticle->DirectionStart[2]);
-
-    // Normalize directions
-    if (beamDir.Mag() > 0 && neutralDir.Mag() > 0) {
-      beamDir = beamDir.Unit();
-      neutralDir = neutralDir.Unit();
-
-      // Calculate dot product: positive means forward along beam direction
-      double alignment = beamDir.Dot(neutralDir);
-
-      // Only keep if alignment is positive (forward along beam)
-      if (alignment > 0.0) {
-        filteredByDirection.push_back(neutralParticle);
-      } else {
-        delete neutralParticle;
-      }
-    } else {
-      delete neutralParticle;
-    }
-  }
-
-  // Normalize scores using alignment with beam particle direction
-  NormalizeNeutralParticleScores(filteredByDirection);
-
-  // Filter neutral particles by score: keep only one per annihilation vertex (lowest NeutralScore)
-  return FilterNeutralsByScore(filteredByDirection);
+  // Keep all reconstructed neutral candidates in minimal branch.
+  return allNeutralParticles;
 }
 
 } // namespace pdNeutralUtils

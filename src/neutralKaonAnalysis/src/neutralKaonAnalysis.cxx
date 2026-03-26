@@ -149,14 +149,14 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   // AddVarI(output(), nAllParticles, "Number of all particles with valid start positions");
 
   // Add neutral particle candidates variables
-  // neutralKaonTree::AddNeutralKaonVariables_Candidates(output(), 1000);
-  neutralKaonTree::AddNeutralKaonVariables_K0(output(), 1000);
-  neutralKaonTree::AddNeutralKaonVariables_K0Par(output(), 1000);
-  neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(output(), 1000);
-  neutralKaonTree::AddNeutralKaonVariables_K0Vtx(output(), 1000);
-  neutralKaonTree::AddNeutralKaonVariables_K0Brother(output(), 1000);
-  neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(output(), 1000);
-  neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(output(), 1000);
+  const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
+  neutralKaonTree::AddNeutralKaonVariables_K0(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0Par(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0Vtx(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0Brother(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(output(), nK0Max);
 
   // Create EventDisplayData tree now that ana tree is fully defined
   // This prevents index conflicts during validation
@@ -530,6 +530,7 @@ void neutralKaonAnalysis::FillCategories(){
     bool hasSignalCandidate = false;
     for(size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++){
       neutralKaonAnaUtils::FillSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
+      neutralKaonAnaUtils::FillLooseSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
 
       if (anaUtils::_categ && anaUtils::_categ->HasCategory("signal")) {
         const int signalCode = anaUtils::_categ->GetCategory("signal").GetObjectCode(1, static_cast<Int_t>(i));

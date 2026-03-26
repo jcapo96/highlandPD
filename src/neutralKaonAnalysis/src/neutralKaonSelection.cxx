@@ -31,13 +31,8 @@ void neutralKaonSelection::DefineSteps(){
   AddStep(StepBase::kAction, "find neutral candidates", new FindNeutralCandidatesAction(), true);
   AddStep(StepBase::kCut   , "has neutral candidates" , new HasNeutralCandidatesCut(), true);
 
-  // K0 quality cuts
-  AddStep(StepBase::kCut   , "K0 start-end direction" , new K0StartEndDirCut(), true);
-  AddStep(StepBase::kCut   , "K0 vertex opening" , new K0VtxOpeningCut(), true);
-  AddStep(StepBase::kCut   , "K0 parent true PDG" , new K0ParentTruePDGCut(), true);
-  AddStep(StepBase::kCut   , "K0 length" , new K0LengthCut(), true);
-  AddStep(StepBase::kCut   , "K0 daughter1 length" , new K0Dau1LengthCut(), true);
-  AddStep(StepBase::kCut   , "K0 daughter2 length" , new K0Dau2LengthCut(), true);
+  // Minimal branch: keep reconstruction-stage candidate building only.
+  // Neutral-particle purity cuts are intentionally disabled.
 
   // // Split the selection in branches, one for each possible candidate
   // AddSplit(neutralKaonAnalysisConstants::NMAXSAVEDCANDIDATES);

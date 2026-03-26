@@ -151,6 +151,9 @@ std::vector<AnaCreationVertexPD*> CreateCreationVertices(
     AnaParticlePD* parentParticle = static_cast<AnaParticlePD*>(parts[i]);
     if (!parentParticle) continue;
 
+    // Only seed creation vertices from the Pandora beam particle.
+    if (!parentParticle->isPandora) continue;
+
     // Skip excluded particles
     if (excludeParticleIDs.find(parentParticle->UniqueID) != excludeParticleIDs.end()) {
       continue;
@@ -214,8 +217,8 @@ std::vector<AnaCreationVertexPD*> CreateCreationVertices(
     }
   }
 
-  // Filter creation vertices by score (ensures each particle belongs to only one creation vertex)
-  return FilterCreationVerticesByScore(creationVertices);
+  // Minimal branch: disable score/uniqueness filtering at creation-vertex stage.
+  return creationVertices;
 }
 
 //***************************************************************
