@@ -108,6 +108,8 @@ namespace neutralKaonTruthTree{
     k0dau2truegeneration,
     k0dau2hasrecoobject,
 
+    k0trueparticleid,
+
     enumNeutralKaonTruthMicroTreesLast_neutralKaonTruthTree
   };
 }

@@ -21,6 +21,7 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
     AddVarMaxSizeVF(output, k0truestartenddir, "K0 true start-end direction scalar product", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0truegeneration, "K0 true generation", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0hasrecoobject, "K0 true has reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0trueparticleid, "K0 true particle ID (matches ana k0trueid)", ntruek0, nmax);
 
     // Vertex reconstruction debugging variables
     AddVarMaxSizeVI(output, k0dau1hasreco, "K0 daughter1 has reco particle", ntruek0, nmax);
@@ -98,6 +99,7 @@ void neutralKaonTruthTree::AddNeutralKaonDaughter2TruthVariables(OutputManager& 
 //********************************************************************
 void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output, const AnaTrueParticlePD& part, bool hasRecoObject){
     output.FillVectorVar(k0truepdg, part.PDG);
+    output.FillVectorVar(k0trueparticleid, part.ID);
     output.FillVectorVar(k0truendau, static_cast<Int_t>(part.Daughters.size()));
     output.FillVectorVar(k0trueproc, part.ProcessStart);
     output.FillVectorVar(k0trueendproc, part.ProcessEnd);

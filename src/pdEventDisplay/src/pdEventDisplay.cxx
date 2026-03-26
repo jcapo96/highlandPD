@@ -13,8 +13,17 @@
 #include <TGeoBBox.h>
 #include <TGeoSphere.h>
 #include <TEveProjectionManager.h>
+#include <TCanvas.h>
+#include <TH2F.h>
+#include <TGraph.h>
+#include <TLine.h>
+#include <TMarker.h>
+#include <TLatex.h>
+#include <TLegend.h>
 #include <iostream>
 #include <cmath>
+#include <set>
+#include <map>
 
 //********************************************************************
 pdEventDisplay::pdEventDisplay() : EventDisplayBase() {
@@ -518,6 +527,163 @@ void pdEventDisplay::DrawParticles2D(TEveProjectionManager* manager, const std::
 
     // Draw analysis-specific content
     DrawAnalysisContent2D(manager, projection_type);
+}
+
+// ========== 2D TCanvas Drawing Methods ==========
+
+//********************************************************************
+void pdEventDisplay::DrawDetectorCanvas2D(TCanvas* canvas, const std::string& projection_type) {
+//********************************************************************
+    canvas->cd();
+
+    Float_t xmin, xmax, ymin, ymax;
+    std::string xtitle, ytitle;
+
+    if (projection_type == "XY") {
+        xmin = -400; xmax = 400;
+        ymin = -50;  ymax = 650;
+        xtitle = "X (cm - drift direction)";
+        ytitle = "Y (cm - vertical)";
+    } else if (projection_type == "XZ") {
+        xmin = -400; xmax = 400;
+        ymin = -50;  ymax = 750;
+        xtitle = "X (cm - drift direction)";
+        ytitle = "Z (cm - beam direction)";
+    } else if (projection_type == "YZ") {
+        xmin = -50;  xmax = 650;
+        ymin = -50;  ymax = 750;
+        xtitle = "Y (cm - vertical)";
+        ytitle = "Z (cm - beam direction)";
+    } else {
+        return;
+    }
+
+    TH2F* h2 = new TH2F(Form("h2_base_%s", projection_type.c_str()),
+                         Form("ProtoDUNE - %s View;%s;%s",
+                              projection_type.c_str(), xtitle.c_str(), ytitle.c_str()),
+                         100, xmin, xmax, 100, ymin, ymax);
+    h2->SetStats(false);
+    h2->SetDirectory(0);
+    h2->GetXaxis()->SetLabelSize(0.04);
+    h2->GetYaxis()->SetLabelSize(0.04);
+    h2->GetXaxis()->SetTitleSize(0.045);
+    h2->GetYaxis()->SetTitleSize(0.045);
+    h2->Draw();
+
+    const Float_t apaH = 600.0, apaL = 696.0;
+
+    if (projection_type == "XY") {
+        TLine* cpa = new TLine(0, 0, 0, apaH);
+        cpa->SetLineColor(kRed); cpa->SetLineWidth(3); cpa->Draw("SAME");
+        TLine* apa1 = new TLine(-360, 0, -360, apaH);
+        apa1->SetLineColor(kBlue); apa1->SetLineWidth(3); apa1->Draw("SAME");
+        TLine* apa2 = new TLine(360, 0, 360, apaH);
+        apa2->SetLineColor(kBlue); apa2->SetLineWidth(3); apa2->Draw("SAME");
+    } else if (projection_type == "XZ") {
+        TLine* cpa = new TLine(0, 0, 0, apaL);
+        cpa->SetLineColor(kRed); cpa->SetLineWidth(3); cpa->Draw("SAME");
+        TLine* apa1 = new TLine(-360, 0, -360, apaL);
+        apa1->SetLineColor(kBlue); apa1->SetLineWidth(3); apa1->Draw("SAME");
+        TLine* apa2 = new TLine(360, 0, 360, apaL);
+        apa2->SetLineColor(kBlue); apa2->SetLineWidth(3); apa2->Draw("SAME");
+    } else if (projection_type == "YZ") {
+        TLine* bottom = new TLine(0, 0, 0, apaL);
+        TLine* top    = new TLine(apaH, 0, apaH, apaL);
+        TLine* left   = new TLine(0, 0, apaH, 0);
+        TLine* right  = new TLine(0, apaL, apaH, apaL);
+        for (auto* l : {bottom, top, left, right}) {
+            l->SetLineColor(kBlack); l->SetLineWidth(2); l->Draw("SAME");
+        }
+    }
+}
+
+//********************************************************************
+void pdEventDisplay::DrawParticlesCanvas2D(TCanvas* canvas, const std::string& projection_type) {
+//********************************************************************
+    canvas->cd();
+
+    auto project = [&](Float_t x, Float_t y, Float_t z,
+                       Float_t& c1, Float_t& c2) -> bool {
+        if (projection_type == "XY") {
+            if (x <= -900 || y <= -900) return false;
+            c1 = x; c2 = y; return true;
+        } else if (projection_type == "XZ") {
+            if (x <= -900 || z <= -900) return false;
+            c1 = x; c2 = z; return true;
+        } else if (projection_type == "YZ") {
+            if (y <= -900 || z <= -900) return false;
+            c1 = y; c2 = z; return true;
+        }
+        return false;
+    };
+
+    std::set<Int_t> uniquePDGs;
+    std::map<Int_t, TGraph*> graphsByPDG;
+
+    Int_t hitIdx = 0;
+    for (Int_t i = 0; i < _nParticles && i < kMaxParticles; i++) {
+        Int_t nHits = _particle_nHits[i];
+        Int_t pdg   = _particle_PDG[i];
+        Int_t color = GetParticleColor(pdg);
+        uniquePDGs.insert(pdg);
+
+        if (nHits > 0) {
+            for (Int_t h = 0; h < nHits; h++) {
+                if (hitIdx >= _totalHits) break;
+                Float_t c1, c2;
+                if (!project(_hit_X[hitIdx], _hit_Y[hitIdx], _hit_Z[hitIdx], c1, c2)) {
+                    hitIdx++; continue;
+                }
+
+                Int_t style = (h == 0) ? 29 : 20;
+                Float_t size = (h == 0) ? 1.2f : 0.4f;
+                TMarker* m = new TMarker(c1, c2, style);
+                m->SetMarkerColor(color);
+                m->SetMarkerSize(size);
+                m->Draw("SAME");
+                hitIdx++;
+            }
+
+            if (graphsByPDG.find(pdg) == graphsByPDG.end()) {
+                TGraph* gr = new TGraph(1);
+                gr->SetPoint(0, -9999, -9999);
+                gr->SetMarkerStyle(20); gr->SetMarkerSize(0.8);
+                gr->SetMarkerColor(color);
+                graphsByPDG[pdg] = gr;
+            }
+        } else {
+            Float_t x1, y1, x2, y2;
+            bool s = project(_particle_startPos[i][0], _particle_startPos[i][1],
+                             _particle_startPos[i][2], x1, y1);
+            bool e = project(_particle_endPos[i][0], _particle_endPos[i][1],
+                             _particle_endPos[i][2], x2, y2);
+            if (s && e) {
+                TLine* line = new TLine(x1, y1, x2, y2);
+                line->SetLineColor(color); line->SetLineStyle(2);
+                line->SetLineWidth(2); line->Draw("SAME");
+                TMarker* sm = new TMarker(x1, y1, 29);
+                sm->SetMarkerColor(color); sm->SetMarkerSize(1.2f);
+                sm->Draw("SAME");
+            }
+        }
+    }
+
+    TLegend* legend = new TLegend(0.85, 0.7, 0.98, 0.95);
+    legend->SetTextSize(0.025);
+    legend->SetFillStyle(1001);
+    legend->SetBorderSize(1);
+    for (Int_t pdg : uniquePDGs) {
+        std::string name = GetParticleName(pdg);
+        Int_t color = GetParticleColor(pdg);
+        if (graphsByPDG.count(pdg)) {
+            legend->AddEntry(graphsByPDG[pdg], name.c_str(), "p");
+        } else {
+            TMarker* dm = new TMarker(0, 0, 20);
+            dm->SetMarkerColor(color);
+            legend->AddEntry(dm, name.c_str(), "p");
+        }
+    }
+    legend->Draw("SAME");
 }
 
 // ========== Analysis-Specific Virtual Methods (Default Implementations) ==========

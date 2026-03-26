@@ -219,6 +219,10 @@ private:
     void ShowParentTrajectoryHistograms(Int_t index);
     void ClearParentDirectionVisuals();
 
+    /// Check whether the named TEve element group is currently rendered.
+    /// Used to make TCanvas-based 2D overlays respect the TEve element browser toggles.
+    Bool_t IsGroupVisible(const char* groupName) const;
+
     std::unordered_map<TEveElement*, Int_t> _parentDirElementToIndex;
     std::vector<TEveLine*> _parentDirectionLines;
     Bool_t _parentDirSelectionHooked = kFALSE;

@@ -53,6 +53,12 @@ protected:
     /// Draw particles and hits in 2D projections (ProtoDUNE-specific)
     virtual void DrawParticles2D(TEveProjectionManager* manager, const std::string& projection_type) override;
 
+    /// Draw ProtoDUNE detector geometry on 2D TCanvas
+    virtual void DrawDetectorCanvas2D(TCanvas* canvas, const std::string& projection_type) override;
+
+    /// Draw particle tracks and hits on 2D TCanvas
+    virtual void DrawParticlesCanvas2D(TCanvas* canvas, const std::string& projection_type) override;
+
     // ========== Analysis-Specific Virtual Methods ==========
 
     /// Add analysis-specific variables to EventDisplayData tree
