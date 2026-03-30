@@ -3,36 +3,24 @@
 
 #include "pdDataClasses.hxx"
 #include "BaseDataClasses.hxx"
-#include "pdNeutralHelpers.hxx"
 #include <vector>
 
 namespace pdAnnihilationUtils {
 
-  // Create vertices - checks parameter to decide which algorithm to use
+  // Create vertices with simplified geometric position assignment.
   std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double maxDaughterDistance = 5.0);
 
-  // Common vertex creation logic with selectable position finder
-  std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, double maxDaughterDistance, double (*positionFinder)(AnaVertexPD*, double));
+  // Common vertex creation logic based only on pair conditions.
+  std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, double maxDaughterDistance);
 
-  // Position finder functions - return score value
-  double FindVertexPositionWithFit(AnaVertexPD* vertex, double trackFitLength);
-  double FindVertexPositionGeometric(AnaVertexPD* vertex, double trackFitLength);
-  double FindVertexPositionKalman(AnaVertexPD* vertex, double trackFitLength);
+  // Fill PositionPandora from the two daughter start-point/direction lines.
+  void FillPositionPandora(AnaAnnihilationVertexPD* vertex);
 
-  // Validate vertex (position and score checks)
-  bool ValidateVertex(AnaVertexPD* vertex);
+  // Fill PositionFit from line fits in [trackFitDistanceFromStart, trackFitDistanceFromStart + trackFitLength].
+  void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, double trackFitDistanceFromStart = 0.0);
 
-  // Filter vertices ensuring each particle belongs to at most one vertex
-  std::vector<AnaAnnihilationVertexPD*> FilterVerticesByScore(std::vector<AnaAnnihilationVertexPD*>& vertices);
-
-  // Helper function to create and fill true equivalent vertex
-  AnaTrueEquivalentVertexPD* FillTrueEquivalentVertex(AnaVertexPD* vertex);
-
-  // Find vertex position by fitting lines to daughter particles and finding closest points
-  void FindVertexPositionFit(AnaVertexPD* vertex);
-
-  // Find vertex position by fitting lines to true daughter particles and finding closest points
-  void FindVertexPositionFit(AnaTrueEquivalentVertexPD* vertex);
+  // Keep vertices with smallest fit minimum distance first, with each particle used at most once.
+  std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::vector<AnaAnnihilationVertexPD*>& vertices);
 
 }
 

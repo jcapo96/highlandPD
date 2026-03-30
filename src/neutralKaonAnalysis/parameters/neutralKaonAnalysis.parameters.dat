@@ -19,62 +19,23 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.CreateEventDisplay = 1 >
 
 --- Annihilation Vertex Finder ------------
-# Pairing: max distance between RECONSTRUCTED track start positions (PositionStart). In LArTPC these are
-# often the first hit on each track, NOT the true decay point, so two pions from the same K0 can have
-# "starts" 20-50 cm apart. Use a loose value here; the real cut is AnnihilationVertexMaxClosestApproach.
-< neutralKaonAnalysis.AnnihilationVertexRadius = 50.0 >
-# Quality: max distance of closest approach (cm) of the two track lines at the vertex. True K0->pipi
-# decay has both tracks meeting at one point; we require the extrapolated tracks to come this close.
-< neutralKaonAnalysis.AnnihilationVertexMaxClosestApproach = 5.0 >
+# Pairing threshold on daughter start-position distance (cm)
+< neutralKaonAnalysis.AnnihilationVertexRadius = 5.0 >
+# Minimum number of collection-plane hits required per daughter to create a vertex.
+# Vertex is created only if both daughters satisfy NHitsPerPlane[2] > this value.
+< neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 5 >
 
---- Creation Vertex Finder ------
-< neutralKaonAnalysis.CreationVertexRadius = 20.0 > //distance threshold (cm) for creation vertex sphere radius; larger to find proton when beam end is misreconstructed
-< neutralKaonAnalysis.CreationVertexRadiusAlongBeam = 50.0 > //when matching secondaries to beam line (not only beam end), max distance (cm) to line; increase to recover proton when beam end is misreconstructed
-< neutralKaonAnalysis.CreationMaxDistanceFromBeamEnd = 50.0 > //max distance (cm) of creation vertex from beam end along beam; K0 is created where beam stops, not in the middle of the beam track
-< neutralKaonAnalysis.MinCreationAnnihilationSeparation = 5.0 > //min separation (cm) between creation and annihilation vertices; reject pairs below this to avoid track confusion
-
-These variables below are unused as the framework uses Pandora-based
-quantities to extrapolate lines and find vertices
-
-< neutralKaonAnalysis.VertexFindingMethod = 0 > //vertex position finding method: 0=Geometric(PCA), 1=Fitted(TMinuit-default), 2=Kalman
-< neutralKaonAnalysis.MaxKalmanChi2Ndf = 10.0 > //max chi2/ndf for Kalman vertex fit quality (vertices with higher values are rejected)
-< neutralKaonAnalysis.UsePandora = 0 > // Use Pandora-based vertex (1) or Fit-based vertex (0) for general variables
-
---- Filter vertices (one particle per vertex) ---
-# FilterVerticesByScore keeps vertices in order of effective score; each particle can appear in at most one vertex.
-# FilterVerticesFavourGeometry = 1: add penalties for large opening angle, short min-daughter length, low min-daughter nhits
-#   (based on signal vs background diagnostics: signal has smaller opening, longer daughters, more hits).
-# FilterVerticesFavourTwoPions = 1: add mass near K0 + pion PID terms (weak when background is also pi+ pi-; use with care).
-< neutralKaonAnalysis.FilterVerticesFavourGeometry = 1 > // 1 = favour small opening angle, long daughters, many hits; use small weights to avoid efficiency loss
-< neutralKaonAnalysis.FilterVerticesOpeningAngleWeight = 0.005 > // penalty per degree (try 0.002–0.01; too large can reduce efficiency)
-< neutralKaonAnalysis.FilterVerticesMinDaughterLengthWeight = 0.01 > // penalty per cm below threshold
-< neutralKaonAnalysis.FilterVerticesMinDaughterLengthThreshold = 40.0 > // cm
-< neutralKaonAnalysis.FilterVerticesMinDaughterNhitsWeight = 0.002 > // penalty per hit below threshold
-< neutralKaonAnalysis.FilterVerticesMinDaughterNhitsThreshold = 50.0 > // collection-plane hits
-< neutralKaonAnalysis.FilterVerticesFavourTwoPions = 0 > // 1 = also add mass + pion PID terms; 0 recommended (weak discriminator)
-< neutralKaonAnalysis.FilterVerticesK0MassWeight = 1e-5 > // weight for (M_pipi - M_K0)^2 term (MeV^-2)
-< neutralKaonAnalysis.FilterVerticesPionChi2Weight = 0.01 > // weight for max(chi2/ndf_pion) of the two tracks
-
---- Neutral Particle Scoring ----
- < neutralKaonAnalysis.CylinderRadius = 7.5 >
- < neutralKaonAnalysis.ImpactParameter = 0.0 > //selection level
-
---- Alternative Annihilation Vertex Finding Parameters (not used) -----------
+--- Annihilation Line-Fit Parameters -----------
  < neutralKaonAnalysis.TrackFitLength = 5.0 > //length of track used for line fitting (cm)
- < neutralKaonAnalysis.TrackFitMinDistance = 0.0 > //min distance from vertex (cm): use only hits in [TrackFitMinDistance, TrackFitLength] for line fit (0=no trim)
-
---- Creation Vertex Fit Parameters (optional overrides; if not set, fall back to TrackFitLength/TrackFitMinDistance) -----------
- < neutralKaonAnalysis.CreationTrackFitLength = 15.0 > //length of track used for creation vertex line fitting (cm)
- < neutralKaonAnalysis.CreationTrackFitMinDistance = 1.0 > //min distance for creation vertex: use only hits in [CreationTrackFitMinDistance, CreationTrackFitLength] from beam end / second start (cm)
- < neutralKaonAnalysis.CreationMinOpeningAngleCos = 0.98 > //cos(angle): if beam-second cos >= this, use midpoint of beam end and second start (nearly parallel fallback)
- < neutralKaonAnalysis.UseROOTFitting = 1 > //use ROOT fitting instead of PCA for track fitting (1=ROOT, 0=PCA)
+ < neutralKaonAnalysis.TrackFitDistanceFromStart = 5.0 > //fit starts this many cm away from particle start position
+ < neutralKaonAnalysis.VertexXBiasCorrectionCm = 0.0 > //x_corrected = x_reco - value (cm)
 
 --- Other Parameters -----------
 
 --- Other Parameters -----------
 
 --- Event Skim File ------------
- < baseAnalysis.StoreSurvivingEvents = 0 >  // Enable storing surviving events (0=disabled, 1=enabled)
+< baseAnalysis.StoreSurvivingEvents = 0 >  // Enable storing surviving events (0=disabled, 1=enabled)
  < baseAnalysis.TruthPDGForSkim = -1 >    // PDG code to check in truth (-1=disabled, e.g., 310 for K0)
 
 ###############################################################################

@@ -15,7 +15,7 @@ namespace pdNeutralUtils {
 //***************************************************************
 std::pair<Int_t, Int_t> pdNeutralUtils::CalculateNeutralScore(
     AnaNeutralParticlePD* neutralParticle,
-    AnaVertexPD* vertex,
+    AnaAnnihilationVertexPD* vertex,
     AnaParticlePD* parentParticle,
     AnaEventB& event,
     const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID) {
@@ -35,9 +35,9 @@ std::pair<Int_t, Int_t> pdNeutralUtils::CalculateNeutralScore(
 
   // Get parameters
   double daughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
-  double cylinderRadius = ND::params().GetParameterD("neutralKaonAnalysis.CylinderRadius");
+  const double cylinderRadius = 7.5;
 
-  TVector3 vertexPos(vertex->Position[0], vertex->Position[1], vertex->Position[2]);
+  TVector3 vertexPos(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
 
   // === ENHANCED NEUTRAL PARTICLE SCORING ALGORITHM ===
   // LOWER score = more neutral-like (few hits, far from path, not aligned)
@@ -296,119 +296,6 @@ std::pair<Int_t, Int_t> pdNeutralUtils::CalculateNeutralScore(
 }
 
 //***************************************************************
-AnaTrueEquivalentNeutralParticlePD* pdNeutralUtils::FillTrueEquivalentNeutralParticle(
-    AnaVertexPD* vertex,
-    AnaParticlePD* parentParticle) {
-//***************************************************************
-
-  if (!vertex || !parentParticle) {
-    return nullptr;
-  }
-
-  // Create true equivalent neutral particle
-  AnaTrueEquivalentNeutralParticlePD* trueEquivalentNeutralParticle = new AnaTrueEquivalentNeutralParticlePD();
-  trueEquivalentNeutralParticle->TrueEquivalentVertex = static_cast<AnaTrueEquivalentVertexPD*>(vertex->TrueEquivalentVertex);
-  trueEquivalentNeutralParticle->TrueParent = static_cast<AnaTrueParticlePD*>(parentParticle->TrueObject);
-
-  // Add the position and direction of the true particle
-  if (parentParticle->TrueObject) {
-    AnaTrueParticlePD* trueParticle = static_cast<AnaTrueParticlePD*>(parentParticle->TrueObject);
-    trueEquivalentNeutralParticle->Position[0] = trueParticle->PositionEnd[0];
-    trueEquivalentNeutralParticle->Position[1] = trueParticle->PositionEnd[1];
-    trueEquivalentNeutralParticle->Position[2] = trueParticle->PositionEnd[2];
-  } else {
-    trueEquivalentNeutralParticle->Position[0] = -999.0;
-    trueEquivalentNeutralParticle->Position[1] = -999.0;
-    trueEquivalentNeutralParticle->Position[2] = -999.0;
-  }
-
-  // Add the end position of the true vertex
-  if (vertex->TrueEquivalentVertex) {
-    trueEquivalentNeutralParticle->PositionEnd[0] = vertex->TrueEquivalentVertex->Position[0];
-    trueEquivalentNeutralParticle->PositionEnd[1] = vertex->TrueEquivalentVertex->Position[1];
-    trueEquivalentNeutralParticle->PositionEnd[2] = vertex->TrueEquivalentVertex->Position[2];
-  } else {
-    trueEquivalentNeutralParticle->PositionEnd[0] = -999.0;
-    trueEquivalentNeutralParticle->PositionEnd[1] = -999.0;
-    trueEquivalentNeutralParticle->PositionEnd[2] = -999.0;
-  }
-
-  // Calculate the direction of the true particle
-  Float_t trueDirectionStart[3];
-  trueDirectionStart[0] = trueEquivalentNeutralParticle->PositionEnd[0] - trueEquivalentNeutralParticle->Position[0];
-  trueDirectionStart[1] = trueEquivalentNeutralParticle->PositionEnd[1] - trueEquivalentNeutralParticle->Position[1];
-  trueDirectionStart[2] = trueEquivalentNeutralParticle->PositionEnd[2] - trueEquivalentNeutralParticle->Position[2];
-
-  Float_t trueNorm = sqrt(trueDirectionStart[0]*trueDirectionStart[0] +
-                          trueDirectionStart[1]*trueDirectionStart[1] +
-                          trueDirectionStart[2]*trueDirectionStart[2]);
-  if (trueNorm > 0) {
-    trueDirectionStart[0] /= trueNorm;
-    trueDirectionStart[1] /= trueNorm;
-    trueDirectionStart[2] /= trueNorm;
-  } else {
-    trueDirectionStart[0] = -999.0;
-    trueDirectionStart[1] = -999.0;
-    trueDirectionStart[2] = -999.0;
-  }
-
-  trueEquivalentNeutralParticle->Direction[0] = trueDirectionStart[0];
-  trueEquivalentNeutralParticle->Direction[1] = trueDirectionStart[1];
-  trueEquivalentNeutralParticle->Direction[2] = trueDirectionStart[2];
-
-  Float_t trueDirectionEnd[3];
-  trueDirectionEnd[0] = vertex->TrueEquivalentVertex ? vertex->TrueEquivalentVertex->Direction[0] : -999;
-  trueDirectionEnd[1] = vertex->TrueEquivalentVertex ? vertex->TrueEquivalentVertex->Direction[1] : -999;
-  trueDirectionEnd[2] = vertex->TrueEquivalentVertex ? vertex->TrueEquivalentVertex->Direction[2] : -999;
-
-  Float_t trueNormEnd = sqrt(trueDirectionEnd[0]*trueDirectionEnd[0] +
-                             trueDirectionEnd[1]*trueDirectionEnd[1] +
-                             trueDirectionEnd[2]*trueDirectionEnd[2]);
-  if (trueNormEnd > 0) {
-    trueDirectionEnd[0] /= trueNormEnd;
-    trueDirectionEnd[1] /= trueNormEnd;
-    trueDirectionEnd[2] /= trueNormEnd;
-  } else {
-    trueDirectionEnd[0] = -999.0;
-    trueDirectionEnd[1] = -999.0;
-    trueDirectionEnd[2] = -999.0;
-  }
-
-  trueEquivalentNeutralParticle->DirectionEnd[0] = trueDirectionEnd[0];
-  trueEquivalentNeutralParticle->DirectionEnd[1] = trueDirectionEnd[1];
-  trueEquivalentNeutralParticle->DirectionEnd[2] = trueDirectionEnd[2];
-
-  Float_t trueLength = sqrt(pow(trueEquivalentNeutralParticle->PositionEnd[0]-trueEquivalentNeutralParticle->Position[0],2)+
-                            pow(trueEquivalentNeutralParticle->PositionEnd[1]-trueEquivalentNeutralParticle->Position[1],2)+
-                            pow(trueEquivalentNeutralParticle->PositionEnd[2]-trueEquivalentNeutralParticle->Position[2],2));
-  trueEquivalentNeutralParticle->Length = trueLength;
-
-  // Calculate invariant mass and momentum for true equivalent neutral particle
-  Float_t trueInvariantMass = -999;
-  Float_t trueMomentumEnd = -999;
-
-  if (vertex->TrueEquivalentVertex && vertex->TrueEquivalentVertex->TrueParticles.size() >= 2) {
-    AnaTrueParticlePD* trueParticle1 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[0]);
-    AnaTrueParticlePD* trueParticle2 = static_cast<AnaTrueParticlePD*>(vertex->TrueEquivalentVertex->TrueParticles[1]);
-
-    if (trueParticle1 && trueParticle2 &&
-        trueParticle1->Momentum > 0 && trueParticle2->Momentum > 0 &&
-        trueParticle1->Momentum != -999 && trueParticle2->Momentum != -999) {
-      const Float_t pionMass = 0.13957;
-      trueInvariantMass = pdAnaUtils::ComputeTrueInvariantMass(*trueParticle1, *trueParticle2, pionMass, pionMass);
-
-      // Calculate total momentum (sum of daughter momenta)
-      trueMomentumEnd = trueParticle1->Momentum + trueParticle2->Momentum;
-    }
-  }
-
-  trueEquivalentNeutralParticle->Mass = trueInvariantMass;
-  trueEquivalentNeutralParticle->MomentumEnd = trueMomentumEnd;
-
-  return trueEquivalentNeutralParticle;
-}
-
-//***************************************************************
 void pdNeutralUtils::CalculateVertexDegeneracies(AnaEventB& event,
                                                    AnaCreationVertexPD* creationVertex,
                                                    AnaAnnihilationVertexPD* annihilationVertex){
@@ -418,7 +305,7 @@ void pdNeutralUtils::CalculateVertexDegeneracies(AnaEventB& event,
   // Count particles whose start position is within the creation vertex radius, excluding annihilation vertex particles
   int creationDegeneracy = 0;
   std::vector<double> creationDistances; // Store distances for DegDist array
-  double creationVertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius");
+  const double creationVertexRadius = 20.0;
   TVector3 creationPos(creationVertex->Position[0], creationVertex->Position[1], creationVertex->Position[2]);
 
   // Initialize DegDist array
@@ -464,12 +351,7 @@ void pdNeutralUtils::CalculateVertexDegeneracies(AnaEventB& event,
   int annihilationDegeneracy = 0;
   std::vector<double> annihilationDistances; // Store distances for DegDist array
   double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
-  TVector3 annihilationPos(annihilationVertex->Position[0], annihilationVertex->Position[1], annihilationVertex->Position[2]);
-
-  // Initialize DegDist array
-  for (int i = 0; i < 5; i++) {
-    annihilationVertex->DegDist[i] = -999.0;
-  }
+  TVector3 annihilationPos(annihilationVertex->PositionPandora[0], annihilationVertex->PositionPandora[1], annihilationVertex->PositionPandora[2]);
 
   for(int p = 0; p < event.nParticles; p++){
     AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
@@ -492,13 +374,8 @@ void pdNeutralUtils::CalculateVertexDegeneracies(AnaEventB& event,
     }
   }
 
-  annihilationVertex->Degeneracy = annihilationDegeneracy;
-
-  // Sort distances and fill DegDist array (up to 5)
-  std::sort(annihilationDistances.begin(), annihilationDistances.end());
-  for (size_t i = 0; i < annihilationDistances.size() && i < 5; i++) {
-    annihilationVertex->DegDist[i] = static_cast<Float_t>(annihilationDistances[i]);
-  }
+  (void)annihilationDegeneracy;
+  (void)annihilationDistances;
 }
 
 //***************************************************************
@@ -668,6 +545,107 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::FilterNeutralsByScore(std::ve
   return selectedNeutralParticles;
 }
 
+namespace {
+
+AnaTrueParticlePD* GetCommonTrueParent(AnaEventB& event, AnaAnnihilationVertexPD* annihilationVtx) {
+  if (!annihilationVtx || annihilationVtx->Particles.size() < 2) {
+    return nullptr;
+  }
+
+  AnaParticlePD* daughter1 = annihilationVtx->Particles[0];
+  AnaParticlePD* daughter2 = annihilationVtx->Particles[1];
+  if (!daughter1 || !daughter2 || !daughter1->TrueObject || !daughter2->TrueObject) {
+    return nullptr;
+  }
+
+  AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(daughter1->TrueObject);
+  AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(daughter2->TrueObject);
+  if (!trueDaughter1 || !trueDaughter2) {
+    return nullptr;
+  }
+
+  if (trueDaughter1->ParentID <= 0 || trueDaughter1->ParentID != trueDaughter2->ParentID) {
+    return nullptr;
+  }
+
+  return pdAnaUtils::GetTrueParticle(&event, trueDaughter1->ParentID);
+}
+
+Float_t ComputeAnnihilationInvariantMass(AnaAnnihilationVertexPD* annihilationVtx) {
+  if (!annihilationVtx || annihilationVtx->Particles.size() < 2) {
+    return -999.f;
+  }
+
+  AnaParticlePD* particle1 = annihilationVtx->Particles[0];
+  AnaParticlePD* particle2 = annihilationVtx->Particles[1];
+  if (!particle1 || !particle2 ||
+      particle1->Momentum <= 0 || particle2->Momentum <= 0 ||
+      particle1->Momentum == -999 || particle2->Momentum == -999) {
+    return -999.f;
+  }
+
+  const Float_t pionMass = 0.13957f;
+  return anaUtils::ComputeInvariantMass(*particle1, *particle2, pionMass, pionMass);
+}
+
+} // namespace
+
+//***************************************************************
+std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateAnnihilationOnlyNeutrals(
+    AnaEventB& event,
+    const std::vector<AnaAnnihilationVertexPD*>& annihilationVertices) {
+//***************************************************************
+
+  std::vector<AnaNeutralParticlePD*> neutralParticles;
+  int neutralParticleID = 0;
+
+  for (AnaAnnihilationVertexPD* annihilationVtx : annihilationVertices) {
+    if (!annihilationVtx) continue;
+
+    AnaNeutralParticlePD* neutralParticle = new AnaNeutralParticlePD();
+    neutralParticle->UniqueID = neutralParticleID++;
+    neutralParticle->AnnihilationVertex = annihilationVtx;
+    neutralParticle->CreationVertex = nullptr;
+    neutralParticle->Parent = nullptr;
+    neutralParticle->RecoParticle = nullptr;
+
+    for (int i = 0; i < 3; ++i) {
+      neutralParticle->PositionStart[i] = -999.f;
+      neutralParticle->DirectionStart[i] = -999.f;
+      neutralParticle->PositionEnd[i] = annihilationVtx->PositionPandora[i];
+      neutralParticle->DirectionEnd[i] = -999.f;
+    }
+    neutralParticle->PositionStart[3] = -999.f;
+    neutralParticle->PositionEnd[3] = -999.f;
+
+    neutralParticle->Length = -999.f;
+    neutralParticle->ImpactParameter = -999.f;
+    neutralParticle->NRecoHitsInVertex = -999;
+    neutralParticle->NHitsInCylinder = -999;
+    neutralParticle->HitsAlignment = -999.f;
+    neutralParticle->HitsAvgDistance = -999.f;
+    neutralParticle->HitsRMSDistance = -999.f;
+    neutralParticle->HitsLongitudinalSpan = -999.f;
+
+    neutralParticle->Mass = ComputeAnnihilationInvariantMass(annihilationVtx);
+    neutralParticle->Momentum = -999.f;
+    neutralParticle->PDG = -999;
+    neutralParticle->Lifetime = -999.f;
+    neutralParticle->DecayLength = -999.f;
+    neutralParticle->NeutralScore = annihilationVtx->OriginalDistance;
+
+    AnaTrueParticlePD* trueParentParticle = GetCommonTrueParent(event, annihilationVtx);
+    neutralParticle->TrueObject = trueParentParticle;
+    if (trueParentParticle && !trueParentParticle->ReconParticles.empty()) {
+      neutralParticle->RecoParticle = static_cast<AnaParticlePD*>(trueParentParticle->ReconParticles[0]);
+    }
+
+    neutralParticles.push_back(neutralParticle);
+  }
+
+  return neutralParticles;
+}
+
 //***************************************************************
 std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& event,
                                                                   const std::vector<AnaCreationVertexPD*>& creationVertices,
@@ -719,9 +697,9 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
       neutralParticle->PositionStart[3] = creationVtx->BeamParticle->PositionEnd[3];
 
       // Set end position from annihilation vertex
-      neutralParticle->PositionEnd[0] = annihilationVtx->Position[0];
-      neutralParticle->PositionEnd[1] = annihilationVtx->Position[1];
-      neutralParticle->PositionEnd[2] = annihilationVtx->Position[2];
+      neutralParticle->PositionEnd[0] = annihilationVtx->PositionPandora[0];
+      neutralParticle->PositionEnd[1] = annihilationVtx->PositionPandora[1];
+      neutralParticle->PositionEnd[2] = annihilationVtx->PositionPandora[2];
       neutralParticle->PositionEnd[3] = -999;
 
       // Calculate start direction
@@ -744,9 +722,9 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
       neutralParticle->DirectionStart[2] = directionStart[2];
 
       // Set end direction from annihilation vertex
-      neutralParticle->DirectionEnd[0] = annihilationVtx->Direction[0];
-      neutralParticle->DirectionEnd[1] = annihilationVtx->Direction[1];
-      neutralParticle->DirectionEnd[2] = annihilationVtx->Direction[2];
+      neutralParticle->DirectionEnd[0] = -999.f;
+      neutralParticle->DirectionEnd[1] = -999.f;
+      neutralParticle->DirectionEnd[2] = -999.f;
 
       // Calculate length
       neutralParticle->Length = sqrt(pow(neutralParticle->PositionEnd[0]-neutralParticle->PositionStart[0],2)+
@@ -760,7 +738,7 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
       pdAnaUtils::ExtrapolateTrack(creationVtx->BeamParticle, parentLineParams, trackFitLength, false);
 
       if(parentLineParams.size() == 6 && parentLineParams[0] != -999.0){
-        TVector3 vertexPos(annihilationVtx->Position[0], annihilationVtx->Position[1], annihilationVtx->Position[2]);
+        TVector3 vertexPos(annihilationVtx->PositionPandora[0], annihilationVtx->PositionPandora[1], annihilationVtx->PositionPandora[2]);
         neutralParticle->ImpactParameter = pdAnaUtils::CalculateImpactParameter(parentLineParams, vertexPos);
       }
 
@@ -768,20 +746,20 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
       auto [NPotentialParents, NRecoHitsInVertex] = CalculateNeutralScore(
           neutralParticle, annihilationVtx, creationVtx->BeamParticle, event, particleByUniqueID);
 
-      neutralParticle->AnnihilationVertex->NPotentialParents = NPotentialParents;
+      (void)NPotentialParents;
       neutralParticle->NRecoHitsInVertex = NRecoHitsInVertex;
 
-      // Fill true equivalent
-      neutralParticle->TrueEquivalentNeutralParticle =
-          FillTrueEquivalentNeutralParticle(annihilationVtx, creationVtx->BeamParticle);
+      // True-equivalent objects are disabled in this branch.
 
       // Assign TrueObject
       // Keep the common true parent of the reconstructed daughters whenever it exists.
       // Reco-parent consistency is checked later in the category logic, but we still want
       // the candidate to retain its truth label for debugging and efficiency studies.
-      if(annihilationVtx->TrueEquivalentVertex && annihilationVtx->TrueEquivalentVertex->TrueParticles.size() >= 2){
-        AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(annihilationVtx->TrueEquivalentVertex->TrueParticles[0]);
-        AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(annihilationVtx->TrueEquivalentVertex->TrueParticles[1]);
+      if(annihilationVtx->Particles.size() >= 2){
+        AnaParticlePD* recoDaughter1 = static_cast<AnaParticlePD*>(annihilationVtx->Particles[0]);
+        AnaParticlePD* recoDaughter2 = static_cast<AnaParticlePD*>(annihilationVtx->Particles[1]);
+        AnaTrueParticlePD* trueDaughter1 = recoDaughter1 ? static_cast<AnaTrueParticlePD*>(recoDaughter1->TrueObject) : nullptr;
+        AnaTrueParticlePD* trueDaughter2 = recoDaughter2 ? static_cast<AnaTrueParticlePD*>(recoDaughter2->TrueObject) : nullptr;
 
         if(trueDaughter1 && trueDaughter2){
           // Both daughters have the same parent (same true ID)
@@ -816,9 +794,6 @@ std::vector<AnaNeutralParticlePD*> pdNeutralUtils::CreateNeutrals(AnaEventB& eve
         neutralParticle->TrueObject = nullptr;
         neutralParticle->RecoParticle = nullptr;
       }
-
-      // Ensure particle momentum
-      annihilationVtx->EnsureParticleMomentum();
 
       // Calculate invariant mass
       Float_t invariantMass = -999;

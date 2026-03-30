@@ -22,9 +22,10 @@ namespace neutralKaonTree {
   void FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, const AnaEventB& event, AnaBeamB* beam = NULL);
   void FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaParticlePD* parentCandidate, const AnaEventB& event);
   void FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate);
-  void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaVertexPD* vertex);
-  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
-  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex);
+  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
+  void WriteHitDistanceProfiles(OutputManager& output);
 
   // Enum with unique indexes for output tree variables
   enum enumNeutralKaonMicroTrees{
@@ -70,9 +71,7 @@ namespace neutralKaonTree {
     k0truerecodist, //True-vertex-position minus reconstructed-vertex-position
     k0impactparameter, //Impact parameter
     k0creationvtxdeg, //Creation vertex degeneracy
-    k0annvtxdeg, //Annihilation vertex degeneracy
     k0creationvtxdegdist, //Creation vertex degeneracy distances [5]
-    k0annvtxdegdist, //Annihilation vertex degeneracy distances [5]
     k0creationvtxprotonscore, //Creation vertex proton score (Chi2/ndf under proton hypothesis)
     k0creationvtxdistancescore, //Creation vertex distance score (distance from beam end to secondary start)
     k0creationbeamsecondopening, //Creation: cos(angle) between beam end dir and second start dir (1=parallel, poorly constrained)
@@ -276,28 +275,34 @@ namespace neutralKaonTree {
      // Variables about the vertex system (two particles)
     k0vtxrecopos,
     k0vtxtruepos,
-    k0vtxrecomom,
     k0vtxtruemom,
-    k0vtxrecoenergy,
     k0vtxtrueenergy,
     k0vtxrecomass,
     k0vtxtruemass,
-    k0vtxrecodir,
     k0vtxtruedir,
-    k0vtxrecoopening,
     k0vtxtrueopening,
-    k0vtxrecoangle,
     k0vtxtrueangle,
     k0vtxnpotpar,
     k0vtxoriginaldistance,
-    k0vtxminimumdistance,
     k0vtxtrueoriginaldistance,
     k0vtxtrueminimumdistance,
-    k0vtxscore,
 
     k0vtxpandorapos, //Pandora-based vertex position
     k0vtxfitpos, //Algorithm-specific fitted vertex position (geometric/TMinuit/Kalman)
-    k0vtxfitdir, //Algorithm-specific fitted vertex direction (geometric/TMinuit/Kalman)
+    k0vtxpandorax, //Pandora vertex x position [cm]
+    k0vtxpandoray, //Pandora vertex y position [cm]
+    k0vtxpandoraz, //Pandora vertex z position [cm]
+    k0vtxfitx, //Fit vertex x position [cm]
+    k0vtxfity, //Fit vertex y position [cm]
+    k0vtxfitz, //Fit vertex z position [cm]
+    k0vtxpandoraresidual, //|Pandora vertex position - true vertex position| [cm]
+    k0vtxfitresidual, //|Fit vertex position - true vertex position| [cm]
+    k0vtxpandoraresidualx, //Pandora x_reco - x_true [cm]
+    k0vtxpandoraresidualy, //Pandora y_reco - y_true [cm]
+    k0vtxpandoraresidualz, //Pandora z_reco - z_true [cm]
+    k0vtxfitresidualx, //Fit x_reco - x_true [cm]
+    k0vtxfitresidualy, //Fit y_reco - y_true [cm]
+    k0vtxfitresidualz, //Fit z_reco - z_true [cm]
     k0vtxisjustavg, //Flag: 1 if Pandora used simple average, 0 if line intersection, -999 if invalid
   enumNeutralKaonMicroTreesLast
   };

@@ -1,6 +1,7 @@
 #include "neutralKaonEventDisplay.hxx"
 #include "ToyBoxNeutralKaon.hxx"
 #include "pdDataClasses.hxx"
+#include "pdAnalysisUtils.hxx"
 #include "OutputManager.hxx"
 #include <TEveGeoShape.h>
 #include <TEveManager.h>
@@ -148,14 +149,19 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         for (Int_t j = 0; j < 3; j++) {
             _k0_creationVtxPos[i][j] = -999;
             _k0_annihilationVtxPos[i][j] = -999;
+            _k0_annihilationVtxFitPos[i][j] = -999;
             _k0_startPos[i][j] = -999;
             _k0_endPos[i][j] = -999;
             _k0_annVtx_fitLine1Start[i][j] = -999;
             _k0_annVtx_fitLine1Dir[i][j] = -999;
             _k0_annVtx_fitLine2Start[i][j] = -999;
             _k0_annVtx_fitLine2Dir[i][j] = -999;
+            _k0_annVtx_pandoraLine1Dir[i][j] = -999;
+            _k0_annVtx_pandoraLine2Dir[i][j] = -999;
             _k0_annVtx_closestPt1[i][j] = -999;
             _k0_annVtx_closestPt2[i][j] = -999;
+            _k0_annVtx_pandoraClosestPt1[i][j] = -999;
+            _k0_annVtx_pandoraClosestPt2[i][j] = -999;
             _k0_creationVtx_fitLineBeamStart[i][j] = -999;
             _k0_creationVtx_fitLineBeamDir[i][j] = -999;
             _k0_creationVtx_fitLineSecondStart[i][j] = -999;
@@ -404,6 +410,7 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddVectorVar(tree_index, edk0_annihilationVtxDeg, "ED_k0_annihilationVtxDeg", "I", "K0 annihilation vertex degeneracy", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddMatrixVar(tree_index, edk0_creationVtxPos, "ED_k0_creationVtxPos", "F", "K0 creation vertex positions", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_annihilationVtxPos, "ED_k0_annihilationVtxPos", "F", "K0 annihilation vertex positions", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_annihilationVtxFitPos, "ED_k0_annihilationVtxFitPos", "F", "K0 annihilation vertex fit positions", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_startPos, "ED_k0_startPos", "F", "K0 start positions", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_endPos, "ED_k0_endPos", "F", "K0 end positions", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
 
@@ -412,8 +419,12 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edk0_annVtx_fitLine1Dir, "ED_k0_annVtx_fitLine1Dir", "F", "Annihilation vtx daughter1 fit line direction", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_annVtx_fitLine2Start, "ED_k0_annVtx_fitLine2Start", "F", "Annihilation vtx daughter2 fit line start", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_annVtx_fitLine2Dir, "ED_k0_annVtx_fitLine2Dir", "F", "Annihilation vtx daughter2 fit line direction", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_annVtx_pandoraLine1Dir, "ED_k0_annVtx_pandoraLine1Dir", "F", "Annihilation vtx daughter1 Pandora direction", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_annVtx_pandoraLine2Dir, "ED_k0_annVtx_pandoraLine2Dir", "F", "Annihilation vtx daughter2 Pandora direction", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_annVtx_closestPt1, "ED_k0_annVtx_closestPt1", "F", "Closest point on daughter1 fit line", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_annVtx_closestPt2, "ED_k0_annVtx_closestPt2", "F", "Closest point on daughter2 fit line", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_annVtx_pandoraClosestPt1, "ED_k0_annVtx_pandoraClosestPt1", "F", "Closest point on daughter1 Pandora line", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_annVtx_pandoraClosestPt2, "ED_k0_annVtx_pandoraClosestPt2", "F", "Closest point on daughter2 Pandora line", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
 
     // Fitted lines for creation vertex
     output.AddMatrixVar(tree_index, edk0_creationVtx_fitLineBeamStart, "ED_k0_creationVtx_fitLineBeamStart", "F", "Creation vtx beam fit line start", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
@@ -680,7 +691,7 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_dau2TrajDirNPts, dau2TrajNpts);
 
             // Vertex radii (read from parameters file)
-            Float_t creationRadius = ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius");
+            Float_t creationRadius = 0.0f;
             Float_t annihilationRadius = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
 
             output.FillVectorVar(edk0_creationVtxRadius, creationRadius);
@@ -713,22 +724,20 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
 
             // Annihilation vertex position and degeneracy
             Float_t annihilationPos[3] = {-999, -999, -999};
+            Float_t annihilationFitPos[3] = {-999, -999, -999};
             Int_t annihilationDeg = -999;
             if (neutralParticle->AnnihilationVertex) {
-                annihilationPos[0] = (Float_t)neutralParticle->AnnihilationVertex->Position[0];
-                annihilationPos[1] = (Float_t)neutralParticle->AnnihilationVertex->Position[1];
-                annihilationPos[2] = (Float_t)neutralParticle->AnnihilationVertex->Position[2];
-                annihilationDeg = neutralParticle->AnnihilationVertex->Degeneracy;
+                annihilationPos[0] = (Float_t)neutralParticle->AnnihilationVertex->PositionPandora[0];
+                annihilationPos[1] = (Float_t)neutralParticle->AnnihilationVertex->PositionPandora[1];
+                annihilationPos[2] = (Float_t)neutralParticle->AnnihilationVertex->PositionPandora[2];
+                annihilationFitPos[0] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[0];
+                annihilationFitPos[1] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[1];
+                annihilationFitPos[2] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[2];
             }
             output.FillVectorVar(edk0_annihilationVtxDeg, annihilationDeg);
 
             // Annihilation vertex degeneracy distances
             Float_t annihilationDegDist[5] = {-999, -999, -999, -999, -999};
-            if (neutralParticle->AnnihilationVertex) {
-                for (Int_t d = 0; d < 5; d++) {
-                    annihilationDegDist[d] = neutralParticle->AnnihilationVertex->DegDist[d];
-                }
-            }
             output.FillMatrixVarFromArray(edk0_annihilationVtxDegDist, annihilationDegDist, 5);
 
             // K0 trajectory (from creation to annihilation)
@@ -737,6 +746,7 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
 
             output.FillMatrixVarFromArray(edk0_creationVtxPos, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_annihilationVtxPos, annihilationPos, 3);
+            output.FillMatrixVarFromArray(edk0_annihilationVtxFitPos, annihilationFitPos, 3);
             output.FillMatrixVarFromArray(edk0_startPos, startPos, 3);
             output.FillMatrixVarFromArray(edk0_endPos, endPos, 3);
 
@@ -745,8 +755,12 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Float_t fitLine1Dir[3] = {-999, -999, -999};
             Float_t fitLine2Start[3] = {-999, -999, -999};
             Float_t fitLine2Dir[3] = {-999, -999, -999};
+            Float_t pandoraLine1Dir[3] = {-999, -999, -999};
+            Float_t pandoraLine2Dir[3] = {-999, -999, -999};
             Float_t closestPt1[3] = {-999, -999, -999};
             Float_t closestPt2[3] = {-999, -999, -999};
+            Float_t pandoraClosestPt1[3] = {-999, -999, -999};
+            Float_t pandoraClosestPt2[3] = {-999, -999, -999};
             Float_t fitLineLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
 
             // For annihilation vertex: use Pandora directions (not fitted directions)
@@ -757,36 +771,88 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                 AnaParticlePD* d2 = neutralParticle->AnnihilationVertex->Particles[1];
 
                 if (d1 && d2) {
-                    // Use Pandora positions and directions (what was actually used for vertex calculation)
+                    // Start points are the line anchors for both methods
                     fitLine1Start[0] = d1->PositionStart[0];
                     fitLine1Start[1] = d1->PositionStart[1];
                     fitLine1Start[2] = d1->PositionStart[2];
-                    fitLine1Dir[0] = d1->DirectionStart[0];
-                    fitLine1Dir[1] = d1->DirectionStart[1];
-                    fitLine1Dir[2] = d1->DirectionStart[2];
-
                     fitLine2Start[0] = d2->PositionStart[0];
                     fitLine2Start[1] = d2->PositionStart[1];
                     fitLine2Start[2] = d2->PositionStart[2];
-                    fitLine2Dir[0] = d2->DirectionStart[0];
-                    fitLine2Dir[1] = d2->DirectionStart[1];
-                    fitLine2Dir[2] = d2->DirectionStart[2];
+
+                    // Pandora directions
+                    pandoraLine1Dir[0] = d1->DirectionStart[0];
+                    pandoraLine1Dir[1] = d1->DirectionStart[1];
+                    pandoraLine1Dir[2] = d1->DirectionStart[2];
+                    pandoraLine2Dir[0] = d2->DirectionStart[0];
+                    pandoraLine2Dir[1] = d2->DirectionStart[1];
+                    pandoraLine2Dir[2] = d2->DirectionStart[2];
+
+                    // Extrapolated-fit directions (first trackFitLength cm from start)
+                    std::vector<double> line1Params;
+                    std::vector<double> line2Params;
+                    pdAnaUtils::ExtrapolateTrack(d1, line1Params, fitLineLength, true);
+                    pdAnaUtils::ExtrapolateTrack(d2, line2Params, fitLineLength, true);
+                    if (line1Params.size() >= 6) {
+                        fitLine1Dir[0] = line1Params[3];
+                        fitLine1Dir[1] = line1Params[4];
+                        fitLine1Dir[2] = line1Params[5];
+                    } else {
+                        fitLine1Dir[0] = pandoraLine1Dir[0];
+                        fitLine1Dir[1] = pandoraLine1Dir[1];
+                        fitLine1Dir[2] = pandoraLine1Dir[2];
+                    }
+                    if (line2Params.size() >= 6) {
+                        fitLine2Dir[0] = line2Params[3];
+                        fitLine2Dir[1] = line2Params[4];
+                        fitLine2Dir[2] = line2Params[5];
+                    } else {
+                        fitLine2Dir[0] = pandoraLine2Dir[0];
+                        fitLine2Dir[1] = pandoraLine2Dir[1];
+                        fitLine2Dir[2] = pandoraLine2Dir[2];
+                    }
+
+                    // Force fitted directions to follow particle travel direction.
+                    TVector3 p1(pandoraLine1Dir[0], pandoraLine1Dir[1], pandoraLine1Dir[2]);
+                    TVector3 f1(fitLine1Dir[0], fitLine1Dir[1], fitLine1Dir[2]);
+                    if (p1.Mag2() > 1e-10 && f1.Mag2() > 1e-10 && f1.Dot(p1) < 0) {
+                        fitLine1Dir[0] *= -1.f;
+                        fitLine1Dir[1] *= -1.f;
+                        fitLine1Dir[2] *= -1.f;
+                    }
+
+                    TVector3 p2(pandoraLine2Dir[0], pandoraLine2Dir[1], pandoraLine2Dir[2]);
+                    TVector3 f2(fitLine2Dir[0], fitLine2Dir[1], fitLine2Dir[2]);
+                    if (p2.Mag2() > 1e-10 && f2.Mag2() > 1e-10 && f2.Dot(p2) < 0) {
+                        fitLine2Dir[0] *= -1.f;
+                        fitLine2Dir[1] *= -1.f;
+                        fitLine2Dir[2] *= -1.f;
+                    }
                 }
 
-                closestPt1[0] = neutralParticle->AnnihilationVertex->ClosestPoint1[0];
-                closestPt1[1] = neutralParticle->AnnihilationVertex->ClosestPoint1[1];
-                closestPt1[2] = neutralParticle->AnnihilationVertex->ClosestPoint1[2];
-                closestPt2[0] = neutralParticle->AnnihilationVertex->ClosestPoint2[0];
-                closestPt2[1] = neutralParticle->AnnihilationVertex->ClosestPoint2[1];
-                closestPt2[2] = neutralParticle->AnnihilationVertex->ClosestPoint2[2];
+                closestPt1[0] = neutralParticle->AnnihilationVertex->ClosestPointFit1[0];
+                closestPt1[1] = neutralParticle->AnnihilationVertex->ClosestPointFit1[1];
+                closestPt1[2] = neutralParticle->AnnihilationVertex->ClosestPointFit1[2];
+                closestPt2[0] = neutralParticle->AnnihilationVertex->ClosestPointFit2[0];
+                closestPt2[1] = neutralParticle->AnnihilationVertex->ClosestPointFit2[1];
+                closestPt2[2] = neutralParticle->AnnihilationVertex->ClosestPointFit2[2];
+                pandoraClosestPt1[0] = neutralParticle->AnnihilationVertex->ClosestPointPandora1[0];
+                pandoraClosestPt1[1] = neutralParticle->AnnihilationVertex->ClosestPointPandora1[1];
+                pandoraClosestPt1[2] = neutralParticle->AnnihilationVertex->ClosestPointPandora1[2];
+                pandoraClosestPt2[0] = neutralParticle->AnnihilationVertex->ClosestPointPandora2[0];
+                pandoraClosestPt2[1] = neutralParticle->AnnihilationVertex->ClosestPointPandora2[1];
+                pandoraClosestPt2[2] = neutralParticle->AnnihilationVertex->ClosestPointPandora2[2];
             }
 
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine1Start, fitLine1Start, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine1Dir, fitLine1Dir, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine2Start, fitLine2Start, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine2Dir, fitLine2Dir, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraLine1Dir, pandoraLine1Dir, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraLine2Dir, pandoraLine2Dir, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_closestPt1, closestPt1, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_closestPt2, closestPt2, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraClosestPt1, pandoraClosestPt1, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraClosestPt2, pandoraClosestPt2, 3);
 
             // Extract fitted line parameters from creation vertex
             Float_t creationFitLineBeamStart[3] = {-999, -999, -999};
@@ -855,18 +921,6 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                     trueEndPos[1] = associatedTrueK0->PositionEnd[1];
                     trueEndPos[2] = associatedTrueK0->PositionEnd[2];
                     truePDG = associatedTrueK0->PDG;
-                }
-            } else if (neutralParticle->TrueEquivalentNeutralParticle) {
-                AnaTrueEquivalentNeutralParticlePD* trueEqK0 = static_cast<AnaTrueEquivalentNeutralParticlePD*>(neutralParticle->TrueEquivalentNeutralParticle);
-                if (trueEqK0) {
-                    trueStartPos[0] = trueEqK0->Position[0];
-                    trueStartPos[1] = trueEqK0->Position[1];
-                    trueStartPos[2] = trueEqK0->Position[2];
-                    trueEndPos[0] = trueEqK0->PositionEnd[0];
-                    trueEndPos[1] = trueEqK0->PositionEnd[1];
-                    trueEndPos[2] = trueEqK0->PositionEnd[2];
-                    truePDG = trueEqK0->PDG;
-                    associatedTrueK0 = trueEqK0->TrueParent;
                 }
             }
 
@@ -1048,14 +1102,19 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillMatrixVarFromArray(edk0_annihilationVtxDegDist, zero5, 5);
             output.FillMatrixVarFromArray(edk0_creationVtxPos, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_annihilationVtxPos, annihilationPos, 3);
+            output.FillMatrixVarFromArray(edk0_annihilationVtxFitPos, annihilationPos, 3);
             output.FillMatrixVarFromArray(edk0_startPos, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_endPos, annihilationPos, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine1Start, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine1Dir, zero3, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine2Start, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_fitLine2Dir, zero3, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraLine1Dir, zero3, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraLine2Dir, zero3, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_closestPt1, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_annVtx_closestPt2, creationPos, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraClosestPt1, creationPos, 3);
+            output.FillMatrixVarFromArray(edk0_annVtx_pandoraClosestPt2, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_creationVtx_fitLineBeamStart, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_creationVtx_fitLineBeamDir, zero3, 3);
             output.FillMatrixVarFromArray(edk0_creationVtx_fitLineSecondStart, creationPos, 3);
@@ -1130,14 +1189,19 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     tree->SetBranchAddress("ED_k0_annihilationVtxDegDist", _k0_annihilationVtxDegDist);
     tree->SetBranchAddress("ED_k0_creationVtxPos", _k0_creationVtxPos);
     tree->SetBranchAddress("ED_k0_annihilationVtxPos", _k0_annihilationVtxPos);
+    tree->SetBranchAddress("ED_k0_annihilationVtxFitPos", _k0_annihilationVtxFitPos);
     tree->SetBranchAddress("ED_k0_startPos", _k0_startPos);
     tree->SetBranchAddress("ED_k0_endPos", _k0_endPos);
     tree->SetBranchAddress("ED_k0_annVtx_fitLine1Start", _k0_annVtx_fitLine1Start);
     tree->SetBranchAddress("ED_k0_annVtx_fitLine1Dir", _k0_annVtx_fitLine1Dir);
     tree->SetBranchAddress("ED_k0_annVtx_fitLine2Start", _k0_annVtx_fitLine2Start);
     tree->SetBranchAddress("ED_k0_annVtx_fitLine2Dir", _k0_annVtx_fitLine2Dir);
+    tree->SetBranchAddress("ED_k0_annVtx_pandoraLine1Dir", _k0_annVtx_pandoraLine1Dir);
+    tree->SetBranchAddress("ED_k0_annVtx_pandoraLine2Dir", _k0_annVtx_pandoraLine2Dir);
     tree->SetBranchAddress("ED_k0_annVtx_closestPt1", _k0_annVtx_closestPt1);
     tree->SetBranchAddress("ED_k0_annVtx_closestPt2", _k0_annVtx_closestPt2);
+    tree->SetBranchAddress("ED_k0_annVtx_pandoraClosestPt1", _k0_annVtx_pandoraClosestPt1);
+    tree->SetBranchAddress("ED_k0_annVtx_pandoraClosestPt2", _k0_annVtx_pandoraClosestPt2);
     tree->SetBranchAddress("ED_k0_creationVtx_fitLineBeamStart", _k0_creationVtx_fitLineBeamStart);
     tree->SetBranchAddress("ED_k0_creationVtx_fitLineBeamDir", _k0_creationVtx_fitLineBeamDir);
     tree->SetBranchAddress("ED_k0_creationVtx_fitLineSecondStart", _k0_creationVtx_fitLineSecondStart);
@@ -1204,22 +1268,22 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 //********************************************************************
     // Draw K0 candidates
     TEveElementList* recoGroup = PrepareGroup(scene, "K0 Reco Objects");
-    TEveElementList* creationVertexGroup = PrepareGroup(scene, "K0 Creation Vertices");
+    TEveElementList* creationVertexGroup = nullptr;
     TEveElementList* annihilationVertexGroup = PrepareGroup(scene, "K0 Annihilation Vertices");
     TEveElementList* truthGroup = PrepareGroup(scene, "K0 Truth (Matched)");
     TEveElementList* truthParentGroup = PrepareGroup(scene, "K0 Truth Parents");
     TEveElementList* truthDaughterGroup = PrepareGroup(scene, "K0 Truth Daughters");
-    TEveElementList* truthSiblingGroup = PrepareGroup(scene, "K0 Truth Siblings");
-    TEveElementList* creationFitGroup = PrepareGroup(scene, "K0 Creation Fit Helpers");
+    TEveElementList* truthSiblingGroup = nullptr;
+    TEveElementList* creationFitGroup = nullptr;
     TEveElementList* annihilationFitGroup = PrepareGroup(scene, "K0 Annihilation Fit Helpers");
     TEveElementList* standaloneTruthGroup = PrepareGroup(scene, "Standalone True K0");
     TEveElementList* standaloneParentGroup = PrepareGroup(scene, "Standalone True K0 Parents");
     TEveElementList* standaloneDaughterGroup = PrepareGroup(scene, "Standalone True K0 Daughters");
-    TEveElementList* standaloneSiblingGroup = PrepareGroup(scene, "Standalone True K0 Siblings");
+    TEveElementList* standaloneSiblingGroup = nullptr;
     TEveElementList* annotationGroup = PrepareGroup(scene, "K0 Annotations");
     TEveElementList* parentDirGroup = PrepareGroup(scene, "Parent Trajectory Directions");
-    TEveElementList* creationDirGroup = PrepareGroup(scene, "Creation Trajectory Directions");
-    TEveElementList* daughterDirGroup = PrepareGroup(scene, "Daughter Trajectory Directions");
+    TEveElementList* creationDirGroup = nullptr;
+    TEveElementList* daughterDirGroup = nullptr;
 
     auto addElement = [&](TEveElementList* group, TEveElement* element) {
         AppendElementToGroup(scene, group, element);
@@ -1420,20 +1484,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                                _k0_secondTrajDir[i],
                                _k0_secondTrajDirNPts[i]);
         }
-        if (daughterDirGroup && _k0_dau1TrajDirNPts[i] > 0) {
-            drawTrajectoryLine(daughterDirGroup,
-                               "Daughter 1 Direction",
-                               _k0_daughter1ID[i],
-                               _k0_dau1TrajDir[i],
-                               _k0_dau1TrajDirNPts[i]);
-        }
-        if (daughterDirGroup && _k0_dau2TrajDirNPts[i] > 0) {
-            drawTrajectoryLine(daughterDirGroup,
-                               "Daughter 2 Direction",
-                               _k0_daughter2ID[i],
-                               _k0_dau2TrajDir[i],
-                               _k0_dau2TrajDirNPts[i]);
-        }
+        (void)daughterDirGroup;
 
         // Annihilation vertex sphere
         Float_t annihilationX = _k0_annihilationVtxPos[i][0];
@@ -1461,6 +1512,49 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             vtx->SetMainColor(kRed);
             addElement(annihilationVertexGroup, vtx);
             anchorPoint(vtx, annihilationX, annihilationY, annihilationZ);
+
+            // Fit-based annihilation vertex marker
+            if (_k0_annihilationVtxFitPos[i][0] > -900 &&
+                _k0_annihilationVtxFitPos[i][1] > -900 &&
+                _k0_annihilationVtxFitPos[i][2] > -900) {
+                TEvePointSet* fitVtx = new TEvePointSet(Form("K0 #%d Decay Vertex (Fit)", i));
+                fitVtx->SetNextPoint(_k0_annihilationVtxFitPos[i][0],
+                                     _k0_annihilationVtxFitPos[i][1],
+                                     _k0_annihilationVtxFitPos[i][2]);
+                fitVtx->SetMarkerStyle(20); // Full circle
+                fitVtx->SetMarkerSize(2.2);
+                fitVtx->SetMainColor(kOrange + 1);
+                addElement(annihilationVertexGroup, fitVtx);
+                anchorPoint(fitVtx, _k0_annihilationVtxFitPos[i][0], _k0_annihilationVtxFitPos[i][1], _k0_annihilationVtxFitPos[i][2]);
+            }
+
+            // Pandora start-position markers for annihilation daughter particles.
+            if (_k0_annVtx_fitLine1Start[i][0] > -900 &&
+                _k0_annVtx_fitLine1Start[i][1] > -900 &&
+                _k0_annVtx_fitLine1Start[i][2] > -900) {
+                TEvePointSet* dau1Start = new TEvePointSet(Form("K0 #%d Annihilation Daughter1 Start (Pandora)", i));
+                dau1Start->SetNextPoint(_k0_annVtx_fitLine1Start[i][0],
+                                        _k0_annVtx_fitLine1Start[i][1],
+                                        _k0_annVtx_fitLine1Start[i][2]);
+                dau1Start->SetMarkerStyle(24);
+                dau1Start->SetMarkerSize(2.0);
+                dau1Start->SetMainColor(kCyan + 1);
+                addElement(annihilationVertexGroup, dau1Start);
+                anchorPoint(dau1Start, _k0_annVtx_fitLine1Start[i][0], _k0_annVtx_fitLine1Start[i][1], _k0_annVtx_fitLine1Start[i][2]);
+            }
+            if (_k0_annVtx_fitLine2Start[i][0] > -900 &&
+                _k0_annVtx_fitLine2Start[i][1] > -900 &&
+                _k0_annVtx_fitLine2Start[i][2] > -900) {
+                TEvePointSet* dau2Start = new TEvePointSet(Form("K0 #%d Annihilation Daughter2 Start (Pandora)", i));
+                dau2Start->SetNextPoint(_k0_annVtx_fitLine2Start[i][0],
+                                        _k0_annVtx_fitLine2Start[i][1],
+                                        _k0_annVtx_fitLine2Start[i][2]);
+                dau2Start->SetMarkerStyle(25);
+                dau2Start->SetMarkerSize(2.0);
+                dau2Start->SetMainColor(kMagenta + 1);
+                addElement(annihilationVertexGroup, dau2Start);
+                anchorPoint(dau2Start, _k0_annVtx_fitLine2Start[i][0], _k0_annVtx_fitLine2Start[i][1], _k0_annVtx_fitLine2Start[i][2]);
+            }
 
             // Annihilation vertex degeneracy label
             Int_t annihilationDeg = _k0_annihilationVtxDeg[i];
@@ -1521,7 +1615,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             trueK0->SetPoint(0, _k0_trueStartPos[i][0], _k0_trueStartPos[i][1], _k0_trueStartPos[i][2]);
             trueK0->SetPoint(1, _k0_trueEndPos[i][0], _k0_trueEndPos[i][1], _k0_trueEndPos[i][2]);
             trueK0->SetMainColor(trueColor);
-            trueK0->SetLineWidth(2);
+            trueK0->SetLineWidth(3);
             trueK0->SetLineStyle(1); // Solid line for truth
             addElement(truthGroup, trueK0);
             anchorPoint(trueK0,
@@ -1581,7 +1675,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 parentLine->SetPoint(0, _k0_trueParentStartPos[i][0], _k0_trueParentStartPos[i][1], _k0_trueParentStartPos[i][2]);
                 parentLine->SetPoint(1, _k0_trueParentEndPos[i][0], _k0_trueParentEndPos[i][1], _k0_trueParentEndPos[i][2]);
                 parentLine->SetMainColor(parentColor);
-                parentLine->SetLineWidth(2);
+                parentLine->SetLineWidth(3);
                 parentLine->SetLineStyle(1);
                 addElement(truthParentGroup, parentLine);
                 anchorPoint(parentLine,
@@ -1608,14 +1702,14 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 daughterLine->SetPoint(0, sx, sy, sz);
                 daughterLine->SetPoint(1, ex, ey, ez);
                 daughterLine->SetMainColor(daughterColor);
-                daughterLine->SetLineWidth(2);
+                daughterLine->SetLineWidth(3);
                 daughterLine->SetLineStyle(1);
                 addElement(truthDaughterGroup, daughterLine);
                 anchorPoint(daughterLine, sx, sy, sz);
                 anchorPoint(daughterLine, ex, ey, ez);
             }
 
-            for (Int_t s = 0; s < _k0_trueNSiblings[i] && s < kMaxTrueSiblings; ++s) {
+            for (Int_t s = 0; s < _k0_trueNSiblings[i] && s < kMaxTrueSiblings && false; ++s) {
                 Float_t sx = _k0_trueSiblingStartPos[i][s*3 + 0];
                 Float_t sy = _k0_trueSiblingStartPos[i][s*3 + 1];
                 Float_t sz = _k0_trueSiblingStartPos[i][s*3 + 2];
@@ -1810,85 +1904,159 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 }
             }
 
-            // Fitted line 1 (daughter 1)
-            if (_k0_annVtx_fitLine1Start[i][0] > -900 && _k0_annVtx_closestPt1[i][0] > -900) {
-                // Get daughter 1 actual startPos and verify it has hits
-                Float_t d1PosX = -999, d1PosY = -999, d1PosZ = -999;
-                Int_t d1Hits = 0;
-                for (Int_t p = 0; p < _nParticles; p++) {
-                    if (_particle_uniqueID[p] == d1ID) {
-                        d1PosX = _particle_startPos[p][0];  // Daughter uses START position
-                        d1PosY = _particle_startPos[p][1];
-                        d1PosZ = _particle_startPos[p][2];
-                        d1Hits = _particle_nHits[p];
-                        break;
+            // Daughter 1: Pandora direction (solid)
+            if (_k0_annVtx_fitLine1Start[i][0] > -900 && _k0_annVtx_pandoraLine1Dir[i][0] > -900) {
+                TVector3 s(_k0_annVtx_fitLine1Start[i][0], _k0_annVtx_fitLine1Start[i][1], _k0_annVtx_fitLine1Start[i][2]);
+                TVector3 d(_k0_annVtx_pandoraLine1Dir[i][0], _k0_annVtx_pandoraLine1Dir[i][1], _k0_annVtx_pandoraLine1Dir[i][2]);
+                if (d.Mag() > 0) {
+                    d = d.Unit();
+                    TVector3 lineStart = s;
+                    TVector3 lineEnd = s + 100.0 * d;
+                    if (_k0_annVtx_pandoraClosestPt1[i][0] > -900) {
+                        TVector3 cp(_k0_annVtx_pandoraClosestPt1[i][0], _k0_annVtx_pandoraClosestPt1[i][1], _k0_annVtx_pandoraClosestPt1[i][2]);
+                        const double t = (cp - s).Dot(d);
+                        if (t >= 0.0) {
+                            lineStart = s;
+                            lineEnd = cp + 20.0 * d;
+                        } else {
+                            lineStart = cp;
+                            lineEnd = s + 100.0 * d;
+                        }
                     }
+                    TEveLine* line = new TEveLine(Form("K0 #%d D1 Pandora Dir", i));
+                    line->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
+                    line->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+                    line->SetMainColor(d1Color);
+                    line->SetLineWidth(1);
+                    line->SetLineStyle(1);
+                    addElement(annihilationFitGroup, line);
                 }
-
-                // Only draw if particle position was found and particle has hits
-                if (d1PosX < -900 || d1Hits == 0) continue;
-
-                TVector3 d1Pos(d1PosX, d1PosY, d1PosZ);
-                TVector3 closest1(_k0_annVtx_closestPt1[i][0],
-                                  _k0_annVtx_closestPt1[i][1],
-                                  _k0_annVtx_closestPt1[i][2]);
-                TVector3 dir1 = closest1 - d1Pos;
-                if (dir1.Mag() > 0) dir1 = dir1.Unit();
-                TVector3 extended1 = closest1 + 100.0 * dir1;
-
-                TEveLine* fitLine1 = new TEveLine(Form("K0 #%d Fitted Line D1", i));
-                fitLine1->SetPoint(0, d1PosX,
-                                      d1PosY,
-                                      d1PosZ);
-                fitLine1->SetPoint(1, extended1.X(),
-                                      extended1.Y(),
-                                      extended1.Z());
-                fitLine1->SetMainColor(d1Color);
-                fitLine1->SetLineWidth(1);
-                fitLine1->SetLineStyle(2); // Dashed (daughter uses startPos/startDir)
-                addElement(annihilationFitGroup, fitLine1);
             }
 
-            // Fitted line 2 (daughter 2)
-            if (_k0_annVtx_fitLine2Start[i][0] > -900 && _k0_annVtx_closestPt2[i][0] > -900) {
-                // Get daughter 2 actual startPos and verify it has hits
-                Float_t d2PosX = -999, d2PosY = -999, d2PosZ = -999;
-                Int_t d2Hits = 0;
-                for (Int_t p = 0; p < _nParticles; p++) {
-                    if (_particle_uniqueID[p] == d2ID) {
-                        d2PosX = _particle_startPos[p][0];  // Daughter uses START position
-                        d2PosY = _particle_startPos[p][1];
-                        d2PosZ = _particle_startPos[p][2];
-                        d2Hits = _particle_nHits[p];
-                        break;
+            // Daughter 1: extrapolated-fit direction (dashed)
+            if (_k0_annVtx_fitLine1Start[i][0] > -900 && _k0_annVtx_fitLine1Dir[i][0] > -900) {
+                TVector3 s(_k0_annVtx_fitLine1Start[i][0], _k0_annVtx_fitLine1Start[i][1], _k0_annVtx_fitLine1Start[i][2]);
+                TVector3 d(_k0_annVtx_fitLine1Dir[i][0], _k0_annVtx_fitLine1Dir[i][1], _k0_annVtx_fitLine1Dir[i][2]);
+                if (d.Mag() > 0) {
+                    d = d.Unit();
+                    TVector3 lineStart = s;
+                    TVector3 lineEnd = s + 100.0 * d;
+                    if (_k0_annVtx_closestPt1[i][0] > -900) {
+                        TVector3 cp(_k0_annVtx_closestPt1[i][0], _k0_annVtx_closestPt1[i][1], _k0_annVtx_closestPt1[i][2]);
+                        const double t = (cp - s).Dot(d);
+                        if (t >= 0.0) {
+                            lineStart = s;
+                            lineEnd = cp + 20.0 * d;
+                        } else {
+                            lineStart = cp;
+                            lineEnd = s + 100.0 * d;
+                        }
                     }
+                    TEveLine* line = new TEveLine(Form("K0 #%d D1 Fit Dir", i));
+                    line->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
+                    line->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+                    line->SetMainColor(d1Color);
+                    line->SetLineWidth(1);
+                    line->SetLineStyle(2);
+                    addElement(annihilationFitGroup, line);
                 }
+            }
 
-                // Only draw if particle position was found and particle has hits
-                if (d2PosX < -900 || d2Hits == 0) continue;
+            // Daughter 2: Pandora direction (solid)
+            if (_k0_annVtx_fitLine2Start[i][0] > -900 && _k0_annVtx_pandoraLine2Dir[i][0] > -900) {
+                TVector3 s(_k0_annVtx_fitLine2Start[i][0], _k0_annVtx_fitLine2Start[i][1], _k0_annVtx_fitLine2Start[i][2]);
+                TVector3 d(_k0_annVtx_pandoraLine2Dir[i][0], _k0_annVtx_pandoraLine2Dir[i][1], _k0_annVtx_pandoraLine2Dir[i][2]);
+                if (d.Mag() > 0) {
+                    d = d.Unit();
+                    TVector3 lineStart = s;
+                    TVector3 lineEnd = s + 100.0 * d;
+                    if (_k0_annVtx_pandoraClosestPt2[i][0] > -900) {
+                        TVector3 cp(_k0_annVtx_pandoraClosestPt2[i][0], _k0_annVtx_pandoraClosestPt2[i][1], _k0_annVtx_pandoraClosestPt2[i][2]);
+                        const double t = (cp - s).Dot(d);
+                        if (t >= 0.0) {
+                            lineStart = s;
+                            lineEnd = cp + 20.0 * d;
+                        } else {
+                            lineStart = cp;
+                            lineEnd = s + 100.0 * d;
+                        }
+                    }
+                    TEveLine* line = new TEveLine(Form("K0 #%d D2 Pandora Dir", i));
+                    line->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
+                    line->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+                    line->SetMainColor(d2Color);
+                    line->SetLineWidth(1);
+                    line->SetLineStyle(1);
+                    addElement(annihilationFitGroup, line);
+                }
+            }
 
-                TVector3 d2Pos(d2PosX, d2PosY, d2PosZ);
-                TVector3 closest2(_k0_annVtx_closestPt2[i][0],
-                                  _k0_annVtx_closestPt2[i][1],
-                                  _k0_annVtx_closestPt2[i][2]);
-                TVector3 dir2 = closest2 - d2Pos;
-                if (dir2.Mag() > 0) dir2 = dir2.Unit();
-                TVector3 extended2 = closest2 + 100.0 * dir2;
-
-                TEveLine* fitLine2 = new TEveLine(Form("K0 #%d Fitted Line D2", i));
-                fitLine2->SetPoint(0, d2PosX,
-                                      d2PosY,
-                                      d2PosZ);
-                fitLine2->SetPoint(1, extended2.X(),
-                                      extended2.Y(),
-                                      extended2.Z());
-                fitLine2->SetMainColor(d2Color);
-                fitLine2->SetLineWidth(1);
-                fitLine2->SetLineStyle(2); // Dashed (daughter uses startPos/startDir)
-                addElement(annihilationFitGroup, fitLine2);
+            // Daughter 2: extrapolated-fit direction (dashed)
+            if (_k0_annVtx_fitLine2Start[i][0] > -900 && _k0_annVtx_fitLine2Dir[i][0] > -900) {
+                TVector3 s(_k0_annVtx_fitLine2Start[i][0], _k0_annVtx_fitLine2Start[i][1], _k0_annVtx_fitLine2Start[i][2]);
+                TVector3 d(_k0_annVtx_fitLine2Dir[i][0], _k0_annVtx_fitLine2Dir[i][1], _k0_annVtx_fitLine2Dir[i][2]);
+                if (d.Mag() > 0) {
+                    d = d.Unit();
+                    TVector3 lineStart = s;
+                    TVector3 lineEnd = s + 100.0 * d;
+                    if (_k0_annVtx_closestPt2[i][0] > -900) {
+                        TVector3 cp(_k0_annVtx_closestPt2[i][0], _k0_annVtx_closestPt2[i][1], _k0_annVtx_closestPt2[i][2]);
+                        const double t = (cp - s).Dot(d);
+                        if (t >= 0.0) {
+                            lineStart = s;
+                            lineEnd = cp + 20.0 * d;
+                        } else {
+                            lineStart = cp;
+                            lineEnd = s + 100.0 * d;
+                        }
+                    }
+                    TEveLine* line = new TEveLine(Form("K0 #%d D2 Fit Dir", i));
+                    line->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
+                    line->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+                    line->SetMainColor(d2Color);
+                    line->SetLineWidth(1);
+                    line->SetLineStyle(2);
+                    addElement(annihilationFitGroup, line);
+                }
             }
 
             // Closest points (points of minimum distance)
+            if (_k0_annVtx_pandoraClosestPt1[i][0] > -900) {
+                TEvePointSet* pt1Pand = new TEvePointSet(Form("K0 #%d Pandora Closest Pt D1", i));
+                pt1Pand->SetNextPoint(_k0_annVtx_pandoraClosestPt1[i][0],
+                                      _k0_annVtx_pandoraClosestPt1[i][1],
+                                      _k0_annVtx_pandoraClosestPt1[i][2]);
+                pt1Pand->SetMarkerStyle(25); // Open square
+                pt1Pand->SetMarkerSize(1.8);
+                pt1Pand->SetMainColor(kAzure + 2);
+                addElement(annihilationFitGroup, pt1Pand);
+            }
+
+            if (_k0_annVtx_pandoraClosestPt2[i][0] > -900) {
+                TEvePointSet* pt2Pand = new TEvePointSet(Form("K0 #%d Pandora Closest Pt D2", i));
+                pt2Pand->SetNextPoint(_k0_annVtx_pandoraClosestPt2[i][0],
+                                      _k0_annVtx_pandoraClosestPt2[i][1],
+                                      _k0_annVtx_pandoraClosestPt2[i][2]);
+                pt2Pand->SetMarkerStyle(25); // Open square
+                pt2Pand->SetMarkerSize(1.8);
+                pt2Pand->SetMainColor(kAzure + 2);
+                addElement(annihilationFitGroup, pt2Pand);
+            }
+
+            if (_k0_annVtx_pandoraClosestPt1[i][0] > -900 && _k0_annVtx_pandoraClosestPt2[i][0] > -900) {
+                TEveLine* connectPand = new TEveLine(Form("K0 #%d Ann Vtx Connect Pandora", i));
+                connectPand->SetPoint(0, _k0_annVtx_pandoraClosestPt1[i][0],
+                                      _k0_annVtx_pandoraClosestPt1[i][1],
+                                      _k0_annVtx_pandoraClosestPt1[i][2]);
+                connectPand->SetPoint(1, _k0_annVtx_pandoraClosestPt2[i][0],
+                                      _k0_annVtx_pandoraClosestPt2[i][1],
+                                      _k0_annVtx_pandoraClosestPt2[i][2]);
+                connectPand->SetMainColor(kAzure + 2);
+                connectPand->SetLineStyle(1);
+                connectPand->SetLineWidth(2);
+                addElement(annihilationFitGroup, connectPand);
+            }
+
             if (_k0_annVtx_closestPt1[i][0] > -900) {
                 TEvePointSet* pt1 = new TEvePointSet(Form("K0 #%d Closest Pt D1", i));
                 pt1->SetNextPoint(_k0_annVtx_closestPt1[i][0],
@@ -1947,7 +2115,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         trueK0->SetPoint(0, _trueK0_startPos[i][0], _trueK0_startPos[i][1], _trueK0_startPos[i][2]);
         trueK0->SetPoint(1, _trueK0_endPos[i][0], _trueK0_endPos[i][1], _trueK0_endPos[i][2]);
         trueK0->SetMainColor(trueColor);
-        trueK0->SetLineWidth(2);
+        trueK0->SetLineWidth(3);
         trueK0->SetLineStyle(1);
         addElement(standaloneTruthGroup, trueK0);
 
@@ -1991,7 +2159,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             parentLine->SetPoint(0, _trueK0_parentStartPos[i][0], _trueK0_parentStartPos[i][1], _trueK0_parentStartPos[i][2]);
             parentLine->SetPoint(1, _trueK0_parentEndPos[i][0], _trueK0_parentEndPos[i][1], _trueK0_parentEndPos[i][2]);
             parentLine->SetMainColor(parentColor);
-            parentLine->SetLineWidth(2);
+            parentLine->SetLineWidth(3);
             parentLine->SetLineStyle(1);
             addElement(standaloneParentGroup, parentLine);
         }
@@ -2010,7 +2178,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             daughterLine->SetPoint(0, sx, sy, sz);
             daughterLine->SetPoint(1, ex, ey, ez);
             daughterLine->SetMainColor(daughterColor);
-            daughterLine->SetLineWidth(2);
+            daughterLine->SetLineWidth(3);
             daughterLine->SetLineStyle(1);
             addElement(standaloneDaughterGroup, daughterLine);
         }
@@ -2051,14 +2219,14 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
     // Draw K0 vertices (creation and annihilation) as circles on TCanvas
     canvas->cd();
 
-    const Bool_t showCreationVertices = IsGroupVisible("K0 Creation Vertices");
+    const Bool_t showCreationVertices = kFALSE;
     const Bool_t showAnnihilationVertices = IsGroupVisible("K0 Annihilation Vertices");
     const Bool_t showStandaloneTruth = IsGroupVisible("Standalone True K0");
     const Bool_t showStandaloneParents = IsGroupVisible("Standalone True K0 Parents");
     const Bool_t showStandaloneDaughters = IsGroupVisible("Standalone True K0 Daughters");
-    const Bool_t showStandaloneSiblings = IsGroupVisible("Standalone True K0 Siblings");
+    const Bool_t showStandaloneSiblings = kFALSE;
 
-    for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0; i++) {
+    for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0 && false; i++) {
         // Get vertex positions
         Float_t creationX = _k0_creationVtxPos[i][0];
         Float_t creationY = _k0_creationVtxPos[i][1];
@@ -2067,6 +2235,9 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
         Float_t annihilationX = _k0_annihilationVtxPos[i][0];
         Float_t annihilationY = _k0_annihilationVtxPos[i][1];
         Float_t annihilationZ = _k0_annihilationVtxPos[i][2];
+        Float_t annihilationFitX = _k0_annihilationVtxFitPos[i][0];
+        Float_t annihilationFitY = _k0_annihilationVtxFitPos[i][1];
+        Float_t annihilationFitZ = _k0_annihilationVtxFitPos[i][2];
 
         // Get vertex radii and degeneracies
         Float_t creationRadius = _k0_creationVtxRadius[i];
@@ -2096,6 +2267,16 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             annCoord1 = annihilationY; annCoord2 = annihilationZ;
         } else {
             continue;
+        }
+
+        Float_t annFitCoord1 = -999.f;
+        Float_t annFitCoord2 = -999.f;
+        if (projection_type == "XY") {
+            annFitCoord1 = annihilationFitX; annFitCoord2 = annihilationFitY;
+        } else if (projection_type == "XZ") {
+            annFitCoord1 = annihilationFitX; annFitCoord2 = annihilationFitZ;
+        } else if (projection_type == "YZ") {
+            annFitCoord1 = annihilationFitY; annFitCoord2 = annihilationFitZ;
         }
 
         // Draw creation vertex circle (if valid position)
@@ -2135,6 +2316,14 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             annVtxMarker->SetMarkerColor(kRed);
             annVtxMarker->SetMarkerSize(2.5);
             annVtxMarker->Draw("SAME");
+
+            // Fit-based annihilation vertex marker (different marker/color from Pandora)
+            if (annFitCoord1 > -900 && annFitCoord2 > -900) {
+                TMarker* annFitVtxMarker = new TMarker(annFitCoord1, annFitCoord2, 20); // Filled circle
+                annFitVtxMarker->SetMarkerColor(kOrange + 1);
+                annFitVtxMarker->SetMarkerSize(1.8);
+                annFitVtxMarker->Draw("SAME");
+            }
 
             // Add degeneracy label
             if (annihilationDeg > 0) {
@@ -2217,7 +2406,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             TLine* trueK0Line = new TLine(tx1, ty1, tx2, ty2);
             trueK0Line->SetLineColor(trueColor);
             trueK0Line->SetLineStyle(1); // Solid for truth
-            trueK0Line->SetLineWidth(2);
+            trueK0Line->SetLineWidth(3);
             trueK0Line->Draw("SAME");
 
             // Add markers at true start and end positions
@@ -2264,7 +2453,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 TLine* parentLine = new TLine(px1, py1, px2, py2);
                 parentLine->SetLineColor(parentColor);
                 parentLine->SetLineStyle(1);
-                parentLine->SetLineWidth(2);
+                parentLine->SetLineWidth(3);
                 parentLine->Draw("SAME");
             }
 
@@ -2292,7 +2481,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 TLine* daughterLine = new TLine(dx1, dy1, dx2, dy2);
                 daughterLine->SetLineColor(daughterColor);
                 daughterLine->SetLineStyle(1);
-                daughterLine->SetLineWidth(2);
+                daughterLine->SetLineWidth(3);
                 daughterLine->Draw("SAME");
             }
 
@@ -2326,6 +2515,74 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
         }
 
         // NOTE: Old fitted line code removed - now using particle positions below
+
+        // Draw closest points from Pandora-line method
+        if (_k0_annVtx_pandoraClosestPt1[i][0] > -900) {
+            Float_t pt1_x, pt1_y;
+            if (projection_type == "XY") {
+                pt1_x = _k0_annVtx_pandoraClosestPt1[i][0];
+                pt1_y = _k0_annVtx_pandoraClosestPt1[i][1];
+            } else if (projection_type == "XZ") {
+                pt1_x = _k0_annVtx_pandoraClosestPt1[i][0];
+                pt1_y = _k0_annVtx_pandoraClosestPt1[i][2];
+            } else if (projection_type == "YZ") {
+                pt1_x = _k0_annVtx_pandoraClosestPt1[i][1];
+                pt1_y = _k0_annVtx_pandoraClosestPt1[i][2];
+            } else {
+                continue;
+            }
+            TMarker* minDistPt1Pand = new TMarker(pt1_x, pt1_y, 25); // Open square
+            minDistPt1Pand->SetMarkerSize(1.0);
+            minDistPt1Pand->SetMarkerColor(kAzure + 2);
+            minDistPt1Pand->Draw("SAME");
+        }
+
+        if (_k0_annVtx_pandoraClosestPt2[i][0] > -900) {
+            Float_t pt2_x, pt2_y;
+            if (projection_type == "XY") {
+                pt2_x = _k0_annVtx_pandoraClosestPt2[i][0];
+                pt2_y = _k0_annVtx_pandoraClosestPt2[i][1];
+            } else if (projection_type == "XZ") {
+                pt2_x = _k0_annVtx_pandoraClosestPt2[i][0];
+                pt2_y = _k0_annVtx_pandoraClosestPt2[i][2];
+            } else if (projection_type == "YZ") {
+                pt2_x = _k0_annVtx_pandoraClosestPt2[i][1];
+                pt2_y = _k0_annVtx_pandoraClosestPt2[i][2];
+            } else {
+                continue;
+            }
+            TMarker* minDistPt2Pand = new TMarker(pt2_x, pt2_y, 25); // Open square
+            minDistPt2Pand->SetMarkerSize(1.0);
+            minDistPt2Pand->SetMarkerColor(kAzure + 2);
+            minDistPt2Pand->Draw("SAME");
+        }
+
+        if (_k0_annVtx_pandoraClosestPt1[i][0] > -900 && _k0_annVtx_pandoraClosestPt2[i][0] > -900) {
+            Float_t p1x, p1y, p2x, p2y;
+            if (projection_type == "XY") {
+                p1x = _k0_annVtx_pandoraClosestPt1[i][0];
+                p1y = _k0_annVtx_pandoraClosestPt1[i][1];
+                p2x = _k0_annVtx_pandoraClosestPt2[i][0];
+                p2y = _k0_annVtx_pandoraClosestPt2[i][1];
+            } else if (projection_type == "XZ") {
+                p1x = _k0_annVtx_pandoraClosestPt1[i][0];
+                p1y = _k0_annVtx_pandoraClosestPt1[i][2];
+                p2x = _k0_annVtx_pandoraClosestPt2[i][0];
+                p2y = _k0_annVtx_pandoraClosestPt2[i][2];
+            } else if (projection_type == "YZ") {
+                p1x = _k0_annVtx_pandoraClosestPt1[i][1];
+                p1y = _k0_annVtx_pandoraClosestPt1[i][2];
+                p2x = _k0_annVtx_pandoraClosestPt2[i][1];
+                p2y = _k0_annVtx_pandoraClosestPt2[i][2];
+            } else {
+                continue;
+            }
+            TLine* pandConnect = new TLine(p1x, p1y, p2x, p2y);
+            pandConnect->SetLineColor(kAzure + 2);
+            pandConnect->SetLineStyle(1);
+            pandConnect->SetLineWidth(2);
+            pandConnect->Draw("SAME");
+        }
 
         // Draw closest points on fitted lines (points of minimum distance)
         if (_k0_annVtx_closestPt1[i][0] > -900) {
@@ -2602,52 +2859,47 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             }
         }
 
-        // Draw fitted line 1 (extrapolated from daughter 1 hits)
-        Float_t closest1X = _k0_annVtx_closestPt1[i][0];
-        Float_t closest1Y = _k0_annVtx_closestPt1[i][1];
-        Float_t closest1Z = _k0_annVtx_closestPt1[i][2];
+        // Draw fitted line 1 using fitted direction from start position
+        Float_t d1PosX = _k0_annVtx_fitLine1Start[i][0];
+        Float_t d1PosY = _k0_annVtx_fitLine1Start[i][1];
+        Float_t d1PosZ = _k0_annVtx_fitLine1Start[i][2];
+        Float_t dirX = _k0_annVtx_fitLine1Dir[i][0];
+        Float_t dirY = _k0_annVtx_fitLine1Dir[i][1];
+        Float_t dirZ = _k0_annVtx_fitLine1Dir[i][2];
 
-        if (closest1X > -900) {
-            // Get daughter 1 actual startPos and verify it has hits
-            Float_t d1PosX = -999, d1PosY = -999, d1PosZ = -999;
-            Int_t d1Hits = 0;
-            for (Int_t p = 0; p < _nParticles; p++) {
-                if (_particle_uniqueID[p] == d1ID) {
-                    d1PosX = _particle_startPos[p][0];  // Daughter uses START position
-                    d1PosY = _particle_startPos[p][1];
-                    d1PosZ = _particle_startPos[p][2];
-                    d1Hits = _particle_nHits[p];
-                    break;
-                }
-            }
-
-            // Only draw if particle position was found and particle has hits
-            if (d1PosX < -900 || d1Hits == 0) continue;
-
-            Float_t dirX = closest1X - d1PosX;
-            Float_t dirY = closest1Y - d1PosY;
-            Float_t dirZ = closest1Z - d1PosZ;
+        if (d1PosX > -900 && (dirX*dirX + dirY*dirY + dirZ*dirZ) > 1e-10f) {
             Float_t mag = sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ);
-            if (mag > 0) {
-                dirX /= mag;
-                dirY /= mag;
-                dirZ /= mag;
+            dirX /= mag;
+            dirY /= mag;
+            dirZ /= mag;
+
+            TVector3 s3(d1PosX, d1PosY, d1PosZ);
+            TVector3 d3(dirX, dirY, dirZ);
+            TVector3 lineStart3 = s3;
+            TVector3 lineEnd3 = s3 + 100.0 * d3;
+            if (_k0_annVtx_closestPt1[i][0] > -900) {
+                TVector3 cp3(_k0_annVtx_closestPt1[i][0], _k0_annVtx_closestPt1[i][1], _k0_annVtx_closestPt1[i][2]);
+                const double t = (cp3 - s3).Dot(d3);
+                if (t >= 0.0) {
+                    lineStart3 = s3;
+                    lineEnd3 = cp3 + 20.0 * d3;
+                } else {
+                    lineStart3 = cp3;
+                    lineEnd3 = s3 + 100.0 * d3;
+                }
             }
 
             Float_t line1_x1, line1_y1, line1_x2, line1_y2;
 
             if (projection_type == "XY") {
-                line1_x1 = d1PosX; line1_y1 = d1PosY;
-                line1_x2 = closest1X + 100.0f * dirX;
-                line1_y2 = closest1Y + 100.0f * dirY;
+                line1_x1 = lineStart3.X(); line1_y1 = lineStart3.Y();
+                line1_x2 = lineEnd3.X(); line1_y2 = lineEnd3.Y();
             } else if (projection_type == "XZ") {
-                line1_x1 = d1PosX; line1_y1 = d1PosZ;
-                line1_x2 = closest1X + 100.0f * dirX;
-                line1_y2 = closest1Z + 100.0f * dirZ;
+                line1_x1 = lineStart3.X(); line1_y1 = lineStart3.Z();
+                line1_x2 = lineEnd3.X(); line1_y2 = lineEnd3.Z();
             } else if (projection_type == "YZ") {
-                line1_x1 = d1PosY; line1_y1 = d1PosZ;
-                line1_x2 = closest1Y + 100.0f * dirY;
-                line1_y2 = closest1Z + 100.0f * dirZ;
+                line1_x1 = lineStart3.Y(); line1_y1 = lineStart3.Z();
+                line1_x2 = lineEnd3.Y(); line1_y2 = lineEnd3.Z();
             } else {
                 continue;
             }
@@ -2659,52 +2911,47 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             fitLine1->Draw("SAME");
         }
 
-        // Draw fitted line 2 (extrapolated from daughter 2 hits)
-        Float_t closest2X = _k0_annVtx_closestPt2[i][0];
-        Float_t closest2Y = _k0_annVtx_closestPt2[i][1];
-        Float_t closest2Z = _k0_annVtx_closestPt2[i][2];
+        // Draw fitted line 2 using fitted direction from start position
+        Float_t d2PosX = _k0_annVtx_fitLine2Start[i][0];
+        Float_t d2PosY = _k0_annVtx_fitLine2Start[i][1];
+        Float_t d2PosZ = _k0_annVtx_fitLine2Start[i][2];
+        Float_t dir2X = _k0_annVtx_fitLine2Dir[i][0];
+        Float_t dir2Y = _k0_annVtx_fitLine2Dir[i][1];
+        Float_t dir2Z = _k0_annVtx_fitLine2Dir[i][2];
 
-        if (closest2X > -900) {
-            // Get daughter 2 actual startPos and verify it has hits
-            Float_t d2PosX = -999, d2PosY = -999, d2PosZ = -999;
-            Int_t d2Hits = 0;
-            for (Int_t p = 0; p < _nParticles; p++) {
-                if (_particle_uniqueID[p] == d2ID) {
-                    d2PosX = _particle_startPos[p][0];  // Daughter uses START position
-                    d2PosY = _particle_startPos[p][1];
-                    d2PosZ = _particle_startPos[p][2];
-                    d2Hits = _particle_nHits[p];
-                    break;
-                }
-            }
-
-            // Only draw if particle position was found and particle has hits
-            if (d2PosX < -900 || d2Hits == 0) continue;
-
-            Float_t dir2X = closest2X - d2PosX;
-            Float_t dir2Y = closest2Y - d2PosY;
-            Float_t dir2Z = closest2Z - d2PosZ;
+        if (d2PosX > -900 && (dir2X*dir2X + dir2Y*dir2Y + dir2Z*dir2Z) > 1e-10f) {
             Float_t mag2 = sqrt(dir2X*dir2X + dir2Y*dir2Y + dir2Z*dir2Z);
-            if (mag2 > 0) {
-                dir2X /= mag2;
-                dir2Y /= mag2;
-                dir2Z /= mag2;
+            dir2X /= mag2;
+            dir2Y /= mag2;
+            dir2Z /= mag2;
+
+            TVector3 s3(d2PosX, d2PosY, d2PosZ);
+            TVector3 d3(dir2X, dir2Y, dir2Z);
+            TVector3 lineStart3 = s3;
+            TVector3 lineEnd3 = s3 + 100.0 * d3;
+            if (_k0_annVtx_closestPt2[i][0] > -900) {
+                TVector3 cp3(_k0_annVtx_closestPt2[i][0], _k0_annVtx_closestPt2[i][1], _k0_annVtx_closestPt2[i][2]);
+                const double t = (cp3 - s3).Dot(d3);
+                if (t >= 0.0) {
+                    lineStart3 = s3;
+                    lineEnd3 = cp3 + 20.0 * d3;
+                } else {
+                    lineStart3 = cp3;
+                    lineEnd3 = s3 + 100.0 * d3;
+                }
             }
 
             Float_t line2_x1, line2_y1, line2_x2, line2_y2;
 
             if (projection_type == "XY") {
-                line2_x1 = d2PosX; line2_y1 = d2PosY;
-                line2_x2 = closest2X + 100.0f * dir2X;
-                line2_y2 = closest2Y + 100.0f * dir2Y;
+                line2_x1 = lineStart3.X(); line2_y1 = lineStart3.Y();
+                line2_x2 = lineEnd3.X(); line2_y2 = lineEnd3.Y();
             } else if (projection_type == "XZ") {
-                line2_x1 = d2PosX; line2_y1 = d2PosZ;
-                line2_x2 = closest2X + 100.0f * dir2X;
-                line2_y2 = closest2Z + 100.0f * dir2Z;
+                line2_x1 = lineStart3.X(); line2_y1 = lineStart3.Z();
+                line2_x2 = lineEnd3.X(); line2_y2 = lineEnd3.Z();
             } else if (projection_type == "YZ") {
-                line2_x1 = d2PosY; line2_y1 = d2PosZ;
-                line2_x2 = closest2Y + 100.0f * dir2Y;
-                line2_y2 = closest2Z + 100.0f * dir2Z;
+                line2_x1 = lineStart3.Y(); line2_y1 = lineStart3.Z();
+                line2_x2 = lineEnd3.Y(); line2_y2 = lineEnd3.Z();
             } else {
                 continue;
             }
@@ -2818,7 +3065,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             TLine* trueLine = new TLine(x1, y1, x2, y2);
             trueLine->SetLineColor(trueColor);
             trueLine->SetLineStyle(1);
-            trueLine->SetLineWidth(2);
+            trueLine->SetLineWidth(3);
             trueLine->Draw("SAME");
 
             TMarker* trueStartMarker = new TMarker(x1, y1, 29);
@@ -2865,7 +3112,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             TLine* parentLine = new TLine(px1, py1, px2, py2);
             parentLine->SetLineColor(parentColor);
             parentLine->SetLineStyle(1);
-            parentLine->SetLineWidth(2);
+            parentLine->SetLineWidth(3);
             parentLine->Draw("SAME");
         }
 
@@ -2894,7 +3141,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             TLine* daughterLine = new TLine(dx1, dy1, dx2, dy2);
             daughterLine->SetLineColor(daughterColor);
             daughterLine->SetLineStyle(1);
-            daughterLine->SetLineWidth(2);
+            daughterLine->SetLineWidth(3);
             daughterLine->Draw("SAME");
         }
         }

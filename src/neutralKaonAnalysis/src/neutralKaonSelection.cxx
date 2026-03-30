@@ -3,9 +3,9 @@
 #include "pdAnalysisUtils.hxx"
 #include "pdNeutralUtils.hxx"
 #include "pdAnnihilationUtils.hxx"
-#include "pdCreationUtils.hxx"
 #include "pdBaseSelection.hxx"
 #include "pdDataClasses.hxx"
+#include "TVector3.h"
 #include <algorithm>
 #include <set>
 #include <sstream>
@@ -131,48 +131,14 @@ bool FindNeutralCandidatesAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   box.neutralParticleCandidates.clear();
   box.nNeutralParticleCandidates = 0;
 
-  // First create fitted vertices with scoring (requires same parent for both daughters)
+  // Create annihilation vertices only in this branch.
   const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
   std::vector<AnaAnnihilationVertexPD*> annihilationVertices = pdAnnihilationUtils::CreateVertices(*static_cast<AnaEventB*>(&event), maxDaughterDistance);
 
-  // Create creation vertices (no particle exclusions at this stage)
-  // Filtering by score is done inside CreateCreationVertices
-  // Exclusion of annihilation vertex particles is done inside CreateNeutrals
-  const double creationRadius = ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius");
-  std::vector<AnaCreationVertexPD*> creationVertices = pdCreationUtils::CreateCreationVertices(*static_cast<AnaEventB*>(&event), creationRadius, {});
-
-  // Diagnostic dump for run 22591250 subrun 40 event 4959 (worst creation vertex event)
-  AnaEventB* evb = static_cast<AnaEventB*>(&event);
-  if (evb->EventInfo && evb->EventInfo->Run == 22591250 && evb->EventInfo->SubRun == 40 && evb->EventInfo->Event == 4959) {
-    std::cout << "\n[CreationVertex diagnostic] Run 22591250 SubRun 40 Event 4959:\n";
-    std::cout << "  Creation vertices selected: " << creationVertices.size() << "\n";
-    for (size_t iv = 0; iv < creationVertices.size(); iv++) {
-      AnaCreationVertexPD* cv = creationVertices[iv];
-      if (!cv || !cv->BeamParticle) continue;
-      std::cout << "  CV " << iv << ": beamID=" << cv->BeamParticle->UniqueID
-                << " secondID=" << (cv->SecondParticle ? cv->SecondParticle->UniqueID : -1)
-                << " ProtonScore=" << cv->ProtonScore << " DistanceScore=" << cv->DistanceScore
-                << " MinDistScore=" << cv->MinDistanceScore
-                << " pos=(" << cv->Position[0] << "," << cv->Position[1] << "," << cv->Position[2] << ")\n";
-    }
-  }
-
-  // Then create neutral particle candidates from all combinations, filtered by score
-  box.neutralParticleCandidates = pdNeutralUtils::CreateNeutrals(*static_cast<AnaEventB*>(&event), creationVertices, annihilationVertices);
+  // Build one wrapper candidate per annihilation vertex.
+  box.neutralParticleCandidates =
+      pdNeutralUtils::CreateAnnihilationOnlyNeutrals(*static_cast<AnaEventB*>(&event), annihilationVertices);
   box.nNeutralParticleCandidates = box.neutralParticleCandidates.size();
-
-  if (evb->EventInfo && evb->EventInfo->Run == 22591250 && evb->EventInfo->SubRun == 40 && evb->EventInfo->Event == 4959 && box.nNeutralParticleCandidates > 0) {
-    std::cout << "  K0 candidates: " << box.nNeutralParticleCandidates << "\n";
-    for (size_t i = 0; i < box.neutralParticleCandidates.size() && i < 3; i++) {
-      AnaNeutralParticlePD* np = box.neutralParticleCandidates[i];
-      if (!np || !np->CreationVertex) continue;
-      AnaCreationVertexPD* cv = np->CreationVertex;
-      std::cout << "  K0 cand " << i << ": creationVtx beamID=" << (cv->BeamParticle ? cv->BeamParticle->UniqueID : -1)
-                << " secondID=" << (cv->SecondParticle ? cv->SecondParticle->UniqueID : -1)
-                << " creation pos=(" << np->PositionStart[0] << "," << np->PositionStart[1] << "," << np->PositionStart[2] << ")\n";
-    }
-    std::cout << "[CreationVertex diagnostic] end\n\n";
-  }
 
   return true;
 }
@@ -244,7 +210,18 @@ bool K0VtxOpeningCut::Apply(AnaEventC& event, ToyBoxB& boxB) const {
     // Check if annihilation vertex exists
     if (!candidate->AnnihilationVertex) continue;
 
-    Float_t k0vtxrecoopening = candidate->AnnihilationVertex->OpeningAngle;
+    Float_t k0vtxrecoopening = -999.0f;
+    if (candidate->AnnihilationVertex->Particles.size() >= 2) {
+      AnaParticlePD* d1 = candidate->AnnihilationVertex->Particles[0];
+      AnaParticlePD* d2 = candidate->AnnihilationVertex->Particles[1];
+      if (d1 && d2) {
+        TVector3 dir1(d1->DirectionStart[0], d1->DirectionStart[1], d1->DirectionStart[2]);
+        TVector3 dir2(d2->DirectionStart[0], d2->DirectionStart[1], d2->DirectionStart[2]);
+        if (dir1.Mag() > 0 && dir2.Mag() > 0) {
+          k0vtxrecoopening = static_cast<Float_t>(dir1.Angle(dir2));
+        }
+      }
+    }
 
     // Check if opening angle is valid and passes cut
     if (k0vtxrecoopening > -900 && k0vtxrecoopening < 25.0) {

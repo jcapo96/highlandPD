@@ -7,6 +7,8 @@
 #include "AnalysisUtils.hxx"
 #include "ParticleId.hxx"
 #include "HEPConstants.hxx"
+#include "TH2F.h"
+#include "TProfile.h"
 #include <algorithm>
 #include <cmath>
 #include <set>
@@ -15,6 +17,106 @@
 #include <cmath>
 
 namespace {
+  constexpr Float_t kHitTravelMinCm = 0.f;
+  constexpr Float_t kHitTravelMaxCm = 500.f;
+
+  const std::vector<Double_t>& GetHitTravelBinEdges() {
+    static std::vector<Double_t> edges;
+    if (!edges.empty()) {
+      return edges;
+    }
+
+    // Fine granularity: 2 cm bins from 0 to 30 cm.
+    for (Double_t x = kHitTravelMinCm; x < 30.; x += 2.) {
+      edges.push_back(x);
+    }
+
+    // Coarser granularity: 5 cm bins from 30 to 500 cm.
+    for (Double_t x = 30.; x <= kHitTravelMaxCm; x += 5.) {
+      edges.push_back(x);
+    }
+
+    return edges;
+  }
+
+  TH2F* gK0DauHitDistVsTravel2D[2] = {nullptr, nullptr};
+  TProfile* gK0DauHitDistVsTravelProf[2] = {nullptr, nullptr};
+
+  bool IsValidPos(const TVector3& p) {
+    return std::isfinite(p.X()) && std::isfinite(p.Y()) && std::isfinite(p.Z()) &&
+           p.X() > -900.f && p.Y() > -900.f && p.Z() > -900.f;
+  }
+
+  void EnsureHitDistanceProfiles(OutputManager& output) {
+    (void)output;
+    if (gK0DauHitDistVsTravel2D[0] && gK0DauHitDistVsTravel2D[1] &&
+        gK0DauHitDistVsTravelProf[0] && gK0DauHitDistVsTravelProf[1]) {
+      return;
+    }
+    for (Int_t i = 0; i < 2; ++i) {
+      const Int_t dauIdx = i + 1;
+      const std::vector<Double_t>& travelEdges = GetHitTravelBinEdges();
+      const Int_t nTravelBins = static_cast<Int_t>(travelEdges.size()) - 1;
+      if (!gK0DauHitDistVsTravel2D[i]) {
+        gK0DauHitDistVsTravel2D[i] = new TH2F(
+            Form("h_k0dau%d_hitDistToTrueLine_vs_travel_2d", dauIdx),
+            Form("K0 daughter %d: hit distance to true line vs traveled distance;Traveled distance from reco start [cm];Hit-to-true-line distance [cm]", dauIdx),
+            nTravelBins, travelEdges.data(),
+            200, 0.f, 100.f);
+        gK0DauHitDistVsTravel2D[i]->SetDirectory(nullptr);
+      }
+
+      if (!gK0DauHitDistVsTravelProf[i]) {
+        gK0DauHitDistVsTravelProf[i] = new TProfile(
+            Form("p_k0dau%d_hitDistToTrueLine_vs_travel", dauIdx),
+            Form("K0 daughter %d: mean hit distance to true line vs traveled distance;Traveled distance from reco start [cm];Mean hit-to-true-line distance [cm]", dauIdx),
+            nTravelBins, travelEdges.data());
+        gK0DauHitDistVsTravelProf[i]->SetDirectory(nullptr);
+      }
+    }
+  }
+
+  void FillHitDistanceToTrueLineProfiles(OutputManager& output, const AnaParticlePD* recoParticle,
+                                         const AnaTrueParticlePD* trueParticle, Int_t daughterIndex) {
+    if (!recoParticle || !trueParticle || daughterIndex < 0 || daughterIndex > 1) {
+      return;
+    }
+
+    EnsureHitDistanceProfiles(output);
+    if (!gK0DauHitDistVsTravel2D[daughterIndex] || !gK0DauHitDistVsTravelProf[daughterIndex]) {
+      return;
+    }
+
+    const TVector3 recoStart(recoParticle->PositionStart[0], recoParticle->PositionStart[1], recoParticle->PositionStart[2]);
+    const TVector3 trueStart(trueParticle->Position[0], trueParticle->Position[1], trueParticle->Position[2]);
+    TVector3 trueDir(trueParticle->Direction[0], trueParticle->Direction[1], trueParticle->Direction[2]);
+
+    if (!IsValidPos(recoStart) || !IsValidPos(trueStart)) {
+      return;
+    }
+    if (trueDir.Mag2() <= 0.f) {
+      return;
+    }
+    trueDir = trueDir.Unit();
+
+    const std::vector<AnaHitPD>& hits = recoParticle->Hits[2];
+    for (size_t ihit = 0; ihit < hits.size(); ++ihit) {
+      const TVector3 hitPos = hits[ihit].Position;
+      if (!IsValidPos(hitPos)) {
+        continue;
+      }
+
+      const Float_t traveledDistance = static_cast<Float_t>((hitPos - recoStart).Mag());
+      if (traveledDistance < kHitTravelMinCm || traveledDistance >= kHitTravelMaxCm) {
+        continue;
+      }
+
+      const Float_t hitToTrueLineDistance = static_cast<Float_t>(((hitPos - trueStart).Cross(trueDir)).Mag());
+      gK0DauHitDistVsTravel2D[daughterIndex]->Fill(traveledDistance, hitToTrueLineDistance);
+      gK0DauHitDistVsTravelProf[daughterIndex]->Fill(traveledDistance, hitToTrueLineDistance);
+    }
+  }
+
   // Helper function to get particle mass from PDG code (in GeV/c^2)
   Float_t GetParticleMass(Int_t pdg) {
     switch(abs(pdg)) {
@@ -168,6 +270,29 @@ namespace {
     const auto result = ComputeTrajectoryDirectionFromPoints(particle->TrjPoints);
     particle->TrajectoryDirection = result.mpv;
     particle->TrajectoryDirectionNPoints = result.nPoints;
+  }
+}
+
+//********************************************************************
+void neutralKaonTree::WriteHitDistanceProfiles(OutputManager& output){
+//********************************************************************
+  TTree* tree = output.GetTree();
+  if (!tree) {
+    return;
+  }
+  TFile* file = tree->GetCurrentFile();
+  if (!file) {
+    return;
+  }
+
+  file->cd();
+  for (Int_t i = 0; i < 2; ++i) {
+    if (gK0DauHitDistVsTravel2D[i]) {
+      gK0DauHitDistVsTravel2D[i]->Write("", TObject::kOverwrite);
+    }
+    if (gK0DauHitDistVsTravelProf[i]) {
+      gK0DauHitDistVsTravelProf[i]->Write("", TObject::kOverwrite);
+    }
   }
 }
 
@@ -437,60 +562,76 @@ void neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(OutputManager& outpu
 void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax){
 
   //Vertex system variables
-  AddVarMaxSize3MF(output, k0vtxrecopos, "K0 vertex reconstructed position", nk0, nmax);
+  // AddVarMaxSize3MF(output, k0vtxrecopos, "K0 vertex reconstructed position", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxtruepos, "K0 vertex true position", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxoriginaldistance, "K0 vertex original distance", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxtrueoriginaldistance, "K0 vertex true original distance", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxminimumdistance, "K0 vertex minimum distance between fitted lines", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxtrueminimumdistance, "K0 vertex true minimum distance between fitted lines", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxscore, "K0 vertex fit quality score", nk0, nmax);
-  AddVarMaxSizeVF(output, k0neutralscore, "Neutral particle quality score (lower = more neutral-like)", nk0, nmax);
-  AddVarMaxSizeVF(output, k0hitsalignment, "Alignment between hits in cylinder and neutral particle direction", nk0, nmax);
-  AddVarMaxSizeVI(output, k0nhitsincylinder, "Number of hits in cylinder around neutral particle", nk0, nmax);
-  AddVarMaxSizeVF(output, k0hitsavgdistance, "Average perpendicular distance of hits to neutral path (cm)", nk0, nmax);
-  AddVarMaxSizeVF(output, k0hitsrmsdistance, "RMS of perpendicular distances of hits (cm)", nk0, nmax);
-  AddVarMaxSizeVF(output, k0hitslongspan, "Longitudinal span fraction of hits along path", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0vtxtrueminimumdistance, "K0 vertex true minimum distance between fitted lines", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0neutralscore, "Neutral particle quality score (lower = more neutral-like)", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0hitsalignment, "Alignment between hits in cylinder and neutral particle direction", nk0, nmax);
+  // AddVarMaxSizeVI(output, k0nhitsincylinder, "Number of hits in cylinder around neutral particle", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0hitsavgdistance, "Average perpendicular distance of hits to neutral path (cm)", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0hitsrmsdistance, "RMS of perpendicular distances of hits (cm)", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0hitslongspan, "Longitudinal span fraction of hits along path", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxpandorapos, "K0 vertex Pandora position", nk0, nmax);
   AddVarMaxSize3MF(output, k0vtxfitpos, "K0 vertex fitted position (geometric/TMinuit/Kalman)", nk0, nmax);
-  AddVarMaxSize3MF(output, k0vtxfitdir, "K0 vertex fitted direction (geometric/TMinuit/Kalman)", nk0, nmax);
-  AddVarMaxSizeVI(output, k0vtxisjustavg, "K0 vertex Pandora used simple average (1) or line intersection (0)", nk0, nmax);
-  AddVarMaxSize3MF(output, k0vtxrecomom, "Vertex system reconstructed momentum magnitude", nk0, nmax);
-  AddVarMaxSize3MF(output, k0vtxtruemom, "Vertex system true momentum magnitude", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxrecoenergy, "Vertex system reconstructed energy", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxtrueenergy, "Vertex system true energy", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxrecomass, "Vertex system reconstructed mass", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxtruemass, "Vertex system true mass", nk0, nmax);
-  AddVarMaxSize3MF(output, k0vtxrecodir, "Vertex system reconstructed direction", nk0, nmax);
-  AddVarMaxSize3MF(output, k0vtxtruedir, "Vertex system true direction", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxrecoopening, "Vertex system reconstructed opening angle", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxtrueopening, "Vertex system true opening angle", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxrecoangle, "Vertex system reconstructed angle with beam", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxtrueangle, "Vertex system true angle with beam", nk0, nmax);
-  AddVarMaxSizeVI(output, k0vtxnpotpar, "Number of potential parent particles for vertex", nk0, nmax);
-  AddVarMaxSizeVI(output, k0annvtxdeg, "K0 annihilation vtx degeneracy", nk0, nmax);
-  output.AddMatrixVar(k0annvtxdegdist, "k0annvtxdegdist", "F", "K0 annihilation vtx degeneracy distances", nk0, "nk0", -nmax, 5);
+  AddVarMaxSizeVF(output, k0vtxpandorax, "K0 vertex Pandora x position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxpandoray, "K0 vertex Pandora y position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxpandoraz, "K0 vertex Pandora z position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxfitx, "K0 vertex Fit x position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxfity, "K0 vertex Fit y position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxfitz, "K0 vertex Fit z position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxpandoraresidual, "Vertex true-reco distance (Pandora position)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxfitresidual, "Vertex true-reco distance (Fit position)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxpandoraresidualx, "Vertex Pandora residual x_reco - x_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxpandoraresidualy, "Vertex Pandora residual y_reco - y_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxpandoraresidualz, "Vertex Pandora residual z_reco - z_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxfitresidualx, "Vertex Fit residual x_reco - x_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxfitresidualy, "Vertex Fit residual y_reco - y_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxfitresidualz, "Vertex Fit residual z_reco - z_true", nk0, nmax);
+  // AddVarMaxSizeVI(output, k0vtxisjustavg, "K0 vertex Pandora used simple average (1) or line intersection (0)", nk0, nmax);
+  // AddVarMaxSize3MF(output, k0vtxtruemom, "Vertex system true momentum magnitude", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0vtxtrueenergy, "Vertex system true energy", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0vtxrecomass, "Vertex system reconstructed mass", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0vtxtruemass, "Vertex system true mass", nk0, nmax);
+  // AddVarMaxSize3MF(output, k0vtxtruedir, "Vertex system true direction", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0vtxtrueopening, "Vertex system true opening angle", nk0, nmax);
+  // AddVarMaxSizeVF(output, k0vtxtrueangle, "Vertex system true angle with beam", nk0, nmax);
+  // AddVarMaxSizeVI(output, k0vtxnpotpar, "Number of potential parent particles for vertex", nk0, nmax);
 }
 
 //********************************************************************
 void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event, AnaBeamB* beam){
     // Fill all variables for all candidates
     if(candidate){
-      neutralKaonTree::FillNeutralKaonVariables_K0(output, candidate);
-      neutralKaonTree::FillNeutralKaonVariables_K0Par(output, candidate, event, beam);
-      neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate, candidate->Parent, event);
-      neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(output, candidate);
-      AnaVertexPD* vertex = candidate->AnnihilationVertex;
+      // neutralKaonTree::FillNeutralKaonVariables_K0(output, candidate);
+      // neutralKaonTree::FillNeutralKaonVariables_K0Par(output, candidate, event, beam);
+      // neutralKaonTree::FillNeutralKaonVariables_K0Brother(output, candidate, candidate->Parent, event);
+      // neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(output, candidate);
+      AnaAnnihilationVertexPD* vertex = candidate->AnnihilationVertex;
       neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex);
-      AnaParticlePD* daughter1Candidate = nullptr;
-      if (vertex && vertex->Particles.size() > 0) {
-        daughter1Candidate = vertex->Particles[0];
+      if (vertex && neutralKaonAnaUtils::IsSignalCandidate(candidate, event)) {
+        if (vertex->Particles.size() > 0 && vertex->Particles[0]) {
+          AnaParticlePD* recoDau1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+          AnaTrueParticlePD* trueDau1 = recoDau1 ? static_cast<AnaTrueParticlePD*>(recoDau1->TrueObject) : nullptr;
+          FillHitDistanceToTrueLineProfiles(output, recoDau1, trueDau1, 0);
+        }
+        if (vertex->Particles.size() > 1 && vertex->Particles[1]) {
+          AnaParticlePD* recoDau2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
+          AnaTrueParticlePD* trueDau2 = recoDau2 ? static_cast<AnaTrueParticlePD*>(recoDau2->TrueObject) : nullptr;
+          FillHitDistanceToTrueLineProfiles(output, recoDau2, trueDau2, 1);
+        }
       }
-      neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(output, daughter1Candidate, vertex, event);
-      AnaParticlePD* daughter2Candidate = nullptr;
-      if (vertex && vertex->Particles.size() > 1) {
-        daughter2Candidate = vertex->Particles[1];
-      }
-      neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(output, daughter2Candidate, vertex, event);
+      // AnaParticlePD* daughter1Candidate = nullptr;
+      // if (vertex && vertex->Particles.size() > 0) {
+      //   daughter1Candidate = vertex->Particles[0];
+      // }
+      // neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(output, daughter1Candidate, vertex, event);
+      // AnaParticlePD* daughter2Candidate = nullptr;
+      // if (vertex && vertex->Particles.size() > 1) {
+      //   daughter2Candidate = vertex->Particles[1];
+      // }
+      // neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(output, daughter2Candidate, vertex, event);
     }
 }
 //********************************************************************
@@ -527,16 +668,31 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     // Fill K0 true object ID
     output.FillVectorVar(k0trueid, candidate->TrueObject ? candidate->TrueObject->ID : -999);
 
-    // K0 reconstructed start position (from AnaNeutralParticlePD inherited from AnaParticleB)
+    const bool hasRecoStartPos =
+        candidate->PositionStart[0] > -900 && candidate->PositionStart[1] > -900 &&
+        candidate->PositionStart[2] > -900;
+    const bool hasRecoEndPos =
+        candidate->AnnihilationVertex && candidate->PositionEnd[0] > -900 &&
+        candidate->PositionEnd[1] > -900 && candidate->PositionEnd[2] > -900;
+    const bool hasRecoStartDir =
+        candidate->DirectionStart[0] > -900 && candidate->DirectionStart[1] > -900 &&
+        candidate->DirectionStart[2] > -900;
+    const bool hasRecoEndDir =
+        candidate->DirectionEnd[0] > -900 && candidate->DirectionEnd[1] > -900 &&
+        candidate->DirectionEnd[2] > -900;
+
+    // K0 reconstructed start position
     Float_t k0recostartpos_val[3] = {-999.0, -999.0, -999.0};
-    k0recostartpos_val[0] = candidate->PositionStart[0];
-    k0recostartpos_val[1] = candidate->PositionStart[1];
-    k0recostartpos_val[2] = candidate->PositionStart[2];
+    if (hasRecoStartPos) {
+      k0recostartpos_val[0] = candidate->PositionStart[0];
+      k0recostartpos_val[1] = candidate->PositionStart[1];
+      k0recostartpos_val[2] = candidate->PositionStart[2];
+    }
     output.FillMatrixVarFromArray(k0recostartpos, k0recostartpos_val, 3);
 
     //K0 reconstructed end position (vertex position)
     Float_t k0recoendpos_val[3] = {-999.0, -999.0, -999.0};
-    if (candidate->AnnihilationVertex) {
+    if (hasRecoEndPos) {
         k0recoendpos_val[0] = candidate->PositionEnd[0];
         k0recoendpos_val[1] = candidate->PositionEnd[1];
         k0recoendpos_val[2] = candidate->PositionEnd[2];
@@ -545,25 +701,38 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
 
     // K0 reconstructed start direction
     Float_t k0recostartdir_val[3] = {-999.0, -999.0, -999.0};
-    k0recostartdir_val[0] = candidate->DirectionStart[0];
-    k0recostartdir_val[1] = candidate->DirectionStart[1];
-    k0recostartdir_val[2] = candidate->DirectionStart[2];
+    if (hasRecoStartDir) {
+      k0recostartdir_val[0] = candidate->DirectionStart[0];
+      k0recostartdir_val[1] = candidate->DirectionStart[1];
+      k0recostartdir_val[2] = candidate->DirectionStart[2];
+    }
     output.FillMatrixVarFromArray(k0recostartdir, k0recostartdir_val, 3);
 
     // K0 reconstructed end direction
     Float_t k0recoenddir_val[3] = {-999.0, -999.0, -999.0};
-    k0recoenddir_val[0] = candidate->DirectionEnd[0];
-    k0recoenddir_val[1] = candidate->DirectionEnd[1];
-    k0recoenddir_val[2] = candidate->DirectionEnd[2];
+    if (hasRecoEndDir) {
+      k0recoenddir_val[0] = candidate->DirectionEnd[0];
+      k0recoenddir_val[1] = candidate->DirectionEnd[1];
+      k0recoenddir_val[2] = candidate->DirectionEnd[2];
+    }
     output.FillMatrixVarFromArray(k0recoenddir, k0recoenddir_val, 3);
 
     // Calculate reconstructed scalar product
-    Float_t k0recostartenddir_val = k0recostartdir_val[0]*k0recoenddir_val[0] + k0recostartdir_val[1]*k0recoenddir_val[1] + k0recostartdir_val[2]*k0recoenddir_val[2];
+    Float_t k0recostartenddir_val = -999.0;
+    if (hasRecoStartDir && hasRecoEndDir) {
+      k0recostartenddir_val = k0recostartdir_val[0]*k0recoenddir_val[0] +
+                              k0recostartdir_val[1]*k0recoenddir_val[1] +
+                              k0recostartdir_val[2]*k0recoenddir_val[2];
+    }
     output.FillVectorVar(k0recostartenddir, k0recostartenddir_val);
 
     // K0 reconstructed length
     Float_t k0recolength_val = -999.0;
-    k0recolength_val = sqrt(pow(k0recoendpos_val[0] - k0recostartpos_val[0], 2) + pow(k0recoendpos_val[1] - k0recostartpos_val[1], 2) + pow(k0recoendpos_val[2] - k0recostartpos_val[2], 2));
+    if (hasRecoStartPos && hasRecoEndPos) {
+      k0recolength_val = sqrt(pow(k0recoendpos_val[0] - k0recostartpos_val[0], 2) +
+                              pow(k0recoendpos_val[1] - k0recostartpos_val[1], 2) +
+                              pow(k0recoendpos_val[2] - k0recostartpos_val[2], 2));
+    }
     output.FillVectorVar(k0recolength, k0recolength_val);
 
     // K0 reconstructed mass
@@ -605,7 +774,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     output.FillVectorVar(k0recomass, k0recomass_val);
 
     // K0 impact parameter
-    Float_t k0impactparameter_val = candidate->ImpactParameter;
+    Float_t k0impactparameter_val = (candidate->ImpactParameter > -900) ? candidate->ImpactParameter : -999.0;
     output.FillVectorVar(k0impactparameter, k0impactparameter_val);
 
     // K0 number of reconstructed hits in cylinder
@@ -636,13 +805,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
     Float_t k0hitslongspan_val = candidate->HitsLongitudinalSpan;
     output.FillVectorVar(k0hitslongspan, k0hitslongspan_val);
 
-    // Determine if we have an equivalent true object
-    if(candidate->TrueEquivalentNeutralParticle){
-      k0hasequivalenttrueobject_val = 1;
-    }
-    else{
-      k0hasequivalenttrueobject_val = 0;
-    }
+    // True-equivalent objects are disabled in this branch.
+    k0hasequivalenttrueobject_val = 0;
 
 
     // Determine if we have a true object
@@ -750,71 +914,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0(OutputManager& output, AnaNeut
           }
         }
       }
-      // If no true object, check if there is an equivalent true object
       else{
-        // k0hastrueobject_val remains 0 (has equivalent but not direct true object)
         k0hastrueobject_val = 0;
-        AnaTrueEquivalentNeutralParticlePD* trueEquivalentNeutralParticle = static_cast<AnaTrueEquivalentNeutralParticlePD*>(candidate->TrueEquivalentNeutralParticle);
-        if(trueEquivalentNeutralParticle){
-          k0truestartpos_val[0] = trueEquivalentNeutralParticle->Position[0];
-          k0truestartpos_val[1] = trueEquivalentNeutralParticle->Position[1];
-          k0truestartpos_val[2] = trueEquivalentNeutralParticle->Position[2];
-          k0truestartdir_val[0] = trueEquivalentNeutralParticle->Direction[0];
-          k0truestartdir_val[1] = trueEquivalentNeutralParticle->Direction[1];
-          k0truestartdir_val[2] = trueEquivalentNeutralParticle->Direction[2];
-          k0trueendpos_val[0] = trueEquivalentNeutralParticle->PositionEnd[0];
-          k0trueendpos_val[1] = trueEquivalentNeutralParticle->PositionEnd[1];
-          k0trueendpos_val[2] = trueEquivalentNeutralParticle->PositionEnd[2];
-          k0trueenddir_val[0] = trueEquivalentNeutralParticle->DirectionEnd[0];
-          k0trueenddir_val[1] = trueEquivalentNeutralParticle->DirectionEnd[1];
-          k0trueenddir_val[2] = trueEquivalentNeutralParticle->DirectionEnd[2];
-          k0truelength_val = sqrt(pow(k0trueendpos_val[0] - k0truestartpos_val[0], 2) + pow(k0trueendpos_val[1] - k0truestartpos_val[1], 2) + pow(k0trueendpos_val[2] - k0truestartpos_val[2], 2));
-          k0truestartmom_val = trueEquivalentNeutralParticle->Momentum;
-          k0trueendmom_val = trueEquivalentNeutralParticle->MomentumEnd;
-          k0truendau_val = trueEquivalentNeutralParticle->TrueEquivalentVertex->TrueParticles.size();
-          k0trueproc_val = trueEquivalentNeutralParticle->Process;
-          // Note: AnaTrueEquivalentNeutralParticlePD only has Process, not ProcessStart/ProcessEnd
-          // k0trueendproc_val remains -999 for equivalent true particles
-          k0truestartenddir_val = trueEquivalentNeutralParticle->Direction[0]*trueEquivalentNeutralParticle->DirectionEnd[0] + trueEquivalentNeutralParticle->Direction[1]*trueEquivalentNeutralParticle->DirectionEnd[1] + trueEquivalentNeutralParticle->Direction[2]*trueEquivalentNeutralParticle->DirectionEnd[2];
-          k0truerecodist_val = sqrt(pow(k0trueendpos_val[0] - k0recoendpos_val[0], 2) + pow(k0trueendpos_val[1] - k0recoendpos_val[1], 2) + pow(k0trueendpos_val[2] - k0recoendpos_val[2], 2));
-          k0truepdg_val = trueEquivalentNeutralParticle->PDG;
-
-          // Calculate true mass from equivalent vertex true particles assuming pion hypothesis
-          if(trueEquivalentNeutralParticle->TrueEquivalentVertex &&
-             trueEquivalentNeutralParticle->TrueEquivalentVertex->TrueParticles.size() >= 2) {
-            AnaTrueParticlePD* trueDaughter1 = static_cast<AnaTrueParticlePD*>(trueEquivalentNeutralParticle->TrueEquivalentVertex->TrueParticles[0]);
-            AnaTrueParticlePD* trueDaughter2 = static_cast<AnaTrueParticlePD*>(trueEquivalentNeutralParticle->TrueEquivalentVertex->TrueParticles[1]);
-
-            if(trueDaughter1 && trueDaughter2) {
-              // Use framework mass constant (in GeV)
-              const double pionMass = 0.13957;
-
-              // Get momenta (in framework base units = GeV/c)
-              double p1 = trueDaughter1->Momentum;
-              double p2 = trueDaughter2->Momentum;
-
-              // Calculate energies assuming pion mass (all in MeV)
-              double E1 = sqrt(p1*p1 + pionMass*pionMass);
-              double E2 = sqrt(p2*p2 + pionMass*pionMass);
-
-              // Get momentum vectors (in GeV/c)
-              TVector3 p1vec(trueDaughter1->Direction[0] * p1,
-                            trueDaughter1->Direction[1] * p1,
-                            trueDaughter1->Direction[2] * p1);
-              TVector3 p2vec(trueDaughter2->Direction[0] * p2,
-                            trueDaughter2->Direction[1] * p2,
-                            trueDaughter2->Direction[2] * p2);
-
-              // Calculate invariant mass (in MeV/c^2)
-              TVector3 pTot = p1vec + p2vec;
-              double ETot = E1 + E2;
-              double massGeV = sqrt(ETot*ETot - pTot.Mag2());
-
-              // Convert to GeV/c^2
-              k0truemass_val = massGeV * 1000; // Convert to MeV/c^2
-            }
-          }
-        }
       }
     }
 
@@ -1047,181 +1148,114 @@ void neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(OutputManager& outp
     output.FillVectorVar(k0creationvtxdeg, -999);
     Float_t k0creationvtxdegdist_val[5] = {-999, -999, -999, -999, -999};
     output.FillMatrixVarFromArray(k0creationvtxdegdist, k0creationvtxdegdist_val, 5);
-    output.FillVectorVar(k0creationvtxprotonscore, -999.0);
-    output.FillVectorVar(k0creationvtxdistancescore, -999.0);
-    output.FillVectorVar(k0creationbeamsecondopening, -999.0);
+    output.FillVectorVar(k0creationvtxprotonscore, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0creationvtxdistancescore, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0creationbeamsecondopening, static_cast<Float_t>(-999.0));
   }
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaVertexPD* vertex){
+void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex){
     // Fill all variables for a single K0 vertex
+  Float_t invalidPos[3] = {-999.0f, -999.0f, -999.0f};
+  Float_t k0vtxtruepos_val[3] = {-999.0f, -999.0f, -999.0f};
+  Float_t k0vtxtrueoriginaldistance_val = -999.0f;
+  Float_t k0vtxoriginaldistance_val = -999.0f;
+  Float_t k0vtxpandoraresidual_val = -999.0f;
+  Float_t k0vtxfitresidual_val = -999.0f;
+  Float_t k0vtxpandorax_val = -999.0f;
+  Float_t k0vtxpandoray_val = -999.0f;
+  Float_t k0vtxpandoraz_val = -999.0f;
+  Float_t k0vtxfitx_val = -999.0f;
+  Float_t k0vtxfity_val = -999.0f;
+  Float_t k0vtxfitz_val = -999.0f;
+  Float_t k0vtxpandoraresidualx_val = -999.0f;
+  Float_t k0vtxpandoraresidualy_val = -999.0f;
+  Float_t k0vtxpandoraresidualz_val = -999.0f;
+  Float_t k0vtxfitresidualx_val = -999.0f;
+  Float_t k0vtxfitresidualy_val = -999.0f;
+  Float_t k0vtxfitresidualz_val = -999.0f;
+
   if(vertex){
-    Float_t k0vtxrecopos_val[3] = {-999.0, -999.0, -999.0};
-    k0vtxrecopos_val[0] = vertex->Position[0];
-    k0vtxrecopos_val[1] = vertex->Position[1];
-    k0vtxrecopos_val[2] = vertex->Position[2];
-
-    // Get vertex momentum, mass, energy, and angle from vertex attributes
-    // These are now calculated when the vertex is created in pdNeutralUtils
-    Float_t k0vtxrecomom_val[3] = {vertex->Momentum[0], vertex->Momentum[1], vertex->Momentum[2]};
-    Float_t k0vtxrecoenergy_val = vertex->Energy;
-
-    // Calculate reconstructed mass from vertex particles
-    Float_t k0vtxrecomass_val = -999.0;
-    if(vertex->Particles.size() >= 2) {
-      AnaParticlePD* particle1 = vertex->Particles[0];
-      AnaParticlePD* particle2 = vertex->Particles[1];
-
-      if(particle1 && particle2 &&
-         particle1->Momentum > 0 && particle2->Momentum > 0 &&
-         particle1->Momentum != -999 && particle2->Momentum != -999) {
-        // Calculate invariant mass
-        const double pionMass = 0.13957; // GeV
-        TVector3 p1vec(particle1->DirectionStart[0] * particle1->Momentum,
-                      particle1->DirectionStart[1] * particle1->Momentum,
-                      particle1->DirectionStart[2] * particle1->Momentum);
-        TVector3 p2vec(particle2->DirectionStart[0] * particle2->Momentum,
-                      particle2->DirectionStart[1] * particle2->Momentum,
-                      particle2->DirectionStart[2] * particle2->Momentum);
-        TVector3 pTot = p1vec + p2vec;
-        double E1 = sqrt(particle1->Momentum*particle1->Momentum + pionMass*pionMass);
-        double E2 = sqrt(particle2->Momentum*particle2->Momentum + pionMass*pionMass);
-        double ETot = E1 + E2;
-        double massGeV = sqrt(ETot*ETot - pTot.Mag2());
-        k0vtxrecomass_val = massGeV * 1000; // Convert to MeV/c^2
-      }
-    }
-
-    Float_t k0vtxrecodir_val[3] = {vertex->Direction[0], vertex->Direction[1], vertex->Direction[2]};
-    Float_t k0vtxrecoopening_val = vertex->OpeningAngle;
-    Float_t k0vtxrecoangle_val = vertex->AngleWithBeam;
-
-    Float_t k0vtxoriginaldistance_val = -999.0;
     k0vtxoriginaldistance_val = vertex->OriginalDistance;
+    if (vertex->PositionPandora[0] > -900.f && vertex->PositionPandora[1] > -900.f && vertex->PositionPandora[2] > -900.f) {
+      k0vtxpandorax_val = vertex->PositionPandora[0];
+      k0vtxpandoray_val = vertex->PositionPandora[1];
+      k0vtxpandoraz_val = vertex->PositionPandora[2];
+    }
+    if (vertex->PositionFit[0] > -900.f && vertex->PositionFit[1] > -900.f && vertex->PositionFit[2] > -900.f) {
+      k0vtxfitx_val = vertex->PositionFit[0];
+      k0vtxfity_val = vertex->PositionFit[1];
+      k0vtxfitz_val = vertex->PositionFit[2];
+    }
 
-    Float_t k0vtxminimumdistance_val = -999.0;
-    k0vtxminimumdistance_val = vertex->MinimumDistance;
+    if(vertex->Particles.size() >= 2) {
+      AnaParticlePD* recoParticle1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+      AnaParticlePD* recoParticle2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
+      AnaTrueParticlePD* trueParticle1 = recoParticle1 ? static_cast<AnaTrueParticlePD*>(recoParticle1->TrueObject) : nullptr;
+      AnaTrueParticlePD* trueParticle2 = recoParticle2 ? static_cast<AnaTrueParticlePD*>(recoParticle2->TrueObject) : nullptr;
 
-    Float_t k0vtxscore_val = -999.0;
-    k0vtxscore_val = vertex->Score;
+      if(trueParticle1 && trueParticle2) {
+        const Float_t dx = trueParticle1->Position[0] - trueParticle2->Position[0];
+        const Float_t dy = trueParticle1->Position[1] - trueParticle2->Position[1];
+        const Float_t dz = trueParticle1->Position[2] - trueParticle2->Position[2];
+        k0vtxtrueoriginaldistance_val = sqrt(dx*dx + dy*dy + dz*dz);
 
-    Int_t k0vtxnpotpar_val = -999;
-    k0vtxnpotpar_val = vertex->NPotentialParents;
-
-    Float_t k0vtxtruepos_val[3] = {-999.0, -999.0, -999.0};
-    Float_t k0vtxtruedir_val[3] = {-999.0, -999.0, -999.0};
-    Float_t k0vtxtruemom_val[3] = {-999.0, -999.0, -999.0};
-    Float_t k0vtxtrueenergy_val = -999.0;
-    Float_t k0vtxtruemass_val = -999.0;
-    Float_t k0vtxtrueoriginaldistance_val = -999.0;
-    Float_t k0vtxtrueminimumdistance_val = -999.0;
-    Float_t k0vtxtrueopening_val = -999.0;
-    Float_t k0vtxtrueangle_val = -999.0;
-
-    if(vertex->TrueEquivalentVertex){
-      AnaTrueEquivalentVertexPD* trueEquivalentVertex = static_cast<AnaTrueEquivalentVertexPD*>(vertex->TrueEquivalentVertex);
-      if(trueEquivalentVertex){
-        k0vtxtruepos_val[0] = trueEquivalentVertex->Position[0];
-        k0vtxtruepos_val[1] = trueEquivalentVertex->Position[1];
-        k0vtxtruepos_val[2] = trueEquivalentVertex->Position[2];
-        k0vtxtruedir_val[0] = trueEquivalentVertex->Direction[0];
-        k0vtxtruedir_val[1] = trueEquivalentVertex->Direction[1];
-        k0vtxtruedir_val[2] = trueEquivalentVertex->Direction[2];
-        k0vtxtrueoriginaldistance_val = trueEquivalentVertex->OriginalDistance;
-        k0vtxtrueminimumdistance_val = trueEquivalentVertex->MinimumDistance;
-        k0vtxtrueopening_val = trueEquivalentVertex->OpeningAngle;
-
-        // Calculate true angle with beam
-        if(k0vtxtruedir_val[0] != -999.0) {
-          TVector3 vtxTrueDir(k0vtxtruedir_val[0], k0vtxtruedir_val[1], k0vtxtruedir_val[2]);
-          TVector3 beamDir(0, 0, 1); // Beam along +z
-          k0vtxtrueangle_val = vtxTrueDir.Angle(beamDir);
-        }
-
-        // Calculate true momentum, energy, and mass if we have two true particles
-        if(trueEquivalentVertex->TrueParticles.size() >= 2) {
-          AnaTrueParticlePD* trueParticle1 = static_cast<AnaTrueParticlePD*>(trueEquivalentVertex->TrueParticles[0]);
-          AnaTrueParticlePD* trueParticle2 = static_cast<AnaTrueParticlePD*>(trueEquivalentVertex->TrueParticles[1]);
-
-          if(trueParticle1 && trueParticle2) {
-            const double pionMass = 0.13957; // GeV
-
-            // Calculate total momentum vector
-            TVector3 p1vec(trueParticle1->Direction[0] * trueParticle1->Momentum,
-                          trueParticle1->Direction[1] * trueParticle1->Momentum,
-                          trueParticle1->Direction[2] * trueParticle1->Momentum);
-            TVector3 p2vec(trueParticle2->Direction[0] * trueParticle2->Momentum,
-                          trueParticle2->Direction[1] * trueParticle2->Momentum,
-                          trueParticle2->Direction[2] * trueParticle2->Momentum);
-            TVector3 pTot = p1vec + p2vec;
-
-            k0vtxtruemom_val[0] = pTot.X();
-            k0vtxtruemom_val[1] = pTot.Y();
-            k0vtxtruemom_val[2] = pTot.Z();
-
-            // Calculate total energy
-            double E1 = sqrt(trueParticle1->Momentum*trueParticle1->Momentum + pionMass*pionMass);
-            double E2 = sqrt(trueParticle2->Momentum*trueParticle2->Momentum + pionMass*pionMass);
-            double ETot = E1 + E2;
-            k0vtxtrueenergy_val = ETot * 1000; // Convert to MeV
-
-            // Calculate invariant mass
-            double massGeV = sqrt(ETot*ETot - pTot.Mag2());
-            k0vtxtruemass_val = massGeV * 1000; // Convert to MeV/c^2
-          }
+        // True vertex is valid only when both true daughters are consistent with a common start point.
+        constexpr Float_t kSameTrueVertexTolerance = 1e-2f;
+        if (k0vtxtrueoriginaldistance_val <= kSameTrueVertexTolerance) {
+          k0vtxtruepos_val[0] = 0.5f * static_cast<Float_t>(trueParticle1->Position[0] + trueParticle2->Position[0]);
+          k0vtxtruepos_val[1] = 0.5f * static_cast<Float_t>(trueParticle1->Position[1] + trueParticle2->Position[1]);
+          k0vtxtruepos_val[2] = 0.5f * static_cast<Float_t>(trueParticle1->Position[2] + trueParticle2->Position[2]);
         }
       }
     }
 
-    output.FillMatrixVarFromArray(k0vtxrecopos, k0vtxrecopos_val, 3);
-    output.FillMatrixVarFromArray(k0vtxrecomom, k0vtxrecomom_val, 3);
-    output.FillVectorVar(k0vtxrecoenergy, k0vtxrecoenergy_val);
-    output.FillMatrixVarFromArray(k0vtxrecodir, k0vtxrecodir_val, 3);
-    output.FillVectorVar(k0vtxrecomass, k0vtxrecomass_val);
-    output.FillVectorVar(k0vtxrecoopening, k0vtxrecoopening_val);
-    output.FillVectorVar(k0vtxrecoangle, k0vtxrecoangle_val);
-    output.FillVectorVar(k0vtxoriginaldistance, k0vtxoriginaldistance_val);
-    output.FillVectorVar(k0vtxminimumdistance, k0vtxminimumdistance_val);
-    output.FillVectorVar(k0vtxscore, k0vtxscore_val);
-    output.FillVectorVar(k0vtxnpotpar, k0vtxnpotpar_val);
+    if (k0vtxtruepos_val[0] > -900.f && k0vtxtruepos_val[1] > -900.f && k0vtxtruepos_val[2] > -900.f) {
+      const TVector3 truePos(k0vtxtruepos_val[0], k0vtxtruepos_val[1], k0vtxtruepos_val[2]);
 
-    output.FillMatrixVarFromArray(k0vtxtruepos, k0vtxtruepos_val, 3);
-    output.FillMatrixVarFromArray(k0vtxtruemom, k0vtxtruemom_val, 3);
-    output.FillVectorVar(k0vtxtrueenergy, k0vtxtrueenergy_val);
-    output.FillMatrixVarFromArray(k0vtxtruedir, k0vtxtruedir_val, 3);
-    output.FillVectorVar(k0vtxtruemass, k0vtxtruemass_val);
-    output.FillVectorVar(k0vtxtrueoriginaldistance, k0vtxtrueoriginaldistance_val);
-    output.FillVectorVar(k0vtxtrueminimumdistance, k0vtxtrueminimumdistance_val);
-    output.FillVectorVar(k0vtxtrueopening, k0vtxtrueopening_val);
-    output.FillVectorVar(k0vtxtrueangle, k0vtxtrueangle_val);
+      if (vertex->PositionPandora[0] > -900.f && vertex->PositionPandora[1] > -900.f && vertex->PositionPandora[2] > -900.f) {
+        const TVector3 pandoraPos(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
+        k0vtxpandoraresidual_val = static_cast<Float_t>((pandoraPos - truePos).Mag());
+        k0vtxpandoraresidualx_val = vertex->PositionPandora[0] - k0vtxtruepos_val[0];
+        k0vtxpandoraresidualy_val = vertex->PositionPandora[1] - k0vtxtruepos_val[1];
+        k0vtxpandoraresidualz_val = vertex->PositionPandora[2] - k0vtxtruepos_val[2];
+      }
 
-    // Fill Pandora position
+      if (vertex->PositionFit[0] > -900.f && vertex->PositionFit[1] > -900.f && vertex->PositionFit[2] > -900.f) {
+        const TVector3 fitPos(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
+        k0vtxfitresidual_val = static_cast<Float_t>((fitPos - truePos).Mag());
+        k0vtxfitresidualx_val = vertex->PositionFit[0] - k0vtxtruepos_val[0];
+        k0vtxfitresidualy_val = vertex->PositionFit[1] - k0vtxtruepos_val[1];
+        k0vtxfitresidualz_val = vertex->PositionFit[2] - k0vtxtruepos_val[2];
+      }
+    }
+
     output.FillMatrixVarFromArray(k0vtxpandorapos, vertex->PositionPandora, 3);
-
-    // Fill fitted position
     output.FillMatrixVarFromArray(k0vtxfitpos, vertex->PositionFit, 3);
 
-    // Fill fitted direction
-    output.FillMatrixVarFromArray(k0vtxfitdir, vertex->DirectionFit, 3);
-
-    // Fill IsJustAverage flag
-    output.FillVectorVar(k0vtxisjustavg, vertex->IsJustAverage);
-
-    // Fill annihilation vertex degeneracy
-    output.FillVectorVar(k0annvtxdeg, vertex->Degeneracy);
-
-    // Fill annihilation vertex degeneracy distances
-    Float_t k0annvtxdegdist_val[5] = {-999, -999, -999, -999, -999};
-    for (Int_t d = 0; d < 5; d++) {
-      k0annvtxdegdist_val[d] = vertex->DegDist[d];
-    }
-    output.FillMatrixVarFromArray(k0annvtxdegdist, k0annvtxdegdist_val, 5);
   } else {
-    output.FillVectorVar(k0annvtxdeg, -999);
-    Float_t k0annvtxdegdist_val[5] = {-999, -999, -999, -999, -999};
-    output.FillMatrixVarFromArray(k0annvtxdegdist, k0annvtxdegdist_val, 5);
+    output.FillMatrixVarFromArray(k0vtxpandorapos, invalidPos, 3);
+    output.FillMatrixVarFromArray(k0vtxfitpos, invalidPos, 3);
   }
+
+  output.FillMatrixVarFromArray(k0vtxtruepos, k0vtxtruepos_val, 3);
+  output.FillVectorVar(k0vtxoriginaldistance, k0vtxoriginaldistance_val);
+  output.FillVectorVar(k0vtxtrueoriginaldistance, k0vtxtrueoriginaldistance_val);
+  output.FillVectorVar(k0vtxpandorax, k0vtxpandorax_val);
+  output.FillVectorVar(k0vtxpandoray, k0vtxpandoray_val);
+  output.FillVectorVar(k0vtxpandoraz, k0vtxpandoraz_val);
+  output.FillVectorVar(k0vtxfitx, k0vtxfitx_val);
+  output.FillVectorVar(k0vtxfity, k0vtxfity_val);
+  output.FillVectorVar(k0vtxfitz, k0vtxfitz_val);
+  output.FillVectorVar(k0vtxpandoraresidual, k0vtxpandoraresidual_val);
+  output.FillVectorVar(k0vtxfitresidual, k0vtxfitresidual_val);
+  output.FillVectorVar(k0vtxpandoraresidualx, k0vtxpandoraresidualx_val);
+  output.FillVectorVar(k0vtxpandoraresidualy, k0vtxpandoraresidualy_val);
+  output.FillVectorVar(k0vtxpandoraresidualz, k0vtxpandoraresidualz_val);
+  output.FillVectorVar(k0vtxfitresidualx, k0vtxfitresidualx_val);
+  output.FillVectorVar(k0vtxfitresidualy, k0vtxfitresidualy_val);
+  output.FillVectorVar(k0vtxfitresidualz, k0vtxfitresidualz_val);
 }
 
 //********************************************************************
@@ -1721,13 +1755,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
       if(maxProtonRecoMom > 0){
         // Reco alignment must remain reco-only (no truth leakage).
         Float_t parentMom = parentCandidate->Momentum;
-        Float_t k0Mom = -999.0;
-        if (neutralCandidate->AnnihilationVertex) {
-          const Float_t vx = neutralCandidate->AnnihilationVertex->Momentum[0];
-          const Float_t vy = neutralCandidate->AnnihilationVertex->Momentum[1];
-          const Float_t vz = neutralCandidate->AnnihilationVertex->Momentum[2];
-          k0Mom = std::sqrt(vx*vx + vy*vy + vz*vz);
-        }
+        Float_t k0Mom = neutralCandidate->Momentum;
 
         if(parentMom > 0 && k0Mom > 0){
           // Parent momentum vector (reco end direction with true end momentum)
@@ -1920,39 +1948,39 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
     output.FillVectorVar(k0reconbrother, -999);
     output.FillVectorVar(k0truenbrother, -999);
     output.FillVectorVar(k0brothreconprot, -999);
-    output.FillVectorVar(k0brothrecoprotenergy, -999.0);
-    output.FillVectorVar(k0brothrecoprotmom, -999.0);
+    output.FillVectorVar(k0brothrecoprotenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0brothrecoprotmom, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0brothreconpiplus, -999);
     output.FillVectorVar(k0brothreconpiminus, -999);
     output.FillVectorVar(k0brothreconprotchi2, -999);
 
     // Fill new variables with defaults
     output.FillVectorVar(k0ntruebroth, -999);
-    output.FillVectorVar(k0truebrothtotalmom, -999.0);
-    output.FillVectorVar(k0truebrothtotalenergy, -999.0);
-    output.FillVectorVar(k0truebrothprotonmaxenergy, -999.0);
-    output.FillVectorVar(k0truebrothprotonmaxmomentum, -999.0);
-    output.FillVectorVar(k0truebrothalign, -999.0);
+    output.FillVectorVar(k0truebrothtotalmom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothtotalenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothprotonmaxenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothprotonmaxmomentum, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothalign, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0truebrothprotonmaxid, -999);
 
     output.FillVectorVar(k0ntruebrothreco, -999);
-    output.FillVectorVar(k0truebrothrecotruetotalmom, -999.0);
-    output.FillVectorVar(k0truebrothrecotruetotalenergy, -999.0);
-    output.FillVectorVar(k0truebrothrecoprotonmaxenergy, -999.0);
-    output.FillVectorVar(k0truebrothrecoprotonmaxmomentum, -999.0);
-    output.FillVectorVar(k0truebrothrecoprotonmaxrecoenergy, -999.0);
-    output.FillVectorVar(k0truebrothrecoprotonmaxrecomom, -999.0);
-    output.FillVectorVar(k0truebrothrecoalign, -999.0);
+    output.FillVectorVar(k0truebrothrecotruetotalmom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothrecotruetotalenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothrecoprotonmaxenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothrecoprotonmaxmomentum, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothrecoprotonmaxrecoenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothrecoprotonmaxrecomom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0truebrothrecoalign, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0truebrothrecoprotonmaxid, -999);
 
     output.FillVectorVar(k0nrecobroth, -999);
     output.FillVectorVar(k0nrecobrothbad, -999);
-    output.FillVectorVar(k0recobrothprotonmaxenergy, -999.0);
-    output.FillVectorVar(k0recobrothprotonmaxmomentum, -999.0);
-    output.FillVectorVar(k0recobrothprotonmaxtrueenergy, -999.0);
-    output.FillVectorVar(k0recobrothprotonmaxtruemom, -999.0);
-    output.FillVectorVar(k0recobrothalign, -999.0);
-    output.FillVectorVar(k0recobrothtruealign, -999.0);
+    output.FillVectorVar(k0recobrothprotonmaxenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0recobrothprotonmaxmomentum, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0recobrothprotonmaxtrueenergy, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0recobrothprotonmaxtruemom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0recobrothalign, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0recobrothtruealign, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0recobrothprotonmaxid, -999);
 
     Float_t defaultRecBrothTrajDir[100 * 3];
@@ -1964,7 +1992,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Brother(OutputManager& output, 
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event){
+void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaAnnihilationVertexPD* vertex, const AnaEventB& event){
     // Fill all variables for a single K0 daughter1
   if(daughterCandidate){
     EnsureTrajectoryDirectionFromPoints(daughterCandidate);
@@ -2166,9 +2194,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
       output.FillMatrixVarFromArray(k0dau1trueendpos, k0dau1trueendpos_default, 3);
       output.FillMatrixVarFromArray(k0dau1truestartdir, k0dau1truestartdir_default, 3);
       output.FillMatrixVarFromArray(k0dau1trueenddir, k0dau1trueenddir_default, 3);
-      output.FillVectorVar(k0dau1truestartmom, -999.0);
-      output.FillVectorVar(k0dau1trueendmom, -999.0);
-      output.FillVectorVar(k0dau1truelength, -999.0);
+      output.FillVectorVar(k0dau1truestartmom, static_cast<Float_t>(-999.0));
+      output.FillVectorVar(k0dau1trueendmom, static_cast<Float_t>(-999.0));
+      output.FillVectorVar(k0dau1truelength, static_cast<Float_t>(-999.0));
       output.FillVectorVar(k0dau1truendau, -999);
       output.FillVectorVar(k0dau1trueproc, -999);
       output.FillVectorVar(k0dau1trueendproc, -999);
@@ -2182,22 +2210,22 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
     output.FillMatrixVarFromArray(k0dau1recostartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1recoenddir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1trajdir, default_3d, 3);
-    output.FillVectorVar(k0dau1recomom, -999.0);
-    output.FillVectorVar(k0dau1recolength, -999.0);
+    output.FillVectorVar(k0dau1recomom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau1recolength, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau1recondau, -999);
     output.FillVectorVar(k0dau1parid, -999);
     output.FillVectorVar(k0dau1istrack, -999);
-    output.FillVectorVar(k0dau1chi2pion, -999.0);
+    output.FillVectorVar(k0dau1chi2pion, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau1nptchi2pion, -999);
-    output.FillVectorVar(k0dau1chi2proton, -999.0);
+    output.FillVectorVar(k0dau1chi2proton, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau1nptchi2proton, -999);
-    output.FillVectorVar(k0dau1chi2kaon, -999.0);
+    output.FillVectorVar(k0dau1chi2kaon, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau1nptchi2kaon, -999);
-    output.FillVectorVar(k0dau1avgdedx5cm, -999.0);
-    output.FillVectorVar(k0dau1avgdedx10cm, -999.0);
-    output.FillVectorVar(k0dau1avgdedx15cm, -999.0);
-    output.FillVectorVar(k0dau1avgdedx25cm, -999.0);
-    output.FillVectorVar(k0dau1avgdedx50cm, -999.0);
+    output.FillVectorVar(k0dau1avgdedx5cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau1avgdedx10cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau1avgdedx15cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau1avgdedx25cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau1avgdedx50cm, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau1nhits, -999);
       output.FillVectorVar(k0dau1trueid, -999);
       output.FillVectorVar(k0dau1recoid, -999);
@@ -2207,9 +2235,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
     output.FillMatrixVarFromArray(k0dau1trueendpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1truestartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau1trueenddir, default_3d, 3);
-    output.FillVectorVar(k0dau1truestartmom, -999.0);
-    output.FillVectorVar(k0dau1trueendmom, -999.0);
-    output.FillVectorVar(k0dau1truelength, -999.0);
+    output.FillVectorVar(k0dau1truestartmom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau1trueendmom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau1truelength, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau1truendau, -999);
     output.FillVectorVar(k0dau1trueproc, -999);
     output.FillVectorVar(k0dau1trueendproc, -999);
@@ -2218,7 +2246,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& out
 }
 
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event){
+void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaAnnihilationVertexPD* vertex, const AnaEventB& event){
     // Fill all variables for a single K0 daughter2
   if(daughterCandidate){
     Float_t k0dau2recostartpos_val[3] = {-999.0, -999.0, -999.0};
@@ -2418,9 +2446,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
       output.FillMatrixVarFromArray(k0dau2trueendpos, k0dau2trueendpos_default, 3);
       output.FillMatrixVarFromArray(k0dau2truestartdir, k0dau2truestartdir_default, 3);
       output.FillMatrixVarFromArray(k0dau2trueenddir, k0dau2trueenddir_default, 3);
-      output.FillVectorVar(k0dau2truestartmom, -999.0);
-      output.FillVectorVar(k0dau2trueendmom, -999.0);
-      output.FillVectorVar(k0dau2truelength, -999.0);
+      output.FillVectorVar(k0dau2truestartmom, static_cast<Float_t>(-999.0));
+      output.FillVectorVar(k0dau2trueendmom, static_cast<Float_t>(-999.0));
+      output.FillVectorVar(k0dau2truelength, static_cast<Float_t>(-999.0));
       output.FillVectorVar(k0dau2truendau, -999);
       output.FillVectorVar(k0dau2trueproc, -999);
       output.FillVectorVar(k0dau2trueendproc, -999);
@@ -2434,22 +2462,22 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
     output.FillMatrixVarFromArray(k0dau2recostartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2recoenddir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2trajdir, default_3d, 3);
-    output.FillVectorVar(k0dau2recomom, -999.0);
-    output.FillVectorVar(k0dau2recolength, -999.0);
+    output.FillVectorVar(k0dau2recomom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau2recolength, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau2recondau, -999);
     output.FillVectorVar(k0dau2parid, -999);
     output.FillVectorVar(k0dau2istrack, -999);
-    output.FillVectorVar(k0dau2chi2pion, -999.0);
+    output.FillVectorVar(k0dau2chi2pion, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau2nptchi2pion, -999);
-    output.FillVectorVar(k0dau2chi2proton, -999.0);
+    output.FillVectorVar(k0dau2chi2proton, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau2nptchi2proton, -999);
-    output.FillVectorVar(k0dau2chi2kaon, -999.0);
+    output.FillVectorVar(k0dau2chi2kaon, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau2nptchi2kaon, -999);
-    output.FillVectorVar(k0dau2avgdedx5cm, -999.0);
-    output.FillVectorVar(k0dau2avgdedx10cm, -999.0);
-    output.FillVectorVar(k0dau2avgdedx15cm, -999.0);
-    output.FillVectorVar(k0dau2avgdedx25cm, -999.0);
-    output.FillVectorVar(k0dau2avgdedx50cm, -999.0);
+    output.FillVectorVar(k0dau2avgdedx5cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau2avgdedx10cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau2avgdedx15cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau2avgdedx25cm, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau2avgdedx50cm, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau2nhits, -999);
       output.FillVectorVar(k0dau2trueid, -999);
       output.FillVectorVar(k0dau2recoid, -999);
@@ -2459,9 +2487,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& out
     output.FillMatrixVarFromArray(k0dau2trueendpos, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2truestartdir, default_3d, 3);
     output.FillMatrixVarFromArray(k0dau2trueenddir, default_3d, 3);
-    output.FillVectorVar(k0dau2truestartmom, -999.0);
-    output.FillVectorVar(k0dau2trueendmom, -999.0);
-    output.FillVectorVar(k0dau2truelength, -999.0);
+    output.FillVectorVar(k0dau2truestartmom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau2trueendmom, static_cast<Float_t>(-999.0));
+    output.FillVectorVar(k0dau2truelength, static_cast<Float_t>(-999.0));
     output.FillVectorVar(k0dau2truendau, -999);
     output.FillVectorVar(k0dau2trueproc, -999);
     output.FillVectorVar(k0dau2trueendproc, -999);

@@ -78,6 +78,13 @@ bool neutralKaonAnalysis::Initialize(){
 }
 
 //********************************************************************
+void neutralKaonAnalysis::Finalize(){
+//********************************************************************
+  // Persist external diagnostic profiles filled during event loop.
+  neutralKaonTree::WriteHitDistanceProfiles(output());
+}
+
+//********************************************************************
 void neutralKaonAnalysis::DefineInputConverters(){
 //********************************************************************
 
@@ -150,13 +157,13 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
 
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
-  neutralKaonTree::AddNeutralKaonVariables_K0(output(), nK0Max);
-  neutralKaonTree::AddNeutralKaonVariables_K0Par(output(), nK0Max);
-  neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(output(), nK0Max);
+  // neutralKaonTree::AddNeutralKaonVariables_K0(output(), nK0Max);
+  // neutralKaonTree::AddNeutralKaonVariables_K0Par(output(), nK0Max);
+  // neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(output(), nK0Max);
   neutralKaonTree::AddNeutralKaonVariables_K0Vtx(output(), nK0Max);
-  neutralKaonTree::AddNeutralKaonVariables_K0Brother(output(), nK0Max);
-  neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(output(), nK0Max);
-  neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(output(), nK0Max);
+  // neutralKaonTree::AddNeutralKaonVariables_K0Brother(output(), nK0Max);
+  // neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(output(), nK0Max);
+  // neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(output(), nK0Max);
 
   // Create EventDisplayData tree now that ana tree is fully defined
   // This prevents index conflicts during validation
@@ -527,30 +534,8 @@ void neutralKaonAnalysis::FillCategories(){
   // For neutral particle candidates
   const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
   if(neutralKaonBox.neutralParticleCandidates.size() > 0){
-    bool hasSignalCandidate = false;
     for(size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++){
       neutralKaonAnaUtils::FillSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
-      neutralKaonAnaUtils::FillLooseSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
-
-      if (anaUtils::_categ && anaUtils::_categ->HasCategory("signal")) {
-        const int signalCode = anaUtils::_categ->GetCategory("signal").GetObjectCode(1, static_cast<Int_t>(i));
-        if (signalCode == 1) {
-          hasSignalCandidate = true;
-        }
-      }
-
-    }
-
-    if (hasSignalCandidate) {
-      const AnaEventInfoPD* evtInfo = static_cast<const AnaEventInfoPD*>(GetEvent().EventInfo);
-      if (evtInfo) {
-        std::cout << "[neutralKaonAnalysis] Event contains a signal neutral candidate (signal==1): "
-                  << "Run " << evtInfo->Run
-                  << " SubRun " << evtInfo->SubRun
-                  << " Event " << evtInfo->Event << std::endl;
-      } else {
-        std::cout << "[neutralKaonAnalysis] Event contains a signal neutral candidate (signal==1)" << std::endl;
-      }
     }
   }
 

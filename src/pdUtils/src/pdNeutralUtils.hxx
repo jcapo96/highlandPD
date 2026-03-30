@@ -11,16 +11,11 @@
 
 namespace pdNeutralUtils {
 
-  // Helper function to create and fill true equivalent neutral particle
-  AnaTrueEquivalentNeutralParticlePD* FillTrueEquivalentNeutralParticle(
-      AnaVertexPD* vertex,
-      AnaParticlePD* parentParticle);
-
   // Calculate neutral particle score and metrics
   // Returns: {NPotentialParents, NRecoHitsInVertex}
   std::pair<Int_t, Int_t> CalculateNeutralScore(
       AnaNeutralParticlePD* neutralParticle,
-      AnaVertexPD* vertex,
+      AnaAnnihilationVertexPD* vertex,
       AnaParticlePD* parentParticle,
       AnaEventB& event,
       const std::unordered_map<Int_t, AnaParticlePD*>& particleByUniqueID);
@@ -29,6 +24,11 @@ namespace pdNeutralUtils {
   std::vector<AnaNeutralParticlePD*> CreateNeutrals(AnaEventB& event,
                                                      const std::vector<AnaCreationVertexPD*>& creationVertices,
                                                      const std::vector<AnaAnnihilationVertexPD*>& annihilationVertices);
+
+  // Create one wrapper candidate per annihilation vertex.
+  std::vector<AnaNeutralParticlePD*> CreateAnnihilationOnlyNeutrals(
+      AnaEventB& event,
+      const std::vector<AnaAnnihilationVertexPD*>& annihilationVertices);
 
   // Filter neutral particles ensuring each annihilation vertex belongs to at most one neutral particle
   std::vector<AnaNeutralParticlePD*> FilterNeutralsByScore(std::vector<AnaNeutralParticlePD*>& neutralParticles);

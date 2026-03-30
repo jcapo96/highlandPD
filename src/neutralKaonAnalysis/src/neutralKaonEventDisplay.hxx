@@ -61,6 +61,7 @@ private:
     Int_t _k0_annihilationVtxDeg[kMaxK0];
     Float_t _k0_creationVtxPos[kMaxK0][3];
     Float_t _k0_annihilationVtxPos[kMaxK0][3];
+    Float_t _k0_annihilationVtxFitPos[kMaxK0][3];
     Float_t _k0_startPos[kMaxK0][3];
     Float_t _k0_endPos[kMaxK0][3];
 
@@ -69,8 +70,12 @@ private:
     Float_t _k0_annVtx_fitLine1Dir[kMaxK0][3];    // Daughter 1 fit line direction
     Float_t _k0_annVtx_fitLine2Start[kMaxK0][3];  // Daughter 2 fit line start
     Float_t _k0_annVtx_fitLine2Dir[kMaxK0][3];    // Daughter 2 fit line direction
-    Float_t _k0_annVtx_closestPt1[kMaxK0][3];     // Closest point on line 1
-    Float_t _k0_annVtx_closestPt2[kMaxK0][3];     // Closest point on line 2
+    Float_t _k0_annVtx_pandoraLine1Dir[kMaxK0][3]; // Daughter 1 Pandora direction
+    Float_t _k0_annVtx_pandoraLine2Dir[kMaxK0][3]; // Daughter 2 Pandora direction
+    Float_t _k0_annVtx_closestPt1[kMaxK0][3];     // Closest point on fit line 1
+    Float_t _k0_annVtx_closestPt2[kMaxK0][3];     // Closest point on fit line 2
+    Float_t _k0_annVtx_pandoraClosestPt1[kMaxK0][3];
+    Float_t _k0_annVtx_pandoraClosestPt2[kMaxK0][3];
 
     // Fitted lines for creation vertex
     Float_t _k0_creationVtx_fitLineBeamStart[kMaxK0][3];   // Beam particle fit line start
@@ -147,14 +152,19 @@ private:
         edk0_annihilationVtxDeg,
         edk0_creationVtxPos,
         edk0_annihilationVtxPos,
+        edk0_annihilationVtxFitPos,
         edk0_startPos,
         edk0_endPos,
         edk0_annVtx_fitLine1Start,
         edk0_annVtx_fitLine1Dir,
         edk0_annVtx_fitLine2Start,
         edk0_annVtx_fitLine2Dir,
+        edk0_annVtx_pandoraLine1Dir,
+        edk0_annVtx_pandoraLine2Dir,
         edk0_annVtx_closestPt1,
         edk0_annVtx_closestPt2,
+        edk0_annVtx_pandoraClosestPt1,
+        edk0_annVtx_pandoraClosestPt2,
         edk0_creationVtx_fitLineBeamStart,
         edk0_creationVtx_fitLineBeamDir,
         edk0_creationVtx_fitLineSecondStart,
