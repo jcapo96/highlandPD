@@ -733,6 +733,7 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                 annihilationFitPos[0] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[0];
                 annihilationFitPos[1] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[1];
                 annihilationFitPos[2] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[2];
+                annihilationDeg = neutralParticle->AnnihilationVertex->Degeneracy;
             }
             output.FillVectorVar(edk0_annihilationVtxDeg, annihilationDeg);
 
@@ -762,16 +763,16 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Float_t pandoraClosestPt1[3] = {-999, -999, -999};
             Float_t pandoraClosestPt2[3] = {-999, -999, -999};
             Float_t fitLineLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+            Float_t fitLineDistanceFromStart = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart");
 
-            // For annihilation vertex: use Pandora directions (not fitted directions)
-            // This ensures visualization matches the actual geometry used for vertex position calculation
+            // For annihilation vertex, draw both Pandora and fit-based line definitions.
             if (neutralParticle->AnnihilationVertex &&
                 neutralParticle->AnnihilationVertex->Particles.size() >= 2) {
                 AnaParticlePD* d1 = neutralParticle->AnnihilationVertex->Particles[0];
                 AnaParticlePD* d2 = neutralParticle->AnnihilationVertex->Particles[1];
 
                 if (d1 && d2) {
-                    // Start points are the line anchors for both methods
+                    // Start points are the physical anchors nearest TrackFitDistanceFromStart.
                     fitLine1Start[0] = d1->PositionStart[0];
                     fitLine1Start[1] = d1->PositionStart[1];
                     fitLine1Start[2] = d1->PositionStart[2];
@@ -790,9 +791,20 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                     // Extrapolated-fit directions (first trackFitLength cm from start)
                     std::vector<double> line1Params;
                     std::vector<double> line2Params;
-                    pdAnaUtils::ExtrapolateTrack(d1, line1Params, fitLineLength, true);
-                    pdAnaUtils::ExtrapolateTrack(d2, line2Params, fitLineLength, true);
-                    if (line1Params.size() >= 6) {
+                    pdAnaUtils::ExtrapolateTrack(d1, line1Params, fitLineLength, true, fitLineDistanceFromStart);
+                    pdAnaUtils::ExtrapolateTrack(d2, line2Params, fitLineLength, true, fitLineDistanceFromStart);
+                    const bool line1Valid = (line1Params.size() >= 6 &&
+                                            line1Params[0] > -900.0 &&
+                                            line1Params[1] > -900.0 &&
+                                            line1Params[2] > -900.0);
+                    const bool line2Valid = (line2Params.size() >= 6 &&
+                                            line2Params[0] > -900.0 &&
+                                            line2Params[1] > -900.0 &&
+                                            line2Params[2] > -900.0);
+                    if (line1Valid) {
+                        fitLine1Start[0] = line1Params[0];
+                        fitLine1Start[1] = line1Params[1];
+                        fitLine1Start[2] = line1Params[2];
                         fitLine1Dir[0] = line1Params[3];
                         fitLine1Dir[1] = line1Params[4];
                         fitLine1Dir[2] = line1Params[5];
@@ -801,7 +813,10 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                         fitLine1Dir[1] = pandoraLine1Dir[1];
                         fitLine1Dir[2] = pandoraLine1Dir[2];
                     }
-                    if (line2Params.size() >= 6) {
+                    if (line2Valid) {
+                        fitLine2Start[0] = line2Params[0];
+                        fitLine2Start[1] = line2Params[1];
+                        fitLine2Start[2] = line2Params[2];
                         fitLine2Dir[0] = line2Params[3];
                         fitLine2Dir[1] = line2Params[4];
                         fitLine2Dir[2] = line2Params[5];
@@ -1528,30 +1543,30 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 anchorPoint(fitVtx, _k0_annihilationVtxFitPos[i][0], _k0_annihilationVtxFitPos[i][1], _k0_annihilationVtxFitPos[i][2]);
             }
 
-            // Pandora start-position markers for annihilation daughter particles.
+            // Anchor-hit markers used by the fit-line method.
             if (_k0_annVtx_fitLine1Start[i][0] > -900 &&
                 _k0_annVtx_fitLine1Start[i][1] > -900 &&
                 _k0_annVtx_fitLine1Start[i][2] > -900) {
-                TEvePointSet* dau1Start = new TEvePointSet(Form("K0 #%d Annihilation Daughter1 Start (Pandora)", i));
+                TEvePointSet* dau1Start = new TEvePointSet(Form("K0 #%d Annihilation Daughter1 Fit Anchor", i));
                 dau1Start->SetNextPoint(_k0_annVtx_fitLine1Start[i][0],
                                         _k0_annVtx_fitLine1Start[i][1],
                                         _k0_annVtx_fitLine1Start[i][2]);
-                dau1Start->SetMarkerStyle(24);
-                dau1Start->SetMarkerSize(2.0);
-                dau1Start->SetMainColor(kCyan + 1);
+                dau1Start->SetMarkerStyle(29);
+                dau1Start->SetMarkerSize(2.6);
+                dau1Start->SetMainColor(kYellow + 1);
                 addElement(annihilationVertexGroup, dau1Start);
                 anchorPoint(dau1Start, _k0_annVtx_fitLine1Start[i][0], _k0_annVtx_fitLine1Start[i][1], _k0_annVtx_fitLine1Start[i][2]);
             }
             if (_k0_annVtx_fitLine2Start[i][0] > -900 &&
                 _k0_annVtx_fitLine2Start[i][1] > -900 &&
                 _k0_annVtx_fitLine2Start[i][2] > -900) {
-                TEvePointSet* dau2Start = new TEvePointSet(Form("K0 #%d Annihilation Daughter2 Start (Pandora)", i));
+                TEvePointSet* dau2Start = new TEvePointSet(Form("K0 #%d Annihilation Daughter2 Fit Anchor", i));
                 dau2Start->SetNextPoint(_k0_annVtx_fitLine2Start[i][0],
                                         _k0_annVtx_fitLine2Start[i][1],
                                         _k0_annVtx_fitLine2Start[i][2]);
-                dau2Start->SetMarkerStyle(25);
-                dau2Start->SetMarkerSize(2.0);
-                dau2Start->SetMainColor(kMagenta + 1);
+                dau2Start->SetMarkerStyle(29);
+                dau2Start->SetMarkerSize(2.6);
+                dau2Start->SetMainColor(kYellow + 1);
                 addElement(annihilationVertexGroup, dau2Start);
                 anchorPoint(dau2Start, _k0_annVtx_fitLine2Start[i][0], _k0_annVtx_fitLine2Start[i][1], _k0_annVtx_fitLine2Start[i][2]);
             }
@@ -1939,19 +1954,22 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 TVector3 d(_k0_annVtx_fitLine1Dir[i][0], _k0_annVtx_fitLine1Dir[i][1], _k0_annVtx_fitLine1Dir[i][2]);
                 if (d.Mag() > 0) {
                     d = d.Unit();
-                    TVector3 lineStart = s;
-                    TVector3 lineEnd = s + 100.0 * d;
+                    TVector3 base = s;
+                    double tMin = -20.0;
+                    double tMax = 100.0;
                     if (_k0_annVtx_closestPt1[i][0] > -900) {
                         TVector3 cp(_k0_annVtx_closestPt1[i][0], _k0_annVtx_closestPt1[i][1], _k0_annVtx_closestPt1[i][2]);
-                        const double t = (cp - s).Dot(d);
-                        if (t >= 0.0) {
-                            lineStart = s;
-                            lineEnd = cp + 20.0 * d;
-                        } else {
-                            lineStart = cp;
-                            lineEnd = s + 100.0 * d;
+                        const TVector3 anchorToClosest = cp - s;
+                        if (anchorToClosest.Mag2() > 1e-8) {
+                            d = anchorToClosest.Unit();
                         }
+                        base = cp; // Guarantee rendered fit line passes through closest point.
+                        const double tAnchor = (s - base).Dot(d);
+                        tMin = std::min(tMin, tAnchor - 20.0);
+                        tMax = std::max(tMax, tAnchor + 100.0);
                     }
+                    TVector3 lineStart = base + tMin * d;
+                    TVector3 lineEnd = base + tMax * d;
                     TEveLine* line = new TEveLine(Form("K0 #%d D1 Fit Dir", i));
                     line->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
                     line->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
@@ -1997,19 +2015,22 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 TVector3 d(_k0_annVtx_fitLine2Dir[i][0], _k0_annVtx_fitLine2Dir[i][1], _k0_annVtx_fitLine2Dir[i][2]);
                 if (d.Mag() > 0) {
                     d = d.Unit();
-                    TVector3 lineStart = s;
-                    TVector3 lineEnd = s + 100.0 * d;
+                    TVector3 base = s;
+                    double tMin = -20.0;
+                    double tMax = 100.0;
                     if (_k0_annVtx_closestPt2[i][0] > -900) {
                         TVector3 cp(_k0_annVtx_closestPt2[i][0], _k0_annVtx_closestPt2[i][1], _k0_annVtx_closestPt2[i][2]);
-                        const double t = (cp - s).Dot(d);
-                        if (t >= 0.0) {
-                            lineStart = s;
-                            lineEnd = cp + 20.0 * d;
-                        } else {
-                            lineStart = cp;
-                            lineEnd = s + 100.0 * d;
+                        const TVector3 anchorToClosest = cp - s;
+                        if (anchorToClosest.Mag2() > 1e-8) {
+                            d = anchorToClosest.Unit();
                         }
+                        base = cp; // Guarantee rendered fit line passes through closest point.
+                        const double tAnchor = (s - base).Dot(d);
+                        tMin = std::min(tMin, tAnchor - 20.0);
+                        tMax = std::max(tMax, tAnchor + 100.0);
                     }
+                    TVector3 lineStart = base + tMin * d;
+                    TVector3 lineEnd = base + tMax * d;
                     TEveLine* line = new TEveLine(Form("K0 #%d D2 Fit Dir", i));
                     line->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
                     line->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
@@ -2875,19 +2896,22 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
 
             TVector3 s3(d1PosX, d1PosY, d1PosZ);
             TVector3 d3(dirX, dirY, dirZ);
-            TVector3 lineStart3 = s3;
-            TVector3 lineEnd3 = s3 + 100.0 * d3;
+            TVector3 base3 = s3;
+            double tMin3 = -20.0;
+            double tMax3 = 100.0;
             if (_k0_annVtx_closestPt1[i][0] > -900) {
                 TVector3 cp3(_k0_annVtx_closestPt1[i][0], _k0_annVtx_closestPt1[i][1], _k0_annVtx_closestPt1[i][2]);
-                const double t = (cp3 - s3).Dot(d3);
-                if (t >= 0.0) {
-                    lineStart3 = s3;
-                    lineEnd3 = cp3 + 20.0 * d3;
-                } else {
-                    lineStart3 = cp3;
-                    lineEnd3 = s3 + 100.0 * d3;
+                const TVector3 anchorToClosest3 = cp3 - s3;
+                if (anchorToClosest3.Mag2() > 1e-8) {
+                    d3 = anchorToClosest3.Unit();
                 }
+                base3 = cp3; // Guarantee rendered fit line passes through closest point.
+                const double tAnchor3 = (s3 - base3).Dot(d3);
+                tMin3 = std::min(tMin3, tAnchor3 - 20.0);
+                tMax3 = std::max(tMax3, tAnchor3 + 100.0);
             }
+            TVector3 lineStart3 = base3 + tMin3 * d3;
+            TVector3 lineEnd3 = base3 + tMax3 * d3;
 
             Float_t line1_x1, line1_y1, line1_x2, line1_y2;
 
@@ -2909,6 +2933,19 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             fitLine1->SetLineStyle(2); // Dashed (daughter uses startPos/startDir)
             fitLine1->SetLineWidth(1);
             fitLine1->Draw("SAME");
+
+            Float_t anchor1_x, anchor1_y;
+            if (projection_type == "XY") {
+                anchor1_x = d1PosX; anchor1_y = d1PosY;
+            } else if (projection_type == "XZ") {
+                anchor1_x = d1PosX; anchor1_y = d1PosZ;
+            } else {
+                anchor1_x = d1PosY; anchor1_y = d1PosZ;
+            }
+            TMarker* anchor1 = new TMarker(anchor1_x, anchor1_y, 29);
+            anchor1->SetMarkerColor(kYellow + 1);
+            anchor1->SetMarkerSize(1.6);
+            anchor1->Draw("SAME");
         }
 
         // Draw fitted line 2 using fitted direction from start position
@@ -2927,19 +2964,22 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
 
             TVector3 s3(d2PosX, d2PosY, d2PosZ);
             TVector3 d3(dir2X, dir2Y, dir2Z);
-            TVector3 lineStart3 = s3;
-            TVector3 lineEnd3 = s3 + 100.0 * d3;
+            TVector3 base3 = s3;
+            double tMin3 = -20.0;
+            double tMax3 = 100.0;
             if (_k0_annVtx_closestPt2[i][0] > -900) {
                 TVector3 cp3(_k0_annVtx_closestPt2[i][0], _k0_annVtx_closestPt2[i][1], _k0_annVtx_closestPt2[i][2]);
-                const double t = (cp3 - s3).Dot(d3);
-                if (t >= 0.0) {
-                    lineStart3 = s3;
-                    lineEnd3 = cp3 + 20.0 * d3;
-                } else {
-                    lineStart3 = cp3;
-                    lineEnd3 = s3 + 100.0 * d3;
+                const TVector3 anchorToClosest3 = cp3 - s3;
+                if (anchorToClosest3.Mag2() > 1e-8) {
+                    d3 = anchorToClosest3.Unit();
                 }
+                base3 = cp3; // Guarantee rendered fit line passes through closest point.
+                const double tAnchor3 = (s3 - base3).Dot(d3);
+                tMin3 = std::min(tMin3, tAnchor3 - 20.0);
+                tMax3 = std::max(tMax3, tAnchor3 + 100.0);
             }
+            TVector3 lineStart3 = base3 + tMin3 * d3;
+            TVector3 lineEnd3 = base3 + tMax3 * d3;
 
             Float_t line2_x1, line2_y1, line2_x2, line2_y2;
 
@@ -2961,6 +3001,19 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             fitLine2->SetLineStyle(2); // Dashed (daughter uses startPos/startDir)
             fitLine2->SetLineWidth(1);
             fitLine2->Draw("SAME");
+
+            Float_t anchor2_x, anchor2_y;
+            if (projection_type == "XY") {
+                anchor2_x = d2PosX; anchor2_y = d2PosY;
+            } else if (projection_type == "XZ") {
+                anchor2_x = d2PosX; anchor2_y = d2PosZ;
+            } else {
+                anchor2_x = d2PosY; anchor2_y = d2PosZ;
+            }
+            TMarker* anchor2 = new TMarker(anchor2_x, anchor2_y, 29);
+            anchor2->SetMarkerColor(kYellow + 1);
+            anchor2->SetMarkerSize(1.6);
+            anchor2->Draw("SAME");
         }
 
         // Draw closest points on annihilation fitted lines (points of minimum distance)

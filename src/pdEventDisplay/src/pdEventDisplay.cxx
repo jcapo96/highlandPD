@@ -25,6 +25,32 @@
 #include <set>
 #include <map>
 
+namespace {
+Float_t HitMarkerSizeFromdEdx(Float_t dEdx) {
+    // Scale hit marker size with local dEdx to enhance stopping-particle visibility.
+    if (!std::isfinite(dEdx) || dEdx < 0.f) return 0.45f;
+    const Float_t capped = std::max(0.f, std::min(10.f, dEdx));
+    return 0.45f + 0.20f * capped; // [0.45, 2.45]
+}
+
+Int_t HitSizeBinFromdEdx(Float_t dEdx) {
+    const Float_t size = HitMarkerSizeFromdEdx(dEdx);
+    if (size < 0.8f) return 0;
+    if (size < 1.2f) return 1;
+    if (size < 1.8f) return 2;
+    return 3;
+}
+
+Float_t HitSizeForBin(Int_t bin) {
+    switch (bin) {
+        case 0: return 0.55f;
+        case 1: return 0.95f;
+        case 2: return 1.45f;
+        default: return 2.15f;
+    }
+}
+}
+
 //********************************************************************
 pdEventDisplay::pdEventDisplay() : EventDisplayBase() {
 //********************************************************************
@@ -37,6 +63,7 @@ pdEventDisplay::pdEventDisplay() : EventDisplayBase() {
     _hit_X = new Float_t[kMaxHits];
     _hit_Y = new Float_t[kMaxHits];
     _hit_Z = new Float_t[kMaxHits];
+    _hit_dEdx = new Float_t[kMaxHits];
 
     // Initialize data members
     _nParticles = 0;
@@ -51,6 +78,7 @@ pdEventDisplay::~pdEventDisplay() {
     delete[] _hit_X;
     delete[] _hit_Y;
     delete[] _hit_Z;
+    delete[] _hit_dEdx;
 }
 
 //********************************************************************
@@ -132,6 +160,7 @@ void pdEventDisplay::AddExperimentVariables(OutputManager& output) {
     output.AddVectorVar(tree_index, edhit_X, "ED_hit_X", "F", "Hit X positions", edtotalHits, "ED_totalHits", -kMaxHits);
     output.AddVectorVar(tree_index, edhit_Y, "ED_hit_Y", "F", "Hit Y positions", edtotalHits, "ED_totalHits", -kMaxHits);
     output.AddVectorVar(tree_index, edhit_Z, "ED_hit_Z", "F", "Hit Z positions", edtotalHits, "ED_totalHits", -kMaxHits);
+    output.AddVectorVar(tree_index, edhit_dEdx, "ED_hit_dEdx", "F", "Hit dEdx values", edtotalHits, "ED_totalHits", -kMaxHits);
 
     // Call analysis-specific variable addition (e.g., K0 variables in neutralKaonEventDisplay)
     AddAnalysisVariables(output, tree_index);
@@ -192,6 +221,7 @@ void pdEventDisplay::FillExperimentData(OutputManager& output, const AnaEventB& 
             output.FillVectorVar(edhit_X, (Float_t)hit.Position[0]);
             output.FillVectorVar(edhit_Y, (Float_t)hit.Position[1]);
             output.FillVectorVar(edhit_Z, (Float_t)hit.Position[2]);
+            output.FillVectorVar(edhit_dEdx, (Float_t)hit.dEdx);
             output.IncrementCounter(edtotalHits);
             hitIndex++;
         }
@@ -315,6 +345,7 @@ bool pdEventDisplay::ReadEventData(TTree* tree, Int_t run, Int_t subrun, Int_t e
     tree->SetBranchAddress("ED_hit_X", _hit_X);
     tree->SetBranchAddress("ED_hit_Y", _hit_Y);
     tree->SetBranchAddress("ED_hit_Z", _hit_Z);
+    tree->SetBranchAddress("ED_hit_dEdx", _hit_dEdx);
 
     tree->SetBranchAddress("ED_k0_creationVtxPos", _k0_creationVtxPos);
     tree->SetBranchAddress("ED_k0_annihilationVtxPos", _k0_annihilationVtxPos);
@@ -347,7 +378,7 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
     std::cout << "Drawing particles in 3D..." << std::endl;
 
     // Group hits by PDG for efficiency
-    std::map<Int_t, TEvePointSet*> hitsByPDG;
+    std::map<std::pair<Int_t, Int_t>, TEvePointSet*> hitsByPDGAndSizeBin;
     std::map<Int_t, TEvePointSet*> firstHitsByPDG;
     std::map<Int_t, TEvePointSet*> startPosByPDG;
 
@@ -363,15 +394,7 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
             // Particle has hits - draw hit-by-hit trajectory
 
             // Create point sets for this PDG if they don't exist
-            if (hitsByPDG.find(pdg) == hitsByPDG.end()) {
-                // Regular hits
-                TEvePointSet* hitSet = new TEvePointSet(Form("%s Hits", pdgName.c_str()));
-                hitSet->SetMarkerStyle(20);
-                hitSet->SetMarkerSize(0.8);
-                hitSet->SetMainColor(color);
-                hitsByPDG[pdg] = hitSet;
-                scene->AddElement(hitSet);
-
+            if (firstHitsByPDG.find(pdg) == firstHitsByPDG.end()) {
                 // First hits (larger, different style)
                 TEvePointSet* firstHitSet = new TEvePointSet(Form("%s First Hit", pdgName.c_str()));
                 firstHitSet->SetMarkerStyle(29); // Star
@@ -395,13 +418,25 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
                     Float_t x = _hit_X[hitIdx];
                     Float_t y = _hit_Y[hitIdx];
                     Float_t z = _hit_Z[hitIdx];
+                    Float_t dEdx = _hit_dEdx[hitIdx];
 
                     if (x > -900 && y > -900 && z > -900) {
                         if (h == nHits - 1) {
                             // Last hit in array = first hit spatially
                             firstHitsByPDG[pdg]->SetNextPoint(x, y, z);
                         } else {
-                            hitsByPDG[pdg]->SetNextPoint(x, y, z);
+                            const Int_t sizeBin = HitSizeBinFromdEdx(dEdx);
+                            const auto key = std::make_pair(pdg, sizeBin);
+                            if (hitsByPDGAndSizeBin.find(key) == hitsByPDGAndSizeBin.end()) {
+                                TEvePointSet* hitSet =
+                                    new TEvePointSet(Form("%s Hits dEdxBin%d", pdgName.c_str(), sizeBin));
+                                hitSet->SetMarkerStyle(20);
+                                hitSet->SetMarkerSize(HitSizeForBin(sizeBin));
+                                hitSet->SetMainColor(color);
+                                hitsByPDGAndSizeBin[key] = hitSet;
+                                scene->AddElement(hitSet);
+                            }
+                            hitsByPDGAndSizeBin[key]->SetNextPoint(x, y, z);
                         }
                     }
                     hitIdx++;
@@ -634,9 +669,10 @@ void pdEventDisplay::DrawParticlesCanvas2D(TCanvas* canvas, const std::string& p
                 if (!project(_hit_X[hitIdx], _hit_Y[hitIdx], _hit_Z[hitIdx], c1, c2)) {
                     hitIdx++; continue;
                 }
+                const Float_t dEdx = _hit_dEdx[hitIdx];
 
                 Int_t style = (h == 0) ? 29 : 20;
-                Float_t size = (h == 0) ? 1.2f : 0.4f;
+                Float_t size = (h == 0) ? 1.2f : HitMarkerSizeFromdEdx(dEdx);
                 TMarker* m = new TMarker(c1, c2, style);
                 m->SetMarkerColor(color);
                 m->SetMarkerSize(size);

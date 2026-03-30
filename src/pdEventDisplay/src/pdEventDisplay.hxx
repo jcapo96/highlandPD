@@ -130,6 +130,7 @@ protected:
     Float_t* _hit_X;
     Float_t* _hit_Y;
     Float_t* _hit_Z;
+    Float_t* _hit_dEdx;
 
     // K0 candidate data arrays
     static const Int_t kMaxK0 = 10;
@@ -167,6 +168,7 @@ protected:
         edhit_X,
         edhit_Y,
         edhit_Z,
+        edhit_dEdx,
 
         // K0 candidate data
         ednK0Candidates,

@@ -1457,7 +1457,54 @@ void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitP
   const bool hasValidTravelDir = (travelDir.Mag2() > 1e-10);
   if (hasValidTravelDir) travelDir = travelDir.Unit();
 
-  // Collect all 3D hit positions from all planes with their longitudinal distance from reference.
+  // Build arc-length map from trajectory points (preferred for true along-track distance).
+  std::vector<std::pair<TVector3, double>> trajectoryPointsWithDistance;
+  if (part->TrjPoints.size() >= 2) {
+    trajectoryPointsWithDistance.reserve(part->TrjPoints.size());
+    double cumulative = 0.0;
+    TVector3 prev;
+    bool hasPrev = false;
+
+    if (useStartPosition) {
+      for (size_t i = 0; i < part->TrjPoints.size(); ++i) {
+        const TVector3 pos = part->TrjPoints[i].Position;
+        if (pos.Z() == -999) continue;
+        if (hasPrev) cumulative += (pos - prev).Mag();
+        trajectoryPointsWithDistance.push_back(std::make_pair(pos, cumulative));
+        prev = pos;
+        hasPrev = true;
+      }
+    } else {
+      for (int i = static_cast<int>(part->TrjPoints.size()) - 1; i >= 0; --i) {
+        const TVector3 pos = part->TrjPoints[i].Position;
+        if (pos.Z() == -999) continue;
+        if (hasPrev) cumulative += (pos - prev).Mag();
+        trajectoryPointsWithDistance.push_back(std::make_pair(pos, cumulative));
+        prev = pos;
+        hasPrev = true;
+      }
+    }
+  }
+
+  auto computePathDistance = [&](const TVector3& position) -> double {
+    if (!trajectoryPointsWithDistance.empty()) {
+      double bestDist2 = 1e30;
+      double bestArc = -1.0;
+      for (const auto& tp : trajectoryPointsWithDistance) {
+        const double d2 = (position - tp.first).Mag2();
+        if (d2 < bestDist2) {
+          bestDist2 = d2;
+          bestArc = tp.second;
+        }
+      }
+      return bestArc;
+    }
+
+    TVector3 delta = position - referencePos;
+    return hasValidTravelDir ? delta.Dot(travelDir) : delta.Mag();
+  };
+
+  // Collect all 3D hit positions from all planes with their path distance from reference.
   std::vector<std::pair<TVector3, double>> hitPositionsWithDistance;
 
   for (int plane = 0; plane < 3; plane++) {
@@ -1472,9 +1519,8 @@ void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitP
         continue; // Skip invalid hits
       }
 
-      TVector3 delta = position - referencePos;
-      double longitudinal = hasValidTravelDir ? delta.Dot(travelDir) : delta.Mag();
-      hitPositionsWithDistance.push_back(std::make_pair(position, longitudinal));
+      const double pathDistance = computePathDistance(position);
+      hitPositionsWithDistance.push_back(std::make_pair(position, pathDistance));
     }
   }
 
@@ -1485,6 +1531,23 @@ void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitP
 
   const double fitWindowStart = std::max(0.0, trackFitDistanceFromStart);
   const double fitWindowEnd = fitWindowStart + std::max(0.0, trackLength);
+
+  // Anchor the fitted line at the physical hit closest to fitWindowStart.
+  TVector3 anchorPoint = referencePos;
+  bool foundAnchor = false;
+  double bestAnchorDelta = 1e30;
+  for (const auto& hitPair : hitPositionsWithDistance) {
+    if (hitPair.second < 0.0) continue;
+    const double delta = std::abs(hitPair.second - fitWindowStart);
+    if (!foundAnchor || delta < bestAnchorDelta) {
+      bestAnchorDelta = delta;
+      anchorPoint = hitPair.first;
+      foundAnchor = true;
+    }
+  }
+  if (!foundAnchor && hasValidTravelDir) {
+    anchorPoint = referencePos + fitWindowStart * travelDir;
+  }
 
   // Fit line to hits in the requested fit window along the travel direction.
   std::vector<TVector3> nearbyHits;
@@ -1551,9 +1614,9 @@ void pdAnaUtils::ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitP
                        eigenVectors(2, maxEigenIndex));
     direction = direction.Unit();
 
-    fitParams[0] = centroid.X();
-    fitParams[1] = centroid.Y();
-    fitParams[2] = centroid.Z();
+    fitParams[0] = anchorPoint.X();
+    fitParams[1] = anchorPoint.Y();
+    fitParams[2] = anchorPoint.Z();
     fitParams[3] = direction.X();
     fitParams[4] = direction.Y();
     fitParams[5] = direction.Z();

@@ -900,6 +900,7 @@ AnaAnnihilationVertexPD::AnaAnnihilationVertexPD(){
   MinimumDistancePandora = kFloatUnassigned;
   MinimumDistanceFit = kFloatUnassigned;
   OriginalDistance = kFloatUnassigned;
+  Degeneracy = kIntUnassigned;
 }
 
 //********************************************************************

@@ -157,13 +157,7 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
 
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
-  // neutralKaonTree::AddNeutralKaonVariables_K0(output(), nK0Max);
-  // neutralKaonTree::AddNeutralKaonVariables_K0Par(output(), nK0Max);
-  // neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(output(), nK0Max);
   neutralKaonTree::AddNeutralKaonVariables_K0Vtx(output(), nK0Max);
-  // neutralKaonTree::AddNeutralKaonVariables_K0Brother(output(), nK0Max);
-  // neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter1(output(), nK0Max);
-  // neutralKaonTree::AddNeutralKaonVariables_K0vtxDaughter2(output(), nK0Max);
 
   // Create EventDisplayData tree now that ana tree is fully defined
   // This prevents index conflicts during validation
@@ -205,7 +199,10 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   // Fill individual candidate data
   if(neutralKaonBox.neutralParticleCandidates.size() > 0){
     for(size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++){
-      neutralKaonTree::FillNeutralKaonVariables(output(), neutralKaonBox.neutralParticleCandidates[i], GetEvent(), GetSpill().Beam);
+      neutralKaonTree::FillNeutralKaonVariables(output(), neutralKaonBox.neutralParticleCandidates[i], GetEvent(),
+                                                neutralKaonBox.nAnnihilationVerticesBeforeFiltering,
+                                                neutralKaonBox.nAnnihilationVerticesAfterFiltering,
+                                                GetSpill().Beam);
       output().IncrementCounter(neutralKaonTree::nk0);
     }
   }

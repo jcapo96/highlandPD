@@ -633,6 +633,7 @@ public:
   Float_t MinimumDistancePandora;
   Float_t MinimumDistanceFit;
   Float_t OriginalDistance;
+  Int_t Degeneracy;
 };
 
 //** ------------------------------------------------------------ */

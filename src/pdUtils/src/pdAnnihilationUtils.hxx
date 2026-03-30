@@ -8,10 +8,15 @@
 namespace pdAnnihilationUtils {
 
   // Create vertices with simplified geometric position assignment.
-  std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double maxDaughterDistance = 5.0);
+  // Optional outputs return counts before/after overlap filtering.
+  std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double maxDaughterDistance = 5.0,
+                                                       Int_t* nBeforeFiltering = nullptr,
+                                                       Int_t* nAfterFiltering = nullptr);
 
   // Common vertex creation logic based only on pair conditions.
-  std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, double maxDaughterDistance);
+  std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, double maxDaughterDistance,
+                                                             Int_t* nBeforeFiltering = nullptr,
+                                                             Int_t* nAfterFiltering = nullptr);
 
   // Fill PositionPandora from the two daughter start-point/direction lines.
   void FillPositionPandora(AnaAnnihilationVertexPD* vertex);

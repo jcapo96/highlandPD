@@ -17,6 +17,8 @@ ToyBoxNeutralKaon::ToyBoxNeutralKaon():ToyBoxPD(){
 
     // Initialize neutral particle candidate counter and index
     nNeutralParticleCandidates = 0;
+    nAnnihilationVerticesBeforeFiltering = 0;
+    nAnnihilationVerticesAfterFiltering = 0;
     BestNeutralParticleCandidateIndex = -1;
 }
 
@@ -54,6 +56,8 @@ void ToyBoxNeutralKaon::ResetBase(){
 
     // Reset neutral particle candidate counter and index
     nNeutralParticleCandidates = 0;
+    nAnnihilationVerticesBeforeFiltering = 0;
+    nAnnihilationVerticesAfterFiltering = 0;
     BestNeutralParticleCandidateIndex = -1;
 
     SoftReset();  // just reset internal stuff

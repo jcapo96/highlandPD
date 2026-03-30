@@ -6,6 +6,62 @@
 #include <unordered_set>
 
 namespace pdAnnihilationUtils {
+namespace {
+
+bool HasValidStartPosition(const AnaParticlePD* particle) {
+  if (!particle) return false;
+  return (particle->PositionStart[0] > -900.0 &&
+          particle->PositionStart[1] > -900.0 &&
+          particle->PositionStart[2] > -900.0);
+}
+
+bool HasValidPosition3(const Float_t pos[3]) {
+  if (!pos) return false;
+  return (pos[0] > -900.0f && pos[1] > -900.0f && pos[2] > -900.0f);
+}
+
+TVector3 GetAnnihilationVertexPositionForDegeneracy(const AnaAnnihilationVertexPD* vertex) {
+  if (vertex && HasValidPosition3(vertex->PositionFit)) {
+    return TVector3(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
+  }
+  if (vertex && HasValidPosition3(vertex->PositionPandora)) {
+    return TVector3(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
+  }
+  return TVector3(-999.0, -999.0, -999.0);
+}
+
+bool IsVertexDaughter(const AnaAnnihilationVertexPD* vertex, const AnaParticlePD* candidate) {
+  if (!vertex || !candidate) return false;
+  for (AnaParticlePD* daughter : vertex->Particles) {
+    if (daughter == candidate) return true;
+  }
+  return false;
+}
+
+Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
+                                         const AnaAnnihilationVertexPD* vertex,
+                                         double annihilationVertexRadius) {
+  if (!vertex || annihilationVertexRadius <= 0.0) return 0;
+
+  const TVector3 vertexPos = GetAnnihilationVertexPositionForDegeneracy(vertex);
+  if (vertexPos.X() < -900.0 || vertexPos.Y() < -900.0 || vertexPos.Z() < -900.0) return 0;
+
+  Int_t degeneracy = 0;
+  for (Int_t p = 0; p < event.nParticles; ++p) {
+    AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
+    if (!HasValidStartPosition(particle)) continue;
+    if (IsVertexDaughter(vertex, particle)) continue;
+
+    const TVector3 startPos(particle->PositionStart[0], particle->PositionStart[1], particle->PositionStart[2]);
+    if ((startPos - vertexPos).Mag() <= annihilationVertexRadius) {
+      ++degeneracy;
+    }
+  }
+
+  return degeneracy;
+}
+
+} // namespace
 
 //***************************************************************
 void FillPositionPandora(AnaAnnihilationVertexPD* vertex) {
@@ -91,18 +147,27 @@ void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, dou
   AnaParticlePD* p2 = vertex->Particles[1];
   if (!p1 || !p2) return;
 
-  TVector3 s1(p1->PositionStart[0], p1->PositionStart[1], p1->PositionStart[2]);
-  TVector3 s2(p2->PositionStart[0], p2->PositionStart[1], p2->PositionStart[2]);
-
   std::vector<double> fit1;
   std::vector<double> fit2;
   pdAnaUtils::ExtrapolateTrack(p1, fit1, trackFitLength, true, trackFitDistanceFromStart);
   pdAnaUtils::ExtrapolateTrack(p2, fit2, trackFitLength, true, trackFitDistanceFromStart);
 
+  TVector3 s1(p1->PositionStart[0], p1->PositionStart[1], p1->PositionStart[2]);
+  TVector3 s2(p2->PositionStart[0], p2->PositionStart[1], p2->PositionStart[2]);
+  const bool fit1Valid = (fit1.size() >= 6 && fit1[0] > -900.0 && fit1[1] > -900.0 && fit1[2] > -900.0);
+  const bool fit2Valid = (fit2.size() >= 6 && fit2[0] > -900.0 && fit2[1] > -900.0 && fit2[2] > -900.0);
+
+  if (fit1Valid) {
+    s1.SetXYZ(fit1[0], fit1[1], fit1[2]);
+  }
+  if (fit2Valid) {
+    s2.SetXYZ(fit2[0], fit2[1], fit2[2]);
+  }
+
   TVector3 d1(p1->DirectionStart[0], p1->DirectionStart[1], p1->DirectionStart[2]);
   TVector3 d2(p2->DirectionStart[0], p2->DirectionStart[1], p2->DirectionStart[2]);
-  if (fit1.size() >= 6) d1.SetXYZ(fit1[3], fit1[4], fit1[5]);
-  if (fit2.size() >= 6) d2.SetXYZ(fit2[3], fit2[4], fit2[5]);
+  if (fit1Valid) d1.SetXYZ(fit1[3], fit1[4], fit1[5]);
+  if (fit2Valid) d2.SetXYZ(fit2[3], fit2[4], fit2[5]);
 
   const double eps = 1e-10;
   if (d1.Mag2() < eps || d2.Mag2() < eps) {
@@ -180,7 +245,9 @@ std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::ve
 }
 
 //***************************************************************
-std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, double maxDaughterDistance) {
+std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, double maxDaughterDistance,
+                                                           Int_t* nBeforeFiltering,
+                                                           Int_t* nAfterFiltering) {
 //***************************************************************
   AnaParticleB** parts = event.Particles;
   int nParts = event.nParticles;
@@ -219,17 +286,28 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       reconstructedVertex->NParticles = reconstructedVertex->Particles.size();
       FillPositionPandora(reconstructedVertex);
       FillPositionFit(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
+      reconstructedVertex->Degeneracy =
+          ComputeAnnihilationVertexDegeneracy(event, reconstructedVertex, maxDaughterDistance);
       reconstructedVertices.push_back(reconstructedVertex);
     }
   }
 
-  return FilterVerticesByMinimumDistanceFit(reconstructedVertices);
+  if (nBeforeFiltering) {
+    *nBeforeFiltering = static_cast<Int_t>(reconstructedVertices.size());
+  }
+  std::vector<AnaAnnihilationVertexPD*> filteredVertices = FilterVerticesByMinimumDistanceFit(reconstructedVertices);
+  if (nAfterFiltering) {
+    *nAfterFiltering = static_cast<Int_t>(filteredVertices.size());
+  }
+  return filteredVertices;
 }
 
 //***************************************************************
-std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double maxDaughterDistance) {
+std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double maxDaughterDistance,
+                                                     Int_t* nBeforeFiltering,
+                                                     Int_t* nAfterFiltering) {
 //***************************************************************
-  return CreateVerticesCommon(event, maxDaughterDistance);
+  return CreateVerticesCommon(event, maxDaughterDistance, nBeforeFiltering, nAfterFiltering);
 }
 
 } // namespace pdAnnihilationUtils

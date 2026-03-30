@@ -130,10 +130,15 @@ bool FindNeutralCandidatesAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
   // Clear existing neutral particle candidates
   box.neutralParticleCandidates.clear();
   box.nNeutralParticleCandidates = 0;
+  box.nAnnihilationVerticesBeforeFiltering = 0;
+  box.nAnnihilationVerticesAfterFiltering = 0;
 
   // Create annihilation vertices only in this branch.
   const double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
-  std::vector<AnaAnnihilationVertexPD*> annihilationVertices = pdAnnihilationUtils::CreateVertices(*static_cast<AnaEventB*>(&event), maxDaughterDistance);
+  std::vector<AnaAnnihilationVertexPD*> annihilationVertices =
+      pdAnnihilationUtils::CreateVertices(*static_cast<AnaEventB*>(&event), maxDaughterDistance,
+                                          &box.nAnnihilationVerticesBeforeFiltering,
+                                          &box.nAnnihilationVerticesAfterFiltering);
 
   // Build one wrapper candidate per annihilation vertex.
   box.neutralParticleCandidates =

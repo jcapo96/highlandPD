@@ -40,6 +40,12 @@ public:
     /// Number of neutral particle candidates
     int nNeutralParticleCandidates;
 
+    /// Number of annihilation vertices before overlap filtering
+    int nAnnihilationVerticesBeforeFiltering;
+
+    /// Number of annihilation vertices after overlap filtering
+    int nAnnihilationVerticesAfterFiltering;
+
     /// Index of best neutral particle candidate
     int BestNeutralParticleCandidateIndex;
 };

@@ -116,7 +116,7 @@ namespace pdAnaUtils{
   /// @param fitParams Output: Vector with 6 parameters [x0, y0, z0, dx, dy, dz] for line fit (point + direction)
   /// @param trackLength Input: Length of track used for line fitting (cm)
   /// @param useStartPosition If true, use start position as reference; if false, use end position
-  /// @param trackFitDistanceFromStart Distance from reference position where fit window begins (cm)
+  /// @param trackFitDistanceFromStart Arc-length distance from reference where fit window begins (cm)
   /// The function fits a 3D line to hits in [trackFitDistanceFromStart, trackFitDistanceFromStart + trackLength]
   void ExtrapolateTrack(AnaParticlePD* part, std::vector<double>& fitParams, double trackLength, bool useStartPosition,
                         double trackFitDistanceFromStart = 0.0);
