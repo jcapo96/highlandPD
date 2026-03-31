@@ -142,7 +142,7 @@ bool FindNeutralCandidatesAction::Apply(AnaEventC& event, ToyBoxB& boxB) const {
 
   // Build one wrapper candidate per annihilation vertex.
   box.neutralParticleCandidates =
-      pdNeutralUtils::CreateAnnihilationOnlyNeutrals(*static_cast<AnaEventB*>(&event), annihilationVertices);
+      pdNeutralUtils::CreateNeutralsFromAnnihilationVertices(*static_cast<AnaEventB*>(&event), annihilationVertices);
   box.nNeutralParticleCandidates = box.neutralParticleCandidates.size();
 
   return true;

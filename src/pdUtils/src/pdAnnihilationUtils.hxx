@@ -27,6 +27,10 @@ namespace pdAnnihilationUtils {
   // Keep vertices with smallest fit minimum distance first, with each particle used at most once.
   std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::vector<AnaAnnihilationVertexPD*>& vertices);
 
+  // Angle (rad) between neutral creation→annihilation axis and reconstructed vertex momentum (Pandora / fit).
+  void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, double trackFitLength,
+                                    double trackFitDistanceFromStart);
+
 }
 
 #endif

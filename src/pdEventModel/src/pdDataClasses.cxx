@@ -901,6 +901,12 @@ AnaAnnihilationVertexPD::AnaAnnihilationVertexPD(){
   MinimumDistanceFit = kFloatUnassigned;
   OriginalDistance = kFloatUnassigned;
   Degeneracy = kIntUnassigned;
+  Momentum = kFloatUnassigned;
+  InvariantMass = kFloatUnassigned;
+  MomentumPandora = kFloatUnassigned;
+  InvariantMassPandora = kFloatUnassigned;
+  MomentumFit = kFloatUnassigned;
+  InvariantMassFit = kFloatUnassigned;
 }
 
 //********************************************************************
@@ -916,19 +922,10 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
   AnnihilationVertex = NULL;
   CreationVertex = NULL;
   Parent = NULL;
-  ImpactParameter = kFloatUnassigned;
-  Mass = kFloatUnassigned;
-  Momentum = kFloatUnassigned;
-  PDG = kIntUnassigned;
-  Lifetime = kFloatUnassigned;
-  DecayLength = kFloatUnassigned;
-  NRecoHitsInVertex = kIntUnassigned;
-  NeutralScore = kFloatUnassigned;
-  HitsAlignment = kFloatUnassigned;
-  NHitsInCylinder = kIntUnassigned;
-  HitsAvgDistance = kFloatUnassigned;
-  HitsRMSDistance = kFloatUnassigned;
-  HitsLongitudinalSpan = kFloatUnassigned;
+  LengthPandora = kFloatUnassigned;
+  LengthFit = kFloatUnassigned;
+  AlignmentPandora = kFloatUnassigned;
+  AlignmentFit = kFloatUnassigned;
 }
 
 //********************************************************************
@@ -945,20 +942,10 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
   AnnihilationVertex = neutralParticle.AnnihilationVertex;
   CreationVertex = neutralParticle.CreationVertex;
   Parent = neutralParticle.Parent;
-  RecoParticle = neutralParticle.RecoParticle;
-  ImpactParameter = neutralParticle.ImpactParameter;
-  Mass = neutralParticle.Mass;
-  Momentum = neutralParticle.Momentum;
-  PDG = neutralParticle.PDG;
-  Lifetime = neutralParticle.Lifetime;
-  DecayLength = neutralParticle.DecayLength;
-  NRecoHitsInVertex = neutralParticle.NRecoHitsInVertex;
-  NeutralScore = neutralParticle.NeutralScore;
-  HitsAlignment = neutralParticle.HitsAlignment;
-  NHitsInCylinder = neutralParticle.NHitsInCylinder;
-  HitsAvgDistance = neutralParticle.HitsAvgDistance;
-  HitsRMSDistance = neutralParticle.HitsRMSDistance;
-  HitsLongitudinalSpan = neutralParticle.HitsLongitudinalSpan;
+  LengthPandora = neutralParticle.LengthPandora;
+  LengthFit = neutralParticle.LengthFit;
+  AlignmentPandora = neutralParticle.AlignmentPandora;
+  AlignmentFit = neutralParticle.AlignmentFit;
 }
 
 //********************************************************************
@@ -973,14 +960,9 @@ void AnaNeutralParticlePD::Print() const{
   std::cout << "AnnihilationVertex:    " << (AnnihilationVertex ? "Yes" : "No") << std::endl;
   std::cout << "CreationVertex:        " << (CreationVertex ? "Yes" : "No") << std::endl;
   std::cout << "Parent:                " << (Parent ? "Yes" : "No") << std::endl;
-  std::cout << "RecoParticle:          " << (RecoParticle ? "Yes" : "No") << std::endl;
-  std::cout << "ImpactParameter:       " << ImpactParameter << " cm" << std::endl;
-  std::cout << "Mass:                  " << Mass << " GeV/c²" << std::endl;
-  std::cout << "Momentum:              " << Momentum << " GeV/c" << std::endl;
-  std::cout << "PDG:                   " << PDG << std::endl;
-  std::cout << "Lifetime:              " << Lifetime << " ns" << std::endl;
-  std::cout << "DecayLength:           " << DecayLength << " cm" << std::endl;
-  std::cout << "NRecoHitsInVertex:     " << NRecoHitsInVertex << std::endl;
-  std::cout << "RecoParticle:          " << (RecoParticle ? "Yes" : "No") << std::endl;
+  std::cout << "LengthPandora:         " << LengthPandora << " cm" << std::endl;
+  std::cout << "LengthFit:             " << LengthFit << " cm" << std::endl;
+  std::cout << "AlignmentPandora:      " << AlignmentPandora << " rad" << std::endl;
+  std::cout << "AlignmentFit:          " << AlignmentFit << " rad" << std::endl;
 }
 

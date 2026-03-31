@@ -1,8 +1,11 @@
 #include "pdAnnihilationUtils.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdMomEstimation.hxx"
+#include "pdMomReconstruction.hxx"
 #include "Parameters.hxx"
 #include "TVector3.h"
 #include <algorithm>
+#include <cmath>
 #include <unordered_set>
 
 namespace pdAnnihilationUtils {
@@ -38,9 +41,120 @@ bool IsVertexDaughter(const AnaAnnihilationVertexPD* vertex, const AnaParticlePD
   return false;
 }
 
+void AssignPionMomentumFromResidualRange(AnaParticlePD* particle) {
+  if (!particle) return;
+  constexpr Float_t kUnassigned = -999.0f;
+  if (particle->Momentum > 0.0f && particle->Momentum != kUnassigned) return;
+
+  // 1) Calorimetric estimate
+  Float_t estimatedMomentum = -999.0f;
+  if (!particle->Hits[2].empty()) {
+    estimatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
+  }
+
+  // 2) Residual-range extension (requested pion method)
+  if (!(std::isfinite(estimatedMomentum) && estimatedMomentum > 0.0f)) {
+    estimatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
+  }
+
+  // 3) Fallback: range-based approximation if extension fails
+  if (!(std::isfinite(estimatedMomentum) && estimatedMomentum > 0.0f) &&
+      particle->Length > 0.0f && particle->Length != kUnassigned) {
+    if (particle->RangeMomentum[1] <= 0.0f || particle->RangeMomentum[1] == kUnassigned) {
+      particle->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 13);
+    }
+    if (particle->RangeMomentum[0] <= 0.0f || particle->RangeMomentum[0] == kUnassigned) {
+      particle->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 2212);
+    }
+
+    if (particle->RangeMomentum[1] > 0.0f && particle->RangeMomentum[0] > 0.0f) {
+      estimatedMomentum = 0.5f * (particle->RangeMomentum[1] + particle->RangeMomentum[0]);
+    } else if (particle->RangeMomentum[1] > 0.0f) {
+      estimatedMomentum = particle->RangeMomentum[1];
+    } else if (particle->RangeMomentum[0] > 0.0f) {
+      estimatedMomentum = particle->RangeMomentum[0];
+    }
+  }
+
+  if (std::isfinite(estimatedMomentum) && estimatedMomentum > 0.0f) {
+    particle->Momentum = estimatedMomentum;
+  }
+}
+
+void DaughterPandoraAndFitDirs(AnaAnnihilationVertexPD* vertex, double trackFitLength, double trackFitDistanceFromStart,
+                               TVector3& dirPandora1, TVector3& dirPandora2, TVector3& dirFit1, TVector3& dirFit2) {
+  AnaParticlePD* daughter1 = vertex->Particles[0];
+  AnaParticlePD* daughter2 = vertex->Particles[1];
+  dirPandora1.SetXYZ(daughter1->DirectionStart[0], daughter1->DirectionStart[1], daughter1->DirectionStart[2]);
+  dirPandora2.SetXYZ(daughter2->DirectionStart[0], daughter2->DirectionStart[1], daughter2->DirectionStart[2]);
+  dirFit1 = dirPandora1;
+  dirFit2 = dirPandora2;
+  std::vector<double> fit1;
+  std::vector<double> fit2;
+  pdAnaUtils::ExtrapolateTrack(daughter1, fit1, trackFitLength, true, trackFitDistanceFromStart);
+  pdAnaUtils::ExtrapolateTrack(daughter2, fit2, trackFitLength, true, trackFitDistanceFromStart);
+  const bool fit1Valid = (fit1.size() >= 6 && fit1[3] > -900.0 && fit1[4] > -900.0 && fit1[5] > -900.0 &&
+                          std::isfinite(fit1[3]) && std::isfinite(fit1[4]) && std::isfinite(fit1[5]));
+  const bool fit2Valid = (fit2.size() >= 6 && fit2[3] > -900.0 && fit2[4] > -900.0 && fit2[5] > -900.0 &&
+                          std::isfinite(fit2[3]) && std::isfinite(fit2[4]) && std::isfinite(fit2[5]));
+  if (fit1Valid) dirFit1.SetXYZ(fit1[3], fit1[4], fit1[5]);
+  if (fit2Valid) dirFit2.SetXYZ(fit2[3], fit2[4], fit2[5]);
+}
+
+bool ComputeVertexKinematicsWithDirections(Float_t p1Mag, Float_t p2Mag, TVector3 dir1, TVector3 dir2,
+                                           Float_t& momentumOut, Float_t& invariantMassOut) {
+  static constexpr Float_t kPionMassGeV = 0.13957f;
+  if (!(std::isfinite(p1Mag) && std::isfinite(p2Mag) && p1Mag > 0.0f && p2Mag > 0.0f)) return false;
+  if (dir1.Mag2() <= 0.0 || dir2.Mag2() <= 0.0) return false;
+
+  dir1 = dir1.Unit();
+  dir2 = dir2.Unit();
+  const TVector3 p1 = p1Mag * dir1;
+  const TVector3 p2 = p2Mag * dir2;
+  const TVector3 pTot = p1 + p2;
+  const double e1 = std::sqrt(static_cast<double>(p1Mag) * p1Mag +
+                              static_cast<double>(kPionMassGeV) * kPionMassGeV);
+  const double e2 = std::sqrt(static_cast<double>(p2Mag) * p2Mag +
+                              static_cast<double>(kPionMassGeV) * kPionMassGeV);
+  const double eTot = e1 + e2;
+  const double m2 = eTot * eTot - pTot.Mag2();
+
+  momentumOut = static_cast<Float_t>(pTot.Mag());
+  invariantMassOut = (m2 > 0.0) ? static_cast<Float_t>(std::sqrt(m2)) : 0.0f;
+  return true;
+}
+
+void FillVertexKinematicsFromDaughters(AnaAnnihilationVertexPD* vertex, double trackFitLength,
+                                       double trackFitDistanceFromStart) {
+  if (!vertex || vertex->Particles.size() < 2) return;
+
+  AnaParticlePD* daughter1 = vertex->Particles[0];
+  AnaParticlePD* daughter2 = vertex->Particles[1];
+  if (!daughter1 || !daughter2) return;
+
+  const Float_t p1Mag = daughter1->Momentum;
+  const Float_t p2Mag = daughter2->Momentum;
+
+  TVector3 dirPandora1, dirPandora2, dirFit1, dirFit2;
+  DaughterPandoraAndFitDirs(vertex, trackFitLength, trackFitDistanceFromStart, dirPandora1, dirPandora2, dirFit1,
+                            dirFit2);
+  ComputeVertexKinematicsWithDirections(p1Mag, p2Mag, dirPandora1, dirPandora2,
+                                        vertex->MomentumPandora, vertex->InvariantMassPandora);
+  ComputeVertexKinematicsWithDirections(p1Mag, p2Mag, dirFit1, dirFit2,
+                                        vertex->MomentumFit, vertex->InvariantMassFit);
+  // Preserve previous API behavior using the fit-based values.
+  vertex->Momentum = vertex->MomentumFit;
+  vertex->InvariantMass = vertex->InvariantMassFit;
+}
+
+Float_t AngleBetweenUnitVectors(const TVector3& a, const TVector3& b) {
+  const double c = std::max(-1.0, std::min(1.0, a.Unit().Dot(b.Unit())));
+  return static_cast<Float_t>(std::acos(c));
+}
+
 Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
-                                         const AnaAnnihilationVertexPD* vertex,
-                                         double annihilationVertexRadius) {
+                                          const AnaAnnihilationVertexPD* vertex,
+                                          double annihilationVertexRadius) {
   if (!vertex || annihilationVertexRadius <= 0.0) return 0;
 
   const TVector3 vertexPos = GetAnnihilationVertexPositionForDegeneracy(vertex);
@@ -62,6 +176,63 @@ Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
 }
 
 } // namespace
+
+//***************************************************************
+void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, double trackFitLength,
+                                  double trackFitDistanceFromStart) {
+//***************************************************************
+  constexpr Float_t kUnassigned = -999.0f;
+  if (!neutral) return;
+  neutral->AlignmentPandora = kUnassigned;
+  neutral->AlignmentFit = kUnassigned;
+
+  AnaAnnihilationVertexPD* vertex = neutral->AnnihilationVertex;
+  if (!vertex || vertex->Particles.size() < 2) return;
+
+  AnaParticlePD* daughter1 = vertex->Particles[0];
+  AnaParticlePD* daughter2 = vertex->Particles[1];
+  if (!daughter1 || !daughter2) return;
+
+  AssignPionMomentumFromResidualRange(daughter1);
+  AssignPionMomentumFromResidualRange(daughter2);
+
+  Float_t p1Mag = daughter1->Momentum;
+  Float_t p2Mag = daughter2->Momentum;
+  if (!(std::isfinite(p1Mag) && std::isfinite(p2Mag) && p1Mag > 0.0f && p2Mag > 0.0f)) {
+    p1Mag = 1.0f;
+    p2Mag = 1.0f;
+  }
+
+  TVector3 dirPandora1, dirPandora2, dirFit1, dirFit2;
+  DaughterPandoraAndFitDirs(vertex, trackFitLength, trackFitDistanceFromStart, dirPandora1, dirPandora2, dirFit1,
+                            dirFit2);
+
+  if (dirPandora1.Mag2() <= 0.0 || dirPandora2.Mag2() <= 0.0) return;
+  if (dirFit1.Mag2() <= 0.0 || dirFit2.Mag2() <= 0.0) return;
+
+  const TVector3 pTotPandora = p1Mag * dirPandora1.Unit() + p2Mag * dirPandora2.Unit();
+  const TVector3 pTotFit = p1Mag * dirFit1.Unit() + p2Mag * dirFit2.Unit();
+  if (pTotPandora.Mag2() <= 0.0 || pTotFit.Mag2() <= 0.0) return;
+
+  const Float_t* s = neutral->PositionStart;
+  if (s[0] <= -900.0f || s[1] <= -900.0f || s[2] <= -900.0f) return;
+
+  if (vertex->PositionPandora[0] > -900.0f && vertex->PositionPandora[1] > -900.0f &&
+      vertex->PositionPandora[2] > -900.0f) {
+    TVector3 uP(vertex->PositionPandora[0] - s[0], vertex->PositionPandora[1] - s[1],
+                  vertex->PositionPandora[2] - s[2]);
+    if (uP.Mag2() > 0.0) {
+      neutral->AlignmentPandora = AngleBetweenUnitVectors(uP, pTotPandora);
+    }
+  }
+
+  if (vertex->PositionFit[0] > -900.0f && vertex->PositionFit[1] > -900.0f && vertex->PositionFit[2] > -900.0f) {
+    TVector3 uF(vertex->PositionFit[0] - s[0], vertex->PositionFit[1] - s[1], vertex->PositionFit[2] - s[2]);
+    if (uF.Mag2() > 0.0) {
+      neutral->AlignmentFit = AngleBetweenUnitVectors(uF, pTotFit);
+    }
+  }
+}
 
 //***************************************************************
 void FillPositionPandora(AnaAnnihilationVertexPD* vertex) {
@@ -284,6 +455,12 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       reconstructedVertex->Particles.push_back(daughter1);
       reconstructedVertex->Particles.push_back(daughter2);
       reconstructedVertex->NParticles = reconstructedVertex->Particles.size();
+
+      // Fill daughter momentum at creation time so downstream users can read particle->Momentum.
+      AssignPionMomentumFromResidualRange(daughter1);
+      AssignPionMomentumFromResidualRange(daughter2);
+      FillVertexKinematicsFromDaughters(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
+
       FillPositionPandora(reconstructedVertex);
       FillPositionFit(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
       reconstructedVertex->Degeneracy =

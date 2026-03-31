@@ -76,6 +76,10 @@ private:
     Float_t _k0_annVtx_closestPt2[kMaxK0][3];     // Closest point on fit line 2
     Float_t _k0_annVtx_pandoraClosestPt1[kMaxK0][3];
     Float_t _k0_annVtx_pandoraClosestPt2[kMaxK0][3];
+    Float_t _k0_annVtx_momentumDirFit[kMaxK0][3];
+    Float_t _k0_trueK0Dir[kMaxK0][3];
+    /// Midpoint of true start positions of the two reco annihilation daughters (MC decay vertex for this topology).
+    Float_t _k0_trueDecayVtxFromRecoDaughters[kMaxK0][3];
 
     // Fitted lines for creation vertex
     Float_t _k0_creationVtx_fitLineBeamStart[kMaxK0][3];   // Beam particle fit line start
@@ -165,6 +169,9 @@ private:
         edk0_annVtx_closestPt2,
         edk0_annVtx_pandoraClosestPt1,
         edk0_annVtx_pandoraClosestPt2,
+        edk0_annVtx_momentumDirFit,
+        edk0_trueK0Dir,
+        edk0_trueDecayVtxFromRecoDaughters,
         edk0_creationVtx_fitLineBeamStart,
         edk0_creationVtx_fitLineBeamDir,
         edk0_creationVtx_fitLineSecondStart,

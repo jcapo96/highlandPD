@@ -634,6 +634,12 @@ public:
   Float_t MinimumDistanceFit;
   Float_t OriginalDistance;
   Int_t Degeneracy;
+  Float_t Momentum;
+  Float_t InvariantMass;
+  Float_t MomentumPandora;
+  Float_t InvariantMassPandora;
+  Float_t MomentumFit;
+  Float_t InvariantMassFit;
 };
 
 //** ------------------------------------------------------------ */
@@ -671,47 +677,17 @@ public:
   /// The parent particle that decayed into this neutral particle
   AnaParticlePD* Parent;
 
-  /// The impact parameter of the neutral particle
-  Float_t ImpactParameter;
+  /// Reconstructed neutral length using annihilation Pandora position.
+  Float_t LengthPandora;
 
-  /// Mass of the neutral particle (in GeV/c²)
-  Float_t Mass;
+  /// Reconstructed neutral length using annihilation Fit position.
+  Float_t LengthFit;
 
-  /// Momentum of the neutral particle (in GeV/c)
-  Float_t Momentum;
+  /// Angle (rad) between neutral axis (creation→annihilation Pandora) and Σp̂ vertex momentum (Pandora dirs).
+  Float_t AlignmentPandora;
 
-  /// PDG code of the neutral particle
-  Int_t PDG;
-
-  /// Lifetime of the neutral particle (in ns)
-  Float_t Lifetime;
-
-  /// Decay length of the neutral particle (in cm)
-  Float_t DecayLength;
-
-  /// Number of reconstructed hits in the vertex
-  Int_t NRecoHitsInVertex;
-
-  /// Score for neutral particle compatibility (lower = more neutral-like)
-  Double_t NeutralScore;
-
-  /// Alignment between hits in cylinder and neutral particle direction (dot product)
-  Double_t HitsAlignment;
-
-  /// Number of hits in cylinder around neutral particle path
-  Int_t NHitsInCylinder;
-
-  /// Average perpendicular distance of hits to neutral particle path
-  Double_t HitsAvgDistance;
-
-  /// RMS of perpendicular distances of hits
-  Double_t HitsRMSDistance;
-
-  /// Longitudinal span fraction (span along path / total length)
-  Double_t HitsLongitudinalSpan;
-
-  /// The reconstructed neutral particle associated with this neutral particle
-  AnaParticlePD* RecoParticle;
+  /// Angle (rad) between neutral axis (creation→annihilation Fit) and Σp̂ vertex momentum (fit dirs).
+  Float_t AlignmentFit;
 
 };
 

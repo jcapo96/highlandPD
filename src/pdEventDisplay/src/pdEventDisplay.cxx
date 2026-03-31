@@ -528,12 +528,12 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
             scene->AddElement(vtx);
         }
 
-        // K0 trajectory (neutral particle path - magenta dashed)
+        // K0 trajectory fallback (neutral particle path - dashed neutral color)
         if (_k0_startPos[i][0] > -900 && _k0_endPos[i][0] > -900) {
             TEveLine* k0 = new TEveLine(Form("K0 #%d Trajectory", i));
             k0->SetPoint(0, _k0_startPos[i][0], _k0_startPos[i][1], _k0_startPos[i][2]);
             k0->SetPoint(1, _k0_endPos[i][0], _k0_endPos[i][1], _k0_endPos[i][2]);
-            k0->SetMainColor(kMagenta);
+            k0->SetMainColor(kGray + 1);
             k0->SetLineWidth(3);
             k0->SetLineStyle(2); // Dashed
             scene->AddElement(k0);

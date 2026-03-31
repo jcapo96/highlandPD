@@ -138,6 +138,19 @@ void neutralKaonTree::WriteHitDistanceProfiles(OutputManager& output){
 }
 
 //********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_K0Particle(OutputManager& output, UInt_t nmax){
+//********************************************************************
+  AddVarMaxSizeVF(output, k0lengthpandora, "Neutral length using annihilation Pandora position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0lengthfit, "Neutral length using annihilation Fit position", nk0, nmax);
+  AddVarMaxSizeVF(output, k0alignmentpandora,
+                   "K0 alignment (Pandora): angle (rad) between creation→annihilation(Pandora) and vertex Σp (Pandora dirs)", nk0,
+                   nmax);
+  AddVarMaxSizeVF(output, k0alignmentfit,
+                   "K0 alignment (Fit): angle (rad) between creation→annihilation(Fit) and vertex Σp (fit dirs)", nk0,
+                   nmax);
+}
+
+//********************************************************************
 void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax){
 
   AddVarMaxSizeVI(output, k0nvtxbeforefiltering, "Number of annihilation vertices before overlap filtering", nk0, nmax);
@@ -163,6 +176,12 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_
   AddVarMaxSizeVF(output, k0vtxfitresidualx, "Vertex Fit residual x_reco - x_true", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxfitresidualy, "Vertex Fit residual y_reco - y_true", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxfitresidualz, "Vertex Fit residual z_reco - z_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxmomentum, "K0 annihilation-vertex total momentum", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxinvariantmass, "K0 annihilation-vertex invariant mass (pion hypothesis)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxmomentumpandora, "K0 vertex momentum using Pandora directions", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxinvariantmasspandora, "K0 vertex invariant mass using Pandora directions", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxmomentumfit, "K0 vertex momentum using fit directions", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxinvariantmassfit, "K0 vertex invariant mass using fit directions", nk0, nmax);
 }
 
 //********************************************************************
@@ -172,6 +191,7 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
   (void)beam;
   output.FillVectorVar(k0nvtxbeforefiltering, nVerticesBeforeFiltering);
   output.FillVectorVar(k0nvtxafterfiltering, nVerticesAfterFiltering);
+  neutralKaonTree::FillNeutralKaonVariables_K0Particle(output, candidate);
 
   if(candidate){
     AnaAnnihilationVertexPD* vertex = candidate->AnnihilationVertex;
@@ -194,6 +214,28 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
 //********************************************************************
 
 //********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_K0Particle(OutputManager& output, AnaNeutralParticlePD* candidate){
+//********************************************************************
+  Float_t lengthPandora = -999.0f;
+  Float_t lengthFit = -999.0f;
+  Float_t alignmentPandora = -999.0f;
+  Float_t alignmentFit = -999.0f;
+
+  if (candidate) {
+    lengthPandora = candidate->LengthPandora;
+    lengthFit = candidate->LengthFit;
+    alignmentPandora = candidate->AlignmentPandora;
+    alignmentFit = candidate->AlignmentFit;
+  }
+
+  output.FillVectorVar(k0lengthpandora, lengthPandora);
+  output.FillVectorVar(k0lengthfit, lengthFit);
+  output.FillVectorVar(k0alignmentpandora, alignmentPandora);
+  output.FillVectorVar(k0alignmentfit, alignmentFit);
+}
+
+//********************************************************************
+//********************************************************************
 void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex){
     // Fill all variables for a single K0 vertex
   Float_t invalidPos[3] = {-999.0f, -999.0f, -999.0f};
@@ -214,6 +256,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
   Float_t k0vtxfitresidualx_val = -999.0f;
   Float_t k0vtxfitresidualy_val = -999.0f;
   Float_t k0vtxfitresidualz_val = -999.0f;
+  Float_t k0vtxmomentum_val = -999.0f;
+  Float_t k0vtxinvariantmass_val = -999.0f;
+  Float_t k0vtxmomentumpandora_val = -999.0f;
+  Float_t k0vtxinvariantmasspandora_val = -999.0f;
+  Float_t k0vtxmomentumfit_val = -999.0f;
+  Float_t k0vtxinvariantmassfit_val = -999.0f;
 
   if(vertex){
     k0vtxoriginaldistance_val = vertex->OriginalDistance;
@@ -227,6 +275,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
       k0vtxfity_val = vertex->PositionFit[1];
       k0vtxfitz_val = vertex->PositionFit[2];
     }
+    k0vtxmomentum_val = vertex->Momentum;
+    k0vtxinvariantmass_val = vertex->InvariantMass;
+    k0vtxmomentumpandora_val = vertex->MomentumPandora;
+    k0vtxinvariantmasspandora_val = vertex->InvariantMassPandora;
+    k0vtxmomentumfit_val = vertex->MomentumFit;
+    k0vtxinvariantmassfit_val = vertex->InvariantMassFit;
 
     if(vertex->Particles.size() >= 2) {
       AnaParticlePD* recoParticle1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
@@ -295,6 +349,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
   output.FillVectorVar(k0vtxfitresidualx, k0vtxfitresidualx_val);
   output.FillVectorVar(k0vtxfitresidualy, k0vtxfitresidualy_val);
   output.FillVectorVar(k0vtxfitresidualz, k0vtxfitresidualz_val);
+  output.FillVectorVar(k0vtxmomentum, k0vtxmomentum_val);
+  output.FillVectorVar(k0vtxinvariantmass, k0vtxinvariantmass_val);
+  output.FillVectorVar(k0vtxmomentumpandora, k0vtxmomentumpandora_val);
+  output.FillVectorVar(k0vtxinvariantmasspandora, k0vtxinvariantmasspandora_val);
+  output.FillVectorVar(k0vtxmomentumfit, k0vtxmomentumfit_val);
+  output.FillVectorVar(k0vtxinvariantmassfit, k0vtxinvariantmassfit_val);
 }
 
 //********************************************************************
