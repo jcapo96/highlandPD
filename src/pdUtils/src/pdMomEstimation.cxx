@@ -16,6 +16,38 @@
 
 namespace pdMomEstimation {
 
+namespace {
+bool LoadPionTemplates(TProfile*& pionDEdxTemplate, TGraph*& pionRangeEnergyGraph) {
+  if (!pionDEdxTemplate) {
+    TFile* templateFile = TFile::Open((std::string(getenv("PDUTILSROOT")) +
+                                      "/data/dEdxrestemplates.root").c_str(), "READ");
+    if (templateFile && !templateFile->IsZombie()) {
+      pionDEdxTemplate = (TProfile*)templateFile->Get("dedx_range_pi");
+      if (pionDEdxTemplate) {
+        pionDEdxTemplate->SetDirectory(0);
+      }
+      templateFile->Close();
+      delete templateFile;
+    }
+  }
+
+  if (!pionRangeEnergyGraph) {
+    TFile* rangeFile = TFile::Open((std::string(getenv("PDUTILSROOT")) +
+                                   "/data/ke_vs_range.root").c_str(), "READ");
+    if (rangeFile && !rangeFile->IsZombie()) {
+      TGraph* tempGraph = (TGraph*)rangeFile->Get("pion");
+      if (tempGraph) {
+        pionRangeEnergyGraph = (TGraph*)tempGraph->Clone("pionRangeEnergyGraph_clone");
+      }
+      rangeFile->Close();
+      delete rangeFile;
+    }
+  }
+
+  return (pionDEdxTemplate && pionRangeEnergyGraph);
+}
+} // namespace
+
 //***************************************************************
 double CalculateExtensionChi2(const std::vector<double>& measuredDeDx,
                              const std::vector<double>& measuredRR,
@@ -203,62 +235,57 @@ ExtensionFitResult FitTrackLengthExtension(AnaParticlePD* particle,
 //***************************************************************
 Float_t EstimateMomentumWithExtension(AnaParticlePD* particle, int pdg) {
 //***************************************************************
-
-  if (!particle || pdg != 211) {
-    // Only implemented for pions currently
-    return -999.0;
-  }
-
-  // Load pion dE/dx template from dEdxrestemplates.root
-  static TProfile* pionDEdxTemplate = nullptr;
-  static TGraph* pionRangeEnergyGraph = nullptr;
-
-  if (!pionDEdxTemplate) {
-    TFile* templateFile = TFile::Open((std::string(getenv("PDUTILSROOT")) +
-                                      "/data/dEdxrestemplates.root").c_str(), "READ");
-    if (templateFile && !templateFile->IsZombie()) {
-      pionDEdxTemplate = (TProfile*)templateFile->Get("dedx_range_pi");
-      if (pionDEdxTemplate) {
-        pionDEdxTemplate->SetDirectory(0); // Detach from file
-      }
-      templateFile->Close();
-      delete templateFile;
-    }
-  }
-
-  if (!pionRangeEnergyGraph) {
-    TFile* rangeFile = TFile::Open((std::string(getenv("PDUTILSROOT")) +
-                                   "/data/ke_vs_range.root").c_str(), "READ");
-    if (rangeFile && !rangeFile->IsZombie()) {
-      TGraph* tempGraph = (TGraph*)rangeFile->Get("pion");
-      if (tempGraph) {
-        // Clone the graph so it persists after file is closed
-        pionRangeEnergyGraph = (TGraph*)tempGraph->Clone("pionRangeEnergyGraph_clone");
-      }
-      rangeFile->Close();
-      delete rangeFile;
-    }
-  }
-
-  // Check if templates loaded successfully
-  if (!pionDEdxTemplate || !pionRangeEnergyGraph) {
-    std::cout << "WARNING: Failed to load pion templates for momentum estimation" << std::endl;
-    return -999.0;
-  }
-
-  // Pion mass in MeV
-  const double pionMass = 139.57;
-
-  // Perform track-length extension fit
-  ExtensionFitResult result = FitTrackLengthExtension(particle, pionDEdxTemplate,
-                                                      pionRangeEnergyGraph, pionMass);
-
-  // Return momentum if fit was successful
+  ExtensionFitResult result = EstimateMomentumWithExtensionDetailed(particle, pdg);
   if (result.valid) {
     return static_cast<Float_t>(result.momentum);
   }
-
   return -999.0;
+}
+
+//***************************************************************
+Float_t EstimateMomentumFromPionRange(AnaParticlePD* particle) {
+//***************************************************************
+  if (!particle) return -999.0f;
+  if (!(particle->Length > 0.0f) || particle->Length == -999.0f) return -999.0f;
+
+  static TProfile* pionDEdxTemplate = nullptr;
+  static TGraph* pionRangeEnergyGraph = nullptr;
+  static constexpr double pionMass = 139.57; // MeV/c^2
+  if (!LoadPionTemplates(pionDEdxTemplate, pionRangeEnergyGraph)) {
+    return -999.0f;
+  }
+
+  const double momentum = RangeToMomentum(static_cast<double>(particle->Length), 211,
+                                          pionRangeEnergyGraph, pionMass);
+  if (!(momentum > 0.0) || !std::isfinite(momentum)) return -999.0f;
+  return static_cast<Float_t>(momentum);
+}
+
+//***************************************************************
+ExtensionFitResult EstimateMomentumWithExtensionDetailed(AnaParticlePD* particle, int pdg) {
+//***************************************************************
+  ExtensionFitResult invalidResult;
+  invalidResult.extension = -999;
+  invalidResult.effectiveRange = -999;
+  invalidResult.momentum = -999;
+  invalidResult.chi2 = 9999;
+  invalidResult.ndf = 0;
+  invalidResult.valid = false;
+
+  if (!particle || pdg != 211) {
+    // Only implemented for pions currently
+    return invalidResult;
+  }
+
+  static TProfile* pionDEdxTemplate = nullptr;
+  static TGraph* pionRangeEnergyGraph = nullptr;
+  if (!LoadPionTemplates(pionDEdxTemplate, pionRangeEnergyGraph)) {
+    std::cout << "WARNING: Failed to load pion templates for momentum estimation" << std::endl;
+    return invalidResult;
+  }
+
+  const double pionMass = 139.57;
+  return FitTrackLengthExtension(particle, pionDEdxTemplate, pionRangeEnergyGraph, pionMass);
 }
 
 } // namespace pdMomEstimation

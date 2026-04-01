@@ -799,17 +799,17 @@ void AnaVertexPD::EnsureParticleMomentum(){
 
     Float_t calculatedMomentum = -999;
 
-    // Priority 1: Calorimetric method (best for interacting pions from K0 decay)
-    // Sums all deposited energy from particle + daughters using pitch-corrected path lengths
+    // Priority 1: Track-length extension method
+    // Fits dE/dx-shape vs residual range to estimate the missing length.
     if (!particle->Hits[2].empty()) {
-      calculatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
+      calculatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
     }
 
-    // Priority 2: Track-length extension method (fallback for through-going pions)
-    // This method fits the dE/dx shape to estimate how much further the particle would travel
+    // Priority 2: Calorimetric method
+    // Sums deposited energy from particle and descendants.
     if (calculatedMomentum <= 0 || calculatedMomentum == -999) {
-      if (!particle->Hits[2].empty() && particle->Length > 0) {
-        calculatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
+      if (!particle->Hits[2].empty()) {
+        calculatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
       }
     }
 
@@ -907,6 +907,18 @@ AnaAnnihilationVertexPD::AnaAnnihilationVertexPD(){
   InvariantMassPandora = kFloatUnassigned;
   MomentumFit = kFloatUnassigned;
   InvariantMassFit = kFloatUnassigned;
+  Daughter1MomentumMethod = -1;
+  Daughter2MomentumMethod = -1;
+  Daughter1HasPreexistingMomentum = -1;
+  Daughter2HasPreexistingMomentum = -1;
+  Daughter1ExtensionAttempted = -1;
+  Daughter2ExtensionAttempted = -1;
+  Daughter1ExtensionValid = -1;
+  Daughter2ExtensionValid = -1;
+  Daughter1ExtensionChi2Ndf = kFloatUnassigned;
+  Daughter2ExtensionChi2Ndf = kFloatUnassigned;
+  Daughter1ExtensionNValidHits = -1;
+  Daughter2ExtensionNValidHits = -1;
 }
 
 //********************************************************************

@@ -5,6 +5,77 @@ If needed, you can ask to remove any item by its `ID`.
 
 ---
 
+## ID: NK-MOMDIAG-003
+
+- **Title**: Temporary daughter momentum-method diagnostics in K0 vertex microtree
+- **Date**: 2026-03-31
+- **Status**: Active (tentative)
+- **Intent**: Diagnose why extension-fit momentum assignment is rare by exposing per-daughter decision and fit-quality diagnostics.
+
+### What it does
+
+Adds temporary per-vertex/per-daughter diagnostic branches:
+
+- Existing method flags:
+  - `k0vtxdaughter1momentummethod`
+  - `k0vtxdaughter2momentummethod`
+- New diagnostics:
+  - `k0vtxdau1haspreexistingmomentum`, `k0vtxdau2haspreexistingmomentum`
+  - `k0vtxdau1extensionattempted`, `k0vtxdau2extensionattempted`
+  - `k0vtxdau1extensionvalid`, `k0vtxdau2extensionvalid`
+  - `k0vtxdau1extensionchi2ndf`, `k0vtxdau2extensionchi2ndf`
+  - `k0vtxdau1extensionnvalidhits`, `k0vtxdau2extensionnvalidhits`
+
+### Where implemented
+
+1. `highlandPD/src/pdUtils/src/pdAnnihilationUtils.cxx`
+   - Captures and stores daughter-level extension diagnostics while assigning momentum.
+2. `highlandPD/src/pdUtils/src/pdMomEstimation.hxx`
+   - Added `EstimateMomentumWithExtensionDetailed(...)` declaration.
+3. `highlandPD/src/pdUtils/src/pdMomEstimation.cxx`
+   - Added `EstimateMomentumWithExtensionDetailed(...)` implementation and shared template-loading helper.
+4. `highlandPD/src/pdEventModel/src/pdDataClasses.hxx`
+   - Added new diagnostic members to `AnaAnnihilationVertexPD`.
+5. `highlandPD/src/pdEventModel/src/pdDataClasses.cxx`
+   - Initializes new diagnostic members.
+6. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.hxx`
+   - Added new microtree enum entries.
+7. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.cxx`
+   - Added branch definitions and fill logic for all diagnostics.
+
+### Important notes
+
+- These branches are diagnostic-only and intended for short-term validation.
+- `extensionchi2ndf` is set to `-999` when `ndf <= 0` or extension was not attempted.
+
+### How to test quickly
+
+1. Run:
+   - `neutralKaon.exe -o test.root minitree_pure_signal.root`
+2. In ROOT:
+   - `root -l test.root`
+   - `default->Draw("k0vtxdaughter1momentummethod")`
+   - `default->Draw("k0vtxdau1extensionvalid:k0vtxdau1extensionattempted","","colz")`
+   - `default->Draw("k0vtxdau1extensionchi2ndf","k0vtxdau1extensionattempted==1")`
+
+### Rollback plan (full removal)
+
+1. Remove diagnostic members from:
+   - `highlandPD/src/pdEventModel/src/pdDataClasses.hxx`
+   - `highlandPD/src/pdEventModel/src/pdDataClasses.cxx`
+2. Remove diagnostic capture logic from:
+   - `highlandPD/src/pdUtils/src/pdAnnihilationUtils.cxx`
+3. Remove detailed extension API if no longer needed:
+   - `highlandPD/src/pdUtils/src/pdMomEstimation.hxx`
+   - `highlandPD/src/pdUtils/src/pdMomEstimation.cxx`
+4. Remove diagnostic microtree vars from:
+   - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.hxx`
+   - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.cxx`
+5. Rebuild/install:
+   - `cmake --build . -j8 && cmake --install .` (from `highlandPD/build`)
+
+---
+
 ## ID: NK-XBIAS-001
 
 - **Title**: Global reconstructed X shift using `VertexXBiasCorrectionCm`
@@ -101,6 +172,7 @@ Objects:
 ### Important notes
 
 - Histograms are external ROOT objects (not microtree branches).
+- **Related**: signal-only dE/dx vs residual range and per-track graphs are documented in **`NK-DEDX-RR-004`** (same fill gate and same `Finalize` write path).
 - Current traveled-distance binning is variable:
   - `0-30 cm`: `2 cm` bins
   - `30-500 cm`: `5 cm` bins
@@ -132,6 +204,94 @@ Objects:
    - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysis.hxx`
    - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysis.cxx`
 4. Rebuild/install:
+   - `cmake --build . -j8 && cmake --install .` (from `highlandPD/build`)
+
+---
+
+## ID: NK-DEDX-RR-004
+
+- **Title**: Signal-only dE/dx vs residual range diagnostics and temporary Bragg scoring prototype
+- **Date**: 2026-03-31
+- **Status**: Removed
+- **Intent**: Study stopping vs interacting pions at the annihilation vertex using collection-plane hit dE/dx vs residual range and temporary Bragg-style discriminators.
+
+### What it does
+
+- Historical note only: this item introduced and iterated several Bragg-score definitions and temporary graph outputs.
+- Current code keeps only signal-gated dE/dx-vs-RR `TH2F` diagnostics by true daughter end process (2, 9, 10, 11); Bragg-score branches and related logic were removed.
+
+### Where implemented
+
+1. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysisUtils.hxx` / `.cxx`
+   - `GetSignalTrueParent(...)`: refactored signal parent access; `IsSignalCandidate` calls it.
+2. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.cxx`
+   - Active: signal-gated dE/dx-vs-RR `TH2F` by true daughter end process.
+   - Removed: Bragg-score helpers/branches and per-track `TGraph` outputs.
+3. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonTree.hxx`
+   - Active enum set after Bragg removal.
+4. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysis.cxx`
+   - `Finalize()` calls `neutralKaonTree::WriteHitDistanceProfiles(output())`.
+
+### Important notes
+
+- Marked `Removed` to avoid confusion with current tree content.
+
+### How to test quickly
+
+1. Confirm Bragg branches are absent in new files and only dE/dx-vs-RR process histograms remain.
+
+### Rollback plan (full removal)
+
+N/A (already removed).
+
+---
+
+## ID: NK-SIGNAL-SPLIT-005
+
+- **Title**: Signal category split by stopping behavior of true pion daughters
+- **Date**: 2026-04-01
+- **Status**: Active (tentative)
+- **Intent**: Keep baseline signal definition while exposing a stopping/interacting signal subtype split for quick studies and plotting.
+
+### What it does
+
+Within the existing `signal` object category, signal candidates are split into:
+
+- `two_stopping` (code `1`): both daughters have `ProcessEnd` in `{2, 11}`
+- `one_stopping` (code `5`): exactly one daughter has `ProcessEnd` in `{2, 11}`
+- `interacting` (code `6`): neither daughter has `ProcessEnd` in `{2, 11}`
+
+Non-signal categories remain:
+- `background` (`2`)
+- `legit_vertex_2body` (`3`)
+- `legit_vertex_multibody` (`4`)
+
+### Where implemented
+
+1. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysisUtils.cxx`
+   - Added stopping-process helper and subtype code assignment in `FillSignalCandidateCategory(...)`.
+   - Updated `AddSignalCandidateCategory()` labels/codes/colors.
+2. `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysisUtils.hxx`
+   - No API expansion needed; behavior changed in implementation only.
+
+### Important notes
+
+- Base signal definition (`IsSignalCandidate`) is unchanged.
+- Split uses true daughter end-process info and is intended for classification/validation studies.
+
+### How to test quickly
+
+1. Run:
+   - `neutralKaon.exe -o test.root minitree_pure_signal.root`
+2. In ROOT:
+   - `draw.Draw(ana, "signal", 10, 0, 10, "signal", "")`
+   - Check bins corresponding to codes `1,5,6` are populated as expected.
+
+### Rollback plan
+
+1. Revert `AddSignalCandidateCategory()` arrays and subtype assignment in:
+   - `highlandPD/src/neutralKaonAnalysis/src/neutralKaonAnalysisUtils.cxx`
+2. Rebuild/install:
    - `cmake --build . -j8 && cmake --install .` (from `highlandPD/build`)
 
 ---

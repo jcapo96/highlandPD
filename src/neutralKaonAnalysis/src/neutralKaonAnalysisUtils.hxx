@@ -20,6 +20,9 @@ namespace neutralKaonAnaUtils{
   // Signal definition used for categories and event-display filtering.
   bool IsSignalCandidate(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
 
+  // When IsSignalCandidate is satisfied, returns the true K0 parent; otherwise nullptr.
+  AnaTrueParticlePD* GetSignalTrueParent(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
+
   // Fill Custom categories
   void FillSignalCandidateCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
 }

@@ -640,6 +640,21 @@ public:
   Float_t InvariantMassPandora;
   Float_t MomentumFit;
   Float_t InvariantMassFit;
+  // Daughter momentum method flags (for Particles[0] and Particles[1]):
+  // -1: unassigned, 0: pre-existing, 1: calorimetric, 2: residual-range extension,
+  // 3: range-based fallback, 4: failed
+  Int_t Daughter1MomentumMethod;
+  Int_t Daughter2MomentumMethod;
+  Int_t Daughter1HasPreexistingMomentum;
+  Int_t Daughter2HasPreexistingMomentum;
+  Int_t Daughter1ExtensionAttempted;
+  Int_t Daughter2ExtensionAttempted;
+  Int_t Daughter1ExtensionValid;
+  Int_t Daughter2ExtensionValid;
+  Float_t Daughter1ExtensionChi2Ndf;
+  Float_t Daughter2ExtensionChi2Ndf;
+  Int_t Daughter1ExtensionNValidHits;
+  Int_t Daughter2ExtensionNValidHits;
 };
 
 //** ------------------------------------------------------------ */

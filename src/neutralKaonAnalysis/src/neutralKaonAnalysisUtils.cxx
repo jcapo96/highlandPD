@@ -41,6 +41,24 @@ AnaTrueParticlePD* GetSharedTrueParent(AnaNeutralParticlePD* neutralParticle, co
   return pdAnaUtils::GetTrueParticle(const_cast<AnaEventB*>(&event), trueDaughter1->ParentID);
 }
 
+bool IsStoppingEndProcess(Int_t proc) {
+  return (proc == 2 || proc == 11);
+}
+
+int GetSignalStoppingSubtypeCode(AnaNeutralParticlePD* neutralParticle) {
+  AnaTrueParticlePD* trueDaughter1 = nullptr;
+  AnaTrueParticlePD* trueDaughter2 = nullptr;
+  if (!GetRecoDaughterTrueObjects(neutralParticle, trueDaughter1, trueDaughter2)) {
+    return 2; // background fallback
+  }
+
+  const int nStopping = static_cast<int>(IsStoppingEndProcess(trueDaughter1->ProcessEnd)) +
+                        static_cast<int>(IsStoppingEndProcess(trueDaughter2->ProcessEnd));
+  if (nStopping == 2) return 1; // two-stopping
+  if (nStopping == 1) return 5; // one-stopping
+  return 6;                     // interacting (signal with no stopping daughters)
+}
+
 }
 
 //********************************************************************
@@ -56,13 +74,15 @@ void neutralKaonAnaUtils::AddCustomCategories(){
 void neutralKaonAnaUtils::AddSignalCandidateCategory(){
 
   std::string part_types[] = {
-    "signal",
+    "two_stopping",
+    "one_stopping",
+    "interacting",
     "legit_vertex_2body",
     "legit_vertex_multibody",
     "background",
     NAMEOTHER};
-  int part_codes[]         = {1, 3, 4, 2, CATOTHER};
-  int part_colors[]        = {2, 4, 7, 6, COLOTHER};
+  int part_codes[]         = {1, 5, 6, 3, 4, 2, CATOTHER};
+  int part_colors[]        = {2, 8, 6, 4, 7, 46, COLOTHER};
   const int NPART = sizeof(part_types)/sizeof(part_types[0]);
 
   std::reverse(part_types,  part_types  + NPART);
@@ -92,32 +112,44 @@ bool neutralKaonAnaUtils::IsLegitVertexCandidate(AnaNeutralParticlePD* neutralPa
 }
 
 //********************************************************************
-bool neutralKaonAnaUtils::IsSignalCandidate(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event){
+AnaTrueParticlePD* neutralKaonAnaUtils::GetSignalTrueParent(AnaNeutralParticlePD* neutralParticle,
+                                                            const AnaEventB& event){
 //********************************************************************
 
   if(!IsLegitVertexCandidate(neutralParticle)) {
-    return false;
+    return nullptr;
   }
 
   AnaTrueParticlePD* trueDaughter1 = nullptr;
   AnaTrueParticlePD* trueDaughter2 = nullptr;
   if(!GetRecoDaughterTrueObjects(neutralParticle, trueDaughter1, trueDaughter2)) {
-    return false;
+    return nullptr;
   }
 
   const bool arePions =
       ((trueDaughter1->PDG == 211 && trueDaughter2->PDG == -211) ||
        (trueDaughter1->PDG == -211 && trueDaughter2->PDG == 211));
   if(!arePions) {
-    return false;
+    return nullptr;
   }
 
   AnaTrueParticlePD* trueParent = GetSharedTrueParent(neutralParticle, event);
   if(!trueParent) {
-    return false;
+    return nullptr;
   }
 
-  return (trueParent->PDG == 310 && trueParent->ProcessEnd == 2);
+  if(!(trueParent->PDG == 310 && trueParent->ProcessEnd == 2)) {
+    return nullptr;
+  }
+
+  return trueParent;
+}
+
+//********************************************************************
+bool neutralKaonAnaUtils::IsSignalCandidate(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event){
+//********************************************************************
+
+  return GetSignalTrueParent(neutralParticle, event) != nullptr;
 }
 
 //********************************************************************
@@ -147,7 +179,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
 
   int signalCode = 2;
   if(IsSignalCandidate(neutralParticle, event)) {
-    signalCode = 1;
+    signalCode = GetSignalStoppingSubtypeCode(neutralParticle);
   } else if(IsLegitVertexFromTwoBodyDecay(neutralParticle, event)) {
     signalCode = 3;
   } else if(IsLegitVertexFromMultiBodyDecay(neutralParticle, event)) {

@@ -41,44 +41,57 @@ bool IsVertexDaughter(const AnaAnnihilationVertexPD* vertex, const AnaParticlePD
   return false;
 }
 
-void AssignPionMomentumFromResidualRange(AnaParticlePD* particle) {
-  if (!particle) return;
-  constexpr Float_t kUnassigned = -999.0f;
-  if (particle->Momentum > 0.0f && particle->Momentum != kUnassigned) return;
+enum DaughterMomentumMethod {
+  kMomMethodUnassigned = -1,
+  kMomMethodPionRangeStopping = 0,
+  kMomMethodCalorimetric = 1,
+  kMomMethodFailed = 2
+};
 
-  // 1) Calorimetric estimate
+struct DaughterMomentumDebugInfo {
+  Int_t hasPreexistingMomentum = -1;
+  Int_t extensionAttempted = 0;
+  Int_t extensionValid = 0;
+  Float_t extensionChi2Ndf = -999.0f;
+  Int_t extensionNValidHits = 0;
+};
+
+Int_t CountValidCollectionPlaneHits(const AnaParticlePD* particle) {
+  if (!particle) return 0;
+  Int_t count = 0;
+  for (size_t i = 0; i < particle->Hits[2].size(); ++i) {
+    const AnaHitPD& hit = particle->Hits[2][i];
+    if (hit.dEdx > 0.0f && hit.dEdx != -999.0f && hit.dEdx < 1000.0f) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomentumDebugInfo* debugInfo = nullptr) {
+  if (!particle) return kMomMethodUnassigned;
+  if (debugInfo) {
+    debugInfo->hasPreexistingMomentum = -1;
+    debugInfo->extensionAttempted = 0;
+    debugInfo->extensionValid = 0;
+    debugInfo->extensionChi2Ndf = -999.0f;
+    debugInfo->extensionNValidHits = CountValidCollectionPlaneHits(particle);
+  }
+
   Float_t estimatedMomentum = -999.0f;
-  if (!particle->Hits[2].empty()) {
+  if (particle->Daughters.empty()) {
+    // Stopping-like case.
+    estimatedMomentum = pdMomEstimation::EstimateMomentumFromPionRange(particle);
+  } else {
+    // Interacting/branched case: calorimetric momentum includes descendants.
     estimatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
-  }
-
-  // 2) Residual-range extension (requested pion method)
-  if (!(std::isfinite(estimatedMomentum) && estimatedMomentum > 0.0f)) {
-    estimatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
-  }
-
-  // 3) Fallback: range-based approximation if extension fails
-  if (!(std::isfinite(estimatedMomentum) && estimatedMomentum > 0.0f) &&
-      particle->Length > 0.0f && particle->Length != kUnassigned) {
-    if (particle->RangeMomentum[1] <= 0.0f || particle->RangeMomentum[1] == kUnassigned) {
-      particle->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 13);
-    }
-    if (particle->RangeMomentum[0] <= 0.0f || particle->RangeMomentum[0] == kUnassigned) {
-      particle->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 2212);
-    }
-
-    if (particle->RangeMomentum[1] > 0.0f && particle->RangeMomentum[0] > 0.0f) {
-      estimatedMomentum = 0.5f * (particle->RangeMomentum[1] + particle->RangeMomentum[0]);
-    } else if (particle->RangeMomentum[1] > 0.0f) {
-      estimatedMomentum = particle->RangeMomentum[1];
-    } else if (particle->RangeMomentum[0] > 0.0f) {
-      estimatedMomentum = particle->RangeMomentum[0];
-    }
   }
 
   if (std::isfinite(estimatedMomentum) && estimatedMomentum > 0.0f) {
     particle->Momentum = estimatedMomentum;
+    return particle->Daughters.empty() ? kMomMethodPionRangeStopping : kMomMethodCalorimetric;
   }
+  return kMomMethodFailed;
 }
 
 void DaughterPandoraAndFitDirs(AnaAnnihilationVertexPD* vertex, double trackFitLength, double trackFitDistanceFromStart,
@@ -193,8 +206,8 @@ void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, double trackFit
   AnaParticlePD* daughter2 = vertex->Particles[1];
   if (!daughter1 || !daughter2) return;
 
-  AssignPionMomentumFromResidualRange(daughter1);
-  AssignPionMomentumFromResidualRange(daughter2);
+  (void)AssignPionMomentumFromResidualRange(daughter1);
+  (void)AssignPionMomentumFromResidualRange(daughter2);
 
   Float_t p1Mag = daughter1->Momentum;
   Float_t p2Mag = daughter2->Momentum;
@@ -457,8 +470,20 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       reconstructedVertex->NParticles = reconstructedVertex->Particles.size();
 
       // Fill daughter momentum at creation time so downstream users can read particle->Momentum.
-      AssignPionMomentumFromResidualRange(daughter1);
-      AssignPionMomentumFromResidualRange(daughter2);
+      DaughterMomentumDebugInfo daughter1Debug;
+      DaughterMomentumDebugInfo daughter2Debug;
+      reconstructedVertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
+      reconstructedVertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+      reconstructedVertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
+      reconstructedVertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
+      reconstructedVertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;
+      reconstructedVertex->Daughter2ExtensionAttempted = daughter2Debug.extensionAttempted;
+      reconstructedVertex->Daughter1ExtensionValid = daughter1Debug.extensionValid;
+      reconstructedVertex->Daughter2ExtensionValid = daughter2Debug.extensionValid;
+      reconstructedVertex->Daughter1ExtensionChi2Ndf = daughter1Debug.extensionChi2Ndf;
+      reconstructedVertex->Daughter2ExtensionChi2Ndf = daughter2Debug.extensionChi2Ndf;
+      reconstructedVertex->Daughter1ExtensionNValidHits = daughter1Debug.extensionNValidHits;
+      reconstructedVertex->Daughter2ExtensionNValidHits = daughter2Debug.extensionNValidHits;
       FillVertexKinematicsFromDaughters(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
 
       FillPositionPandora(reconstructedVertex);

@@ -1390,8 +1390,55 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     tree->SetBranchAddress("ED_trueK0_siblingEndPos", _trueK0_siblingEndPos);
     tree->SetBranchAddress("ED_trueK0_siblingPDG", _trueK0_siblingPDG);
 
-    // Read the current entry
-    tree->GetEntry(tree->GetReadEntry());
+    // Load only analysis branches for the already-selected entry.
+    // This avoids a full second TTree::GetEntry() pass while still refreshing
+    // K0 display payload after branch addresses are bound.
+    const Long64_t entry = tree->GetReadEntry();
+    if (entry >= 0) {
+        const std::initializer_list<const char*> analysisBranches = {
+            "ED_nK0Candidates",
+            "ED_k0_daughter1ID", "ED_k0_daughter2ID", "ED_k0_parentID", "ED_k0_secondParticleID",
+            "ED_k0_creationVtxRadius", "ED_k0_annihilationVtxRadius",
+            "ED_k0_creationVtxDeg", "ED_k0_annihilationVtxDeg",
+            "ED_k0_creationVtxDegDist", "ED_k0_annihilationVtxDegDist",
+            "ED_k0_creationVtxPos", "ED_k0_annihilationVtxPos", "ED_k0_annihilationVtxFitPos",
+            "ED_k0_startPos", "ED_k0_endPos",
+            "ED_k0_annVtx_fitLine1Start", "ED_k0_annVtx_fitLine1Dir",
+            "ED_k0_annVtx_fitLine2Start", "ED_k0_annVtx_fitLine2Dir",
+            "ED_k0_annVtx_pandoraLine1Dir", "ED_k0_annVtx_pandoraLine2Dir",
+            "ED_k0_annVtx_closestPt1", "ED_k0_annVtx_closestPt2",
+            "ED_k0_annVtx_pandoraClosestPt1", "ED_k0_annVtx_pandoraClosestPt2",
+            "ED_k0_annVtx_momentumDirFit", "ED_k0_trueK0Dir",
+            "ED_k0_trueDecayVtxFromRecoDaughters",
+            "ED_k0_creationVtx_fitLineBeamStart", "ED_k0_creationVtx_fitLineBeamDir",
+            "ED_k0_creationVtx_fitLineSecondStart", "ED_k0_creationVtx_fitLineSecondDir",
+            "ED_k0_creationVtx_closestPtBeam", "ED_k0_creationVtx_closestPtSecond",
+            "ED_k0_fitLineLength", "ED_k0_hasTrueObject",
+            "ED_k0_trueStartPos", "ED_k0_trueEndPos", "ED_k0_truePDG", "ED_k0_trueProcessEnd",
+            "ED_k0_trueParentPDG", "ED_k0_trueParentStartPos", "ED_k0_trueParentEndPos",
+            "ED_k0_parentStartPos", "ED_k0_parentEndPos", "ED_k0_parentLength",
+            "ED_k0_parentTrajDir", "ED_k0_parentTrajDirHist", "ED_k0_parentTrajDirNPts",
+            "ED_k0_secondTrajDir", "ED_k0_secondTrajDirNPts",
+            "ED_k0_dau1TrajDir", "ED_k0_dau1TrajDirNPts",
+            "ED_k0_dau2TrajDir", "ED_k0_dau2TrajDirNPts",
+            "ED_k0_trueNDaughters", "ED_k0_trueDaughterStartPos",
+            "ED_k0_trueDaughterEndPos", "ED_k0_trueDaughterPDG",
+            "ED_k0_trueNSiblings", "ED_k0_trueSiblingStartPos",
+            "ED_k0_trueSiblingEndPos", "ED_k0_trueSiblingPDG",
+            "ED_nTrueK0", "ED_trueK0_startPos", "ED_trueK0_endPos",
+            "ED_trueK0_PDG", "ED_trueK0_processEnd",
+            "ED_trueK0_parentPDG", "ED_trueK0_parentStartPos", "ED_trueK0_parentEndPos",
+            "ED_trueK0_nDaughters", "ED_trueK0_daughterStartPos",
+            "ED_trueK0_daughterEndPos", "ED_trueK0_daughterPDG",
+            "ED_trueK0_nSiblings", "ED_trueK0_siblingStartPos",
+            "ED_trueK0_siblingEndPos", "ED_trueK0_siblingPDG"
+        };
+        for (const char* bname : analysisBranches) {
+            if (TBranch* br = tree->GetBranch(bname)) {
+                br->GetEntry(entry);
+            }
+        }
+    }
 
     std::cout << "Read K0 analysis data: " << _nK0Candidates << " K0 candidates" << std::endl;
 
@@ -1403,7 +1450,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 //********************************************************************
     // Draw K0 candidates
     TEveElementList* recoGroup = PrepareGroup(scene, "K0 Reco Objects");
-    TEveElementList* creationVertexGroup = nullptr;
+    TEveElementList* creationVertexGroup = PrepareGroup(scene, "K0 Creation Vertices");
     TEveElementList* annihilationVertexGroup = PrepareGroup(scene, "K0 Annihilation Vertices");
     // Vertex momentum arrows + daughter Pandora/fit direction rays; uncheck once to hide all.
     TEveElementList* momentumArrowGroup =
@@ -1411,17 +1458,17 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
     TEveElementList* truthGroup = PrepareGroup(scene, "K0 Truth (Matched)");
     TEveElementList* truthParentGroup = PrepareGroup(scene, "K0 Truth Parents");
     TEveElementList* truthDaughterGroup = PrepareGroup(scene, "K0 Truth Daughters");
-    TEveElementList* truthSiblingGroup = nullptr;
-    TEveElementList* creationFitGroup = nullptr;
+    TEveElementList* truthSiblingGroup = PrepareGroup(scene, "K0 Truth Siblings");
+    TEveElementList* creationFitGroup = PrepareGroup(scene, "K0 Creation Fit Helpers");
     TEveElementList* annihilationFitGroup = PrepareGroup(scene, "K0 Annihilation Fit Helpers");
     TEveElementList* standaloneTruthGroup = PrepareGroup(scene, "Standalone True K0");
     TEveElementList* standaloneParentGroup = PrepareGroup(scene, "Standalone True K0 Parents");
     TEveElementList* standaloneDaughterGroup = PrepareGroup(scene, "Standalone True K0 Daughters");
-    TEveElementList* standaloneSiblingGroup = nullptr;
-    TEveElementList* annotationGroup = nullptr;
-    TEveElementList* parentDirGroup = nullptr;
-    TEveElementList* creationDirGroup = nullptr;
-    TEveElementList* daughterDirGroup = nullptr;
+    TEveElementList* standaloneSiblingGroup = PrepareGroup(scene, "Standalone True K0 Siblings");
+    TEveElementList* annotationGroup = PrepareGroup(scene, "K0 Truth Annotations");
+    TEveElementList* parentDirGroup = PrepareGroup(scene, "K0 Parent Directions");
+    TEveElementList* creationDirGroup = PrepareGroup(scene, "K0 Creation Partner Directions");
+    TEveElementList* daughterDirGroup = PrepareGroup(scene, "K0 Daughter Directions");
 
     auto addElement = [&](TEveElementList* group, TEveElement* element) {
         AppendElementToGroup(scene, group, element);
