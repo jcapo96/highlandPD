@@ -92,4 +92,3 @@ TVector3 CalculateLineMinDistanceMidpoint(
 }
 
 } // namespace pdNeutralHelpers
-

@@ -26,17 +26,26 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
   if(!GetBinValues(0.5, params, index))	return eventWeight;
 
   // Casts the toyBox. The systematic box is not needed
-  const ToyBoxKaon& box = *static_cast<const ToyBoxKaon*>(&boxB);   
+  const ToyBoxKaon& box = *static_cast<const ToyBoxKaon*>(&boxB);
   if(box.Candidates.empty())return eventWeight;
-    
+
   // Get the SystBox for this event, and the appropriate selection and branch
   SystBoxB* SystBox = GetSystBox(event,box.SelectionEnabledIndex,boxB.SuccessfulBranch); // not really needed
-   
+
   //get bestcandidate
   AnaParticlePD* part = box.Candidates[box.BestCandidateIndex];
 
   //get parent info to check angle condition
-  AnaParticlePD* parent = static_cast<AnaParticlePD*>(anaUtils::GetParticleByID(*static_cast<const AnaEventB*>(&event),part->ParentID));
+  AnaParticlePD* parent = nullptr;
+  const AnaEventB* eventB = static_cast<const AnaEventB*>(&event);
+  for (Int_t i = 0; i < eventB->nParticles; ++i) {
+    AnaParticlePD* candidate = static_cast<AnaParticlePD*>(eventB->Particles[i]);
+    if (!candidate) continue;
+    if (candidate->UniqueID == part->ParentID) {
+      parent = candidate;
+      break;
+    }
+  }
   if(!parent)return eventWeight;
 
   //compute cos
@@ -66,6 +75,6 @@ Weight_h BrokenTrackWeight::ComputeWeight(const ToyExperiment& toy, const AnaEve
 bool BrokenTrackWeight::IsRelevantRecObject(const AnaEventC& event, const AnaRecObjectC& recObj) const{
 //********************************************************************
 
-  (void)event;      
+  (void)event;
   return true;
-}  
+}
