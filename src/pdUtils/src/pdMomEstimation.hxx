@@ -25,6 +25,8 @@ namespace pdMomEstimation {
 
   // Estimate momentum using track-length extension method
   Float_t EstimateMomentumWithExtension(AnaParticlePD* particle, int pdg = 211);
+  ExtensionFitResult EstimateMomentumWithExtensionDetailed(AnaParticlePD* particle, int pdg = 211);
+  Float_t EstimateMomentumFromPionRange(AnaParticlePD* particle);
 
   // Perform track-length extension fit
   ExtensionFitResult FitTrackLengthExtension(AnaParticlePD* particle,
