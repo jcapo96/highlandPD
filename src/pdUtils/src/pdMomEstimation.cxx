@@ -1,4 +1,5 @@
 #include "pdMomEstimation.hxx"
+#include "pdAnalysisUtils.hxx"
 #include <TFile.h>
 #include <TProfile.h>
 #include <TGraph.h>
@@ -100,15 +101,13 @@ double CalculateExtensionChi2(const std::vector<double>& measuredDeDx,
 double RangeToMomentum(double effectiveRange, int pdg, TGraph* rangeEnergyGraph, double mass) {
 //***************************************************************
 
-  if (!rangeEnergyGraph || effectiveRange <= 0) {
+  if (!rangeEnergyGraph || effectiveRange < 0.) {
     return -999.0;
   }
 
-  // Get kinetic energy from range using the graph
-  // Note: graph should have range on x-axis, KE on y-axis
-  double kineticEnergy = rangeEnergyGraph->Eval(effectiveRange);
-
-  if (kineticEnergy <= 0 || kineticEnergy > 1e6) {
+  const double kineticEnergy =
+      pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(rangeEnergyGraph, effectiveRange);
+  if (kineticEnergy < 0. || kineticEnergy > 1e6 || !std::isfinite(kineticEnergy)) {
     return -999.0;
   }
 
@@ -197,9 +196,9 @@ ExtensionFitResult FitTrackLengthExtension(AnaParticlePD* particle,
   double minChi2 = 9999.0;
   double bestExtension = 0.0;
 
-  // Search range: 0 to 200 cm with 0.5 cm steps
+  // Search range: 0 to 500 cm with 0.5 cm steps
   double extensionMin = 0.0;
-  double extensionMax = 200.0;
+  double extensionMax = 500.0;
   double extensionStep = 0.5;
 
   for (double ext = extensionMin; ext <= extensionMax; ext += extensionStep) {

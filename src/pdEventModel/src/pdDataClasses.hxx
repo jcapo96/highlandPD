@@ -640,9 +640,8 @@ public:
   Float_t InvariantMassPandora;
   Float_t MomentumFit;
   Float_t InvariantMassFit;
-  // Daughter momentum method flags (for Particles[0] and Particles[1]):
-  // -1: unassigned, 0: pre-existing, 1: calorimetric, 2: residual-range extension,
-  // 3: range-based fallback, 4: failed
+  // Daughter momentum method flags (see pdAnnihilationUtils DaughterMomentumMethod):
+  // -1 unassigned, 0 pion-range stopping (legacy), 1 calorimetric (legacy), 2 failed, 3 free-range ML
   Int_t Daughter1MomentumMethod;
   Int_t Daughter2MomentumMethod;
   Int_t Daughter1HasPreexistingMomentum;

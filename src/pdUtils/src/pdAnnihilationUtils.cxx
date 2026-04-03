@@ -1,7 +1,6 @@
 #include "pdAnnihilationUtils.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pdMomEstimation.hxx"
-#include "pdMomReconstruction.hxx"
+#include "neutralKaonAnalysisUtils.hxx"
 #include "Parameters.hxx"
 #include "TVector3.h"
 #include <algorithm>
@@ -45,7 +44,8 @@ enum DaughterMomentumMethod {
   kMomMethodUnassigned = -1,
   kMomMethodPionRangeStopping = 0,
   kMomMethodCalorimetric = 1,
-  kMomMethodFailed = 2
+  kMomMethodFailed = 2,
+  kMomMethodFreeRangeML = 3
 };
 
 struct DaughterMomentumDebugInfo {
@@ -70,26 +70,30 @@ Int_t CountValidCollectionPlaneHits(const AnaParticlePD* particle) {
 
 Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomentumDebugInfo* debugInfo = nullptr) {
   if (!particle) return kMomMethodUnassigned;
+  const Int_t nCollHits = static_cast<Int_t>(particle->Hits[2].size());
+  const Int_t attempted = (nCollHits >= 4) ? 1 : 0;
   if (debugInfo) {
     debugInfo->hasPreexistingMomentum = -1;
-    debugInfo->extensionAttempted = 0;
+    debugInfo->extensionAttempted = attempted;
     debugInfo->extensionValid = 0;
     debugInfo->extensionChi2Ndf = -999.0f;
     debugInfo->extensionNValidHits = CountValidCollectionPlaneHits(particle);
   }
 
-  Float_t estimatedMomentum = -999.0f;
-  if (particle->Daughters.empty()) {
-    // Stopping-like case.
-    estimatedMomentum = pdMomEstimation::EstimateMomentumFromPionRange(particle);
-  } else {
-    // Interacting/branched case: calorimetric momentum includes descendants.
-    estimatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
+  double truncMinRR = 0.;
+  double truncFrac = 0.;
+  if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm")) {
+    truncMinRR = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm");
   }
-
-  if (std::isfinite(estimatedMomentum) && estimatedMomentum > 0.0f) {
-    particle->Momentum = estimatedMomentum;
-    return particle->Daughters.empty() ? kMomMethodPionRangeStopping : kMomMethodCalorimetric;
+  if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction")) {
+    truncFrac = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction");
+  }
+  const pdAnaUtils::DEdxFreeRangeFitResult fit = pdAnaUtils::GetdEdxLikelihoodFreeRangeFit(
+      particle, 211, 500., 0.5, truncMinRR, truncFrac);
+  if (std::isfinite(static_cast<double>(fit.momentumGeV)) && fit.momentumGeV > 0.f) {
+    particle->Momentum = fit.momentumGeV;
+    if (debugInfo) debugInfo->extensionValid = 1;
+    return kMomMethodFreeRangeML;
   }
   return kMomMethodFailed;
 }
@@ -191,7 +195,7 @@ Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
 } // namespace
 
 //***************************************************************
-void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, double trackFitLength,
+void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, const AnaEventB& event, double trackFitLength,
                                   double trackFitDistanceFromStart) {
 //***************************************************************
   constexpr Float_t kUnassigned = -999.0f;
@@ -206,8 +210,11 @@ void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, double trackFit
   AnaParticlePD* daughter2 = vertex->Particles[1];
   if (!daughter1 || !daughter2) return;
 
-  (void)AssignPionMomentumFromResidualRange(daughter1);
-  (void)AssignPionMomentumFromResidualRange(daughter2);
+  const int sigCode = neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(vertex, event);
+  if (sigCode == 1 || sigCode == 5 || sigCode == 6) {
+    (void)AssignPionMomentumFromResidualRange(daughter1);
+    (void)AssignPionMomentumFromResidualRange(daughter2);
+  }
 
   Float_t p1Mag = daughter1->Momentum;
   Float_t p2Mag = daughter2->Momentum;
@@ -470,10 +477,17 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       reconstructedVertex->NParticles = reconstructedVertex->Particles.size();
 
       // Fill daughter momentum at creation time so downstream users can read particle->Momentum.
+      // Free-range ML momentum only for true K0->pi+pi- signal subtypes (same truth codes as category signal 1/5/6).
       DaughterMomentumDebugInfo daughter1Debug;
       DaughterMomentumDebugInfo daughter2Debug;
-      reconstructedVertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
-      reconstructedVertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+      const int vtxSigCode = neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(reconstructedVertex, event);
+      if (vtxSigCode == 1 || vtxSigCode == 5 || vtxSigCode == 6) {
+        reconstructedVertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
+        reconstructedVertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+      } else {
+        reconstructedVertex->Daughter1MomentumMethod = kMomMethodUnassigned;
+        reconstructedVertex->Daughter2MomentumMethod = kMomMethodUnassigned;
+      }
       reconstructedVertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
       reconstructedVertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
       reconstructedVertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;

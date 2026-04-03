@@ -25,6 +25,10 @@ namespace neutralKaonAnaUtils{
 
   // Fill Custom categories
   void FillSignalCandidateCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
+
+  /// Same integer codes as category "signal" in FillSignalCandidateCategory, using only the annihilation vertex and
+  /// event (truth-matched evaluation). For vertex creation before AnaNeutralParticlePD exists.
+  int GetSignalCategoryCodeForAnnihilationVertex(AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
 }
 
 #endif

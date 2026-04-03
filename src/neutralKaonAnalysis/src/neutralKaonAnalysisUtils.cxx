@@ -7,32 +7,38 @@
 
 namespace {
 
-bool GetRecoDaughterTrueObjects(AnaNeutralParticlePD* neutralParticle,
-                                AnaTrueParticlePD*& trueDaughter1,
-                                AnaTrueParticlePD*& trueDaughter2) {
+bool GetRecoDaughterTrueObjectsFromVertex(AnaAnnihilationVertexPD* vertex,
+                                          AnaTrueParticlePD*& trueDaughter1,
+                                          AnaTrueParticlePD*& trueDaughter2) {
   trueDaughter1 = nullptr;
   trueDaughter2 = nullptr;
-
-  if(!neutralParticle || !neutralParticle->AnnihilationVertex ||
-     neutralParticle->AnnihilationVertex->Particles.size() < 2) {
+  if (!vertex || vertex->Particles.size() < 2) {
     return false;
   }
-
-  AnaParticlePD* daughter1 = neutralParticle->AnnihilationVertex->Particles[0];
-  AnaParticlePD* daughter2 = neutralParticle->AnnihilationVertex->Particles[1];
-  if(!daughter1 || !daughter2) {
+  AnaParticlePD* daughter1 = vertex->Particles[0];
+  AnaParticlePD* daughter2 = vertex->Particles[1];
+  if (!daughter1 || !daughter2) {
     return false;
   }
-
   trueDaughter1 = static_cast<AnaTrueParticlePD*>(daughter1->TrueObject);
   trueDaughter2 = static_cast<AnaTrueParticlePD*>(daughter2->TrueObject);
   return trueDaughter1 && trueDaughter2;
 }
 
-AnaTrueParticlePD* GetSharedTrueParent(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event) {
+bool GetRecoDaughterTrueObjects(AnaNeutralParticlePD* neutralParticle,
+                                AnaTrueParticlePD*& trueDaughter1,
+                                AnaTrueParticlePD*& trueDaughter2) {
+  if (!neutralParticle || !neutralParticle->AnnihilationVertex) {
+    trueDaughter1 = trueDaughter2 = nullptr;
+    return false;
+  }
+  return GetRecoDaughterTrueObjectsFromVertex(neutralParticle->AnnihilationVertex, trueDaughter1, trueDaughter2);
+}
+
+AnaTrueParticlePD* GetSharedTrueParentFromVertex(AnaAnnihilationVertexPD* vertex, const AnaEventB& event) {
   AnaTrueParticlePD* trueDaughter1 = nullptr;
   AnaTrueParticlePD* trueDaughter2 = nullptr;
-  if (!GetRecoDaughterTrueObjects(neutralParticle, trueDaughter1, trueDaughter2)) {
+  if (!GetRecoDaughterTrueObjectsFromVertex(vertex, trueDaughter1, trueDaughter2)) {
     return nullptr;
   }
   if (trueDaughter1->ParentID <= 0 || trueDaughter1->ParentID != trueDaughter2->ParentID) {
@@ -45,18 +51,64 @@ bool IsStoppingEndProcess(Int_t proc) {
   return (proc == 2 || proc == 11);
 }
 
-int GetSignalStoppingSubtypeCode(AnaNeutralParticlePD* neutralParticle) {
+int GetSignalStoppingSubtypeCodeFromVertex(AnaAnnihilationVertexPD* vertex) {
   AnaTrueParticlePD* trueDaughter1 = nullptr;
   AnaTrueParticlePD* trueDaughter2 = nullptr;
-  if (!GetRecoDaughterTrueObjects(neutralParticle, trueDaughter1, trueDaughter2)) {
-    return 2; // background fallback
+  if (!GetRecoDaughterTrueObjectsFromVertex(vertex, trueDaughter1, trueDaughter2)) {
+    return 2;
   }
-
   const int nStopping = static_cast<int>(IsStoppingEndProcess(trueDaughter1->ProcessEnd)) +
                         static_cast<int>(IsStoppingEndProcess(trueDaughter2->ProcessEnd));
-  if (nStopping == 2) return 1; // two-stopping
-  if (nStopping == 1) return 5; // one-stopping
-  return 6;                     // interacting (signal with no stopping daughters)
+  if (nStopping == 2) return 1;
+  if (nStopping == 1) return 5;
+  return 6;
+}
+
+int GetSignalStoppingSubtypeCode(AnaNeutralParticlePD* neutralParticle) {
+  if (!neutralParticle || !neutralParticle->AnnihilationVertex) {
+    return 2;
+  }
+  return GetSignalStoppingSubtypeCodeFromVertex(neutralParticle->AnnihilationVertex);
+}
+
+AnaTrueParticlePD* GetSignalTrueParentFromVertex(AnaAnnihilationVertexPD* vertex, const AnaEventB& event) {
+  if (!vertex || vertex->Particles.size() < 2) {
+    return nullptr;
+  }
+  AnaTrueParticlePD* trueDaughter1 = nullptr;
+  AnaTrueParticlePD* trueDaughter2 = nullptr;
+  if (!GetRecoDaughterTrueObjectsFromVertex(vertex, trueDaughter1, trueDaughter2)) {
+    return nullptr;
+  }
+  if (!(trueDaughter1->ParentID > 0 && trueDaughter1->ParentID == trueDaughter2->ParentID)) {
+    return nullptr;
+  }
+  const bool arePions =
+      ((trueDaughter1->PDG == 211 && trueDaughter2->PDG == -211) ||
+       (trueDaughter1->PDG == -211 && trueDaughter2->PDG == 211));
+  if (!arePions) {
+    return nullptr;
+  }
+  AnaTrueParticlePD* trueParent = GetSharedTrueParentFromVertex(vertex, event);
+  if (!trueParent) {
+    return nullptr;
+  }
+  if (!(trueParent->PDG == 310 && trueParent->ProcessEnd == 2)) {
+    return nullptr;
+  }
+  return trueParent;
+}
+
+bool IsLegitVertexFromTwoBodyDecayVertex(AnaAnnihilationVertexPD* vertex, const AnaEventB& event) {
+  AnaTrueParticlePD* trueParent = GetSharedTrueParentFromVertex(vertex, event);
+  if (!trueParent) return false;
+  return (trueParent->Daughters.size() == 2);
+}
+
+bool IsLegitVertexFromMultiBodyDecayVertex(AnaAnnihilationVertexPD* vertex, const AnaEventB& event) {
+  AnaTrueParticlePD* trueParent = GetSharedTrueParentFromVertex(vertex, event);
+  if (!trueParent) return false;
+  return (trueParent->Daughters.size() > 2);
 }
 
 }
@@ -116,33 +168,10 @@ AnaTrueParticlePD* neutralKaonAnaUtils::GetSignalTrueParent(AnaNeutralParticlePD
                                                             const AnaEventB& event){
 //********************************************************************
 
-  if(!IsLegitVertexCandidate(neutralParticle)) {
+  if (!neutralParticle || !neutralParticle->AnnihilationVertex) {
     return nullptr;
   }
-
-  AnaTrueParticlePD* trueDaughter1 = nullptr;
-  AnaTrueParticlePD* trueDaughter2 = nullptr;
-  if(!GetRecoDaughterTrueObjects(neutralParticle, trueDaughter1, trueDaughter2)) {
-    return nullptr;
-  }
-
-  const bool arePions =
-      ((trueDaughter1->PDG == 211 && trueDaughter2->PDG == -211) ||
-       (trueDaughter1->PDG == -211 && trueDaughter2->PDG == 211));
-  if(!arePions) {
-    return nullptr;
-  }
-
-  AnaTrueParticlePD* trueParent = GetSharedTrueParent(neutralParticle, event);
-  if(!trueParent) {
-    return nullptr;
-  }
-
-  if(!(trueParent->PDG == 310 && trueParent->ProcessEnd == 2)) {
-    return nullptr;
-  }
-
-  return trueParent;
+  return GetSignalTrueParentFromVertex(neutralParticle->AnnihilationVertex, event);
 }
 
 //********************************************************************
@@ -155,17 +184,15 @@ bool neutralKaonAnaUtils::IsSignalCandidate(AnaNeutralParticlePD* neutralParticl
 //********************************************************************
 bool neutralKaonAnaUtils::IsLegitVertexFromTwoBodyDecay(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event){
 //********************************************************************
-  AnaTrueParticlePD* trueParent = GetSharedTrueParent(neutralParticle, event);
-  if (!trueParent) return false;
-  return (trueParent->Daughters.size() == 2);
+  if (!neutralParticle || !neutralParticle->AnnihilationVertex) return false;
+  return IsLegitVertexFromTwoBodyDecayVertex(neutralParticle->AnnihilationVertex, event);
 }
 
 //********************************************************************
 bool neutralKaonAnaUtils::IsLegitVertexFromMultiBodyDecay(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event){
 //********************************************************************
-  AnaTrueParticlePD* trueParent = GetSharedTrueParent(neutralParticle, event);
-  if (!trueParent) return false;
-  return (trueParent->Daughters.size() > 2);
+  if (!neutralParticle || !neutralParticle->AnnihilationVertex) return false;
+  return IsLegitVertexFromMultiBodyDecayVertex(neutralParticle->AnnihilationVertex, event);
 }
 
 //********************************************************************
@@ -186,5 +213,23 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     signalCode = 4;
   }
   anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
+}
+
+//********************************************************************
+int neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(AnaAnnihilationVertexPD* vertex,
+                                                                   const AnaEventB& event){
+//********************************************************************
+  if (!vertex) {
+    return 2;
+  }
+  int signalCode = 2;
+  if (GetSignalTrueParentFromVertex(vertex, event) != nullptr) {
+    signalCode = GetSignalStoppingSubtypeCodeFromVertex(vertex);
+  } else if (IsLegitVertexFromTwoBodyDecayVertex(vertex, event)) {
+    signalCode = 3;
+  } else if (IsLegitVertexFromMultiBodyDecayVertex(vertex, event)) {
+    signalCode = 4;
+  }
+  return signalCode;
 }
 

@@ -203,7 +203,7 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
       neutralKaonTree::FillNeutralKaonVariables(output(), neutralKaonBox.neutralParticleCandidates[i], GetEvent(),
                                                 neutralKaonBox.nAnnihilationVerticesBeforeFiltering,
                                                 neutralKaonBox.nAnnihilationVerticesAfterFiltering,
-                                                GetSpill().Beam);
+                                                GetSpill().Beam, i);
       output().IncrementCounter(neutralKaonTree::nk0);
     }
   }

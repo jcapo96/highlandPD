@@ -30,7 +30,11 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.TrackFitDistanceFromStart = 10.0 > //fit starts this many cm away from particle start position
  < neutralKaonAnalysis.VertexXBiasCorrectionCm = 1.0 > //x_corrected = x_reco - value (cm)
 
---- Other Parameters -----------
+--- ML residual-range dE/dx (annihilation pions) -----------
+# Among interior collection hits, only hits with residual range >= MinRRCm may be discarded as Landau-tail outliers;
+# low-RR hits are never removed. Fraction is the fraction of those high-RR hits (largest dE/dx first) to drop. Set to 0 to disable.
+< neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm = 5.0 >
+< neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction = 0.05 >
 
 --- Other Parameters -----------
 

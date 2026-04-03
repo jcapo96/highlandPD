@@ -158,7 +158,8 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
     const double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
     const double trackFitDistanceFromStart =
         ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart");
-    pdAnnihilationUtils::FillNeutralParticleAlignment(neutralParticle, trackFitLength, trackFitDistanceFromStart);
+    pdAnnihilationUtils::FillNeutralParticleAlignment(neutralParticle, event, trackFitLength,
+                                                      trackFitDistanceFromStart);
 
     AnaTrueParticlePD* trueParentParticle = GetCommonTrueParent(event, annihilationVtx);
     neutralParticle->TrueObject = trueParentParticle;

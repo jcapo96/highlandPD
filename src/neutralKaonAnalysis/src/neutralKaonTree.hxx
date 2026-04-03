@@ -14,7 +14,7 @@ namespace neutralKaonTree {
 
   void FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event,
                                 Int_t nVerticesBeforeFiltering = -1, Int_t nVerticesAfterFiltering = -1,
-                                AnaBeamB* beam = NULL);
+                                AnaBeamB* beam = NULL, size_t neutralCandidateIndex = 0);
   void FillNeutralKaonVariables_K0Particle(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
   void FillNeutralKaonVariables_K0vtxDaughters(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
