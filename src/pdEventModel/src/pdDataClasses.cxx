@@ -631,87 +631,6 @@ void AnaEventInfoPD::Print() const{
 }
 
 //********************************************************************
-AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(){
-//********************************************************************
-
-  TrueParticles.clear();
-  OriginalDistance = kFloatUnassigned;
-  MinimumDistance = kFloatUnassigned;
-  OpeningAngle = kFloatUnassigned;
-  Position[0] = kFloatUnassigned;
-  Position[1] = kFloatUnassigned;
-  Position[2] = kFloatUnassigned;
-  Direction[0] = kFloatUnassigned;
-  Direction[1] = kFloatUnassigned;
-  Direction[2] = kFloatUnassigned;
-  DirectionFit[0] = kFloatUnassigned;
-  DirectionFit[1] = kFloatUnassigned;
-  DirectionFit[2] = kFloatUnassigned;
-  PositionPandora[0] = kFloatUnassigned;
-  PositionPandora[1] = kFloatUnassigned;
-  PositionPandora[2] = kFloatUnassigned;
-  DirectionPandora[0] = kFloatUnassigned;
-  DirectionPandora[1] = kFloatUnassigned;
-  DirectionPandora[2] = kFloatUnassigned;
-  PositionFit[0] = kFloatUnassigned;
-  PositionFit[1] = kFloatUnassigned;
-  PositionFit[2] = kFloatUnassigned;
-  DirectionFit[0] = kFloatUnassigned;
-  DirectionFit[1] = kFloatUnassigned;
-  DirectionFit[2] = kFloatUnassigned;
-}
-
-//********************************************************************
-AnaTrueEquivalentVertexPD::~AnaTrueEquivalentVertexPD(){
-//********************************************************************
-
-}
-
-//********************************************************************
-AnaTrueEquivalentVertexPD::AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVertexPD& vertex){
-//********************************************************************
-
-  TrueParticles = vertex.TrueParticles;
-  OriginalDistance = vertex.OriginalDistance;
-  MinimumDistance = vertex.MinimumDistance;
-  OpeningAngle = vertex.OpeningAngle;
-  Position[0] = vertex.Position[0];
-  Position[1] = vertex.Position[1];
-  Position[2] = vertex.Position[2];
-  Direction[0] = vertex.Direction[0];
-  Direction[1] = vertex.Direction[1];
-  Direction[2] = vertex.Direction[2];
-  DirectionFit[0] = vertex.DirectionFit[0];
-  DirectionFit[1] = vertex.DirectionFit[1];
-  DirectionFit[2] = vertex.DirectionFit[2];
-  PositionPandora[0] = vertex.PositionPandora[0];
-  PositionPandora[1] = vertex.PositionPandora[1];
-  PositionPandora[2] = vertex.PositionPandora[2];
-  DirectionPandora[0] = vertex.DirectionPandora[0];
-  DirectionPandora[1] = vertex.DirectionPandora[1];
-  DirectionPandora[2] = vertex.DirectionPandora[2];
-  PositionFit[0] = vertex.PositionFit[0];
-  PositionFit[1] = vertex.PositionFit[1];
-  PositionFit[2] = vertex.PositionFit[2];
-  DirectionFit[0] = vertex.DirectionFit[0];
-  DirectionFit[1] = vertex.DirectionFit[1];
-  DirectionFit[2] = vertex.DirectionFit[2];
-}
-
-//********************************************************************
-void AnaTrueEquivalentVertexPD::Print() const{
-//********************************************************************
-
-  std::cout << "-------- AnaTrueEquivalentVertexPD --------- " << std::endl;
-  std::cout << "TrueParticles size:    " << TrueParticles.size() << std::endl;
-  std::cout << "OriginalDistance:      " << OriginalDistance << " cm" << std::endl;
-  std::cout << "MinimumDistance:       " << MinimumDistance << " cm" << std::endl;
-  std::cout << "OpeningAngle:          " << OpeningAngle << " degrees" << std::endl;
-  std::cout << "Position:              " << Position[0] << " " << Position[1] << " " << Position[2] << std::endl;
-  std::cout << "Direction:             " << Direction[0] << " " << Direction[1] << " " << Direction[2] << std::endl;
-}
-
-//********************************************************************
 AnaVertexPD::AnaVertexPD():AnaVertexB(){
 //********************************************************************
 
@@ -744,6 +663,8 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   ClosestPoint1Fit[0] = ClosestPoint1Fit[1] = ClosestPoint1Fit[2] = kFloatUnassigned;
   ClosestPoint2Fit[0] = ClosestPoint2Fit[1] = ClosestPoint2Fit[2] = kFloatUnassigned;
   Score = kFloatUnassigned;
+  ScorePandora = kFloatUnassigned;
+  ScoreFit = kFloatUnassigned;
   ParentID = kIntUnassigned;
   DirectionFit[0] = kFloatUnassigned;
   DirectionFit[1] = kFloatUnassigned;
@@ -815,6 +736,8 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   ClosestPoint2Fit[1] = vertex.ClosestPoint2Fit[1];
   ClosestPoint2Fit[2] = vertex.ClosestPoint2Fit[2];
   Score = vertex.Score;
+  ScorePandora = vertex.ScorePandora;
+  ScoreFit = vertex.ScoreFit;
   ParentID = vertex.ParentID;
   DirectionFit[0] = vertex.DirectionFit[0];
   DirectionFit[1] = vertex.DirectionFit[1];
@@ -876,17 +799,17 @@ void AnaVertexPD::EnsureParticleMomentum(){
 
     Float_t calculatedMomentum = -999;
 
-    // Priority 1: Calorimetric method (best for interacting pions from K0 decay)
-    // Sums all deposited energy from particle + daughters using pitch-corrected path lengths
+    // Priority 1: Track-length extension method
+    // Fits dE/dx-shape vs residual range to estimate the missing length.
     if (!particle->Hits[2].empty()) {
-      calculatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
+      calculatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
     }
 
-    // Priority 2: Track-length extension method (fallback for through-going pions)
-    // This method fits the dE/dx shape to estimate how much further the particle would travel
+    // Priority 2: Calorimetric method
+    // Sums deposited energy from particle and descendants.
     if (calculatedMomentum <= 0 || calculatedMomentum == -999) {
-      if (!particle->Hits[2].empty() && particle->Length > 0) {
-        calculatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
+      if (!particle->Hits[2].empty()) {
+        calculatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
       }
     }
 
@@ -951,9 +874,51 @@ AnaCreationVertexPD::~AnaCreationVertexPD(){
 }
 
 //********************************************************************
-AnaAnnihilationVertexPD::AnaAnnihilationVertexPD() : AnaVertexPD(){
+AnaAnnihilationVertexPD::AnaAnnihilationVertexPD(){
 //********************************************************************
-  // All initialization handled by base class AnaVertexPD
+  UniqueID = kIntUnassigned;
+  NParticles = 0;
+  Particles.clear();
+  PositionPandora[0] = kFloatUnassigned;
+  PositionPandora[1] = kFloatUnassigned;
+  PositionPandora[2] = kFloatUnassigned;
+  PositionFit[0] = kFloatUnassigned;
+  PositionFit[1] = kFloatUnassigned;
+  PositionFit[2] = kFloatUnassigned;
+  ClosestPointPandora1[0] = kFloatUnassigned;
+  ClosestPointPandora1[1] = kFloatUnassigned;
+  ClosestPointPandora1[2] = kFloatUnassigned;
+  ClosestPointPandora2[0] = kFloatUnassigned;
+  ClosestPointPandora2[1] = kFloatUnassigned;
+  ClosestPointPandora2[2] = kFloatUnassigned;
+  ClosestPointFit1[0] = kFloatUnassigned;
+  ClosestPointFit1[1] = kFloatUnassigned;
+  ClosestPointFit1[2] = kFloatUnassigned;
+  ClosestPointFit2[0] = kFloatUnassigned;
+  ClosestPointFit2[1] = kFloatUnassigned;
+  ClosestPointFit2[2] = kFloatUnassigned;
+  MinimumDistancePandora = kFloatUnassigned;
+  MinimumDistanceFit = kFloatUnassigned;
+  OriginalDistance = kFloatUnassigned;
+  Degeneracy = kIntUnassigned;
+  Momentum = kFloatUnassigned;
+  InvariantMass = kFloatUnassigned;
+  MomentumPandora = kFloatUnassigned;
+  InvariantMassPandora = kFloatUnassigned;
+  MomentumFit = kFloatUnassigned;
+  InvariantMassFit = kFloatUnassigned;
+  Daughter1MomentumMethod = -1;
+  Daughter2MomentumMethod = -1;
+  Daughter1HasPreexistingMomentum = -1;
+  Daughter2HasPreexistingMomentum = -1;
+  Daughter1ExtensionAttempted = -1;
+  Daughter2ExtensionAttempted = -1;
+  Daughter1ExtensionValid = -1;
+  Daughter2ExtensionValid = -1;
+  Daughter1ExtensionChi2Ndf = kFloatUnassigned;
+  Daughter2ExtensionChi2Ndf = kFloatUnassigned;
+  Daughter1ExtensionNValidHits = -1;
+  Daughter2ExtensionNValidHits = -1;
 }
 
 //********************************************************************
@@ -969,20 +934,10 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(): AnaParticleB(){
   AnnihilationVertex = NULL;
   CreationVertex = NULL;
   Parent = NULL;
-  TrueEquivalentNeutralParticle = NULL;
-  ImpactParameter = kFloatUnassigned;
-  Mass = kFloatUnassigned;
-  Momentum = kFloatUnassigned;
-  PDG = kIntUnassigned;
-  Lifetime = kFloatUnassigned;
-  DecayLength = kFloatUnassigned;
-  NRecoHitsInVertex = kIntUnassigned;
-  NeutralScore = kFloatUnassigned;
-  HitsAlignment = kFloatUnassigned;
-  NHitsInCylinder = kIntUnassigned;
-  HitsAvgDistance = kFloatUnassigned;
-  HitsRMSDistance = kFloatUnassigned;
-  HitsLongitudinalSpan = kFloatUnassigned;
+  LengthPandora = kFloatUnassigned;
+  LengthFit = kFloatUnassigned;
+  AlignmentPandora = kFloatUnassigned;
+  AlignmentFit = kFloatUnassigned;
 }
 
 //********************************************************************
@@ -999,21 +954,10 @@ AnaNeutralParticlePD::AnaNeutralParticlePD(const AnaNeutralParticlePD& neutralPa
   AnnihilationVertex = neutralParticle.AnnihilationVertex;
   CreationVertex = neutralParticle.CreationVertex;
   Parent = neutralParticle.Parent;
-  TrueEquivalentNeutralParticle = neutralParticle.TrueEquivalentNeutralParticle;
-  RecoParticle = neutralParticle.RecoParticle;
-  ImpactParameter = neutralParticle.ImpactParameter;
-  Mass = neutralParticle.Mass;
-  Momentum = neutralParticle.Momentum;
-  PDG = neutralParticle.PDG;
-  Lifetime = neutralParticle.Lifetime;
-  DecayLength = neutralParticle.DecayLength;
-  NRecoHitsInVertex = neutralParticle.NRecoHitsInVertex;
-  NeutralScore = neutralParticle.NeutralScore;
-  HitsAlignment = neutralParticle.HitsAlignment;
-  NHitsInCylinder = neutralParticle.NHitsInCylinder;
-  HitsAvgDistance = neutralParticle.HitsAvgDistance;
-  HitsRMSDistance = neutralParticle.HitsRMSDistance;
-  HitsLongitudinalSpan = neutralParticle.HitsLongitudinalSpan;
+  LengthPandora = neutralParticle.LengthPandora;
+  LengthFit = neutralParticle.LengthFit;
+  AlignmentPandora = neutralParticle.AlignmentPandora;
+  AlignmentFit = neutralParticle.AlignmentFit;
 }
 
 //********************************************************************
@@ -1028,94 +972,9 @@ void AnaNeutralParticlePD::Print() const{
   std::cout << "AnnihilationVertex:    " << (AnnihilationVertex ? "Yes" : "No") << std::endl;
   std::cout << "CreationVertex:        " << (CreationVertex ? "Yes" : "No") << std::endl;
   std::cout << "Parent:                " << (Parent ? "Yes" : "No") << std::endl;
-  std::cout << "TrueEquivalentNeutralParticle:   " << (TrueEquivalentNeutralParticle ? "Yes" : "No") << std::endl;
-  std::cout << "RecoParticle:          " << (RecoParticle ? "Yes" : "No") << std::endl;
-  std::cout << "ImpactParameter:       " << ImpactParameter << " cm" << std::endl;
-  std::cout << "Mass:                  " << Mass << " GeV/c²" << std::endl;
-  std::cout << "Momentum:              " << Momentum << " GeV/c" << std::endl;
-  std::cout << "PDG:                   " << PDG << std::endl;
-  std::cout << "Lifetime:              " << Lifetime << " ns" << std::endl;
-  std::cout << "DecayLength:           " << DecayLength << " cm" << std::endl;
-  std::cout << "NRecoHitsInVertex:     " << NRecoHitsInVertex << std::endl;
-  std::cout << "RecoParticle:          " << (RecoParticle ? "Yes" : "No") << std::endl;
-}
-
-//********************************************************************
-AnaTrueEquivalentNeutralParticlePD::AnaTrueEquivalentNeutralParticlePD(){
-//********************************************************************
-
-  TrueEquivalentVertex = NULL;
-  TrueParent = NULL;
-  Position[0] = kFloatUnassigned;
-  Position[1] = kFloatUnassigned;
-  Position[2] = kFloatUnassigned;
-  Direction[0] = kFloatUnassigned;
-  Direction[1] = kFloatUnassigned;
-  Direction[2] = kFloatUnassigned;
-  PositionEnd[0] = kFloatUnassigned;
-  PositionEnd[1] = kFloatUnassigned;
-  PositionEnd[2] = kFloatUnassigned;
-  DirectionEnd[0] = kFloatUnassigned;
-  DirectionEnd[1] = kFloatUnassigned;
-  DirectionEnd[2] = kFloatUnassigned;
-  Length = kFloatUnassigned;
-  Momentum = kFloatUnassigned;
-  MomentumEnd = kFloatUnassigned;
-  PDG = kIntUnassigned;
-  Generation = kIntUnassigned;
-  Process = kIntUnassigned;
-  Mass = kFloatUnassigned;
-}
-
-//********************************************************************
-AnaTrueEquivalentNeutralParticlePD::~AnaTrueEquivalentNeutralParticlePD(){
-//********************************************************************
-
-}
-
-//********************************************************************
-AnaTrueEquivalentNeutralParticlePD::AnaTrueEquivalentNeutralParticlePD(const AnaTrueEquivalentNeutralParticlePD& trueEquivalentNeutralPart){
-//********************************************************************
-
-  TrueEquivalentVertex = trueEquivalentNeutralPart.TrueEquivalentVertex;
-  TrueParent = trueEquivalentNeutralPart.TrueParent;
-  Position[0] = trueEquivalentNeutralPart.Position[0];
-  Position[1] = trueEquivalentNeutralPart.Position[1];
-  Position[2] = trueEquivalentNeutralPart.Position[2];
-  Direction[0] = trueEquivalentNeutralPart.Direction[0];
-  Direction[1] = trueEquivalentNeutralPart.Direction[1];
-  Direction[2] = trueEquivalentNeutralPart.Direction[2];
-  PositionEnd[0] = trueEquivalentNeutralPart.PositionEnd[0];
-  PositionEnd[1] = trueEquivalentNeutralPart.PositionEnd[1];
-  PositionEnd[2] = trueEquivalentNeutralPart.PositionEnd[2];
-  DirectionEnd[0] = trueEquivalentNeutralPart.DirectionEnd[0];
-  DirectionEnd[1] = trueEquivalentNeutralPart.DirectionEnd[1];
-  DirectionEnd[2] = trueEquivalentNeutralPart.DirectionEnd[2];
-  Length = trueEquivalentNeutralPart.Length;
-  Momentum = trueEquivalentNeutralPart.Momentum;
-  MomentumEnd = trueEquivalentNeutralPart.MomentumEnd;
-  PDG = trueEquivalentNeutralPart.PDG;
-  Generation = trueEquivalentNeutralPart.Generation;
-  Process = trueEquivalentNeutralPart.Process;
-  Mass = trueEquivalentNeutralPart.Mass;
-}
-
-//********************************************************************
-void AnaTrueEquivalentNeutralParticlePD::Print() const{
-//********************************************************************
-
-  std::cout << "-------- AnaTrueNeutralParticlePD --------- " << std::endl;
-  std::cout << "TrueEquivalentVertex:   " << (TrueEquivalentVertex ? "Set" : "NULL") << std::endl;
-  std::cout << "TrueParent:             " << (TrueParent ? "Set" : "NULL") << std::endl;
-  std::cout << "Position:               " << Position[0] << " " << Position[1] << " " << Position[2] << std::endl;
-  std::cout << "Direction:              " << Direction[0] << " " << Direction[1] << " " << Direction[2] << std::endl;
-  std::cout << "PositionEnd:            " << PositionEnd[0] << " " << PositionEnd[1] << " " << PositionEnd[2] << std::endl;
-  std::cout << "DirectionEnd:           " << DirectionEnd[0] << " " << DirectionEnd[1] << " " << DirectionEnd[2] << std::endl;
-  std::cout << "Length:                 " << Length << " cm" << std::endl;
-  std::cout << "Momentum:               " << Momentum << " GeV/c" << std::endl;
-  std::cout << "PDG:                    " << PDG << std::endl;
-  std::cout << "Generation:             " << Generation << std::endl;
-  std::cout << "Process:                " << Process << std::endl;
-  std::cout << "Mass:                   " << Mass << " GeV/c²" << std::endl;
+  std::cout << "LengthPandora:         " << LengthPandora << " cm" << std::endl;
+  std::cout << "LengthFit:             " << LengthFit << " cm" << std::endl;
+  std::cout << "AlignmentPandora:      " << AlignmentPandora << " rad" << std::endl;
+  std::cout << "AlignmentFit:          " << AlignmentFit << " rad" << std::endl;
 }
 

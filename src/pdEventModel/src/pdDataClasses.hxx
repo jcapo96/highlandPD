@@ -470,59 +470,6 @@ public:
 };
 
 //** ------------------------------------------------------------ */
-// True equivalent vertex class for ProtoDUNE
-class AnaTrueEquivalentVertexPD{
-  public :
-
-    AnaTrueEquivalentVertexPD();
-    virtual ~AnaTrueEquivalentVertexPD();
-
-    /// Clone this object.
-    virtual AnaTrueEquivalentVertexPD* Clone() {
-      return new AnaTrueEquivalentVertexPD(*this);
-    }
-
-    /// Dump the object to screen.
-    virtual void Print() const;
-
-  protected:
-
-    /// Copy constructor is protected, as Clone() should be used to copy this object.
-    AnaTrueEquivalentVertexPD(const AnaTrueEquivalentVertexPD& vertex);
-
-  public:
-
-    /// Vector containing the true particles associated with this vertex
-    std::vector<AnaTrueParticlePD*> TrueParticles;
-
-    /// True Original distance between the two true particles
-    Float_t OriginalDistance;
-
-    /// Minimum distance between the two true particles
-    Float_t MinimumDistance;
-
-    /// Opening angle between the two true particles
-    Float_t OpeningAngle;
-
-    /// 3D coordinates of the vertex
-    Float_t Position[3];
-
-    /// 3D direction of the vertex
-    Float_t Direction[3];
-
-  /// Pandora-based vertex position (from DirectionStart/PositionStart)
-  Float_t PositionPandora[3];
-  Float_t DirectionPandora[3];
-
-  /// Fitted vertex position (from geometric/Kalman fit)
-  Float_t PositionFit[3];
-
-  /// Fitted vertex direction (from geometric/TMinuit/Kalman fit)
-  Float_t DirectionFit[3];
-
-  };
-
-//** ------------------------------------------------------------ */
 // Extension of AnaVertexB for ProtoDUNE analysis
 class AnaVertexPD: public AnaVertexB{
 public :
@@ -606,6 +553,8 @@ public:
 
   /// Quality score from vertex fit (lower is better, from Chi2/minimization)
   Float_t Score;
+  Float_t ScorePandora;
+  Float_t ScoreFit;
 
   /// Parent ID of the vertex (both particles must have same parent)
   Int_t ParentID;
@@ -629,17 +578,11 @@ public:
   /// Distances to the nearest particles contributing to degeneracy estimate
   Float_t DegDist[5];
 
-  AnaTrueEquivalentVertexPD* TrueEquivalentVertex;
-
   /// Ensure particles in this vertex have proper momentum assigned
   /// Uses the most robust momentum calculation method available
   void EnsureParticleMomentum();
 };
 
-
-//** ------------------------------------------------------------ */
-// Forward declarations
-class AnaTrueEquivalentNeutralParticlePD;
 
 //** ------------------------------------------------------------ */
 // Creation vertex class for neutral particle reconstruction
@@ -673,12 +616,44 @@ public:
 
 //** ------------------------------------------------------------ */
 // Annihilation vertex class for neutral particle reconstruction
-class AnaAnnihilationVertexPD : public AnaVertexPD {
+class AnaAnnihilationVertexPD {
 public:
   AnaAnnihilationVertexPD();
   ~AnaAnnihilationVertexPD();
 
-  // Inherits all members from AnaVertexPD including Degeneracy
+  Int_t UniqueID;
+  Int_t NParticles;
+  std::vector<AnaParticlePD*> Particles;
+  Float_t PositionPandora[3];
+  Float_t PositionFit[3];
+  Float_t ClosestPointPandora1[3];
+  Float_t ClosestPointPandora2[3];
+  Float_t ClosestPointFit1[3];
+  Float_t ClosestPointFit2[3];
+  Float_t MinimumDistancePandora;
+  Float_t MinimumDistanceFit;
+  Float_t OriginalDistance;
+  Int_t Degeneracy;
+  Float_t Momentum;
+  Float_t InvariantMass;
+  Float_t MomentumPandora;
+  Float_t InvariantMassPandora;
+  Float_t MomentumFit;
+  Float_t InvariantMassFit;
+  // Daughter momentum method flags (see pdAnnihilationUtils DaughterMomentumMethod):
+  // -1 unassigned, 0 pion-range stopping (legacy), 1 calorimetric (legacy), 2 failed, 3 free-range ML
+  Int_t Daughter1MomentumMethod;
+  Int_t Daughter2MomentumMethod;
+  Int_t Daughter1HasPreexistingMomentum;
+  Int_t Daughter2HasPreexistingMomentum;
+  Int_t Daughter1ExtensionAttempted;
+  Int_t Daughter2ExtensionAttempted;
+  Int_t Daughter1ExtensionValid;
+  Int_t Daughter2ExtensionValid;
+  Float_t Daughter1ExtensionChi2Ndf;
+  Float_t Daughter2ExtensionChi2Ndf;
+  Int_t Daughter1ExtensionNValidHits;
+  Int_t Daughter2ExtensionNValidHits;
 };
 
 //** ------------------------------------------------------------ */
@@ -716,113 +691,18 @@ public:
   /// The parent particle that decayed into this neutral particle
   AnaParticlePD* Parent;
 
-  /// The impact parameter of the neutral particle
-  Float_t ImpactParameter;
+  /// Reconstructed neutral length using annihilation Pandora position.
+  Float_t LengthPandora;
 
-  /// Mass of the neutral particle (in GeV/c²)
-  Float_t Mass;
+  /// Reconstructed neutral length using annihilation Fit position.
+  Float_t LengthFit;
 
-  /// Momentum of the neutral particle (in GeV/c)
-  Float_t Momentum;
+  /// Angle (rad) between neutral axis (creation→annihilation Pandora) and Σp̂ vertex momentum (Pandora dirs).
+  Float_t AlignmentPandora;
 
-  /// PDG code of the neutral particle
-  Int_t PDG;
+  /// Angle (rad) between neutral axis (creation→annihilation Fit) and Σp̂ vertex momentum (fit dirs).
+  Float_t AlignmentFit;
 
-  /// Lifetime of the neutral particle (in ns)
-  Float_t Lifetime;
-
-  /// Decay length of the neutral particle (in cm)
-  Float_t DecayLength;
-
-  /// Number of reconstructed hits in the vertex
-  Int_t NRecoHitsInVertex;
-
-  /// Score for neutral particle compatibility (lower = more neutral-like)
-  Double_t NeutralScore;
-
-  /// Alignment between hits in cylinder and neutral particle direction (dot product)
-  Double_t HitsAlignment;
-
-  /// Number of hits in cylinder around neutral particle path
-  Int_t NHitsInCylinder;
-
-  /// Average perpendicular distance of hits to neutral particle path
-  Double_t HitsAvgDistance;
-
-  /// RMS of perpendicular distances of hits
-  Double_t HitsRMSDistance;
-
-  /// Longitudinal span fraction (span along path / total length)
-  Double_t HitsLongitudinalSpan;
-
-  /// The reconstructed neutral particle associated with this neutral particle
-  AnaParticlePD* RecoParticle;
-
-  /// The true neutral particle associated with this reconstructed neutral particle
-  AnaTrueEquivalentNeutralParticlePD* TrueEquivalentNeutralParticle;
-};
-
-//** ------------------------------------------------------------ */
-// True neutral particle class for ProtoDUNE
-class AnaTrueEquivalentNeutralParticlePD{
-public:
-
-  AnaTrueEquivalentNeutralParticlePD();
-  virtual ~AnaTrueEquivalentNeutralParticlePD();
-
-  /// Clone this object.
-  virtual AnaTrueEquivalentNeutralParticlePD* Clone() {
-    return new AnaTrueEquivalentNeutralParticlePD(*this);
-  }
-
-  /// Dump the object to screen.
-  virtual void Print() const;
-
-protected:
-
-  /// Copy constructor is protected, as Clone() should be used to copy this object.
-  AnaTrueEquivalentNeutralParticlePD(const AnaTrueEquivalentNeutralParticlePD& trueEquivalentNeutralPart);
-
-public:
-
-  /// The true vertex associated with this neutral particle
-  AnaTrueEquivalentVertexPD* TrueEquivalentVertex;
-
-  /// The true parent particle that decayed into this neutral particle
-  AnaTrueParticlePD* TrueParent;
-
-  /// 3D coordinates of the particle
-  Float_t Position[3];
-
-  /// 3D direction of the particle
-  Float_t Direction[3];
-
-  /// 3D end position of the particle
-  Float_t PositionEnd[3];
-
-  /// 3D end direction of the particle
-  Float_t DirectionEnd[3];
-
-  /// Length of the particle
-  Float_t Length;
-
-  /// Momentum of the particle
-  Float_t Momentum;
-
-  /// End momentum of the particle
-  Float_t MomentumEnd;
-
-  // Mass of the particle
-  Float_t Mass;
-
-  /// PDG code of the particle
-  Int_t PDG;
-
-  /// Generation of the particle
-  Int_t Generation;
-
-  /// Process of the particle
-  Int_t Process;
 };
 
 

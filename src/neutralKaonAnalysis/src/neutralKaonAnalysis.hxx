@@ -42,6 +42,7 @@ class neutralKaonAnalysis: public pdBaseAnalysis {
   //--------------------
 
   bool Initialize();
+  void Finalize();
   void FillCategories();
   void DefineInputConverters();
 

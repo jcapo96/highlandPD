@@ -8,297 +8,82 @@
 namespace neutralKaonTree {
 
   // Methods to add to the output tree the neutralKaonAnalysis sets of variables
-  void AddNeutralKaonVariables_K0(OutputManager& output, UInt_t nmax);
-  void AddNeutralKaonVariables_K0Par(OutputManager& output, UInt_t nmax);
-  void AddNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, UInt_t nmax);
-  void AddNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, UInt_t nmax);
-  void AddNeutralKaonVariables_K0Brother(OutputManager& output, UInt_t nmax);
-  void AddNeutralKaonVariables_K0CreationVtx(OutputManager& output, UInt_t nmax);
+  void AddNeutralKaonVariables_K0Particle(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax);
-  // void AddNeutralKaonVariables_K0VtxPions(OutputManager& output, UInt_t nmax);
+  void AddNeutralKaonVariables_K0VtxDaughters(OutputManager& output, UInt_t nmax);
 
-  void FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event, AnaBeamB* beam = NULL);
-  void FillNeutralKaonVariables_K0(OutputManager& output, AnaNeutralParticlePD* candidate);
-  void FillNeutralKaonVariables_K0Par(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, const AnaEventB& event, AnaBeamB* beam = NULL);
-  void FillNeutralKaonVariables_K0Brother(OutputManager& output, AnaNeutralParticlePD* neutralCandidate, AnaParticlePD* parentCandidate, const AnaEventB& event);
-  void FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate);
-  void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaVertexPD* vertex);
-  void FillNeutralKaonVariables_K0vtxDaughter1(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
-  void FillNeutralKaonVariables_K0vtxDaughter2(OutputManager& output, AnaParticlePD* daughterCandidate, AnaVertexPD* vertex, const AnaEventB& event);
+  void FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event,
+                                Int_t nVerticesBeforeFiltering = -1, Int_t nVerticesAfterFiltering = -1,
+                                AnaBeamB* beam = NULL, size_t neutralCandidateIndex = 0);
+  void FillNeutralKaonVariables_K0Particle(OutputManager& output, AnaNeutralParticlePD* candidate);
+  void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0vtxDaughters(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
+  void WriteHitDistanceProfiles(OutputManager& output);
 
   // Enum with unique indexes for output tree variables
   enum enumNeutralKaonMicroTrees{
 
     // Candidate info
     nk0 = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
-    // Variables about K0
-    k0id, //unique ID of neutral particle candidates
-    k0trueid, //true object ID
-    k0recostartpos, //reconstructed start position: from parent end to vertex start
-    k0truestartpos, //true start position: k0hastrueobject=1: true object start, k0hastrueobject=0: true parent end
-    k0recostartdir, //reconstructed start direction
-    k0truestartdir, //true start direction: k0hastrueobject=1: true object start direction, k0hastrueobject=0: vector from true parent end to true vertex start
-    k0recoendpos, //reconstructed end position
-    k0trueendpos, //true end position: k0hastrueobject=1: true object end, k0hastrueobject=0: true vertex start
-    k0recoenddir, //reconstructed end direction
-    k0trueenddir, //true end direction: k0hastrueobject=1: true object end direction, k0hastrueobject=0: true vertex start direction
-    k0truestartenddir, //true start-end direction scalar product
-    k0recostartenddir, //reconstructed start-end direction scalar product
-    k0recolength, //reconstructed length
-    k0truelength, //true length
-    k0truestartmom, //true start momentum
-    k0trueendmom, //true end momentum
-    k0recomass, //reconstructed mass from vertex particles under pion hypothesis
-    k0truemass, //true mass from vertex particles under pion hypothesis
-    k0truendau, //true number of daughters
-    k0trueproc, //true creation process
-    k0trueendproc, // true annihilation process
-    k0hastrueobject, //1: if we have a true object, 0: if we don't have a true object
-    k0hasrecoparticle, //1: if true object has a reconstructed particle, 0: if true object doesn't have a reconstructed particle
-    k0hasequivalenttrueobject, //1: if true object has an equivalent true object, 0: if true object doesn't have an equivalent true object (should be always 1)
-    k0truepdg, //true PDG
-    k0recopdg, //reconstructed PDG
-    k0truegeneration, //true generation
-    k0nrecohits, //number of reconstructed hits in cylinder of radius X from parent end to vertex start
-    k0neutralscore, //neutral particle quality score (lower = more neutral-like)
-    k0hitsalignment, //alignment between hits in cylinder and neutral particle direction
-    k0nhitsincylinder, //number of hits in the cylinder around neutral particle
-    k0hitsavgdistance, //average perpendicular distance of hits to neutral particle path
-    k0hitsrmsdistance, //RMS of perpendicular distances of hits
-    k0hitslongspan, //longitudinal span fraction (span along path / total length)
-
-    k0truerecodist, //True-vertex-position minus reconstructed-vertex-position
-    k0impactparameter, //Impact parameter
-    k0creationvtxdeg, //Creation vertex degeneracy
-    k0annvtxdeg, //Annihilation vertex degeneracy
-    k0creationvtxdegdist, //Creation vertex degeneracy distances [5]
-    k0annvtxdegdist, //Annihilation vertex degeneracy distances [5]
-    k0creationvtxprotonscore, //Creation vertex proton score (Chi2/ndf under proton hypothesis)
-    k0creationvtxdistancescore, //Creation vertex distance score (distance from beam end to secondary start)
-    k0creationbeamsecondopening, //Creation: cos(angle) between beam end dir and second start dir (1=parallel, poorly constrained)
-
-    // Variables about K0 daughter1
-    k0dau1recostartpos, //reconstructed start position
-    k0dau1truestartpos, //true start position
-    k0dau1recoendpos, //reconstructed end position
-    k0dau1trueendpos, //true end position
-    k0dau1recostartdir,
-    k0dau1truestartdir,
-    k0dau1recomom,
-    k0dau1recoenddir,
-    k0dau1trajdir,
-    k0dau1trueenddir,
-    k0dau1recolength,
-    k0dau1truelength,
-    k0dau1truestartmom,
-    k0dau1trueendmom,
-    k0dau1recondau,
-    k0dau1truendau,
-    k0dau1trueproc,
-    k0dau1trueendproc,
-    k0dau1truepdg,
-    k0dau1parid,
-    k0dau1istrack, //0: Unknown, 1: Shower, 2: Track
-    k0dau1chi2pion, //chi2 for pion PID hypothesis
-    k0dau1nptchi2pion, //number of points used in chi2 pion calculation
-    k0dau1chi2proton, //chi2 for proton PID hypothesis
-    k0dau1nptchi2proton, //number of points used in chi2 proton calculation
-    k0dau1chi2kaon, //chi2 for kaon PID hypothesis
-    k0dau1nptchi2kaon, //number of points used in chi2 kaon calculation
-    k0dau1avgdedx5cm, //average dEdx for residual range < 5cm
-    k0dau1avgdedx10cm, //average dEdx for residual range < 10cm
-    k0dau1avgdedx15cm, //average dEdx for residual range < 15cm
-    k0dau1avgdedx25cm, //average dEdx for residual range < 25cm
-    k0dau1avgdedx50cm, //average dEdx for residual range < 50cm
-    k0dau1nhits, //number of hits in collection plane
-    k0dau1trueid, //daughter1 true particle ID
-    k0dau1recoid, //daughter1 reco particle ID
-    k0dau1truedauid, //daughter1 true daughter IDs (granddaughters)
-    k0dau1recodauid, //daughter1 reco daughter IDs (granddaughters)
-    k0dau1truepartrueid, //daughter1 true parent true ID
-    k0dau1truepartruepdg, //daughter1 true parent true PDG
-
-    //Variables about K0 daughter2
-    k0dau2recostartpos,
-    k0dau2truestartpos,
-    k0dau2recoendpos,
-    k0dau2trueendpos,
-    k0dau2recostartdir,
-    k0dau2truestartdir,
-    k0dau2recomom,
-    k0dau2recoenddir,
-    k0dau2trajdir,
-    k0dau2trueenddir,
-    k0dau2recolength,
-    k0dau2truelength,
-    k0dau2truestartmom,
-    k0dau2trueendmom,
-    k0dau2recondau,
-    k0dau2truendau,
-    k0dau2trueproc,
-    k0dau2trueendproc,
-    k0dau2truepdg,
-    k0dau2parid,
-    k0dau2istrack, //0: Unknown, 1: Shower, 2: Track
-    k0dau2chi2pion, //chi2 for pion PID hypothesis
-    k0dau2nptchi2pion, //number of points used in chi2 pion calculation
-    k0dau2chi2proton, //chi2 for proton PID hypothesis
-    k0dau2nptchi2proton, //number of points used in chi2 proton calculation
-    k0dau2chi2kaon, //chi2 for kaon PID hypothesis
-    k0dau2nptchi2kaon, //number of points used in chi2 kaon calculation
-    k0dau2avgdedx5cm, //average dEdx for residual range < 5cm
-    k0dau2avgdedx10cm, //average dEdx for residual range < 10cm
-    k0dau2avgdedx15cm, //average dEdx for residual range < 15cm
-    k0dau2avgdedx25cm, //average dEdx for residual range < 25cm
-    k0dau2avgdedx50cm, //average dEdx for residual range < 50cm
-    k0dau2nhits, //number of hits in collection plane
-    k0dau2trueid, //daughter2 true particle ID
-    k0dau2recoid, //daughter2 reco particle ID
-    k0dau2truedauid, //daughter2 true daughter IDs (granddaughters)
-    k0dau2recodauid, //daughter2 reco daughter IDs (granddaughters)
-    k0dau2truepartrueid, //daughter2 true parent true ID
-    k0dau2truepartruepdg, //daughter2 true parent true PDG
-
-    // Variables about K0 parent
-    k0parrecostartpos,
-    k0partruestartpos,
-    k0parrecoendpos,
-    k0partrueendpos,
-    k0parrecostartdir,
-    k0partruestartdir,
-    k0parrecoenddir,
-    k0partrueenddir,
-    k0parrecostartenddir,
-    k0partruestartenddir,
-    k0parrecolength,
-    k0partruelength,
-    k0partruestartmom,
-    k0partrueendmom,
-    k0partruestartenergy,
-    k0partrueendenergy,
-    k0partruendau,
-    k0parrecondau,
-    k0partruepdg,
-    k0parrecopdg,
-    k0partruepdgdau,
-    k0parrecopdgdau,
-    k0partrajdir,
-    k0partrajdirhist,
-    k0partrajdirnpts,
-
-    //Variables about K0 parent beam
-    k0parisbeam,
-    k0beaminstpdg,
-    k0partrueproc,
-    k0partrueendproc,
-    k0partruegeneration,
-    k0partrueid, //parent true particle ID
-    k0parrecoid, //parent reco particle ID
-
-    // Variables about K0 brothers (siblings)
-    // Summary counters (kept for backward compatibility)
-    k0reconbrother, // Number of reconstructed candidate brothers reconstructed
-    k0truenbrother, // Number of true candidate brothers reconstructed
-    k0brothreconprot, // Number of reconstructed candidate brothers compatible with proton
-    k0brothrecoprotenergy, // Energy of reconstructed candidate brothers compatible with proton with the highest momentum
-    k0brothrecoprotmom, // Momentum of reconstructed candidate brothers compatible with proton with the highest momentum
-    k0brothreconpiplus, // Number of reconstructed candidate brothers compatible with pi+
-    k0brothreconpiminus, // Number of reconstructed candidate brothers compatible with pi-
-    k0brothreconprotchi2, //number of brothers compatible with proton (chi2/ndf<60)
-
-    // True brothers - ALL from trueParent->Daughters (including K0)
-    k0ntruebroth,
-    k0truebrothpdg,
-    k0truebrothmomentum,
-    k0truebrothenergy,
-    k0truebrothprocessstart,
-    k0truebrothlength,
-    k0truebrothtotalmom,
-    k0truebrothtotalenergy,
-    k0truebrothtruetotaldir,
-    k0truebrothprotonmaxenergy,
-    k0truebrothprotonmaxmomentum,
-    k0truebrothprotonmaxdir,
-    k0truebrothalign,
-    k0truebrothid, //vector of all true brother IDs
-    k0truebrothprotonmaxid, //ID of highest energy true proton brother
-
-    // True brothers with reco - subset with reconstructed objects
-    k0ntruebrothreco,
-    k0truebrothrecotruepdg,
-    k0truebrothrecotruemom,
-    k0truebrothrecotrueenergy,
-    k0truebrothrecotrueprocessstart,
-    k0truebrothrecopdg,
-    k0truebrothrecomom,
-    k0truebrothrecoenergy,
-    k0truebrothrecolength,
-    k0truebrothrecochi2prot,
-    k0truebrothrecotruetotalmom,
-    k0truebrothrecotruetotalenergy,
-    k0truebrothrecotruetotaldir,
-    k0truebrothrecoprotonmaxenergy,
-    k0truebrothrecoprotonmaxmomentum,
-    k0truebrothrecoprotonmaxrecoenergy,
-    k0truebrothrecoprotonmaxrecomom,
-    k0truebrothrecoprotonmaxdir,
-    k0truebrothrecoalign,
-    k0truebrothrecoid, //vector of all reco IDs for true brothers with reco
-    k0truebrothrecoprotonmaxid, //ID of highest energy true-reco proton brother
-
-    // Reco brothers - ALL from Parent->Daughters
-    k0nrecobroth,
-    k0nrecobrothbad, // Number of bad reco brothers (no hits in any plane)
-    k0recobrothpdg,
-    k0recobrothmom,
-    k0recobrothenergy,
-    k0recobrothlength,
-    k0recobrothchi2prot,
-    k0recobrothtruepdg,
-    k0recobrothtrueenergy,
-    k0recobrothtruemom,
-    k0recobrothtrueprocessstart,
-    k0recobrothtruetotaldir,
-    k0recobrothrecototaldir,
-    k0recobrothtrajdir,
-    k0recobrothprotonmaxenergy,
-    k0recobrothprotonmaxmomentum,
-    k0recobrothprotonmaxtrueenergy,
-    k0recobrothprotonmaxtruemom,
-    k0recobrothprotonmaxdir,
-    k0recobrothprotonmaxtruedir,
-    k0recobrothalign,
-    k0recobrothtruealign,
-    k0recobrothid, //vector of all reco brother IDs
-    k0recobrothprotonmaxid, //ID of highest energy reco proton brother
-    k0recobrothtrueid, //vector of all true IDs for reco brothers
-
-     // Variables about the vertex system (two particles)
-    k0vtxrecopos,
-    k0vtxtruepos,
-    k0vtxrecomom,
-    k0vtxtruemom,
-    k0vtxrecoenergy,
-    k0vtxtrueenergy,
-    k0vtxrecomass,
-    k0vtxtruemass,
-    k0vtxrecodir,
-    k0vtxtruedir,
-    k0vtxrecoopening,
-    k0vtxtrueopening,
-    k0vtxrecoangle,
-    k0vtxtrueangle,
-    k0vtxnpotpar,
-    k0vtxoriginaldistance,
-    k0vtxminimumdistance,
-    k0vtxtrueoriginaldistance,
-    k0vtxtrueminimumdistance,
-    k0vtxscore,
-
+    k0nvtxbeforefiltering, // Number of annihilation vertices before overlap filtering
+    k0nvtxafterfiltering,  // Number of annihilation vertices after overlap filtering
+    k0lengthpandora, // Neutral length from creation to annihilation Pandora position [cm]
+    k0lengthfit, // Neutral length from creation to annihilation Fit position [cm]
+    k0truelength, // True K0 length from true creation to true decay vertex [cm]
+    k0alignmentpandora, // Angle (rad): neutral axis vs vertex momentum (Pandora dirs)
+    k0alignmentfit, // Angle (rad): neutral axis vs vertex momentum (fit dirs)
+    // Active microtree variables (vertex-only set)
+    k0vtxtruepos, //K0 vertex true position
+    k0vtxoriginaldistance, //K0 vertex original distance
+    k0vtxtrueoriginaldistance, //K0 vertex true original distance
+    k0vtxdegeneracy, //K0 annihilation-vertex degeneracy (Reco)
     k0vtxpandorapos, //Pandora-based vertex position
-    k0vtxfitpos, //Algorithm-specific fitted vertex position (geometric/TMinuit/Kalman)
-    k0vtxfitdir, //Algorithm-specific fitted vertex direction (geometric/TMinuit/Kalman)
-    k0vtxisjustavg, //Flag: 1 if Pandora used simple average, 0 if line intersection, -999 if invalid
+    k0vtxfitpos, //Algorithm-specific fitted vertex position
+    k0vtxpandorax,
+    k0vtxpandoray,
+    k0vtxpandoraz,
+    k0vtxfitx,
+    k0vtxfity,
+    k0vtxfitz,
+    k0vtxpandoraresidual, //|Pandora vertex position - true vertex position| [cm]
+    k0vtxfitresidual, //|Fit vertex position - true vertex position| [cm]
+    k0vtxpandoraresidualx, //Pandora x_reco - x_true [cm]
+    k0vtxpandoraresidualy, //Pandora y_reco - y_true [cm]
+    k0vtxpandoraresidualz, //Pandora z_reco - z_true [cm]
+    k0vtxfitresidualx, //Fit x_reco - x_true [cm]
+    k0vtxfitresidualy, //Fit y_reco - y_true [cm]
+    k0vtxfitresidualz, //Fit z_reco - z_true [cm]
+    k0vtxmomentum, //|p1 + p2| using daughter pion momenta [GeV/c]
+    k0vtxinvariantmass, //Invariant mass from daughter pion hypothesis [GeV/c^2]
+    k0vtxmomentumpandora, //|p1 + p2| using Pandora daughter directions [GeV/c]
+    k0vtxinvariantmasspandora, //Invariant mass with Pandora directions [GeV/c^2]
+    k0vtxmomentumfit, //|p1 + p2| using fit daughter directions [GeV/c]
+    k0vtxinvariantmassfit, //Invariant mass with fit directions [GeV/c^2]
+    k0vtxresultantmomentumreco, // Reco resultant momentum magnitude at vertex [GeV/c]
+    k0vtxresultantmomentumtrue, // True resultant momentum magnitude at vertex [GeV/c]
+    // Daughter-level variables (filled in FillNeutralKaonVariables_K0vtxDaughters)
+    k0vtxdau1momentumreco, // Reco momentum magnitude of daughter 1 [GeV/c]
+    k0vtxdau2momentumreco, // Reco momentum magnitude of daughter 2 [GeV/c]
+    k0vtxdau1momentumtrue, // True momentum magnitude of daughter 1 [GeV/c]
+    k0vtxdau2momentumtrue, // True momentum magnitude of daughter 2 [GeV/c]
+    k0vtxdau1trueendproc, // True end process enum for daughter 1
+    k0vtxdau2trueendproc, // True end process enum for daughter 2
+    k0vtxdau1trueendmom, // True end momentum for daughter 1 [GeV/c]
+    k0vtxdau2trueendmom, // True end momentum for daughter 2 [GeV/c]
+    k0vtxdau1truestartmom, // True start momentum for daughter 1 [GeV/c]
+    k0vtxdau2truestartmom, // True start momentum for daughter 2 [GeV/c]
+    k0vtxdau1truendau, // True number of daughters for daughter 1
+    k0vtxdau2truendau, // True number of daughters for daughter 2
+    k0vtxdau1truelength, // True length for daughter 1 [cm]
+    k0vtxdau2truelength, // True length for daughter 2 [cm]
+    k0vtxdau1recolength, // Reco length for daughter 1 [cm]
+    k0vtxdau2recolength, // Reco length for daughter 2 [cm]
+    k0vtxdau1nhitsreco, // Reco number of collection-plane hits for daughter 1
+    k0vtxdau2nhitsreco, // Reco number of collection-plane hits for daughter 2
+    k0vtxdau1ndaughtersreco, // Reco number of daughters of vertex daughter 1
+    k0vtxdau2ndaughtersreco, // Reco number of daughters of vertex daughter 2
+    k0vtxdau1nrecodau, // Number of true daughters of daughter 1 with at least one reco object
+    k0vtxdau2nrecodau, // Number of true daughters of daughter 2 with at least one reco object
   enumNeutralKaonMicroTreesLast
   };
 }
