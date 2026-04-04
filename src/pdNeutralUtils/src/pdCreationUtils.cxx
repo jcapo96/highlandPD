@@ -350,4 +350,3 @@ std::vector<AnaCreationVertexPD*> FilterCreationVerticesByScore(std::vector<AnaC
 
 
 } // namespace pdCreationUtils
-

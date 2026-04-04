@@ -3,9 +3,48 @@
 #include "pdDataClasses.hxx"
 #include "AnalysisUtils.hxx"
 #include "pdAnalysisUtils.hxx"
-#include "pdMomEstimation.hxx"
 #include "pdMomReconstruction.hxx"
-// #include "pdMomLikelihood.hxx" // Disabled for now, will implement later
+
+namespace {
+
+bool IsValidMomentum(Float_t value) {
+  return value > 0.f && value != -999.f;
+}
+
+Float_t EstimatePionMomentum(AnaParticlePD* particle) {
+  if (!particle) return -999.f;
+
+  Float_t calculatedMomentum = -999.f;
+
+  if (!particle->Hits[2].empty()) {
+    calculatedMomentum = pdMomReconstruction::EstimateMomentumByExtension(particle, 211);
+    if (IsValidMomentum(calculatedMomentum)) return calculatedMomentum;
+  }
+
+  if (!particle->Hits[2].empty()) {
+    calculatedMomentum = pdMomReconstruction::EstimateMomentum(particle, 211);
+    if (IsValidMomentum(calculatedMomentum)) return calculatedMomentum;
+  }
+
+  if ((particle->RangeMomentum[0] == -999 || particle->RangeMomentum[0] <= 0) &&
+      particle->Length > 0 && particle->Length != -999) {
+    particle->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 2212);
+  }
+  if ((particle->RangeMomentum[1] == -999 || particle->RangeMomentum[1] <= 0) &&
+      particle->Length > 0 && particle->Length != -999) {
+    particle->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 13);
+  }
+
+  if (IsValidMomentum(particle->RangeMomentum[0]) && IsValidMomentum(particle->RangeMomentum[1])) {
+    return (particle->RangeMomentum[0] + particle->RangeMomentum[1]) / 2.0f;
+  }
+  if (IsValidMomentum(particle->RangeMomentum[1])) return particle->RangeMomentum[1];
+  if (IsValidMomentum(particle->RangeMomentum[0])) return particle->RangeMomentum[0];
+
+  return -999.f;
+}
+
+} // namespace
 
 
 // define a constant value for uninitialised parameters
@@ -797,51 +836,7 @@ void AnaVertexPD::EnsureParticleMomentum(){
       continue;
     }
 
-    Float_t calculatedMomentum = -999;
-
-    // Priority 1: Track-length extension method
-    // Fits dE/dx-shape vs residual range to estimate the missing length.
-    if (!particle->Hits[2].empty()) {
-      calculatedMomentum = pdMomEstimation::EstimateMomentumWithExtension(particle, 211);
-    }
-
-    // Priority 2: Calorimetric method
-    // Sums deposited energy from particle and descendants.
-    if (calculatedMomentum <= 0 || calculatedMomentum == -999) {
-      if (!particle->Hits[2].empty()) {
-        calculatedMomentum = pdMomReconstruction::EstimateMomentumCalorimetric(particle, 211);
-      }
-    }
-
-    // Fallback methods if calorimetric and extension methods both fail
-    if (calculatedMomentum <= 0 || calculatedMomentum == -999) {
-
-      // Calculate RangeMomentum if not available from input tree
-      if ((particle->RangeMomentum[0] == -999 || particle->RangeMomentum[0] <= 0) &&
-          particle->Length > 0 && particle->Length != -999) {
-        particle->RangeMomentum[0] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 2212);
-      }
-      if ((particle->RangeMomentum[1] == -999 || particle->RangeMomentum[1] <= 0) &&
-          particle->Length > 0 && particle->Length != -999) {
-        particle->RangeMomentum[1] = pdAnaUtils::ComputeRangeMomentum(particle->Length, 13);
-      }
-
-      // Priority 2: Use average of proton and muon range momenta as approximation for pion
-      if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999 &&
-          particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
-        calculatedMomentum = (particle->RangeMomentum[0] + particle->RangeMomentum[1]) / 2.0;
-      }
-      // Priority 3: Use muon range momentum if available (closer to pion mass than proton)
-      else if (particle->RangeMomentum[1] > 0 && particle->RangeMomentum[1] != -999) {
-        calculatedMomentum = particle->RangeMomentum[1];
-      }
-      // Priority 4: Use proton range momentum if available
-      else if (particle->RangeMomentum[0] > 0 && particle->RangeMomentum[0] != -999) {
-        calculatedMomentum = particle->RangeMomentum[0];
-      }
-    }
-
-    // If we successfully calculated momentum, assign it
+    const Float_t calculatedMomentum = EstimatePionMomentum(particle);
     if (calculatedMomentum > 0 && calculatedMomentum != -999) {
       particle->Momentum = calculatedMomentum;
     }

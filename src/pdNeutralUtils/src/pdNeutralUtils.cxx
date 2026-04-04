@@ -171,4 +171,3 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
 }
 
 } // namespace pdNeutralUtils
-

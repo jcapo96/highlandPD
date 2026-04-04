@@ -210,12 +210,6 @@ void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, const AnaEventB
   AnaParticlePD* daughter2 = vertex->Particles[1];
   if (!daughter1 || !daughter2) return;
 
-  const int sigCode = neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(vertex, event);
-  if (sigCode == 1 || sigCode == 5 || sigCode == 6) {
-    (void)AssignPionMomentumFromResidualRange(daughter1);
-    (void)AssignPionMomentumFromResidualRange(daughter2);
-  }
-
   Float_t p1Mag = daughter1->Momentum;
   Float_t p2Mag = daughter2->Momentum;
   if (!(std::isfinite(p1Mag) && std::isfinite(p2Mag) && p1Mag > 0.0f && p2Mag > 0.0f)) {

@@ -34,4 +34,3 @@ namespace pdAnnihilationUtils {
 }
 
 #endif
-

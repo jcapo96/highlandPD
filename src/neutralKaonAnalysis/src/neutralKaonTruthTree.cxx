@@ -195,9 +195,7 @@ void neutralKaonTruthTree::FillVertexReconstructionDebugVariables(OutputManager&
     TVector3 pos1 = pdAnaUtils::DefinePosition(daughter1Reco);
     TVector3 pos2 = pdAnaUtils::DefinePosition(daughter2Reco);
 
-    Float_t pos1_array[3] = {static_cast<Float_t>(pos1.X()), static_cast<Float_t>(pos1.Y()), static_cast<Float_t>(pos1.Z())};
-    Float_t pos2_array[3] = {static_cast<Float_t>(pos2.X()), static_cast<Float_t>(pos2.Y()), static_cast<Float_t>(pos2.Z())};
-    Float_t distance = static_cast<Float_t>(sqrt(anaUtils::GetSeparationSquared(pos1_array, pos2_array)));
+    Float_t distance = static_cast<Float_t>((pos1 - pos2).Mag());
 
     output.FillVectorVar(k0daudistance, static_cast<Float_t>(distance));
     bool closeEnough = (distance <= static_cast<Float_t>(maxDaughterDistance));
