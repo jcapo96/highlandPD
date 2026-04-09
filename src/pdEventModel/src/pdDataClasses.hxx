@@ -654,6 +654,12 @@ public:
   Float_t Daughter2ExtensionChi2Ndf;
   Int_t Daughter1ExtensionNValidHits;
   Int_t Daughter2ExtensionNValidHits;
+  Float_t Daughter1ExtensionDedxBias;  // Gaussian mean of (measured - Bethe-Bloch) dEdx [MeV/cm]
+  Float_t Daughter2ExtensionDedxBias;  // Gaussian mean of (measured - Bethe-Bloch) dEdx [MeV/cm]
+  Float_t Daughter1ExtensionDedxSigma; // Gaussian sigma of (measured - Bethe-Bloch) dEdx [MeV/cm]
+  Float_t Daughter2ExtensionDedxSigma; // Gaussian sigma of (measured - Bethe-Bloch) dEdx [MeV/cm]
+  Int_t Daughter1ExtensionDedxFitOk;
+  Int_t Daughter2ExtensionDedxFitOk;
 };
 
 //** ------------------------------------------------------------ */

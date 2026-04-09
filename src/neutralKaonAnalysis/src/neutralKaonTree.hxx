@@ -9,6 +9,7 @@ namespace neutralKaonTree {
 
   // Methods to add to the output tree the neutralKaonAnalysis sets of variables
   void AddNeutralKaonVariables_K0Particle(OutputManager& output, UInt_t nmax);
+  void AddNeutralKaonVariables_K0Parent(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0VtxDaughters(OutputManager& output, UInt_t nmax);
 
@@ -16,6 +17,7 @@ namespace neutralKaonTree {
                                 Int_t nVerticesBeforeFiltering = -1, Int_t nVerticesAfterFiltering = -1,
                                 AnaBeamB* beam = NULL, size_t neutralCandidateIndex = 0);
   void FillNeutralKaonVariables_K0Particle(OutputManager& output, AnaNeutralParticlePD* candidate);
+  void FillNeutralKaonVariables_K0Parent(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
   void FillNeutralKaonVariables_K0vtxDaughters(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
   void WriteHitDistanceProfiles(OutputManager& output);
@@ -32,6 +34,13 @@ namespace neutralKaonTree {
     k0truelength, // True K0 length from true creation to true decay vertex [cm]
     k0alignmentpandora, // Angle (rad): neutral axis vs vertex momentum (Pandora dirs)
     k0alignmentfit, // Angle (rad): neutral axis vs vertex momentum (fit dirs)
+    // Parent-level variables (parent of reconstructed neutral candidate)
+    k0partruepdg, // True PDG of neutral parent
+    k0partrueendmom, // True end momentum of neutral parent [GeV/c]
+    k0partruelength, // True track length of neutral parent [cm]
+    k0parrecolength, // Reco track length of neutral parent [cm]
+    k0parndau, // Reco number of daughters of neutral parent
+    k0parisbeam, // 1 if reco parent has isPandora==true (beam), 0 otherwise
     // Active microtree variables (vertex-only set)
     k0vtxtruepos, //K0 vertex true position
     k0vtxoriginaldistance, //K0 vertex original distance
@@ -57,13 +66,25 @@ namespace neutralKaonTree {
     k0vtxinvariantmass, //Invariant mass from daughter pion hypothesis [GeV/c^2]
     k0vtxmomentumpandora, //|p1 + p2| using Pandora daughter directions [GeV/c]
     k0vtxinvariantmasspandora, //Invariant mass with Pandora directions [GeV/c^2]
+    k0vtxopeninganglepandora, // Opening angle between daughter directions using Pandora dirs [rad]
     k0vtxmomentumfit, //|p1 + p2| using fit daughter directions [GeV/c]
     k0vtxinvariantmassfit, //Invariant mass with fit directions [GeV/c^2]
+    k0vtxopeninganglefit, // Opening angle between daughter directions using fit dirs [rad]
     k0vtxresultantmomentumreco, // Reco resultant momentum magnitude at vertex [GeV/c]
     k0vtxresultantmomentumtrue, // True resultant momentum magnitude at vertex [GeV/c]
     // Daughter-level variables (filled in FillNeutralKaonVariables_K0vtxDaughters)
     k0vtxdau1momentumreco, // Reco momentum magnitude of daughter 1 [GeV/c]
     k0vtxdau2momentumreco, // Reco momentum magnitude of daughter 2 [GeV/c]
+    k0vtxdau1mommethod, // Momentum assignment method enum for daughter 1
+    k0vtxdau2mommethod, // Momentum assignment method enum for daughter 2
+    k0vtxdau1extchi2ndf, // Free-range fit log-likelihood used by momentum assignment for daughter 1
+    k0vtxdau2extchi2ndf, // Free-range fit log-likelihood used by momentum assignment for daughter 2
+    k0vtxdau1dedxdrift, // Mean dEdx bias (actual - expected from fit PDF mode) for daughter 1 [MeV/cm]
+    k0vtxdau2dedxdrift, // Mean dEdx bias (actual - expected from fit PDF mode) for daughter 2 [MeV/cm]
+    k0vtxdau1dedxsigma, // Sigma of dEdx bias Gaussian fit for daughter 1 [MeV/cm]
+    k0vtxdau2dedxsigma, // Sigma of dEdx bias Gaussian fit for daughter 2 [MeV/cm]
+    k0vtxdau1dedxfitok, // 1 if Gaussian dEdx bias fit succeeded for daughter 1, 0 otherwise
+    k0vtxdau2dedxfitok, // 1 if Gaussian dEdx bias fit succeeded for daughter 2, 0 otherwise
     k0vtxdau1momentumtrue, // True momentum magnitude of daughter 1 [GeV/c]
     k0vtxdau2momentumtrue, // True momentum magnitude of daughter 2 [GeV/c]
     k0vtxdau1trueendproc, // True end process enum for daughter 1

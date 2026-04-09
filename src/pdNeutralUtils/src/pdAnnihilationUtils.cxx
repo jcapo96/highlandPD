@@ -54,6 +54,9 @@ struct DaughterMomentumDebugInfo {
   Int_t extensionValid = 0;
   Float_t extensionChi2Ndf = -999.0f;
   Int_t extensionNValidHits = 0;
+  Float_t extensionDedxBias = -999.0f;   // Gaussian mean of (measured - Bethe-Bloch) dEdx [MeV/cm]
+  Float_t extensionDedxSigma = -999.0f;  // Gaussian sigma of (measured - Bethe-Bloch) dEdx [MeV/cm]
+  Int_t extensionDedxFitOk = -1;
 };
 
 Int_t CountValidCollectionPlaneHits(const AnaParticlePD* particle) {
@@ -77,6 +80,9 @@ Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomen
     debugInfo->extensionAttempted = attempted;
     debugInfo->extensionValid = 0;
     debugInfo->extensionChi2Ndf = -999.0f;
+    debugInfo->extensionDedxBias = -999.0f;
+    debugInfo->extensionDedxSigma = -999.0f;
+    debugInfo->extensionDedxFitOk = -1;
     debugInfo->extensionNValidHits = CountValidCollectionPlaneHits(particle);
   }
 
@@ -90,11 +96,27 @@ Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomen
   }
   const pdAnaUtils::DEdxFreeRangeFitResult fit = pdAnaUtils::GetdEdxLikelihoodFreeRangeFit(
       particle, 211, 500., 0.5, truncMinRR, truncFrac);
+
+  if (debugInfo && std::isfinite(static_cast<double>(fit.logLikelihood))) {
+    debugInfo->extensionChi2Ndf = static_cast<Float_t>(fit.logLikelihood);
+  }
+  if (debugInfo && std::isfinite(static_cast<double>(fit.meanDedxBias))) {
+    debugInfo->extensionDedxBias = static_cast<Float_t>(fit.meanDedxBias);
+  }
+  if (debugInfo && std::isfinite(static_cast<double>(fit.sigmaDedxBias))) {
+    debugInfo->extensionDedxSigma = static_cast<Float_t>(fit.sigmaDedxBias);
+  }
+  if (debugInfo) {
+    debugInfo->extensionDedxFitOk = fit.dedxFitOk;
+  }
+
   if (std::isfinite(static_cast<double>(fit.momentumGeV)) && fit.momentumGeV > 0.f) {
     particle->Momentum = fit.momentumGeV;
     if (debugInfo) debugInfo->extensionValid = 1;
     return kMomMethodFreeRangeML;
   }
+
+  if (debugInfo) debugInfo->extensionValid = 0;
   return kMomMethodFailed;
 }
 
@@ -492,6 +514,12 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       reconstructedVertex->Daughter2ExtensionChi2Ndf = daughter2Debug.extensionChi2Ndf;
       reconstructedVertex->Daughter1ExtensionNValidHits = daughter1Debug.extensionNValidHits;
       reconstructedVertex->Daughter2ExtensionNValidHits = daughter2Debug.extensionNValidHits;
+      reconstructedVertex->Daughter1ExtensionDedxBias = daughter1Debug.extensionDedxBias;
+      reconstructedVertex->Daughter2ExtensionDedxBias = daughter2Debug.extensionDedxBias;
+      reconstructedVertex->Daughter1ExtensionDedxSigma = daughter1Debug.extensionDedxSigma;
+      reconstructedVertex->Daughter2ExtensionDedxSigma = daughter2Debug.extensionDedxSigma;
+      reconstructedVertex->Daughter1ExtensionDedxFitOk = daughter1Debug.extensionDedxFitOk;
+      reconstructedVertex->Daughter2ExtensionDedxFitOk = daughter2Debug.extensionDedxFitOk;
       FillVertexKinematicsFromDaughters(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
 
       FillPositionPandora(reconstructedVertex);

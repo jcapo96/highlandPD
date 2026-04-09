@@ -914,6 +914,12 @@ AnaAnnihilationVertexPD::AnaAnnihilationVertexPD(){
   Daughter2ExtensionChi2Ndf = kFloatUnassigned;
   Daughter1ExtensionNValidHits = -1;
   Daughter2ExtensionNValidHits = -1;
+  Daughter1ExtensionDedxBias = kFloatUnassigned;
+  Daughter2ExtensionDedxBias = kFloatUnassigned;
+  Daughter1ExtensionDedxSigma = kFloatUnassigned;
+  Daughter2ExtensionDedxSigma = kFloatUnassigned;
+  Daughter1ExtensionDedxFitOk = -1;
+  Daughter2ExtensionDedxFitOk = -1;
 }
 
 //********************************************************************

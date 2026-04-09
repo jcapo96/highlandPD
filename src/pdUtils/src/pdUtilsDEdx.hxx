@@ -6,6 +6,7 @@
 
 class TGraph;
 class TMultiGraph;
+class TH1F;
 
 namespace pdAnaUtils {
 
@@ -13,6 +14,9 @@ namespace pdAnaUtils {
     Float_t logLikelihood = -999.f;
     Float_t bestOffsetCm = -999.f;
     Float_t momentumGeV = -999.f;
+    Float_t meanDedxBias = -999.f;   // Gaussian mean of (measured - Bethe-Bloch) dEdx distribution [MeV/cm]
+    Float_t sigmaDedxBias = -999.f;  // Gaussian sigma of (measured - Bethe-Bloch) dEdx distribution [MeV/cm]
+    Int_t dedxFitOk = -1;
   };
 
   Float_t GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG,
@@ -37,6 +41,10 @@ namespace pdAnaUtils {
     TMultiGraph* MakePionFreeRangeDedxVsRRMultiGraph(AnaParticlePD* part, double Lmax = 500., double step = 0.5,
                   double landauTruncMinRRCm = 0., double landauTailHitDropFraction = 0.,
                   const char* xAxisTitle = nullptr);
+
+    TH1F* MakePionFreeRangeDedxBiasHistogram(AnaParticlePD* part, double Lmax = 500., double step = 0.5,
+            double landauTruncMinRRCm = 0., double landauTailHitDropFraction = 0.,
+            const char* histTitle = nullptr);
 
   std::pair<Float_t,Float_t> dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke, Float_t mass);
   DEdxFreeRangeFitResult dEdxLikelihoodFreeRangeFit(TGraph* tg, TGraph* tg_ke, Float_t mass, double L0,

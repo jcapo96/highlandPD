@@ -271,6 +271,11 @@ target_include_directories(neutralKaon.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${hi
 target_link_libraries(neutralKaon.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
 INSTALL(TARGETS neutralKaon.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 
+#add_executable(beamParticle.exe ${CMAKE_SOURCE_DIR}/src/beamParticleAnalysis/app/RunbeamParticleAnalysis.cxx)
+#target_include_directories(beamParticle.exe PRIVATE ${HIGHLAND_INCLUDE_DIRS} ${highlandPD_inc})
+#target_link_libraries(beamParticle.exe ${ROOT_LIBRARIES} ${HIGHLAND_LIBRARIES} ${HIGHLAND_PD_LIBRARIES} ${TENSORFLOW_LIBRARIES} ${PROTOBUF_LIBRARIES})
+#INSTALL(TARGETS beamParticle.exe DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
 
 #-------------------------------------------------------
 #------- custom targets --------------------------------
@@ -306,6 +311,7 @@ add_dependencies(secondaryKaonXS.exe               secondaryProton.exe)
 add_dependencies(secondaryProton.exe               secondaryKaon.exe)
 add_dependencies(secondaryKaon.exe                 neutralKaon.exe)
 add_dependencies(neutralKaon.exe                   highlandPD)
+#add_dependencies(beamParticle.exe                  highlandPD)
 add_dependencies(highlandPD                        ch_rootmap)
 add_dependencies(ch_rootmap                        highlandPD_dicts)
 add_dependencies(highlandPD_dicts                  include)
