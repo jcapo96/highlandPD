@@ -13,6 +13,7 @@
 #include "TH1F.h"
 #include "CategoryManager.hxx"
 #include "TMultiGraph.h"
+#include "pdUtilsNeutralKaonSignalDiagnostics.hxx"
 #include <algorithm>
 #include <cmath>
 #include <unordered_set>
@@ -52,114 +53,6 @@ namespace {
       if (kTrackedEndProc[i] == endProc) return i;
     }
     return -1;
-  }
-
-  Int_t sSignalDiagRun = -999999999;
-  Int_t sSignalDiagSub = -999999999;
-  Int_t sSignalDiagEvt = -999999999;
-  std::unordered_set<Int_t> sSignalDiagTrueK0Ids;
-
-  std::vector<TMultiGraph*> gK0SignalDedxMultiGraphs;
-  std::vector<TH1F*> gK0SignalDedxBiasHistograms;
-  /// Running index per signal subtype (two_stopping=1, one_stopping=5, interacting=6).
-  int sK0SigDedxSerialByCode[3] = {0, 0, 0};
-
-  int SignalCategoryToSerialSlot(int signalCode) {
-    if (signalCode == 1) return 0;
-    if (signalCode == 5) return 1;
-    if (signalCode == 6) return 2;
-    return -1;
-  }
-
-  void DeleteMultiGraphAndGraphs(TMultiGraph* mg) {
-    if (!mg) return;
-    TList* gl = mg->GetListOfGraphs();
-    if (gl) gl->Delete();
-    delete mg;
-  }
-
-  void MaybeAccumulateSignalPionDedxMultiGraphs(AnaNeutralParticlePD* candidate, const AnaEventB& event,
-                                               size_t candidateIndex) {
-    if (!candidate || !anaUtils::_categ || !anaUtils::_categ->HasCategory("signal")) return;
-    const int signalCode =
-        anaUtils::_categ->GetCategory("signal").GetObjectCode(1, static_cast<Int_t>(candidateIndex));
-    if (signalCode != 1 && signalCode != 5 && signalCode != 6) return;
-
-    const int codeSlot = SignalCategoryToSerialSlot(signalCode);
-    if (codeSlot < 0) return;
-
-    AnaAnnihilationVertexPD* vertex = candidate->AnnihilationVertex;
-    if (!vertex || vertex->Particles.size() < 2) return;
-
-    const int pairIdx = sK0SigDedxSerialByCode[codeSlot];
-    Int_t runId = -1;
-    Int_t subRunId = -1;
-    Int_t evtId = -1;
-    if (event.EventInfo) {
-      runId = event.EventInfo->Run;
-      subRunId = event.EventInfo->SubRun;
-      evtId = event.EventInfo->Event;
-    }
-    bool anyGraph = false;
-    for (int idau = 0; idau < 2; ++idau) {
-      AnaParticlePD* reco = static_cast<AnaParticlePD*>(vertex->Particles[idau]);
-      if (!reco) continue;
-      const AnaTrueParticlePD* tpart = reco->TrueObject ? static_cast<AnaTrueParticlePD*>(reco->TrueObject) : nullptr;
-      if (!tpart || std::abs(tpart->PDG) != 211) continue;
-
-      double truncMinRR = 0.;
-      double truncFrac = 0.;
-      if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm")) {
-        truncMinRR = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm");
-      }
-      if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction")) {
-        truncFrac = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction");
-      }
-      char dedxXAxis[200];
-      std::snprintf(dedxXAxis, sizeof(dedxXAxis),
-                    "(run %d, subrun %d, evt %d) Residual range [cm]", static_cast<int>(runId),
-                    static_cast<int>(subRunId), static_cast<int>(evtId));
-      TMultiGraph* mg = pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(reco, 500., 0.5, truncMinRR, truncFrac,
-                                                                        dedxXAxis);
-      if (!mg) continue;
-
-      char biasHistTitle[240];
-      std::snprintf(biasHistTitle, sizeof(biasHistTitle),
-            "(run %d, subrun %d, evt %d) #Delta(dE/dx)=measured-expected(PDF mode);#Delta(dE/dx) [MeV/cm];Entries",
-                    static_cast<int>(runId), static_cast<int>(subRunId), static_cast<int>(evtId));
-      TH1F* hBias = pdAnaUtils::MakePionFreeRangeDedxBiasHistogram(reco, 500., 0.5, truncMinRR, truncFrac,
-                                                                   biasHistTitle);
-      if (!hBias) {
-        DeleteMultiGraphAndGraphs(mg);
-        continue;
-      }
-
-      mg->SetName(Form("mg_sigdedx_%d_dau%d_%d", signalCode, idau + 1, pairIdx));
-      hBias->SetName(Form("h_sigdedx_%d_dau%d_%d", signalCode, idau + 1, pairIdx));
-      gK0SignalDedxMultiGraphs.push_back(mg);
-      gK0SignalDedxBiasHistograms.push_back(hBias);
-      anyGraph = true;
-    }
-    if (anyGraph) {
-      ++sK0SigDedxSerialByCode[codeSlot];
-    }
-  }
-
-  void ResetSignalK0DiagnosticsIfNewEvent(const AnaEventB& event) {
-    Int_t r = -1;
-    Int_t s = -1;
-    Int_t e = -1;
-    if (event.EventInfo) {
-      r = event.EventInfo->Run;
-      s = event.EventInfo->SubRun;
-      e = event.EventInfo->Event;
-    }
-    if (r != sSignalDiagRun || s != sSignalDiagSub || e != sSignalDiagEvt) {
-      sSignalDiagTrueK0Ids.clear();
-      sSignalDiagRun = r;
-      sSignalDiagSub = s;
-      sSignalDiagEvt = e;
-    }
   }
 
   bool IsValidPos(const TVector3& p) {
@@ -314,49 +207,21 @@ namespace {
 //********************************************************************
 void neutralKaonTree::WriteHitDistanceProfiles(OutputManager& output){
 //********************************************************************
-  TTree* tree = output.GetTree();
-  if (!tree) {
-    return;
-  }
-  TFile* file = tree->GetCurrentFile();
-  if (!file) {
-    return;
-  }
-
-  // Materialize process-binned dE/dx vs RR histograms at finalize.
-  EnsureDEdxResidualRangeByEndProcHistograms(output);
-
-  file->cd();
-  for (Int_t i = 0; i < 2; ++i) {
-    if (gK0DauHitDistVsTravel2D[i]) {
-      gK0DauHitDistVsTravel2D[i]->Write("", TObject::kOverwrite);
-    }
-    if (gK0DauHitDistVsTravelProf[i]) {
-      gK0DauHitDistVsTravelProf[i]->Write("", TObject::kOverwrite);
-    }
-  }
-  for (Int_t i = 0; i < 4; ++i) {
-    if (gK0SigDEdxVsRRByEndProc2D[i]) {
-      gK0SigDEdxVsRRByEndProc2D[i]->Write("", TObject::kOverwrite);
-    }
-  }
-  for (TMultiGraph* mg : gK0SignalDedxMultiGraphs) {
-    if (mg) {
-      file->cd();
-      mg->Write(mg->GetName(), TObject::kOverwrite);
-      DeleteMultiGraphAndGraphs(mg);
-    }
-  }
-  for (TH1F* h : gK0SignalDedxBiasHistograms) {
-    if (h) {
-      file->cd();
-      h->Write(h->GetName(), TObject::kOverwrite);
-      delete h;
-    }
-  }
-  gK0SignalDedxMultiGraphs.clear();
-  gK0SignalDedxBiasHistograms.clear();
-  sK0SigDedxSerialByCode[0] = sK0SigDedxSerialByCode[1] = sK0SigDedxSerialByCode[2] = 0;
+  // EnsureDEdxResidualRangeByEndProcHistograms(output);
+  // for (Int_t i = 0; i < 2; ++i) {
+  //   if (gK0DauHitDistVsTravel2D[i]) {
+  //     gK0DauHitDistVsTravel2D[i]->Write("", TObject::kOverwrite);
+  //   }
+  //   if (gK0DauHitDistVsTravelProf[i]) {
+  //     gK0DauHitDistVsTravelProf[i]->Write("", TObject::kOverwrite);
+  //   }
+  // }
+  // for (Int_t i = 0; i < 4; ++i) {
+  //   if (gK0SigDEdxVsRRByEndProc2D[i]) {
+  //     gK0SigDEdxVsRRByEndProc2D[i]->Write("", TObject::kOverwrite);
+  //   }
+  // }
+  neutralKaonTreeDiagnostics::WriteSignalPionDedxDiagnostics(output);
 }
 
 //********************************************************************
@@ -475,24 +340,23 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
     AnaAnnihilationVertexPD* vertex = candidate->AnnihilationVertex;
     neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex, event);
 
-    MaybeAccumulateSignalPionDedxMultiGraphs(candidate, event, neutralCandidateIndex);
+    // neutralKaonTreeDiagnostics::MaybeAccumulateSignalPionDedxMultiGraphs(candidate, event, neutralCandidateIndex);
 
     AnaTrueParticlePD* sigTrueK0 = neutralKaonAnaUtils::GetSignalTrueParent(candidate, event);
     if (vertex && sigTrueK0) {
-      ResetSignalK0DiagnosticsIfNewEvent(event);
-      const auto inserted = sSignalDiagTrueK0Ids.insert(sigTrueK0->ID);
-      if (inserted.second) {
+      neutralKaonTreeDiagnostics::ResetSignalK0DiagnosticsIfNewEvent(event);
+      if (neutralKaonTreeDiagnostics::RegisterSignalTrueK0Id(sigTrueK0->ID)) {
         if (vertex->Particles.size() > 0 && vertex->Particles[0]) {
           AnaParticlePD* recoDau1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
           AnaTrueParticlePD* trueDau1 = recoDau1 ? static_cast<AnaTrueParticlePD*>(recoDau1->TrueObject) : nullptr;
-          FillHitDistanceToTrueLineProfiles(output, recoDau1, trueDau1, 0);
-          FillDEdxVsResidualRangeByEndProc(output, recoDau1, trueDau1);
+          // FillHitDistanceToTrueLineProfiles(output, recoDau1, trueDau1, 0);
+          // FillDEdxVsResidualRangeByEndProc(output, recoDau1, trueDau1);
         }
         if (vertex->Particles.size() > 1 && vertex->Particles[1]) {
           AnaParticlePD* recoDau2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
           AnaTrueParticlePD* trueDau2 = recoDau2 ? static_cast<AnaTrueParticlePD*>(recoDau2->TrueObject) : nullptr;
-          FillHitDistanceToTrueLineProfiles(output, recoDau2, trueDau2, 1);
-          FillDEdxVsResidualRangeByEndProc(output, recoDau2, trueDau2);
+          // FillHitDistanceToTrueLineProfiles(output, recoDau2, trueDau2, 1);
+          // FillDEdxVsResidualRangeByEndProc(output, recoDau2, trueDau2);
         }
       }
     }
