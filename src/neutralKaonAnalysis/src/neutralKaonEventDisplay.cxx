@@ -641,6 +641,54 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
         }
     };
 
+    auto resolveAssociatedTrueNeutral = [&](AnaNeutralParticlePD* neutralParticle,
+                                            AnaParticlePD* daughter1,
+                                            AnaParticlePD* daughter2) -> const AnaTrueParticlePD* {
+        if (!neutralParticle || !daughter1 || !daughter2 ||
+            !daughter1->TrueObject || !daughter2->TrueObject) {
+            return NULL;
+        }
+
+        const AnaTrueParticlePD* trueDaughter1 =
+            static_cast<const AnaTrueParticlePD*>(daughter1->TrueObject);
+        const AnaTrueParticlePD* trueDaughter2 =
+            static_cast<const AnaTrueParticlePD*>(daughter2->TrueObject);
+        if (!trueDaughter1 || !trueDaughter2) return NULL;
+
+        if (trueDaughter1->ParentID <= 0 || trueDaughter1->ParentID != trueDaughter2->ParentID) {
+            return NULL;
+        }
+
+        auto trueNeutralIt = trueParticleByID.find(trueDaughter1->ParentID);
+        if (trueNeutralIt == trueParticleByID.end() || !trueNeutralIt->second) {
+            return NULL;
+        }
+        const AnaTrueParticlePD* trueNeutral = trueNeutralIt->second;
+
+        const Int_t absPDG = std::abs(trueNeutral->PDG);
+        if (!(absPDG == 311 || absPDG == 310 || absPDG == 130)) {
+            return NULL;
+        }
+
+        if (!neutralParticle->Parent || !neutralParticle->Parent->TrueObject) {
+            return NULL;
+        }
+        const AnaTrueParticlePD* trueRecoParent =
+            static_cast<const AnaTrueParticlePD*>(neutralParticle->Parent->TrueObject);
+        if (!trueRecoParent) return NULL;
+
+        bool isTrueDaughterOfRecoParent = false;
+        for (size_t idx = 0; idx < trueRecoParent->Daughters.size(); ++idx) {
+            if (trueRecoParent->Daughters[idx] == trueNeutral->ID) {
+                isTrueDaughterOfRecoParent = true;
+                break;
+            }
+        }
+        if (!isTrueDaughterOfRecoParent) return NULL;
+
+        return trueNeutral;
+    };
+
     // Fill K0 candidate data from neutral particle candidates
     if (k0Box && k0Box->neutralParticleCandidates.size() > 0) {
         for (size_t i = 0; i < k0Box->neutralParticleCandidates.size() && i < (size_t)kMaxK0; i++) {
@@ -995,28 +1043,24 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Int_t truePDG = -999;
             const AnaTrueParticlePD* associatedTrueK0 = NULL;
 
-            if (neutralParticle->TrueObject) {
-                const AnaTrueParticlePD* trueParent =
-                    static_cast<const AnaTrueParticlePD*>(neutralParticle->TrueObject);
-                if (trueParent) {
-                    hasTrueObject = 1;
-                    associatedTrueK0 = trueParent;
-                    trueStartPos[0] = associatedTrueK0->Position[0];
-                    trueStartPos[1] = associatedTrueK0->Position[1];
-                    trueStartPos[2] = associatedTrueK0->Position[2];
-                    trueEndPos[0] = associatedTrueK0->PositionEnd[0];
-                    trueEndPos[1] = associatedTrueK0->PositionEnd[1];
-                    trueEndPos[2] = associatedTrueK0->PositionEnd[2];
-                    truePDG = associatedTrueK0->PDG;
-                    TVector3 trueDirVec(associatedTrueK0->PositionEnd[0] - associatedTrueK0->Position[0],
-                                        associatedTrueK0->PositionEnd[1] - associatedTrueK0->Position[1],
-                                        associatedTrueK0->PositionEnd[2] - associatedTrueK0->Position[2]);
-                    if (trueDirVec.Mag2() > 1e-10) {
-                        trueDirVec = trueDirVec.Unit();
-                        trueK0Dir[0] = trueDirVec.X();
-                        trueK0Dir[1] = trueDirVec.Y();
-                        trueK0Dir[2] = trueDirVec.Z();
-                    }
+            associatedTrueK0 = resolveAssociatedTrueNeutral(neutralParticle, daughter1, daughter2);
+            if (associatedTrueK0) {
+                hasTrueObject = 1;
+                trueStartPos[0] = associatedTrueK0->Position[0];
+                trueStartPos[1] = associatedTrueK0->Position[1];
+                trueStartPos[2] = associatedTrueK0->Position[2];
+                trueEndPos[0] = associatedTrueK0->PositionEnd[0];
+                trueEndPos[1] = associatedTrueK0->PositionEnd[1];
+                trueEndPos[2] = associatedTrueK0->PositionEnd[2];
+                truePDG = associatedTrueK0->PDG;
+                TVector3 trueDirVec(associatedTrueK0->PositionEnd[0] - associatedTrueK0->Position[0],
+                                    associatedTrueK0->PositionEnd[1] - associatedTrueK0->Position[1],
+                                    associatedTrueK0->PositionEnd[2] - associatedTrueK0->Position[2]);
+                if (trueDirVec.Mag2() > 1e-10) {
+                    trueDirVec = trueDirVec.Unit();
+                    trueK0Dir[0] = trueDirVec.X();
+                    trueK0Dir[1] = trueDirVec.Y();
+                    trueK0Dir[2] = trueDirVec.Z();
                 }
             }
 
@@ -1449,26 +1493,8 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
 void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 //********************************************************************
     // Draw K0 candidates
-    TEveElementList* recoGroup = PrepareGroup(scene, "K0 Reco Objects");
-    TEveElementList* creationVertexGroup = PrepareGroup(scene, "K0 Creation Vertices");
-    TEveElementList* annihilationVertexGroup = PrepareGroup(scene, "K0 Annihilation Vertices");
-    // Vertex momentum arrows + daughter Pandora/fit direction rays; uncheck once to hide all.
-    TEveElementList* momentumArrowGroup =
-        PrepareGroup(scene, "K0 Momentum Arrows (vertex + daughter dirs)");
-    TEveElementList* truthGroup = PrepareGroup(scene, "K0 Truth (Matched)");
-    TEveElementList* truthParentGroup = PrepareGroup(scene, "K0 Truth Parents");
-    TEveElementList* truthDaughterGroup = PrepareGroup(scene, "K0 Truth Daughters");
-    TEveElementList* truthSiblingGroup = PrepareGroup(scene, "K0 Truth Siblings");
-    TEveElementList* creationFitGroup = PrepareGroup(scene, "K0 Creation Fit Helpers");
-    TEveElementList* annihilationFitGroup = PrepareGroup(scene, "K0 Annihilation Fit Helpers");
-    TEveElementList* standaloneTruthGroup = PrepareGroup(scene, "Standalone True K0");
-    TEveElementList* standaloneParentGroup = PrepareGroup(scene, "Standalone True K0 Parents");
-    TEveElementList* standaloneDaughterGroup = PrepareGroup(scene, "Standalone True K0 Daughters");
-    TEveElementList* standaloneSiblingGroup = PrepareGroup(scene, "Standalone True K0 Siblings");
-    TEveElementList* annotationGroup = PrepareGroup(scene, "K0 Truth Annotations");
-    TEveElementList* parentDirGroup = PrepareGroup(scene, "K0 Parent Directions");
-    TEveElementList* creationDirGroup = PrepareGroup(scene, "K0 Creation Partner Directions");
-    TEveElementList* daughterDirGroup = PrepareGroup(scene, "K0 Daughter Directions");
+    TEveElementList* neutralParticlesGroup = PrepareGroup(scene, "Neutral Particles");
+    TEveElementList* trueParticlesGroup = PrepareGroup(scene, "True Particles");
 
     auto addElement = [&](TEveElementList* group, TEveElement* element) {
         AppendElementToGroup(scene, group, element);
@@ -1530,78 +1556,48 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         addWing(wing4, "head wing D");
     };
 
-    auto findParticleIndex = [&](Int_t uniqueID) -> Int_t {
-        if (uniqueID < 0) {
-            return -1;
-        }
-        for (Int_t p = 0; p < _nParticles; ++p) {
-            if (_particle_uniqueID[p] == uniqueID) {
-                return p;
-            }
-        }
-        return -1;
-    };
-
-    auto drawTrajectoryLine = [&](TEveElementList* group,
-                                  const char* label,
-                                  Int_t uniqueID,
-                                  const Float_t dir[3],
-                                  Int_t npts) {
-        if (!group || uniqueID < 0 || npts <= 0) {
-            return;
-        }
-        Int_t idx = findParticleIndex(uniqueID);
-        if (idx < 0) {
-            return;
-        }
-        Float_t startX = _particle_startPos[idx][0];
-        Float_t startY = _particle_startPos[idx][1];
-        Float_t startZ = _particle_startPos[idx][2];
-        Float_t endX = _particle_endPos[idx][0];
-        Float_t endY = _particle_endPos[idx][1];
-        Float_t endZ = _particle_endPos[idx][2];
-        if (startX <= -900.f || startY <= -900.f || startZ <= -900.f ||
-            endX <= -900.f || endY <= -900.f || endZ <= -900.f) {
-            return;
-        }
-        TVector3 start(startX, startY, startZ);
-        TVector3 end(endX, endY, endZ);
-        TVector3 dirVec(dir[0], dir[1], dir[2]);
-        if (!std::isfinite(dirVec.X()) || !std::isfinite(dirVec.Y()) || !std::isfinite(dirVec.Z())) {
-            return;
-        }
-        if (dirVec.Mag() <= 0) {
-            return;
-        }
-        dirVec = dirVec.Unit();
-        Double_t length = (end - start).Mag();
-        if (length <= 0) {
-            return;
-        }
-        TVector3 extendedStart = start - dirVec * (0.1 * length);
-        TVector3 extendedEnd = end + dirVec * (0.1 * length);
-        TEveLine* line = new TEveLine(Form("%s #%d", label, uniqueID));
-        line->SetLineWidth(2);
-        Int_t color = GetParticleColor(_particle_PDG[idx]);
-        if (color == kBlack) {
-            color = kGray + 1;
-        }
-        line->SetMainColor(color);
-        line->SetPickable(kTRUE);
-        line->SetElementTitle(Form("%s Trajectory MPV [%0.3f, %0.3f, %0.3f] (%d points)",
-                                   label, dir[0], dir[1], dir[2], npts));
-        line->SetNextPoint(extendedStart.X(), extendedStart.Y(), extendedStart.Z());
-        line->SetNextPoint(extendedEnd.X(), extendedEnd.Y(), extendedEnd.Z());
-        addElement(group, line);
-        anchorPoint(line, extendedStart.X(), extendedStart.Y(), extendedStart.Z());
-        anchorPoint(line, extendedEnd.X(), extendedEnd.Y(), extendedEnd.Z());
-    };
-
     _parentDirElementToIndex.clear();
     _parentDirectionLines.clear();
 
     for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0; i++) {
         Int_t parentColor = kBlue;
+        TEveElementList* neutralParticleGroup =
+            new TEveElementList(Form("Neutral UID=%d TruePDG=%d", i, _k0_truePDG[i]));
+        addElement(neutralParticlesGroup, neutralParticleGroup);
+
+        TEveElementList* trueParticleGroup =
+            new TEveElementList(Form("True UID=%d PDG=%d", i, _k0_truePDG[i]));
+        addElement(trueParticlesGroup, trueParticleGroup);
+
+        TEveElementList* creationVertexGroup = neutralParticleGroup;
+        TEveElementList* annihilationVertexGroup = neutralParticleGroup;
+        TEveElementList* momentumArrowGroup = neutralParticleGroup;
+        TEveElementList* creationFitGroup = neutralParticleGroup;
+        TEveElementList* annihilationFitGroup = neutralParticleGroup;
+
+        TEveElementList* truthGroup = trueParticleGroup;
+        TEveElementList* truthParentGroup = trueParticleGroup;
+        TEveElementList* truthDaughterGroup = trueParticleGroup;
+        TEveElementList* truthSiblingGroup = trueParticleGroup;
+        TEveElementList* annotationGroup = trueParticleGroup;
+
+        if (_k0_startPos[i][0] > -900 && _k0_endPos[i][0] > -900) {
+            Int_t recoColor = kGray + 1;
+            if (_k0_hasTrueObject[i] && _k0_truePDG[i] != -999) {
+                recoColor = GetParticleColor(_k0_truePDG[i]);
+                if (recoColor == kBlack) recoColor = kGray + 1;
+            }
+
+            TEveLine* recoK0 = new TEveLine(Form("K0 #%d Reco Trajectory", i));
+            recoK0->SetPoint(0, _k0_startPos[i][0], _k0_startPos[i][1], _k0_startPos[i][2]);
+            recoK0->SetPoint(1, _k0_endPos[i][0], _k0_endPos[i][1], _k0_endPos[i][2]);
+            recoK0->SetMainColor(recoColor);
+            recoK0->SetLineWidth(3);
+            recoK0->SetLineStyle(2);
+            addElement(neutralParticleGroup, recoK0);
+            anchorPoint(recoK0, _k0_startPos[i][0], _k0_startPos[i][1], _k0_startPos[i][2]);
+            anchorPoint(recoK0, _k0_endPos[i][0], _k0_endPos[i][1], _k0_endPos[i][2]);
+        }
 
         // Creation vertex sphere
         Float_t creationX = _k0_creationVtxPos[i][0];
@@ -1670,7 +1666,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             parentLength = TVector3(parentEndX - parentStartX, parentEndY - parentStartY, parentEndZ - parentStartZ).Mag();
         }
 
-        if (!parentDirGroup || !dirValid || parentLength <= 0) {
+        if (!dirValid || parentLength <= 0) {
             // Cannot draw reliable parent direction line
         } else {
             TVector3 startPoint;
@@ -1703,22 +1699,13 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                                              _k0_parentTrajDirNPts[i]));
             parentLine->SetNextPoint(extendedStart.X(), extendedStart.Y(), extendedStart.Z());
             parentLine->SetNextPoint(extendedEnd.X(), extendedEnd.Y(), extendedEnd.Z());
-            addElement(parentDirGroup, parentLine);
+            addElement(momentumArrowGroup, parentLine);
             anchorPoint(parentLine, extendedStart.X(), extendedStart.Y(), extendedStart.Z());
             anchorPoint(parentLine, extendedEnd.X(), extendedEnd.Y(), extendedEnd.Z());
 
             _parentDirElementToIndex[parentLine] = i;
             _parentDirectionLines.push_back(parentLine);
         }
-
-        if (creationDirGroup && _k0_secondTrajDirNPts[i] > 0) {
-            drawTrajectoryLine(creationDirGroup,
-                               "Creation Partner Direction",
-                               _k0_secondParticleID[i],
-                               _k0_secondTrajDir[i],
-                               _k0_secondTrajDirNPts[i]);
-        }
-        (void)daughterDirGroup;
 
         // Annihilation vertex sphere
         Float_t annihilationX = _k0_annihilationVtxPos[i][0];
@@ -1844,31 +1831,6 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                     }
                 }
             }
-        }
-
-        // Reconstructed neutral trajectory from creation to annihilation, dashed and truth-PDG coloured.
-        if (_k0_creationVtxPos[i][0] > -900 && _k0_annihilationVtxPos[i][0] > -900) {
-            Int_t recoColor = kGray + 1;
-            if (_k0_hasTrueObject[i] && _k0_truePDG[i] != -999) {
-                recoColor = GetParticleColor(_k0_truePDG[i]);
-                if (recoColor == kBlack) recoColor = kGray + 1;
-            }
-
-            TEveLine* k0 = new TEveLine(Form("K0 #%d Reco Trajectory", i));
-            k0->SetPoint(0, _k0_creationVtxPos[i][0], _k0_creationVtxPos[i][1], _k0_creationVtxPos[i][2]);
-            k0->SetPoint(1, _k0_annihilationVtxPos[i][0], _k0_annihilationVtxPos[i][1], _k0_annihilationVtxPos[i][2]);
-            k0->SetMainColor(recoColor);
-            k0->SetLineWidth(3);
-            k0->SetLineStyle(2); // Dashed
-            addElement(recoGroup, k0);
-            anchorPoint(k0,
-                        _k0_creationVtxPos[i][0],
-                        _k0_creationVtxPos[i][1],
-                        _k0_creationVtxPos[i][2]);
-            anchorPoint(k0,
-                        _k0_annihilationVtxPos[i][0],
-                        _k0_annihilationVtxPos[i][1],
-                        _k0_annihilationVtxPos[i][2]);
         }
 
         // K0 true trajectory (if TrueObject exists - solid line, K0 PDG color)
@@ -2161,6 +2123,10 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 
         // Draw annihilation vertex fitted lines (daughter particles)
         if (fitLength > 0) {
+            TEveElementList* annihilationFitCandidateGroup =
+                new TEveElementList(Form("K0 #%d", i));
+            addElement(annihilationFitGroup, annihilationFitCandidateGroup);
+
             // Get daughter colors by matching UniqueID
             Int_t d1Color = kCyan;
             Int_t d2Color = kSpring;
@@ -2307,7 +2273,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 pt1Pand->SetMarkerStyle(25); // Open square
                 pt1Pand->SetMarkerSize(1.8);
                 pt1Pand->SetMainColor(kAzure + 2);
-                addElement(annihilationFitGroup, pt1Pand);
+                addElement(annihilationFitCandidateGroup, pt1Pand);
             }
 
             if (_k0_annVtx_pandoraClosestPt2[i][0] > -900) {
@@ -2318,7 +2284,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 pt2Pand->SetMarkerStyle(25); // Open square
                 pt2Pand->SetMarkerSize(1.8);
                 pt2Pand->SetMainColor(kAzure + 2);
-                addElement(annihilationFitGroup, pt2Pand);
+                addElement(annihilationFitCandidateGroup, pt2Pand);
             }
 
             if (_k0_annVtx_pandoraClosestPt1[i][0] > -900 && _k0_annVtx_pandoraClosestPt2[i][0] > -900) {
@@ -2332,7 +2298,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 connectPand->SetMainColor(kAzure + 2);
                 connectPand->SetLineStyle(1);
                 connectPand->SetLineWidth(2);
-                addElement(annihilationFitGroup, connectPand);
+                addElement(annihilationFitCandidateGroup, connectPand);
             }
 
             if (_k0_annVtx_closestPt1[i][0] > -900) {
@@ -2343,7 +2309,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 pt1->SetMarkerStyle(24); // Open circle
                 pt1->SetMarkerSize(2.0);
                 pt1->SetMainColor(kOrange);
-                addElement(annihilationFitGroup, pt1);
+                addElement(annihilationFitCandidateGroup, pt1);
             }
 
             if (_k0_annVtx_closestPt2[i][0] > -900) {
@@ -2354,7 +2320,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 pt2->SetMarkerStyle(24); // Open circle
                 pt2->SetMarkerSize(2.0);
                 pt2->SetMainColor(kOrange);
-                addElement(annihilationFitGroup, pt2);
+                addElement(annihilationFitCandidateGroup, pt2);
             }
 
             // Draw white dotted line connecting the two closest points (annihilation vertex)
@@ -2369,7 +2335,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 connectLine->SetMainColor(kWhite);
                 connectLine->SetLineStyle(3); // Dotted
                 connectLine->SetLineWidth(2);
-                addElement(annihilationFitGroup, connectLine);
+                addElement(annihilationFitCandidateGroup, connectLine);
             }
         }
     }
@@ -2381,6 +2347,16 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
     // Draw standalone true K0 trajectories
     for (Int_t i = 0; i < _nTrueK0 && i < kMaxTrueK0; ++i) {
         if (_trueK0_startPos[i][0] <= -900 || _trueK0_endPos[i][0] <= -900) continue;
+
+        TEveElementList* trueParticleGroup =
+            new TEveElementList(Form("True UID=%d PDG=%d", i, _trueK0_PDG[i]));
+        addElement(trueParticlesGroup, trueParticleGroup);
+
+        TEveElementList* standaloneTruthGroup = trueParticleGroup;
+        TEveElementList* standaloneParentGroup = trueParticleGroup;
+        TEveElementList* standaloneDaughterGroup = trueParticleGroup;
+        TEveElementList* standaloneSiblingGroup = trueParticleGroup;
+        TEveElementList* annotationGroup = trueParticleGroup;
 
         Int_t trueColor = GetParticleColor(_trueK0_PDG[i]);
         if (trueColor == kBlack) {
@@ -2498,13 +2474,12 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
     canvas->cd();
 
     const Bool_t showCreationVertices = kFALSE;
-    const Bool_t showAnnihilationVertices = IsGroupVisible("K0 Annihilation Vertices");
-    const Bool_t showStandaloneTruth = IsGroupVisible("Standalone True K0");
-    const Bool_t showStandaloneParents = IsGroupVisible("Standalone True K0 Parents");
-    const Bool_t showStandaloneDaughters = IsGroupVisible("Standalone True K0 Daughters");
+    const Bool_t showAnnihilationVertices = IsGroupVisible("Neutral Particles");
+    const Bool_t showStandaloneTruth = IsGroupVisible("True Particles");
+    const Bool_t showStandaloneParents = IsGroupVisible("True Particles");
+    const Bool_t showStandaloneDaughters = IsGroupVisible("True Particles");
     const Bool_t showStandaloneSiblings = kFALSE;
-    const Bool_t showMomentumArrows =
-        IsGroupVisible("K0 Momentum Arrows (vertex + daughter dirs)");
+    const Bool_t showMomentumArrows = IsGroupVisible("Neutral Particles");
 
     for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0 && false; i++) {
         // Get vertex positions

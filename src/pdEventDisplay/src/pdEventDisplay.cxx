@@ -7,6 +7,7 @@
 #include <TEvePointSet.h>
 #include <TEveScene.h>
 #include <TEveGeoShape.h>
+#include <TEveElement.h>
 #include <TEveTrans.h>
 #include <TGeoManager.h>
 #include <TGeoVolume.h>
@@ -246,6 +247,9 @@ void pdEventDisplay::DrawDetectorGeometry(TEveScene* scene) {
 //********************************************************************
     std::cout << "Drawing ProtoDUNE-SP detector geometry..." << std::endl;
 
+    TEveElementList* detectorGeometryGroup = new TEveElementList("Detector Geometry");
+    scene->AddElement(detectorGeometryGroup);
+
     // Create geometry manager if needed (only once per session)
     static bool geoManagerCreated = false;
     if (!gGeoManager && !geoManagerCreated) {
@@ -274,7 +278,7 @@ void pdEventDisplay::DrawDetectorGeometry(TEveScene* scene) {
     cpaShape->SetMainColor(kRed);
     cpaShape->SetMainTransparency(70);
     cpaShape->RefMainTrans().SetPos(0.0, apaHeight/2, apaLength/2);
-    scene->AddElement(cpaShape);
+    detectorGeometryGroup->AddElement(cpaShape);
 
     // Draw 6 APAs (blue) - 3 at X=-360 (left side), 3 at X=+360 (right side)
     // Left side APAs (X=-360)
@@ -289,7 +293,7 @@ void pdEventDisplay::DrawDetectorGeometry(TEveScene* scene) {
         apaShape->SetMainColor(kBlue);
         apaShape->SetMainTransparency(70);
         apaShape->RefMainTrans().SetPos(-360.0, yPos, zPos);
-        scene->AddElement(apaShape);
+        detectorGeometryGroup->AddElement(apaShape);
     }
 
     // Right side APAs (X=+360)
@@ -304,7 +308,7 @@ void pdEventDisplay::DrawDetectorGeometry(TEveScene* scene) {
         apaShape->SetMainColor(kBlue);
         apaShape->SetMainTransparency(70);
         apaShape->RefMainTrans().SetPos(360.0, yPos, zPos);
-        scene->AddElement(apaShape);
+        detectorGeometryGroup->AddElement(apaShape);
     }
 
     std::cout << "ProtoDUNE-SP geometry added: 6 APAs, 1 CPA" << std::endl;
@@ -377,40 +381,77 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
 //********************************************************************
     std::cout << "Drawing particles in 3D..." << std::endl;
 
-    // Group hits by PDG for efficiency
-    std::map<std::pair<Int_t, Int_t>, TEvePointSet*> hitsByPDGAndSizeBin;
-    std::map<Int_t, TEvePointSet*> firstHitsByPDG;
-    std::map<Int_t, TEvePointSet*> startPosByPDG;
+    TEveElementList* particlesGroup = new TEveElementList("Particles");
+    scene->AddElement(particlesGroup);
+
+    auto isDuplicateK0RecoTrajectory = [&](Int_t particleIndex, Int_t pdg, Int_t nHits) {
+        if (nHits > 0) return false;
+        const Int_t absPdg = std::abs(pdg);
+        if (!(absPdg == 311 || absPdg == 310 || absPdg == 130)) return false;
+
+        const Float_t startX = _particle_startPos[particleIndex][0];
+        const Float_t startY = _particle_startPos[particleIndex][1];
+        const Float_t startZ = _particle_startPos[particleIndex][2];
+        const Float_t endX = _particle_endPos[particleIndex][0];
+        const Float_t endY = _particle_endPos[particleIndex][1];
+        const Float_t endZ = _particle_endPos[particleIndex][2];
+        if (startX <= -900 || startY <= -900 || startZ <= -900 ||
+            endX <= -900 || endY <= -900 || endZ <= -900) {
+            return false;
+        }
+
+        const Float_t tol2 = 1e-4f;
+        auto samePoint = [&](Float_t ax, Float_t ay, Float_t az, Float_t bx, Float_t by, Float_t bz) {
+            const Float_t dx = ax - bx;
+            const Float_t dy = ay - by;
+            const Float_t dz = az - bz;
+            return (dx * dx + dy * dy + dz * dz) < tol2;
+        };
+
+        for (Int_t k = 0; k < _nK0Candidates && k < kMaxK0; ++k) {
+            if (_k0_startPos[k][0] <= -900 || _k0_endPos[k][0] <= -900) continue;
+            if (samePoint(startX, startY, startZ,
+                          _k0_startPos[k][0], _k0_startPos[k][1], _k0_startPos[k][2]) &&
+                samePoint(endX, endY, endZ,
+                          _k0_endPos[k][0], _k0_endPos[k][1], _k0_endPos[k][2])) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     Int_t hitIdx = 0;
     for (Int_t i = 0; i < _nParticles && i < kMaxParticles; i++) {
         Int_t nHits = _particle_nHits[i];
         Int_t pdg = _particle_PDG[i];
+        Int_t uniqueID = _particle_uniqueID[i];
+
+        if (isDuplicateK0RecoTrajectory(i, pdg, nHits)) {
+            hitIdx += nHits;
+            continue;
+        }
+
         Int_t color = GetParticleColor(pdg);
         std::string pdgName = GetParticleName(pdg);
+
+        TEveElementList* particleGroup =
+            new TEveElementList(Form("Particle UID=%d TruePDG=%d (%s)", uniqueID, pdg, pdgName.c_str()));
+        particlesGroup->AddElement(particleGroup);
+
+        std::map<Int_t, TEvePointSet*> hitsBySizeBin;
+        TEvePointSet* firstHitSet = nullptr;
+        TEvePointSet* startPosSet = nullptr;
+        TEvePointSet* endPosSet = nullptr;
 
         // Check if particle has hits
         if (nHits > 0) {
             // Particle has hits - draw hit-by-hit trajectory
 
-            // Create point sets for this PDG if they don't exist
-            if (firstHitsByPDG.find(pdg) == firstHitsByPDG.end()) {
-                // First hits (larger, different style)
-                TEvePointSet* firstHitSet = new TEvePointSet(Form("%s First Hit", pdgName.c_str()));
-                firstHitSet->SetMarkerStyle(29); // Star
-                firstHitSet->SetMarkerSize(2.0);
-                firstHitSet->SetMainColor(color);
-                firstHitsByPDG[pdg] = firstHitSet;
-                scene->AddElement(firstHitSet);
-
-                // Pandora startPos markers
-                TEvePointSet* startPosSet = new TEvePointSet(Form("%s Pandora Start", pdgName.c_str()));
-                startPosSet->SetMarkerStyle(21); // Square
-                startPosSet->SetMarkerSize(1.2);
-                startPosSet->SetMainColor(color);
-                startPosByPDG[pdg] = startPosSet;
-                scene->AddElement(startPosSet);
-            }
+            firstHitSet = new TEvePointSet("First Hit");
+            firstHitSet->SetMarkerStyle(29);
+            firstHitSet->SetMarkerSize(2.0);
+            firstHitSet->SetMainColor(color);
+            particleGroup->AddElement(firstHitSet);
 
             // Add this particle's hits
             for (Int_t h = 0; h < nHits; h++) {
@@ -423,36 +464,40 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
                     if (x > -900 && y > -900 && z > -900) {
                         if (h == nHits - 1) {
                             // Last hit in array = first hit spatially
-                            firstHitsByPDG[pdg]->SetNextPoint(x, y, z);
+                            firstHitSet->SetNextPoint(x, y, z);
                         } else {
                             const Int_t sizeBin = HitSizeBinFromdEdx(dEdx);
-                            const auto key = std::make_pair(pdg, sizeBin);
-                            if (hitsByPDGAndSizeBin.find(key) == hitsByPDGAndSizeBin.end()) {
+                            if (hitsBySizeBin.find(sizeBin) == hitsBySizeBin.end()) {
                                 TEvePointSet* hitSet =
-                                    new TEvePointSet(Form("%s Hits dEdxBin%d", pdgName.c_str(), sizeBin));
+                                    new TEvePointSet(Form("Hits dEdxBin%d", sizeBin));
                                 hitSet->SetMarkerStyle(20);
                                 hitSet->SetMarkerSize(HitSizeForBin(sizeBin));
                                 hitSet->SetMainColor(color);
-                                hitsByPDGAndSizeBin[key] = hitSet;
-                                scene->AddElement(hitSet);
+                                hitsBySizeBin[sizeBin] = hitSet;
+                                particleGroup->AddElement(hitSet);
                             }
-                            hitsByPDGAndSizeBin[key]->SetNextPoint(x, y, z);
+                            hitsBySizeBin[sizeBin]->SetNextPoint(x, y, z);
                         }
                     }
                     hitIdx++;
                 }
             }
 
-            // Add Pandora startPos marker
-            if (_particle_startPos[i][0] > -900 && _particle_startPos[i][1] > -900 && _particle_startPos[i][2] > -900) {
-                startPosByPDG[pdg]->SetNextPoint(_particle_startPos[i][0],
-                                                 _particle_startPos[i][1],
-                                                 _particle_startPos[i][2]);
-            }
+            startPosSet = new TEvePointSet("Pandora Start");
+            startPosSet->SetMarkerStyle(21);
+            startPosSet->SetMarkerSize(1.2);
+            startPosSet->SetMainColor(color);
+            particleGroup->AddElement(startPosSet);
+
+            endPosSet = new TEvePointSet("Pandora End");
+            endPosSet->SetMarkerStyle(22);
+            endPosSet->SetMarkerSize(1.2);
+            endPosSet->SetMainColor(color);
+            particleGroup->AddElement(endPosSet);
         } else {
             // Particle has no hits - draw simple line from start to end position
             if (_particle_startPos[i][0] > -900 && _particle_endPos[i][0] > -900) {
-                TEveLine* line = new TEveLine(Form("Particle %d (%s) Line", _particle_uniqueID[i], pdgName.c_str()));
+                TEveLine* line = new TEveLine("Line");
                 line->SetNextPoint(_particle_startPos[i][0],
                                   _particle_startPos[i][1],
                                   _particle_startPos[i][2]);
@@ -462,81 +507,34 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
                 line->SetLineColor(color);
                 line->SetLineWidth(2);
                 line->SetLineStyle(2); // Dashed for no-hit particles
-                scene->AddElement(line);
+                particleGroup->AddElement(line);
             }
-        }
-    }
 
-    // Draw K0 candidates
-    for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0; i++) {
-        Int_t parentID = _k0_parentID[i];
-        Int_t parentColor = kBlue;
+            startPosSet = new TEvePointSet("Pandora Start");
+            startPosSet->SetMarkerStyle(21);
+            startPosSet->SetMarkerSize(1.2);
+            startPosSet->SetMainColor(color);
+            particleGroup->AddElement(startPosSet);
 
-        // Find parent particle PDG to get its color
-        for (Int_t j = 0; j < _nParticles; j++) {
-            if (_particle_uniqueID[j] == parentID) {
-                parentColor = GetParticleColor(_particle_PDG[j]);
-                break;
-            }
+            endPosSet = new TEvePointSet("Pandora End");
+            endPosSet->SetMarkerStyle(22);
+            endPosSet->SetMarkerSize(1.2);
+            endPosSet->SetMainColor(color);
+            particleGroup->AddElement(endPosSet);
         }
 
-        // Creation vertex sphere
-        if (_k0_creationVtxPos[i][0] > -900) {
-            Float_t radius = _k0_creationVtxRadius[i];
-
-            TGeoSphere* creationSphere = new TGeoSphere(0, radius);
-            TGeoVolume* creationVol = new TGeoVolume(Form("CreationSphere_%d", i), creationSphere);
-            TEveGeoShape* creationShape = new TEveGeoShape(Form("K0 #%d Creation Radius (%.0f cm)", i, radius));
-            creationShape->SetShape(creationVol->GetShape());
-            creationShape->SetMainColor(parentColor);
-            creationShape->SetMainTransparency(70);
-            creationShape->RefMainTrans().SetPos(_k0_creationVtxPos[i][0],
-                                                  _k0_creationVtxPos[i][1],
-                                                  _k0_creationVtxPos[i][2]);
-            scene->AddElement(creationShape);
-
-            // Creation vertex marker
-            TEvePointSet* vtx = new TEvePointSet(Form("K0 #%d Creation Vertex", i));
-            vtx->SetNextPoint(_k0_creationVtxPos[i][0], _k0_creationVtxPos[i][1], _k0_creationVtxPos[i][2]);
-            vtx->SetMarkerStyle(29); // Star
-            vtx->SetMainColor(parentColor);
-            vtx->SetMarkerSize(2.5);
-            scene->AddElement(vtx);
+        if (startPosSet &&
+            _particle_startPos[i][0] > -900 && _particle_startPos[i][1] > -900 && _particle_startPos[i][2] > -900) {
+            startPosSet->SetNextPoint(_particle_startPos[i][0],
+                                      _particle_startPos[i][1],
+                                      _particle_startPos[i][2]);
         }
 
-        // Annihilation vertex with sphere (red)
-        if (_k0_annihilationVtxPos[i][0] > -900) {
-            Float_t annihilationRadius = _k0_annihilationVtxRadius[i];
-
-            TGeoSphere* annihilationSphere = new TGeoSphere(0, annihilationRadius);
-            TGeoVolume* annihilationVol = new TGeoVolume(Form("AnnihilationSphere_%d", i), annihilationSphere);
-            TEveGeoShape* annihilationShape = new TEveGeoShape(Form("K0 #%d Annihilation Radius (%.0f cm)", i, annihilationRadius));
-            annihilationShape->SetShape(annihilationVol->GetShape());
-            annihilationShape->SetMainColor(kRed);
-            annihilationShape->SetMainTransparency(70);
-            annihilationShape->RefMainTrans().SetPos(_k0_annihilationVtxPos[i][0],
-                                                      _k0_annihilationVtxPos[i][1],
-                                                      _k0_annihilationVtxPos[i][2]);
-            scene->AddElement(annihilationShape);
-
-            // Annihilation vertex marker
-            TEvePointSet* vtx = new TEvePointSet(Form("K0 #%d Decay Vertex", i));
-            vtx->SetNextPoint(_k0_annihilationVtxPos[i][0], _k0_annihilationVtxPos[i][1], _k0_annihilationVtxPos[i][2]);
-            vtx->SetMarkerStyle(29); // Star
-            vtx->SetMainColor(kRed);
-            vtx->SetMarkerSize(3.0);
-            scene->AddElement(vtx);
-        }
-
-        // K0 trajectory fallback (neutral particle path - dashed neutral color)
-        if (_k0_startPos[i][0] > -900 && _k0_endPos[i][0] > -900) {
-            TEveLine* k0 = new TEveLine(Form("K0 #%d Trajectory", i));
-            k0->SetPoint(0, _k0_startPos[i][0], _k0_startPos[i][1], _k0_startPos[i][2]);
-            k0->SetPoint(1, _k0_endPos[i][0], _k0_endPos[i][1], _k0_endPos[i][2]);
-            k0->SetMainColor(kGray + 1);
-            k0->SetLineWidth(3);
-            k0->SetLineStyle(2); // Dashed
-            scene->AddElement(k0);
+        if (endPosSet &&
+            _particle_endPos[i][0] > -900 && _particle_endPos[i][1] > -900 && _particle_endPos[i][2] > -900) {
+            endPosSet->SetNextPoint(_particle_endPos[i][0],
+                                    _particle_endPos[i][1],
+                                    _particle_endPos[i][2]);
         }
     }
 
