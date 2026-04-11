@@ -1,6 +1,7 @@
 #include "pdNeutralUtils.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pdAnnihilationUtils.hxx"
+#include "pdCreationUtils.hxx"
 #include "Parameters.hxx"
 #include "TVector3.h"
 #include <unordered_map>
@@ -86,16 +87,39 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
     AnaCreationVertexPD* creationVtx = new AnaCreationVertexPD();
     creationVtx->BeamParticle = parentParticle;
     creationVtx->SecondParticle = nullptr;
+
+    TVector3 correctedBeamEnd(-999.0, -999.0, -999.0);
+    bool hasProjectedBeamEnd = false;
+    if (parentParticle) {
+      double fitDistanceFromEndCm = 10.0;
+      if (ND::params().HasParameter("neutralKaonAnalysis.TrackFitDistanceCreationFromEnd")) {
+        fitDistanceFromEndCm = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceCreationFromEnd");
+      }
+      hasProjectedBeamEnd = pdCreationUtils::ProjectBeamTailOntoStartDirection(parentParticle,
+                                                                                fitDistanceFromEndCm,
+                                                                                correctedBeamEnd);
+    }
+
+    const bool hasValidProjectedBeamEnd = hasProjectedBeamEnd && correctedBeamEnd.X() > -900.0 &&
+                                          correctedBeamEnd.Y() > -900.0 && correctedBeamEnd.Z() > -900.0;
+
+    const Float_t parentEndX = (hasValidProjectedBeamEnd ? static_cast<Float_t>(correctedBeamEnd.X())
+                                                          : (parentParticle ? parentParticle->PositionEnd[0] : -999.f));
+    const Float_t parentEndY = (hasValidProjectedBeamEnd ? static_cast<Float_t>(correctedBeamEnd.Y())
+                                                          : (parentParticle ? parentParticle->PositionEnd[1] : -999.f));
+    const Float_t parentEndZ = (hasValidProjectedBeamEnd ? static_cast<Float_t>(correctedBeamEnd.Z())
+                                                          : (parentParticle ? parentParticle->PositionEnd[2] : -999.f));
+
     if (parentParticle) {
       creationVtx->UniqueID = parentParticle->UniqueID;
       creationVtx->Particles.push_back(parentParticle);
       creationVtx->NParticles = static_cast<Int_t>(creationVtx->Particles.size());
-      creationVtx->PositionPandora[0] = parentParticle->PositionEnd[0];
-      creationVtx->PositionPandora[1] = parentParticle->PositionEnd[1];
-      creationVtx->PositionPandora[2] = parentParticle->PositionEnd[2];
-      creationVtx->Position[0] = parentParticle->PositionEnd[0];
-      creationVtx->Position[1] = parentParticle->PositionEnd[1];
-      creationVtx->Position[2] = parentParticle->PositionEnd[2];
+      creationVtx->PositionPandora[0] = parentEndX;
+      creationVtx->PositionPandora[1] = parentEndY;
+      creationVtx->PositionPandora[2] = parentEndZ;
+      creationVtx->Position[0] = parentEndX;
+      creationVtx->Position[1] = parentEndY;
+      creationVtx->Position[2] = parentEndZ;
     }
 
     AnaNeutralParticlePD* neutralParticle = new AnaNeutralParticlePD();
@@ -105,11 +129,19 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
     neutralParticle->Parent = creationVtx->BeamParticle;
 
     const bool hasValidParentEnd = parentParticle &&
-                                   parentParticle->PositionEnd[0] > -900.f &&
-                                   parentParticle->PositionEnd[1] > -900.f &&
-                                   parentParticle->PositionEnd[2] > -900.f;
+                                   parentEndX > -900.f &&
+                                   parentEndY > -900.f &&
+                                   parentEndZ > -900.f;
     for (int i = 0; i < 3; ++i) {
-      neutralParticle->PositionStart[i] = hasValidParentEnd ? parentParticle->PositionEnd[i] : -999.f;
+      if (!hasValidParentEnd) {
+        neutralParticle->PositionStart[i] = -999.f;
+      } else if (i == 0) {
+        neutralParticle->PositionStart[i] = parentEndX;
+      } else if (i == 1) {
+        neutralParticle->PositionStart[i] = parentEndY;
+      } else {
+        neutralParticle->PositionStart[i] = parentEndZ;
+      }
       neutralParticle->PositionEnd[i] = annihilationVtx->PositionPandora[i];
       neutralParticle->DirectionEnd[i] = -999.f;
     }

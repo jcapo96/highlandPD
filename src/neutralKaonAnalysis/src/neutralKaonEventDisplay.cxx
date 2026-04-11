@@ -2,6 +2,7 @@
 #include "ToyBoxNeutralKaon.hxx"
 #include "pdDataClasses.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdCreationUtils.hxx"
 #include "OutputManager.hxx"
 #include <TEveGeoShape.h>
 #include <TEveManager.h>
@@ -236,11 +237,19 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         for (Int_t j = 0; j < 3; ++j) {
             _k0_parentStartPos[i][j] = -999;
             _k0_parentEndPos[i][j] = -999;
+            _k0_parentEndPosCorrected[i][j] = -999;
+            _k0_parentTailFitAnchor[i][j] = -999;
+            _k0_parentTailFitDir[i][j] = -999;
             _k0_parentTrajDir[i][j] = -999;
             _k0_secondTrajDir[i][j] = -999;
             _k0_dau1TrajDir[i][j] = -999;
             _k0_dau2TrajDir[i][j] = -999;
         }
+        _k0_parentTailFitLength[i] = -999.f;
+        std::fill_n(_k0_parentTailHitsRaw[i], kMaxBeamTailHits * 3, -999.f);
+        std::fill_n(_k0_parentTailHitsProjected[i], kMaxBeamTailHits * 3, -999.f);
+        _k0_parentTailHitsRawN[i] = 0;
+        _k0_parentTailHitsProjectedN[i] = 0;
         _k0_parentLength[i] = -999.f;
         std::fill_n(_k0_parentTrajDirHist[i], kParentTrajHistBins * 3, 0.f);
         _k0_parentTrajDirNPts[i] = 0;
@@ -502,6 +511,14 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edk0_trueParentEndPos, "ED_k0_trueParentEndPos", "F", "True K0 parent end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_parentStartPos, "ED_k0_parentStartPos", "F", "Reco K0 parent start position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_parentEndPos, "ED_k0_parentEndPos", "F", "Reconstructed K0 parent end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_parentEndPosCorrected, "ED_k0_parentEndPosCorrected", "F", "Projected parent end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_parentTailFitAnchor, "ED_k0_parentTailFitAnchor", "F", "Beam backward-fit anchor used for tail projection", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddMatrixVar(tree_index, edk0_parentTailFitDir, "ED_k0_parentTailFitDir", "F", "Beam backward-fit direction used for tail projection", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddVectorVar(tree_index, edk0_parentTailFitLength, "ED_k0_parentTailFitLength", "F", "Beam backward-fit length used for tail projection", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddMatrixVar(tree_index, edk0_parentTailHitsRaw, "ED_k0_parentTailHitsRaw", "F", "Raw parent tail trajectory points", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxBeamTailHits * 3);
+    output.AddMatrixVar(tree_index, edk0_parentTailHitsProjected, "ED_k0_parentTailHitsProjected", "F", "Projected parent tail trajectory points", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxBeamTailHits * 3);
+    output.AddVectorVar(tree_index, edk0_parentTailHitsRawN, "ED_k0_parentTailHitsRawN", "I", "Raw parent tail hit count", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_parentTailHitsProjectedN, "ED_k0_parentTailHitsProjectedN", "I", "Projected parent tail hit count", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_parentLength, "ED_k0_parentLength", "F", "Reconstructed K0 parent length", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddMatrixVar(tree_index, edk0_parentTrajDir, "ED_k0_parentTrajDir", "F", "K0 parent trajectory direction MPV", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_parentTrajDirHist, "ED_k0_parentTrajDirHist", "F", "K0 parent trajectory direction histograms (XYZ, 60 bins each)", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kParentTrajHistBins * 3);
@@ -728,6 +745,16 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
 
             Float_t parentStartPos[3] = {-999.f, -999.f, -999.f};
             Float_t parentEndPos[3] = {-999.f, -999.f, -999.f};
+            Float_t parentEndPosCorrected[3] = {-999.f, -999.f, -999.f};
+            Float_t parentTailFitAnchor[3] = {-999.f, -999.f, -999.f};
+            Float_t parentTailFitDir[3] = {-999.f, -999.f, -999.f};
+            Float_t parentTailFitLength = -999.f;
+            Float_t parentTailHitsRaw[kMaxBeamTailHits * 3];
+            Float_t parentTailHitsProjected[kMaxBeamTailHits * 3];
+            std::fill_n(parentTailHitsRaw, kMaxBeamTailHits * 3, -999.f);
+            std::fill_n(parentTailHitsProjected, kMaxBeamTailHits * 3, -999.f);
+            Int_t parentTailHitsRawN = 0;
+            Int_t parentTailHitsProjectedN = 0;
             Float_t parentTrajDir[3] = {-999.f, -999.f, -999.f};
             Float_t secondTrajDir[3] = {-999.f, -999.f, -999.f};
             Float_t dau1TrajDir[3] = {-999.f, -999.f, -999.f};
@@ -753,9 +780,81 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                     parentTrajNpts = neutralParticle->Parent->TrajectoryDirectionNPoints;
                 }
 
+                double fitDistanceFromEndCm = 10.0;
+                if (ND::params().HasParameter("neutralKaonAnalysis.TrackFitDistanceCreationFromEnd")) {
+                    fitDistanceFromEndCm = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceCreationFromEnd");
+                }
+
+                double fitCreationLengthCm = 25.0;
+                if (ND::params().HasParameter("neutralKaonAnalysis.TrackFitCreationLength")) {
+                    fitCreationLengthCm = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitCreationLength");
+                }
+
+                std::vector<double> beamTailFitParams;
+                pdAnaUtils::ExtrapolateTrack(neutralParticle->Parent,
+                                             beamTailFitParams,
+                                             fitCreationLengthCm,
+                                             false,
+                                             fitDistanceFromEndCm);
+                if (beamTailFitParams.size() >= 6 &&
+                    beamTailFitParams[0] > -900.0 &&
+                    beamTailFitParams[1] > -900.0 &&
+                    beamTailFitParams[2] > -900.0) {
+                    TVector3 fitDir(beamTailFitParams[3], beamTailFitParams[4], beamTailFitParams[5]);
+                    if (fitDir.Mag2() > 1e-10) {
+                        fitDir = fitDir.Unit();
+                        parentTailFitAnchor[0] = static_cast<Float_t>(beamTailFitParams[0]);
+                        parentTailFitAnchor[1] = static_cast<Float_t>(beamTailFitParams[1]);
+                        parentTailFitAnchor[2] = static_cast<Float_t>(beamTailFitParams[2]);
+                        parentTailFitDir[0] = static_cast<Float_t>(fitDir.X());
+                        parentTailFitDir[1] = static_cast<Float_t>(fitDir.Y());
+                        parentTailFitDir[2] = static_cast<Float_t>(fitDir.Z());
+                        parentTailFitLength = static_cast<Float_t>(fitCreationLengthCm);
+                    }
+                }
+
+                TVector3 correctedEnd(-999.0, -999.0, -999.0);
+                std::vector<TVector3> rawTail;
+                std::vector<TVector3> projectedTail;
+                const bool projectedOk = pdCreationUtils::ProjectBeamTailOntoStartDirection(
+                    neutralParticle->Parent,
+                    fitDistanceFromEndCm,
+                    correctedEnd,
+                    &rawTail,
+                    &projectedTail);
+
+                if (projectedOk && correctedEnd.X() > -900 && correctedEnd.Y() > -900 && correctedEnd.Z() > -900) {
+                    parentEndPosCorrected[0] = correctedEnd.X();
+                    parentEndPosCorrected[1] = correctedEnd.Y();
+                    parentEndPosCorrected[2] = correctedEnd.Z();
+                }
+
+                parentTailHitsRawN = static_cast<Int_t>(std::min(rawTail.size(), static_cast<size_t>(kMaxBeamTailHits)));
+                for (Int_t t = 0; t < parentTailHitsRawN; ++t) {
+                    parentTailHitsRaw[t * 3 + 0] = rawTail[t].X();
+                    parentTailHitsRaw[t * 3 + 1] = rawTail[t].Y();
+                    parentTailHitsRaw[t * 3 + 2] = rawTail[t].Z();
+                }
+
+                parentTailHitsProjectedN =
+                    static_cast<Int_t>(std::min(projectedTail.size(), static_cast<size_t>(kMaxBeamTailHits)));
+                for (Int_t t = 0; t < parentTailHitsProjectedN; ++t) {
+                    parentTailHitsProjected[t * 3 + 0] = projectedTail[t].X();
+                    parentTailHitsProjected[t * 3 + 1] = projectedTail[t].Y();
+                    parentTailHitsProjected[t * 3 + 2] = projectedTail[t].Z();
+                }
+
             }
             output.FillMatrixVarFromArray(edk0_parentStartPos, parentStartPos, 3);
             output.FillMatrixVarFromArray(edk0_parentEndPos, parentEndPos, 3);
+            output.FillMatrixVarFromArray(edk0_parentEndPosCorrected, parentEndPosCorrected, 3);
+            output.FillMatrixVarFromArray(edk0_parentTailFitAnchor, parentTailFitAnchor, 3);
+            output.FillMatrixVarFromArray(edk0_parentTailFitDir, parentTailFitDir, 3);
+            output.FillVectorVar(edk0_parentTailFitLength, parentTailFitLength);
+            output.FillMatrixVarFromArray(edk0_parentTailHitsRaw, parentTailHitsRaw, kMaxBeamTailHits * 3);
+            output.FillMatrixVarFromArray(edk0_parentTailHitsProjected, parentTailHitsProjected, kMaxBeamTailHits * 3);
+            output.FillVectorVar(edk0_parentTailHitsRawN, parentTailHitsRawN);
+            output.FillVectorVar(edk0_parentTailHitsProjectedN, parentTailHitsProjectedN);
             output.FillVectorVar(edk0_parentLength, parentLength);
             output.FillMatrixVarFromArray(edk0_parentTrajDir, parentTrajDir, 3);
             Float_t parentTrajHist[kParentTrajHistBins * 3];
@@ -1237,6 +1336,9 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
         Int_t pseudoCount = std::min(standaloneStored, kMaxK0);
         Float_t zero5[5] = {0.f, 0.f, 0.f, 0.f, 0.f};
         Float_t zero3[3] = {0.f, 0.f, 0.f};
+        Float_t invalid3[3] = {-999.f, -999.f, -999.f};
+        Float_t invalidTail[kMaxBeamTailHits * 3];
+        std::fill_n(invalidTail, kMaxBeamTailHits * 3, -999.f);
         for (Int_t idx = 0; idx < pseudoCount; ++idx) {
             Float_t creationPos[3] = {
                 _trueK0_startPos[idx][0],
@@ -1282,6 +1384,14 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillMatrixVarFromArray(edk0_creationVtx_closestPtBeam, creationPos, 3);
             output.FillMatrixVarFromArray(edk0_creationVtx_closestPtSecond, creationPos, 3);
             output.FillVectorVar(edk0_fitLineLength, 0.f);
+            output.FillMatrixVarFromArray(edk0_parentEndPosCorrected, invalid3, 3);
+            output.FillMatrixVarFromArray(edk0_parentTailFitAnchor, invalid3, 3);
+            output.FillMatrixVarFromArray(edk0_parentTailFitDir, invalid3, 3);
+            output.FillVectorVar(edk0_parentTailFitLength, -999.f);
+            output.FillMatrixVarFromArray(edk0_parentTailHitsRaw, invalidTail, kMaxBeamTailHits * 3);
+            output.FillMatrixVarFromArray(edk0_parentTailHitsProjected, invalidTail, kMaxBeamTailHits * 3);
+            output.FillVectorVar(edk0_parentTailHitsRawN, 0);
+            output.FillVectorVar(edk0_parentTailHitsProjectedN, 0);
             output.FillVectorVar(edk0_hasTrueObject, 1);
             output.FillMatrixVarFromArray(edk0_trueStartPos, _trueK0_startPos[idx], 3);
             output.FillMatrixVarFromArray(edk0_trueEndPos, _trueK0_endPos[idx], 3);
@@ -1398,6 +1508,20 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     tree->SetBranchAddress("ED_k0_trueParentEndPos", _k0_trueParentEndPos);
     tree->SetBranchAddress("ED_k0_parentStartPos", _k0_parentStartPos);
     tree->SetBranchAddress("ED_k0_parentEndPos", _k0_parentEndPos);
+    tree->SetBranchAddress("ED_k0_parentEndPosCorrected", _k0_parentEndPosCorrected);
+    if (tree->GetBranch("ED_k0_parentTailFitAnchor")) {
+        tree->SetBranchAddress("ED_k0_parentTailFitAnchor", _k0_parentTailFitAnchor);
+    }
+    if (tree->GetBranch("ED_k0_parentTailFitDir")) {
+        tree->SetBranchAddress("ED_k0_parentTailFitDir", _k0_parentTailFitDir);
+    }
+    if (tree->GetBranch("ED_k0_parentTailFitLength")) {
+        tree->SetBranchAddress("ED_k0_parentTailFitLength", _k0_parentTailFitLength);
+    }
+    tree->SetBranchAddress("ED_k0_parentTailHitsRaw", _k0_parentTailHitsRaw);
+    tree->SetBranchAddress("ED_k0_parentTailHitsProjected", _k0_parentTailHitsProjected);
+    tree->SetBranchAddress("ED_k0_parentTailHitsRawN", _k0_parentTailHitsRawN);
+    tree->SetBranchAddress("ED_k0_parentTailHitsProjectedN", _k0_parentTailHitsProjectedN);
     tree->SetBranchAddress("ED_k0_parentLength", _k0_parentLength);
     tree->SetBranchAddress("ED_k0_parentTrajDir", _k0_parentTrajDir);
     tree->SetBranchAddress("ED_k0_parentTrajDirHist", _k0_parentTrajDirHist);
@@ -1461,6 +1585,9 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_k0_trueStartPos", "ED_k0_trueEndPos", "ED_k0_truePDG", "ED_k0_trueProcessEnd",
             "ED_k0_trueParentPDG", "ED_k0_trueParentStartPos", "ED_k0_trueParentEndPos",
             "ED_k0_parentStartPos", "ED_k0_parentEndPos", "ED_k0_parentLength",
+            "ED_k0_parentEndPosCorrected", "ED_k0_parentTailFitAnchor", "ED_k0_parentTailFitDir",
+            "ED_k0_parentTailFitLength", "ED_k0_parentTailHitsRaw", "ED_k0_parentTailHitsProjected",
+            "ED_k0_parentTailHitsRawN", "ED_k0_parentTailHitsProjectedN",
             "ED_k0_parentTrajDir", "ED_k0_parentTrajDirHist", "ED_k0_parentTrajDirNPts",
             "ED_k0_secondTrajDir", "ED_k0_secondTrajDirNPts",
             "ED_k0_dau1TrajDir", "ED_k0_dau1TrajDirNPts",
@@ -1705,6 +1832,100 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 
             _parentDirElementToIndex[parentLine] = i;
             _parentDirectionLines.push_back(parentLine);
+        }
+
+        const Int_t rawTailN = std::max(0, std::min(_k0_parentTailHitsRawN[i], kMaxBeamTailHits));
+        const Int_t projectedTailN = std::max(0, std::min(_k0_parentTailHitsProjectedN[i], kMaxBeamTailHits));
+
+        if (rawTailN > 0) {
+            TEvePointSet* rawTail = new TEvePointSet(Form("K0 #%d Parent Tail Raw", i));
+            rawTail->SetMarkerStyle(20);
+            rawTail->SetMarkerSize(1.4);
+            rawTail->SetMainColor(kGray + 2);
+            for (Int_t t = 0; t < rawTailN; ++t) {
+                const Float_t x = _k0_parentTailHitsRaw[i][t * 3 + 0];
+                const Float_t y = _k0_parentTailHitsRaw[i][t * 3 + 1];
+                const Float_t z = _k0_parentTailHitsRaw[i][t * 3 + 2];
+                if (x <= -900.f || y <= -900.f || z <= -900.f) continue;
+                rawTail->SetNextPoint(x, y, z);
+                anchorPoint(rawTail, x, y, z);
+            }
+            addElement(creationFitGroup, rawTail);
+        }
+
+        if (projectedTailN > 0) {
+            TEvePointSet* projectedTail = new TEvePointSet(Form("K0 #%d Parent Tail Projected", i));
+            projectedTail->SetMarkerStyle(24);
+            projectedTail->SetMarkerSize(1.6);
+            projectedTail->SetMainColor(kYellow + 1);
+            for (Int_t t = 0; t < projectedTailN; ++t) {
+                const Float_t x = _k0_parentTailHitsProjected[i][t * 3 + 0];
+                const Float_t y = _k0_parentTailHitsProjected[i][t * 3 + 1];
+                const Float_t z = _k0_parentTailHitsProjected[i][t * 3 + 2];
+                if (x <= -900.f || y <= -900.f || z <= -900.f) continue;
+                projectedTail->SetNextPoint(x, y, z);
+                anchorPoint(projectedTail, x, y, z);
+            }
+            addElement(creationFitGroup, projectedTail);
+        }
+
+        if (parentEndValid) {
+            TEvePointSet* rawEnd = new TEvePointSet(Form("K0 #%d Parent End (Raw)", i));
+            rawEnd->SetNextPoint(parentEndX, parentEndY, parentEndZ);
+            rawEnd->SetMarkerStyle(34);
+            rawEnd->SetMarkerSize(2.2);
+            rawEnd->SetMainColor(kMagenta + 1);
+            addElement(creationFitGroup, rawEnd);
+            anchorPoint(rawEnd, parentEndX, parentEndY, parentEndZ);
+        }
+
+        const Float_t correctedEndX = _k0_parentEndPosCorrected[i][0];
+        const Float_t correctedEndY = _k0_parentEndPosCorrected[i][1];
+        const Float_t correctedEndZ = _k0_parentEndPosCorrected[i][2];
+        const Bool_t correctedEndValid = correctedEndX > -900.f && correctedEndY > -900.f && correctedEndZ > -900.f;
+        if (correctedEndValid) {
+            TEvePointSet* correctedEnd = new TEvePointSet(Form("K0 #%d Parent End (Projected)", i));
+            correctedEnd->SetNextPoint(correctedEndX, correctedEndY, correctedEndZ);
+            correctedEnd->SetMarkerStyle(29);
+            correctedEnd->SetMarkerSize(2.6);
+            correctedEnd->SetMainColor(kYellow + 1);
+            addElement(creationFitGroup, correctedEnd);
+            anchorPoint(correctedEnd, correctedEndX, correctedEndY, correctedEndZ);
+        }
+
+        const Float_t fitAnchorX = _k0_parentTailFitAnchor[i][0];
+        const Float_t fitAnchorY = _k0_parentTailFitAnchor[i][1];
+        const Float_t fitAnchorZ = _k0_parentTailFitAnchor[i][2];
+        const Float_t fitDirX = _k0_parentTailFitDir[i][0];
+        const Float_t fitDirY = _k0_parentTailFitDir[i][1];
+        const Float_t fitDirZ = _k0_parentTailFitDir[i][2];
+        const Float_t fitLen = _k0_parentTailFitLength[i];
+        const Bool_t fitAnchorValid = fitAnchorX > -900.f && fitAnchorY > -900.f && fitAnchorZ > -900.f;
+        TVector3 fitDir(fitDirX, fitDirY, fitDirZ);
+        if (fitAnchorValid && fitDir.Mag2() > 1e-10 && fitLen > 0.f) {
+            fitDir = fitDir.Unit();
+            TVector3 anchor(fitAnchorX, fitAnchorY, fitAnchorZ);
+            const double fitSpan = std::max<double>(std::max<double>(fitLen, parentLength), 20.0);
+            const TVector3 lineStart = anchor - fitSpan * fitDir;
+            const TVector3 lineEnd = anchor + fitSpan * fitDir;
+
+            TEveLine* fitLine = new TEveLine(Form("K0 #%d Parent Tail Backward Fit Line", i));
+            fitLine->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
+            fitLine->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+            fitLine->SetMainColor(kCyan + 1);
+            fitLine->SetLineStyle(2);
+            fitLine->SetLineWidth(3);
+            addElement(creationFitGroup, fitLine);
+            anchorPoint(fitLine, lineStart.X(), lineStart.Y(), lineStart.Z());
+            anchorPoint(fitLine, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+
+            TEvePointSet* fitAnchor = new TEvePointSet(Form("K0 #%d Parent Tail Backward-Fit Anchor", i));
+            fitAnchor->SetNextPoint(anchor.X(), anchor.Y(), anchor.Z());
+            fitAnchor->SetMarkerStyle(43);
+            fitAnchor->SetMarkerSize(2.2);
+            fitAnchor->SetMainColor(kCyan + 1);
+            addElement(creationFitGroup, fitAnchor);
+            anchorPoint(fitAnchor, anchor.X(), anchor.Y(), anchor.Z());
         }
 
         // Annihilation vertex sphere
@@ -1993,12 +2214,16 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 
             // Get beam particle actual endPos and verify it has hits (3D)
             Float_t beamPosX = -999, beamPosY = -999, beamPosZ = -999;
+            Float_t beamStartX = -999, beamStartY = -999, beamStartZ = -999;
             Int_t beamHits = 0;
             for (Int_t p = 0; p < _nParticles; p++) {
                 if (_particle_uniqueID[p] == beamID) {
                     beamPosX = _particle_endPos[p][0];  // Beam uses END position
                     beamPosY = _particle_endPos[p][1];
                     beamPosZ = _particle_endPos[p][2];
+                    beamStartX = _particle_startPos[p][0];
+                    beamStartY = _particle_startPos[p][1];
+                    beamStartZ = _particle_startPos[p][2];
                     beamHits = _particle_nHits[p];
                     break;
                 }
@@ -2007,41 +2232,50 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             // Only draw if beam particle position was found and particle has hits
             if (beamPosX < -900 || beamHits == 0) continue;
 
-            // Beam particle fitted line direction (from fit)
-            // Extend line beyond closest point for better visibility
+            // Beam fitted line: draw bidirectionally with span >= reconstructed particle length.
             TVector3 beamPos(beamPosX, beamPosY, beamPosZ);
             TVector3 closestBeam(_k0_creationVtx_closestPtBeam[i][0],
                                 _k0_creationVtx_closestPtBeam[i][1],
                                 _k0_creationVtx_closestPtBeam[i][2]);
             TVector3 beamDir = closestBeam - beamPos;
             if (beamDir.Mag() > 0) beamDir = beamDir.Unit();
-            TVector3 beamExtended = closestBeam + 100.0 * beamDir; // Extend 100 cm beyond closest point
+            Float_t beamRecoLength = 0.f;
+            if (beamStartX > -900.f && beamStartY > -900.f && beamStartZ > -900.f) {
+                beamRecoLength = TVector3(beamPosX - beamStartX, beamPosY - beamStartY, beamPosZ - beamStartZ).Mag();
+            }
+            const double beamSpan = std::max<double>(100.0, std::max<double>(beamRecoLength, fitLength));
+            TVector3 beamLineStart = beamPos - beamSpan * beamDir;
+            TVector3 beamLineEnd = beamPos + beamSpan * beamDir;
 
             TEveLine* beamLine = new TEveLine(Form("K0 #%d Creation Beam Fit", i));
-            beamLine->SetPoint(0, beamPosX,
-                                   beamPosY,
-                                   beamPosZ);
-            beamLine->SetPoint(1, beamExtended.X(),
-                                   beamExtended.Y(),
-                                   beamExtended.Z());
+            beamLine->SetPoint(0, beamLineStart.X(),
+                                  beamLineStart.Y(),
+                                  beamLineStart.Z());
+            beamLine->SetPoint(1, beamLineEnd.X(),
+                                  beamLineEnd.Y(),
+                                  beamLineEnd.Z());
             beamLine->SetMainColor(beamColor);
             beamLine->SetLineStyle(2); // Dashed (fitted line uses endPos/endDir for beam)
             beamLine->SetLineWidth(2);
             addElement(creationFitGroup, beamLine);
-            anchorPoint(beamLine, beamPosX, beamPosY, beamPosZ);
-            anchorPoint(beamLine, beamExtended.X(), beamExtended.Y(), beamExtended.Z());
+            anchorPoint(beamLine, beamLineStart.X(), beamLineStart.Y(), beamLineStart.Z());
+            anchorPoint(beamLine, beamLineEnd.X(), beamLineEnd.Y(), beamLineEnd.Z());
 
             // Second particle fitted line (uses startPos/startDir)
             if (_k0_creationVtx_fitLineSecondStart[i][0] > -900 &&
                 _k0_creationVtx_closestPtSecond[i][0] > -900) {
                 // Get second particle actual startPos and verify it has hits (3D)
                 Float_t secondPosX = -999, secondPosY = -999, secondPosZ = -999;
+                Float_t secondEndX = -999, secondEndY = -999, secondEndZ = -999;
                 Int_t secondHits = 0;
                 for (Int_t p = 0; p < _nParticles; p++) {
                     if (_particle_uniqueID[p] == secondID) {
                         secondPosX = _particle_startPos[p][0];  // Second uses START position
                         secondPosY = _particle_startPos[p][1];
                         secondPosZ = _particle_startPos[p][2];
+                        secondEndX = _particle_endPos[p][0];
+                        secondEndY = _particle_endPos[p][1];
+                        secondEndZ = _particle_endPos[p][2];
                         secondHits = _particle_nHits[p];
                         break;
                     }
@@ -2050,28 +2284,34 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 // Only draw if second particle position was found and particle has hits
                 if (secondPosX < -900 || secondHits == 0) continue;
 
-                // Extend line beyond closest point for better visibility
+                // Draw bidirectional fitted line with span >= reconstructed particle length.
                 TVector3 secondPos(secondPosX, secondPosY, secondPosZ);
                 TVector3 closestSecond(_k0_creationVtx_closestPtSecond[i][0],
                                       _k0_creationVtx_closestPtSecond[i][1],
                                       _k0_creationVtx_closestPtSecond[i][2]);
                 TVector3 secondDir = closestSecond - secondPos;
                 if (secondDir.Mag() > 0) secondDir = secondDir.Unit();
-                TVector3 secondExtended = closestSecond + 100.0 * secondDir; // Extend 100 cm
+                Float_t secondRecoLength = 0.f;
+                if (secondEndX > -900.f && secondEndY > -900.f && secondEndZ > -900.f) {
+                    secondRecoLength = TVector3(secondEndX - secondPosX, secondEndY - secondPosY, secondEndZ - secondPosZ).Mag();
+                }
+                const double secondSpan = std::max<double>(100.0, std::max<double>(secondRecoLength, fitLength));
+                TVector3 secondLineStart = secondPos - secondSpan * secondDir;
+                TVector3 secondLineEnd = secondPos + secondSpan * secondDir;
 
                 TEveLine* secondLine = new TEveLine(Form("K0 #%d Creation Second Fit", i));
-                secondLine->SetPoint(0, secondPosX,
-                                        secondPosY,
-                                        secondPosZ);
-                secondLine->SetPoint(1, secondExtended.X(),
-                                        secondExtended.Y(),
-                                        secondExtended.Z());
+                secondLine->SetPoint(0, secondLineStart.X(),
+                                        secondLineStart.Y(),
+                                        secondLineStart.Z());
+                secondLine->SetPoint(1, secondLineEnd.X(),
+                                        secondLineEnd.Y(),
+                                        secondLineEnd.Z());
                 secondLine->SetMainColor(secondColor);
                 secondLine->SetLineStyle(2); // Dashed (fitted line uses startPos/startDir)
                 secondLine->SetLineWidth(2);
                 addElement(creationFitGroup, secondLine);
-                anchorPoint(secondLine, secondPosX, secondPosY, secondPosZ);
-                anchorPoint(secondLine, secondExtended.X(), secondExtended.Y(), secondExtended.Z());
+                anchorPoint(secondLine, secondLineStart.X(), secondLineStart.Y(), secondLineStart.Z());
+                anchorPoint(secondLine, secondLineEnd.X(), secondLineEnd.Y(), secondLineEnd.Z());
             }
 
             // Draw closest points on creation vertex fitted lines
@@ -2178,8 +2418,23 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 if (d.Mag() > 0) {
                     d = d.Unit();
                     TVector3 base = s;
-                    double tMin = -20.0;
-                    double tMax = 100.0;
+                    double d1RecoLength = 0.0;
+                    for (Int_t p = 0; p < _nParticles; ++p) {
+                        if (_particle_uniqueID[p] != d1ID) continue;
+                        const Float_t sx = _particle_startPos[p][0];
+                        const Float_t sy = _particle_startPos[p][1];
+                        const Float_t sz = _particle_startPos[p][2];
+                        const Float_t ex = _particle_endPos[p][0];
+                        const Float_t ey = _particle_endPos[p][1];
+                        const Float_t ez = _particle_endPos[p][2];
+                        if (sx > -900.f && sy > -900.f && sz > -900.f && ex > -900.f && ey > -900.f && ez > -900.f) {
+                            d1RecoLength = TVector3(ex - sx, ey - sy, ez - sz).Mag();
+                        }
+                        break;
+                    }
+                    const double span = std::max<double>(100.0, std::max<double>(d1RecoLength, fitLength));
+                    double tMin = -span;
+                    double tMax = span;
                     if (_k0_annVtx_closestPt1[i][0] > -900) {
                         TVector3 cp(_k0_annVtx_closestPt1[i][0], _k0_annVtx_closestPt1[i][1], _k0_annVtx_closestPt1[i][2]);
                         const TVector3 anchorToClosest = cp - s;
@@ -2188,8 +2443,8 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                         }
                         base = cp; // Guarantee rendered fit line passes through closest point.
                         const double tAnchor = (s - base).Dot(d);
-                        tMin = std::min(tMin, tAnchor - 20.0);
-                        tMax = std::max(tMax, tAnchor + 100.0);
+                        tMin = std::min(tMin, tAnchor - span);
+                        tMax = std::max(tMax, tAnchor + span);
                     }
                     TVector3 lineStart = base + tMin * d;
                     TVector3 lineEnd = base + tMax * d;
@@ -2239,8 +2494,23 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 if (d.Mag() > 0) {
                     d = d.Unit();
                     TVector3 base = s;
-                    double tMin = -20.0;
-                    double tMax = 100.0;
+                    double d2RecoLength = 0.0;
+                    for (Int_t p = 0; p < _nParticles; ++p) {
+                        if (_particle_uniqueID[p] != d2ID) continue;
+                        const Float_t sx = _particle_startPos[p][0];
+                        const Float_t sy = _particle_startPos[p][1];
+                        const Float_t sz = _particle_startPos[p][2];
+                        const Float_t ex = _particle_endPos[p][0];
+                        const Float_t ey = _particle_endPos[p][1];
+                        const Float_t ez = _particle_endPos[p][2];
+                        if (sx > -900.f && sy > -900.f && sz > -900.f && ex > -900.f && ey > -900.f && ez > -900.f) {
+                            d2RecoLength = TVector3(ex - sx, ey - sy, ez - sz).Mag();
+                        }
+                        break;
+                    }
+                    const double span = std::max<double>(100.0, std::max<double>(d2RecoLength, fitLength));
+                    double tMin = -span;
+                    double tMax = span;
                     if (_k0_annVtx_closestPt2[i][0] > -900) {
                         TVector3 cp(_k0_annVtx_closestPt2[i][0], _k0_annVtx_closestPt2[i][1], _k0_annVtx_closestPt2[i][2]);
                         const TVector3 anchorToClosest = cp - s;
@@ -2249,8 +2519,8 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                         }
                         base = cp; // Guarantee rendered fit line passes through closest point.
                         const double tAnchor = (s - base).Dot(d);
-                        tMin = std::min(tMin, tAnchor - 20.0);
-                        tMax = std::max(tMax, tAnchor + 100.0);
+                        tMin = std::min(tMin, tAnchor - span);
+                        tMax = std::max(tMax, tAnchor + span);
                     }
                     TVector3 lineStart = base + tMin * d;
                     TVector3 lineEnd = base + tMax * d;
@@ -2908,12 +3178,16 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
 
             // Get beam particle actual endPos and verify it has hits (2D)
             Float_t beamPosX = -999, beamPosY = -999, beamPosZ = -999;
+            Float_t beamStartX = -999, beamStartY = -999, beamStartZ = -999;
             Int_t beamHits = 0;
             for (Int_t p = 0; p < _nParticles; p++) {
                 if (_particle_uniqueID[p] == beamID) {
                     beamPosX = _particle_endPos[p][0];  // Beam uses END position
                     beamPosY = _particle_endPos[p][1];
                     beamPosZ = _particle_endPos[p][2];
+                    beamStartX = _particle_startPos[p][0];
+                    beamStartY = _particle_startPos[p][1];
+                    beamStartZ = _particle_startPos[p][2];
                     beamHits = _particle_nHits[p];
                     break;
                 }
@@ -2922,8 +3196,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             // Only draw if beam particle position was found and particle has hits
             if (beamPosX < -900 || beamHits == 0) continue;
 
-            // Beam particle fitted line direction (from fit)
-            // Calculate extended endpoint (100 cm beyond closest point)
+            // Beam fitted line: draw bidirectionally with span >= reconstructed particle length.
             Float_t closestBeamX = _k0_creationVtx_closestPtBeam[i][0];
             Float_t closestBeamY = _k0_creationVtx_closestPtBeam[i][1];
             Float_t closestBeamZ = _k0_creationVtx_closestPtBeam[i][2];
@@ -2936,20 +3209,28 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 beamDirExtY /= beamMag;
                 beamDirExtZ /= beamMag;
             }
+            Float_t beamRecoLength = 0.f;
+            if (beamStartX > -900.f && beamStartY > -900.f && beamStartZ > -900.f) {
+                beamRecoLength = TVector3(beamPosX - beamStartX, beamPosY - beamStartY, beamPosZ - beamStartZ).Mag();
+            }
+            const Float_t beamSpan = static_cast<Float_t>(std::max<double>(100.0, std::max<double>(beamRecoLength, fitLength)));
 
             Float_t beamX1, beamY1, beamX2, beamY2;
             if (projection_type == "XY") {
-                beamX1 = beamPosX; beamY1 = beamPosY;
-                beamX2 = closestBeamX + 100.0 * beamDirExtX;
-                beamY2 = closestBeamY + 100.0 * beamDirExtY;
+                beamX1 = beamPosX - beamSpan * beamDirExtX;
+                beamY1 = beamPosY - beamSpan * beamDirExtY;
+                beamX2 = beamPosX + beamSpan * beamDirExtX;
+                beamY2 = beamPosY + beamSpan * beamDirExtY;
             } else if (projection_type == "XZ") {
-                beamX1 = beamPosX; beamY1 = beamPosZ;
-                beamX2 = closestBeamX + 100.0 * beamDirExtX;
-                beamY2 = closestBeamZ + 100.0 * beamDirExtZ;
+                beamX1 = beamPosX - beamSpan * beamDirExtX;
+                beamY1 = beamPosZ - beamSpan * beamDirExtZ;
+                beamX2 = beamPosX + beamSpan * beamDirExtX;
+                beamY2 = beamPosZ + beamSpan * beamDirExtZ;
             } else if (projection_type == "YZ") {
-                beamX1 = beamPosY; beamY1 = beamPosZ;
-                beamX2 = closestBeamY + 100.0 * beamDirExtY;
-                beamY2 = closestBeamZ + 100.0 * beamDirExtZ;
+                beamX1 = beamPosY - beamSpan * beamDirExtY;
+                beamY1 = beamPosZ - beamSpan * beamDirExtZ;
+                beamX2 = beamPosY + beamSpan * beamDirExtY;
+                beamY2 = beamPosZ + beamSpan * beamDirExtZ;
             } else {
                 continue;
             }
@@ -2965,12 +3246,16 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 _k0_creationVtx_closestPtSecond[i][0] > -900) {
                 // Get second particle actual startPos and verify it has hits (2D)
                 Float_t secondPosX = -999, secondPosY = -999, secondPosZ = -999;
+                Float_t secondEndX = -999, secondEndY = -999, secondEndZ = -999;
                 Int_t secondHits = 0;
                 for (Int_t p = 0; p < _nParticles; p++) {
                     if (_particle_uniqueID[p] == secondID) {
                         secondPosX = _particle_startPos[p][0];  // Second uses START position
                         secondPosY = _particle_startPos[p][1];
                         secondPosZ = _particle_startPos[p][2];
+                        secondEndX = _particle_endPos[p][0];
+                        secondEndY = _particle_endPos[p][1];
+                        secondEndZ = _particle_endPos[p][2];
                         secondHits = _particle_nHits[p];
                         break;
                     }
@@ -2979,7 +3264,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 // Only draw if second particle position was found and particle has hits
                 if (secondPosX < -900 || secondHits == 0) continue;
 
-                // Calculate extended endpoint (100 cm beyond closest point)
+                // Draw bidirectional fitted line with span >= reconstructed particle length.
                 Float_t closestSecondX = _k0_creationVtx_closestPtSecond[i][0];
                 Float_t closestSecondY = _k0_creationVtx_closestPtSecond[i][1];
                 Float_t closestSecondZ = _k0_creationVtx_closestPtSecond[i][2];
@@ -2992,20 +3277,28 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                     secondDirExtY /= secondMag;
                     secondDirExtZ /= secondMag;
                 }
+                Float_t secondRecoLength = 0.f;
+                if (secondEndX > -900.f && secondEndY > -900.f && secondEndZ > -900.f) {
+                    secondRecoLength = TVector3(secondEndX - secondPosX, secondEndY - secondPosY, secondEndZ - secondPosZ).Mag();
+                }
+                const Float_t secondSpan = static_cast<Float_t>(std::max<double>(100.0, std::max<double>(secondRecoLength, fitLength)));
 
                 Float_t secondX1 = 0.f, secondY1 = 0.f, secondX2 = 0.f, secondY2 = 0.f;
                 if (projection_type == "XY") {
-                    secondX1 = secondPosX; secondY1 = secondPosY;
-                    secondX2 = closestSecondX + 100.0 * secondDirExtX;
-                    secondY2 = closestSecondY + 100.0 * secondDirExtY;
+                    secondX1 = secondPosX - secondSpan * secondDirExtX;
+                    secondY1 = secondPosY - secondSpan * secondDirExtY;
+                    secondX2 = secondPosX + secondSpan * secondDirExtX;
+                    secondY2 = secondPosY + secondSpan * secondDirExtY;
                 } else if (projection_type == "XZ") {
-                    secondX1 = secondPosX; secondY1 = secondPosZ;
-                    secondX2 = closestSecondX + 100.0 * secondDirExtX;
-                    secondY2 = closestSecondZ + 100.0 * secondDirExtZ;
+                    secondX1 = secondPosX - secondSpan * secondDirExtX;
+                    secondY1 = secondPosZ - secondSpan * secondDirExtZ;
+                    secondX2 = secondPosX + secondSpan * secondDirExtX;
+                    secondY2 = secondPosZ + secondSpan * secondDirExtZ;
                 } else if (projection_type == "YZ") {
-                    secondX1 = secondPosY; secondY1 = secondPosZ;
-                    secondX2 = closestSecondY + 100.0 * secondDirExtY;
-                    secondY2 = closestSecondZ + 100.0 * secondDirExtZ;
+                    secondX1 = secondPosY - secondSpan * secondDirExtY;
+                    secondY1 = secondPosZ - secondSpan * secondDirExtZ;
+                    secondX2 = secondPosY + secondSpan * secondDirExtY;
+                    secondY2 = secondPosZ + secondSpan * secondDirExtZ;
                 }
 
                 TLine* secondLine = new TLine(secondX1, secondY1, secondX2, secondY2);
@@ -3126,8 +3419,23 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             TVector3 s3(d1PosX, d1PosY, d1PosZ);
             TVector3 d3(dirX, dirY, dirZ);
             TVector3 base3 = s3;
-            double tMin3 = -20.0;
-            double tMax3 = 100.0;
+            double d1RecoLength = 0.0;
+            for (Int_t p = 0; p < _nParticles; ++p) {
+                if (_particle_uniqueID[p] != d1ID) continue;
+                const Float_t sx = _particle_startPos[p][0];
+                const Float_t sy = _particle_startPos[p][1];
+                const Float_t sz = _particle_startPos[p][2];
+                const Float_t ex = _particle_endPos[p][0];
+                const Float_t ey = _particle_endPos[p][1];
+                const Float_t ez = _particle_endPos[p][2];
+                if (sx > -900.f && sy > -900.f && sz > -900.f && ex > -900.f && ey > -900.f && ez > -900.f) {
+                    d1RecoLength = TVector3(ex - sx, ey - sy, ez - sz).Mag();
+                }
+                break;
+            }
+            const double span3 = std::max<double>(100.0, std::max<double>(d1RecoLength, fitLength));
+            double tMin3 = -span3;
+            double tMax3 = span3;
             if (_k0_annVtx_closestPt1[i][0] > -900) {
                 TVector3 cp3(_k0_annVtx_closestPt1[i][0], _k0_annVtx_closestPt1[i][1], _k0_annVtx_closestPt1[i][2]);
                 const TVector3 anchorToClosest3 = cp3 - s3;
@@ -3136,8 +3444,8 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 }
                 base3 = cp3; // Guarantee rendered fit line passes through closest point.
                 const double tAnchor3 = (s3 - base3).Dot(d3);
-                tMin3 = std::min(tMin3, tAnchor3 - 20.0);
-                tMax3 = std::max(tMax3, tAnchor3 + 100.0);
+                tMin3 = std::min(tMin3, tAnchor3 - span3);
+                tMax3 = std::max(tMax3, tAnchor3 + span3);
             }
             TVector3 lineStart3 = base3 + tMin3 * d3;
             TVector3 lineEnd3 = base3 + tMax3 * d3;
@@ -3194,8 +3502,23 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             TVector3 s3(d2PosX, d2PosY, d2PosZ);
             TVector3 d3(dir2X, dir2Y, dir2Z);
             TVector3 base3 = s3;
-            double tMin3 = -20.0;
-            double tMax3 = 100.0;
+            double d2RecoLength = 0.0;
+            for (Int_t p = 0; p < _nParticles; ++p) {
+                if (_particle_uniqueID[p] != d2ID) continue;
+                const Float_t sx = _particle_startPos[p][0];
+                const Float_t sy = _particle_startPos[p][1];
+                const Float_t sz = _particle_startPos[p][2];
+                const Float_t ex = _particle_endPos[p][0];
+                const Float_t ey = _particle_endPos[p][1];
+                const Float_t ez = _particle_endPos[p][2];
+                if (sx > -900.f && sy > -900.f && sz > -900.f && ex > -900.f && ey > -900.f && ez > -900.f) {
+                    d2RecoLength = TVector3(ex - sx, ey - sy, ez - sz).Mag();
+                }
+                break;
+            }
+            const double span3 = std::max<double>(100.0, std::max<double>(d2RecoLength, fitLength));
+            double tMin3 = -span3;
+            double tMax3 = span3;
             if (_k0_annVtx_closestPt2[i][0] > -900) {
                 TVector3 cp3(_k0_annVtx_closestPt2[i][0], _k0_annVtx_closestPt2[i][1], _k0_annVtx_closestPt2[i][2]);
                 const TVector3 anchorToClosest3 = cp3 - s3;
@@ -3204,8 +3527,8 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 }
                 base3 = cp3; // Guarantee rendered fit line passes through closest point.
                 const double tAnchor3 = (s3 - base3).Dot(d3);
-                tMin3 = std::min(tMin3, tAnchor3 - 20.0);
-                tMax3 = std::max(tMax3, tAnchor3 + 100.0);
+                tMin3 = std::min(tMin3, tAnchor3 - span3);
+                tMax3 = std::max(tMax3, tAnchor3 + span3);
             }
             TVector3 lineStart3 = base3 + tMin3 * d3;
             TVector3 lineEnd3 = base3 + tMax3 * d3;
