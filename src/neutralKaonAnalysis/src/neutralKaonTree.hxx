@@ -14,6 +14,7 @@ namespace neutralKaonTree {
   void AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0VtxDaughters(OutputManager& output, UInt_t nmax);
   void AddNeutralKaonVariables_K0Kinematics(OutputManager& output, UInt_t nmax);
+  void AddNeutralKaonVariables_K0AlignVariants(OutputManager& output, UInt_t nmax);
 
   void FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event,
                                 Int_t nVerticesBeforeFiltering = -1, Int_t nVerticesAfterFiltering = -1,
@@ -23,7 +24,8 @@ namespace neutralKaonTree {
   void FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
   void FillNeutralKaonVariables_K0vtxDaughters(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
-    void FillNeutralKaonVariables_K0Kinematics(OutputManager& output, AnaNeutralParticlePD* candidate);
+  void FillNeutralKaonVariables_K0Kinematics(OutputManager& output, AnaNeutralParticlePD* candidate);
+  void FillNeutralKaonVariables_K0AlignVariants(OutputManager& output, AnaNeutralParticlePD* candidate);
   void WriteHitDistanceProfiles(OutputManager& output);
 
   // Enum with unique indexes for output tree variables
@@ -38,6 +40,24 @@ namespace neutralKaonTree {
     k0truelength, // True K0 length from true creation to true decay vertex [cm]
     k0alignmentpandora, // Angle (rad): neutral axis vs vertex momentum (Pandora dirs)
     k0alignmentfit, // Angle (rad): neutral axis vs vertex momentum (fit dirs)
+    k0al_alltrue, // Alignment with all true quantities
+    k0al_allreco, // Alignment with all reco quantities (fit reco geometry/directions)
+    k0al_cvreco, // Alignment with reco creation only (all else true)
+    k0al_avreco, // Alignment with reco annihilation only (all else true)
+    k0al_vtxreco, // Alignment with reco creation+annihilation only (all else true)
+    k0al_d1magreco, // Alignment with daughter1 reco momentum magnitude only
+    k0al_d2magreco, // Alignment with daughter2 reco momentum magnitude only
+    k0al_d1dirreco, // Alignment with daughter1 reco momentum direction only
+    k0al_d2dirreco, // Alignment with daughter2 reco momentum direction only
+    k0al_d1preco, // Alignment with daughter1 reco momentum (direction+magnitude)
+    k0al_d2preco, // Alignment with daughter2 reco momentum (direction+magnitude)
+    k0al_d12magreco, // Alignment with both daughters reco momentum magnitudes only
+    k0al_d12dirreco, // Alignment with both daughters reco momentum directions only
+    k0al_d12preco, // Alignment with both daughters reco momentum (direction+magnitude)
+    k0al_allreco_cvtrue, // Alignment with all reco except creation vertex true
+    k0al_allreco_avtrue, // Alignment with all reco except annihilation vertex true
+    k0al_allreco_d1true, // Alignment with all reco except daughter1 momentum true
+    k0al_allreco_d2true, // Alignment with all reco except daughter2 momentum true
     // K0 kinematics: true K0 positions, momentum, direction
     k0truecreationx, // True K0 start position x [cm]
     k0truecreationy, // True K0 start position y [cm]
@@ -154,12 +174,24 @@ namespace neutralKaonTree {
     k0vtxdau2trueendmom, // True end momentum for daughter 2 [GeV/c]
     k0vtxdau1truestartmom, // True start momentum for daughter 1 [GeV/c]
     k0vtxdau2truestartmom, // True start momentum for daughter 2 [GeV/c]
+    k0vtxdau1truestartx, // True start x for daughter 1 [cm]
+    k0vtxdau1truestarty, // True start y for daughter 1 [cm]
+    k0vtxdau1truestartz, // True start z for daughter 1 [cm]
+    k0vtxdau2truestartx, // True start x for daughter 2 [cm]
+    k0vtxdau2truestarty, // True start y for daughter 2 [cm]
+    k0vtxdau2truestartz, // True start z for daughter 2 [cm]
     k0vtxdau1truendau, // True number of daughters for daughter 1
     k0vtxdau2truendau, // True number of daughters for daughter 2
     k0vtxdau1truelength, // True length for daughter 1 [cm]
     k0vtxdau2truelength, // True length for daughter 2 [cm]
     k0vtxdau1recolength, // Reco length for daughter 1 [cm]
     k0vtxdau2recolength, // Reco length for daughter 2 [cm]
+    k0vtxdau1recostartx, // Reco start x for daughter 1 [cm]
+    k0vtxdau1recostarty, // Reco start y for daughter 1 [cm]
+    k0vtxdau1recostartz, // Reco start z for daughter 1 [cm]
+    k0vtxdau2recostartx, // Reco start x for daughter 2 [cm]
+    k0vtxdau2recostarty, // Reco start y for daughter 2 [cm]
+    k0vtxdau2recostartz, // Reco start z for daughter 2 [cm]
     k0vtxdau1nhitsreco, // Reco number of collection-plane hits for daughter 1
     k0vtxdau2nhitsreco, // Reco number of collection-plane hits for daughter 2
     k0vtxdau1protonchi2ndf, // Reco proton PID chi2/ndf for daughter 1
