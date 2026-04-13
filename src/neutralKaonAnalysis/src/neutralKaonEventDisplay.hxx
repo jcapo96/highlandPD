@@ -22,6 +22,7 @@ public:
     static constexpr Int_t kParentTrajHistBins = 60;
     static constexpr Float_t kParentTrajHistMin = -1.f;
     static constexpr Float_t kParentTrajHistMax = 1.f;
+    static constexpr Int_t kMaxBeamTailHits = 60;
 
 protected:
     // Override analysis-specific virtual methods from pdEventDisplay
@@ -114,6 +115,14 @@ private:
     Int_t _k0_trueSiblingPDG[kMaxK0][kMaxTrueSiblings];
     Float_t _k0_parentStartPos[kMaxK0][3];
     Float_t _k0_parentEndPos[kMaxK0][3];
+    Float_t _k0_parentEndPosCorrected[kMaxK0][3];
+    Float_t _k0_parentTailFitAnchor[kMaxK0][3];
+    Float_t _k0_parentTailFitDir[kMaxK0][3];
+    Float_t _k0_parentTailFitLength[kMaxK0];
+    Float_t _k0_parentTailHitsRaw[kMaxK0][kMaxBeamTailHits*3];
+    Float_t _k0_parentTailHitsProjected[kMaxK0][kMaxBeamTailHits*3];
+    Int_t _k0_parentTailHitsRawN[kMaxK0];
+    Int_t _k0_parentTailHitsProjectedN[kMaxK0];
     Float_t _k0_parentLength[kMaxK0];
     Float_t _k0_parentTrajDir[kMaxK0][3];
     Float_t _k0_parentTrajDirHist[kMaxK0][kParentTrajHistBins*3];
@@ -199,6 +208,14 @@ private:
         edk0_trueSiblingPDG,
         edk0_parentStartPos,
         edk0_parentEndPos,
+        edk0_parentEndPosCorrected,
+        edk0_parentTailFitAnchor,
+        edk0_parentTailFitDir,
+        edk0_parentTailFitLength,
+        edk0_parentTailHitsRaw,
+        edk0_parentTailHitsProjected,
+        edk0_parentTailHitsRawN,
+        edk0_parentTailHitsProjectedN,
         edk0_parentLength,
         edk0_parentTrajDir,
         edk0_parentTrajDirHist,

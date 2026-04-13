@@ -207,10 +207,6 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
   int signalCode = 2;
   if(IsSignalCandidate(neutralParticle, event)) {
     signalCode = GetSignalStoppingSubtypeCode(neutralParticle);
-  } else if(IsLegitVertexFromTwoBodyDecay(neutralParticle, event)) {
-    signalCode = 3;
-  } else if(IsLegitVertexFromMultiBodyDecay(neutralParticle, event)) {
-    signalCode = 4;
   }
   anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
 }

@@ -30,6 +30,11 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.TrackFitDistanceFromStart = 10.0 > //fit starts this many cm away from particle start position
  < neutralKaonAnalysis.VertexXBiasCorrectionCm = 1.0 > //x_corrected = x_reco - value (cm)
 
+--- Creation Parent Tail Projection -----------
+ < neutralKaonAnalysis.TrackFitCreationLength = 25.0 > //fit length used to build beam creation line (cm)
+ < neutralKaonAnalysis.TrackFitDistanceCreationFromEnd = 10.0 > //fit starts this many cm backward from beam end
+ # The tail segment used for projection is derived from TrackFitDistanceCreationFromEnd.
+
 --- ML residual-range dE/dx (annihilation pions) -----------
 # Among interior collection hits, only hits with residual range >= MinRRCm may be discarded as Landau-tail outliers;
 # low-RR hits are never removed. Fraction is the fraction of those high-RR hits (largest dE/dx first) to drop. Set to 0 to disable.
