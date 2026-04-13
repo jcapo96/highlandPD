@@ -84,6 +84,13 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
       }
     }
 
+    // Do not create a neutral candidate unless the reco parent exists and has a valid end position.
+    if (!parentParticle) continue;
+    const bool hasValidRecoParentEnd = parentParticle->PositionEnd[0] > -900.f &&
+                                       parentParticle->PositionEnd[1] > -900.f &&
+                                       parentParticle->PositionEnd[2] > -900.f;
+    if (!hasValidRecoParentEnd) continue;
+
     AnaCreationVertexPD* creationVtx = new AnaCreationVertexPD();
     creationVtx->BeamParticle = parentParticle;
     creationVtx->SecondParticle = nullptr;
