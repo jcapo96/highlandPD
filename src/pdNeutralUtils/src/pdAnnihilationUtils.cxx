@@ -492,36 +492,6 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       reconstructedVertex->Particles.push_back(daughter2);
       reconstructedVertex->NParticles = reconstructedVertex->Particles.size();
 
-      // Fill daughter momentum at creation time so downstream users can read particle->Momentum.
-      // Free-range ML momentum only for true K0->pi+pi- signal subtypes (same truth codes as category signal 1/5/6).
-      DaughterMomentumDebugInfo daughter1Debug;
-      DaughterMomentumDebugInfo daughter2Debug;
-      const int vtxSigCode = neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(reconstructedVertex, event);
-      if (vtxSigCode == 1 || vtxSigCode == 5 || vtxSigCode == 6) {
-        reconstructedVertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
-        reconstructedVertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
-      } else {
-        reconstructedVertex->Daughter1MomentumMethod = kMomMethodUnassigned;
-        reconstructedVertex->Daughter2MomentumMethod = kMomMethodUnassigned;
-      }
-      reconstructedVertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
-      reconstructedVertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
-      reconstructedVertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;
-      reconstructedVertex->Daughter2ExtensionAttempted = daughter2Debug.extensionAttempted;
-      reconstructedVertex->Daughter1ExtensionValid = daughter1Debug.extensionValid;
-      reconstructedVertex->Daughter2ExtensionValid = daughter2Debug.extensionValid;
-      reconstructedVertex->Daughter1ExtensionChi2Ndf = daughter1Debug.extensionChi2Ndf;
-      reconstructedVertex->Daughter2ExtensionChi2Ndf = daughter2Debug.extensionChi2Ndf;
-      reconstructedVertex->Daughter1ExtensionNValidHits = daughter1Debug.extensionNValidHits;
-      reconstructedVertex->Daughter2ExtensionNValidHits = daughter2Debug.extensionNValidHits;
-      reconstructedVertex->Daughter1ExtensionDedxBias = daughter1Debug.extensionDedxBias;
-      reconstructedVertex->Daughter2ExtensionDedxBias = daughter2Debug.extensionDedxBias;
-      reconstructedVertex->Daughter1ExtensionDedxSigma = daughter1Debug.extensionDedxSigma;
-      reconstructedVertex->Daughter2ExtensionDedxSigma = daughter2Debug.extensionDedxSigma;
-      reconstructedVertex->Daughter1ExtensionDedxFitOk = daughter1Debug.extensionDedxFitOk;
-      reconstructedVertex->Daughter2ExtensionDedxFitOk = daughter2Debug.extensionDedxFitOk;
-      FillVertexKinematicsFromDaughters(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
-
       FillPositionPandora(reconstructedVertex);
       FillPositionFit(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
       reconstructedVertex->Degeneracy =
@@ -537,6 +507,36 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
   if (nAfterFiltering) {
     *nAfterFiltering = static_cast<Int_t>(filteredVertices.size());
   }
+
+  for (AnaAnnihilationVertexPD* vertex : filteredVertices) {
+    if (!vertex || vertex->Particles.size() < 2) continue;
+    AnaParticlePD* daughter1 = vertex->Particles[0];
+    AnaParticlePD* daughter2 = vertex->Particles[1];
+    if (!daughter1 || !daughter2) continue;
+
+    DaughterMomentumDebugInfo daughter1Debug;
+    DaughterMomentumDebugInfo daughter2Debug;
+    vertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
+    vertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+    vertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
+    vertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
+    vertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;
+    vertex->Daughter2ExtensionAttempted = daughter2Debug.extensionAttempted;
+    vertex->Daughter1ExtensionValid = daughter1Debug.extensionValid;
+    vertex->Daughter2ExtensionValid = daughter2Debug.extensionValid;
+    vertex->Daughter1ExtensionChi2Ndf = daughter1Debug.extensionChi2Ndf;
+    vertex->Daughter2ExtensionChi2Ndf = daughter2Debug.extensionChi2Ndf;
+    vertex->Daughter1ExtensionNValidHits = daughter1Debug.extensionNValidHits;
+    vertex->Daughter2ExtensionNValidHits = daughter2Debug.extensionNValidHits;
+    vertex->Daughter1ExtensionDedxBias = daughter1Debug.extensionDedxBias;
+    vertex->Daughter2ExtensionDedxBias = daughter2Debug.extensionDedxBias;
+    vertex->Daughter1ExtensionDedxSigma = daughter1Debug.extensionDedxSigma;
+    vertex->Daughter2ExtensionDedxSigma = daughter2Debug.extensionDedxSigma;
+    vertex->Daughter1ExtensionDedxFitOk = daughter1Debug.extensionDedxFitOk;
+    vertex->Daughter2ExtensionDedxFitOk = daughter2Debug.extensionDedxFitOk;
+    FillVertexKinematicsFromDaughters(vertex, trackFitLength, trackFitDistanceFromStart);
+  }
+
   return filteredVertices;
 }
 

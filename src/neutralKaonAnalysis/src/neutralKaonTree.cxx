@@ -250,6 +250,21 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Parent(OutputManager& output, UI
 }
 
 //********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(OutputManager& output, UInt_t nmax){
+//********************************************************************
+  AddVarMaxSizeVF(output, k0cvtxpandoraresidual,
+                  "Creation-vertex residual |Pandora(raw parent end) - true creation|", nk0, nmax);
+  AddVarMaxSizeVF(output, k0cvtxfitresidual,
+                  "Creation-vertex residual |Fit(projected parent end) - true creation|", nk0, nmax);
+  AddVarMaxSizeVF(output, k0cvtxpandoraresidualx, "Creation Pandora residual x_reco - x_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0cvtxpandoraresidualy, "Creation Pandora residual y_reco - y_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0cvtxpandoraresidualz, "Creation Pandora residual z_reco - z_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0cvtxfitresidualx, "Creation Fit residual x_reco - x_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0cvtxfitresidualy, "Creation Fit residual y_reco - y_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0cvtxfitresidualz, "Creation Fit residual z_reco - z_true", nk0, nmax);
+}
+
+//********************************************************************
 void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_t nmax){
 
   AddVarMaxSizeVI(output, k0nvtxbeforefiltering, "Number of annihilation vertices before overlap filtering", nk0, nmax);
@@ -327,6 +342,66 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
 }
 
 //********************************************************************
+void neutralKaonTree::AddNeutralKaonVariables_K0Kinematics(OutputManager& output, UInt_t nmax){
+//********************************************************************
+  // True K0 kinematics
+  AddVarMaxSizeVF(output, k0truecreationx, "True K0 creation position x [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0truecreationy, "True K0 creation position y [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0truecreationz, "True K0 creation position z [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0trueannihilationx, "True K0 annihilation position x [cm]", nk0, nmax);
+    AddVarMaxSizeVF(output, k0trueannihilationy, "True K0 annihilation position y [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0trueannihilationz, "True K0 annihilation position z [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0truemomentum, "True K0 momentum magnitude [GeV/c]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0truedirectionx, "True K0 direction (normalized) x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0truedirectiony, "True K0 direction (normalized) y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0truedirectionz, "True K0 direction (normalized) z [dimensionless]", nk0, nmax);
+
+  // Reco K0 creation position: Pandora variant
+  AddVarMaxSizeVF(output, k0creationpandorax, "Reco K0 creation Pandora x [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0creationpandoray, "Reco K0 creation Pandora y [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0creationpandoraz, "Reco K0 creation Pandora z [cm]", nk0, nmax);
+
+  // Reco K0 creation position: Fit variant
+  AddVarMaxSizeVF(output, k0creationfitx, "Reco K0 creation Fit x [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0creationfity, "Reco K0 creation Fit y [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0creationfitz, "Reco K0 creation Fit z [cm]", nk0, nmax);
+
+  // Reco K0 direction: Pandora variant
+  AddVarMaxSizeVF(output, k0directionpandorax, "Reco K0 direction Pandora x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0directionpandoray, "Reco K0 direction Pandora y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0directionpandoraz, "Reco K0 direction Pandora z [dimensionless]", nk0, nmax);
+
+  // Reco K0 direction: Fit variant
+  AddVarMaxSizeVF(output, k0directionfitx, "Reco K0 direction Fit x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0directionfity, "Reco K0 direction Fit y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0directionfitz, "Reco K0 direction Fit z [dimensionless]", nk0, nmax);
+
+  // True daughter directions
+  AddVarMaxSizeVF(output, k0vtxdau1truedirectionx, "True daughter 1 direction x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1truedirectiony, "True daughter 1 direction y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1truedirectionz, "True daughter 1 direction z [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2truedirectionx, "True daughter 2 direction x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2truedirectiony, "True daughter 2 direction y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2truedirectionz, "True daughter 2 direction z [dimensionless]", nk0, nmax);
+
+  // Reco daughter directions: Pandora variant
+  AddVarMaxSizeVF(output, k0vtxdau1directionpandorax, "Reco daughter 1 Pandora direction x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1directionpandoray, "Reco daughter 1 Pandora direction y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1directionpandoraz, "Reco daughter 1 Pandora direction z [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2directionpandorax, "Reco daughter 2 Pandora direction x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2directionpandoray, "Reco daughter 2 Pandora direction y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2directionpandoraz, "Reco daughter 2 Pandora direction z [dimensionless]", nk0, nmax);
+
+  // Reco daughter directions: Fit variant
+  AddVarMaxSizeVF(output, k0vtxdau1directionfitx, "Reco daughter 1 Fit direction x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1directionfity, "Reco daughter 1 Fit direction y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1directionfitz, "Reco daughter 1 Fit direction z [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2directionfitx, "Reco daughter 2 Fit direction x [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2directionfity, "Reco daughter 2 Fit direction y [dimensionless]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2directionfitz, "Reco daughter 2 Fit direction z [dimensionless]", nk0, nmax);
+}
+
+//********************************************************************
 void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutralParticlePD* candidate, const AnaEventB& event,
                                                Int_t nVerticesBeforeFiltering, Int_t nVerticesAfterFiltering,
                                                AnaBeamB* beam, size_t neutralCandidateIndex){
@@ -335,6 +410,8 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
   output.FillVectorVar(k0nvtxafterfiltering, nVerticesAfterFiltering);
   neutralKaonTree::FillNeutralKaonVariables_K0Particle(output, candidate);
   neutralKaonTree::FillNeutralKaonVariables_K0Parent(output, candidate);
+  neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(output, candidate);
+  neutralKaonTree::FillNeutralKaonVariables_K0Kinematics(output, candidate);
 
   if(candidate){
     AnaAnnihilationVertexPD* vertex = candidate->AnnihilationVertex;
@@ -439,6 +516,362 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Parent(OutputManager& output, A
   output.FillVectorVar(k0parrecolength, k0parrecolength_val);
   output.FillVectorVar(k0parndau, k0parndau_val);
   output.FillVectorVar(k0parisbeam, k0parisbeam_val);
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate){
+//********************************************************************
+  Float_t k0cvtxpandoraresidual_val = -999.0f;
+  Float_t k0cvtxfitresidual_val = -999.0f;
+  Float_t k0cvtxpandoraresidualx_val = -999.0f;
+  Float_t k0cvtxpandoraresidualy_val = -999.0f;
+  Float_t k0cvtxpandoraresidualz_val = -999.0f;
+  Float_t k0cvtxfitresidualx_val = -999.0f;
+  Float_t k0cvtxfitresidualy_val = -999.0f;
+  Float_t k0cvtxfitresidualz_val = -999.0f;
+
+  if (candidate) {
+    AnaCreationVertexPD* creationVtx = candidate->CreationVertex;
+    AnaParticlePD* recoParent = nullptr;
+    if (creationVtx && creationVtx->BeamParticle) {
+      recoParent = creationVtx->BeamParticle;
+    } else if (candidate->Parent) {
+      recoParent = static_cast<AnaParticlePD*>(candidate->Parent);
+    }
+
+    TVector3 trueCreation(-999.0, -999.0, -999.0);
+    bool hasTrueCreation = false;
+    AnaTrueParticlePD* trueK0 = candidate->TrueObject ? static_cast<AnaTrueParticlePD*>(candidate->TrueObject) : nullptr;
+    if (trueK0) {
+      trueCreation.SetXYZ(trueK0->Position[0], trueK0->Position[1], trueK0->Position[2]);
+      hasTrueCreation = IsValidPos(trueCreation);
+    }
+    if (!hasTrueCreation) {
+      AnaTrueParticlePD* trueParent =
+          (recoParent && recoParent->TrueObject) ? static_cast<AnaTrueParticlePD*>(recoParent->TrueObject) : nullptr;
+      if (trueParent) {
+        trueCreation.SetXYZ(trueParent->PositionEnd[0], trueParent->PositionEnd[1], trueParent->PositionEnd[2]);
+        hasTrueCreation = IsValidPos(trueCreation);
+      }
+    }
+
+    const bool hasRecoPandora = recoParent &&
+                                recoParent->PositionEnd[0] > -900.f &&
+                                recoParent->PositionEnd[1] > -900.f &&
+                                recoParent->PositionEnd[2] > -900.f;
+    const bool hasRecoFit = creationVtx &&
+                            creationVtx->Position[0] > -900.f &&
+                            creationVtx->Position[1] > -900.f &&
+                            creationVtx->Position[2] > -900.f;
+
+    if (hasTrueCreation && hasRecoPandora) {
+      const TVector3 recoPandora(recoParent->PositionEnd[0], recoParent->PositionEnd[1], recoParent->PositionEnd[2]);
+      k0cvtxpandoraresidual_val = static_cast<Float_t>((recoPandora - trueCreation).Mag());
+      k0cvtxpandoraresidualx_val = recoParent->PositionEnd[0] - static_cast<Float_t>(trueCreation.X());
+      k0cvtxpandoraresidualy_val = recoParent->PositionEnd[1] - static_cast<Float_t>(trueCreation.Y());
+      k0cvtxpandoraresidualz_val = recoParent->PositionEnd[2] - static_cast<Float_t>(trueCreation.Z());
+    }
+
+    if (hasTrueCreation && hasRecoFit) {
+      const TVector3 recoFit(creationVtx->Position[0], creationVtx->Position[1], creationVtx->Position[2]);
+      k0cvtxfitresidual_val = static_cast<Float_t>((recoFit - trueCreation).Mag());
+      k0cvtxfitresidualx_val = creationVtx->Position[0] - static_cast<Float_t>(trueCreation.X());
+      k0cvtxfitresidualy_val = creationVtx->Position[1] - static_cast<Float_t>(trueCreation.Y());
+      k0cvtxfitresidualz_val = creationVtx->Position[2] - static_cast<Float_t>(trueCreation.Z());
+    }
+  }
+
+  output.FillVectorVar(k0cvtxpandoraresidual, k0cvtxpandoraresidual_val);
+  output.FillVectorVar(k0cvtxfitresidual, k0cvtxfitresidual_val);
+  output.FillVectorVar(k0cvtxpandoraresidualx, k0cvtxpandoraresidualx_val);
+  output.FillVectorVar(k0cvtxpandoraresidualy, k0cvtxpandoraresidualy_val);
+  output.FillVectorVar(k0cvtxpandoraresidualz, k0cvtxpandoraresidualz_val);
+  output.FillVectorVar(k0cvtxfitresidualx, k0cvtxfitresidualx_val);
+  output.FillVectorVar(k0cvtxfitresidualy, k0cvtxfitresidualy_val);
+  output.FillVectorVar(k0cvtxfitresidualz, k0cvtxfitresidualz_val);
+}
+
+//********************************************************************
+void neutralKaonTree::FillNeutralKaonVariables_K0Kinematics(OutputManager& output, AnaNeutralParticlePD* candidate){
+//********************************************************************
+  // Initialize all variables to sentinel
+  Float_t k0truecreationx_val = -999.0f;
+  Float_t k0truecreationy_val = -999.0f;
+  Float_t k0truecreationz_val = -999.0f;
+  Float_t k0trueannihilationx_val = -999.0f;
+  Float_t k0trueannihilationy_val = -999.0f;
+  Float_t k0trueannihilationz_val = -999.0f;
+  Float_t k0truemomentum_val = -999.0f;
+  Float_t k0truedirectionx_val = -999.0f;
+  Float_t k0truedirectiony_val = -999.0f;
+  Float_t k0truedirectionz_val = -999.0f;
+
+  Float_t k0creationpandorax_val = -999.0f;
+  Float_t k0creationpandoray_val = -999.0f;
+  Float_t k0creationpandoraz_val = -999.0f;
+
+  Float_t k0creationfitx_val = -999.0f;
+  Float_t k0creationfity_val = -999.0f;
+  Float_t k0creationfitz_val = -999.0f;
+
+  Float_t k0directionpandorax_val = -999.0f;
+  Float_t k0directionpandoray_val = -999.0f;
+  Float_t k0directionpandoraz_val = -999.0f;
+
+  Float_t k0directionfitx_val = -999.0f;
+  Float_t k0directionfity_val = -999.0f;
+  Float_t k0directionfitz_val = -999.0f;
+
+  Float_t k0vtxdau1truedirectionx_val = -999.0f;
+  Float_t k0vtxdau1truedirectiony_val = -999.0f;
+  Float_t k0vtxdau1truedirectionz_val = -999.0f;
+  Float_t k0vtxdau2truedirectionx_val = -999.0f;
+  Float_t k0vtxdau2truedirectiony_val = -999.0f;
+  Float_t k0vtxdau2truedirectionz_val = -999.0f;
+
+  Float_t k0vtxdau1directionpandorax_val = -999.0f;
+  Float_t k0vtxdau1directionpandoray_val = -999.0f;
+  Float_t k0vtxdau1directionpandoraz_val = -999.0f;
+  Float_t k0vtxdau2directionpandorax_val = -999.0f;
+  Float_t k0vtxdau2directionpandoray_val = -999.0f;
+  Float_t k0vtxdau2directionpandoraz_val = -999.0f;
+
+  Float_t k0vtxdau1directionfitx_val = -999.0f;
+  Float_t k0vtxdau1directionfity_val = -999.0f;
+  Float_t k0vtxdau1directionfitz_val = -999.0f;
+  Float_t k0vtxdau2directionfitx_val = -999.0f;
+  Float_t k0vtxdau2directionfity_val = -999.0f;
+  Float_t k0vtxdau2directionfitz_val = -999.0f;
+
+  if (candidate) {
+    // Get reco parent
+    AnaCreationVertexPD* creationVtx = candidate->CreationVertex;
+    AnaParticlePD* recoParent = nullptr;
+    if (creationVtx && creationVtx->BeamParticle) {
+      recoParent = creationVtx->BeamParticle;
+    } else if (candidate->Parent) {
+      recoParent = static_cast<AnaParticlePD*>(candidate->Parent);
+    }
+
+    AnaAnnihilationVertexPD* vertex = candidate->AnnihilationVertex;
+
+    // Get true K0
+    AnaTrueParticlePD* trueK0 = candidate->TrueObject ? static_cast<AnaTrueParticlePD*>(candidate->TrueObject) : nullptr;
+    AnaTrueParticlePD* trueParent = (recoParent && recoParent->TrueObject) ? static_cast<AnaTrueParticlePD*>(recoParent->TrueObject) : nullptr;
+
+    // ===== TRUE K0 KINEMATICS =====
+    TVector3 trueCreation(-999.0, -999.0, -999.0);
+    bool hasTrueCreation = false;
+    if (trueK0) {
+      trueCreation.SetXYZ(trueK0->Position[0], trueK0->Position[1], trueK0->Position[2]);
+      hasTrueCreation = IsValidPos(trueCreation);
+    }
+    if (!hasTrueCreation && trueParent) {
+      trueCreation.SetXYZ(trueParent->PositionEnd[0], trueParent->PositionEnd[1], trueParent->PositionEnd[2]);
+      hasTrueCreation = IsValidPos(trueCreation);
+    }
+
+    TVector3 trueAnnihilation(-999.0, -999.0, -999.0);
+    bool hasTrueAnnihilation = false;
+    if (trueK0) {
+      trueAnnihilation.SetXYZ(trueK0->PositionEnd[0], trueK0->PositionEnd[1], trueK0->PositionEnd[2]);
+      hasTrueAnnihilation = IsValidPos(trueAnnihilation);
+    }
+
+    if (hasTrueCreation) {
+      k0truecreationx_val = static_cast<Float_t>(trueCreation.X());
+      k0truecreationy_val = static_cast<Float_t>(trueCreation.Y());
+      k0truecreationz_val = static_cast<Float_t>(trueCreation.Z());
+    }
+
+    if (hasTrueAnnihilation) {
+      k0trueannihilationx_val = static_cast<Float_t>(trueAnnihilation.X());
+      k0trueannihilationy_val = static_cast<Float_t>(trueAnnihilation.Y());
+      k0trueannihilationz_val = static_cast<Float_t>(trueAnnihilation.Z());
+    }
+
+    if (trueK0 && trueK0->Momentum > 0.f) {
+      k0truemomentum_val = trueK0->Momentum;
+    }
+
+    if (hasTrueCreation && hasTrueAnnihilation) {
+      TVector3 trueDir = trueAnnihilation - trueCreation;
+      if (trueDir.Mag() > 1e-6) {
+        trueDir = trueDir.Unit();
+        k0truedirectionx_val = static_cast<Float_t>(trueDir.X());
+        k0truedirectiony_val = static_cast<Float_t>(trueDir.Y());
+        k0truedirectionz_val = static_cast<Float_t>(trueDir.Z());
+      }
+    }
+
+    // ===== RECO K0 CREATION POSITIONS =====
+    if (recoParent) {
+      if (recoParent->PositionEnd[0] > -900.f && recoParent->PositionEnd[1] > -900.f && recoParent->PositionEnd[2] > -900.f) {
+        k0creationpandorax_val = recoParent->PositionEnd[0];
+        k0creationpandoray_val = recoParent->PositionEnd[1];
+        k0creationpandoraz_val = recoParent->PositionEnd[2];
+      }
+    }
+
+    if (creationVtx) {
+      if (creationVtx->Position[0] > -900.f && creationVtx->Position[1] > -900.f && creationVtx->Position[2] > -900.f) {
+        k0creationfitx_val = creationVtx->Position[0];
+        k0creationfity_val = creationVtx->Position[1];
+        k0creationfitz_val = creationVtx->Position[2];
+      }
+    }
+
+    // ===== RECO K0 DIRECTIONS =====
+    if (vertex && recoParent) {
+      TVector3 recoPandoraCreation(recoParent->PositionEnd[0], recoParent->PositionEnd[1], recoParent->PositionEnd[2]);
+      TVector3 recoPandoraAnnihilation(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
+      if (IsValidPos(recoPandoraCreation) && IsValidPos(recoPandoraAnnihilation)) {
+        TVector3 pandoraDir = recoPandoraAnnihilation - recoPandoraCreation;
+        if (pandoraDir.Mag() > 1e-6) {
+          pandoraDir = pandoraDir.Unit();
+          k0directionpandorax_val = static_cast<Float_t>(pandoraDir.X());
+          k0directionpandoray_val = static_cast<Float_t>(pandoraDir.Y());
+          k0directionpandoraz_val = static_cast<Float_t>(pandoraDir.Z());
+        }
+      }
+    }
+
+    if (vertex && creationVtx) {
+      TVector3 recoFitCreation(creationVtx->Position[0], creationVtx->Position[1], creationVtx->Position[2]);
+      TVector3 recoFitAnnihilation(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
+      if (IsValidPos(recoFitCreation) && IsValidPos(recoFitAnnihilation)) {
+        TVector3 fitDir = recoFitAnnihilation - recoFitCreation;
+        if (fitDir.Mag() > 1e-6) {
+          fitDir = fitDir.Unit();
+          k0directionfitx_val = static_cast<Float_t>(fitDir.X());
+          k0directionfity_val = static_cast<Float_t>(fitDir.Y());
+          k0directionfitz_val = static_cast<Float_t>(fitDir.Z());
+        }
+      }
+    }
+
+    // ===== TRUE DAUGHTER DIRECTIONS =====
+    if (vertex && vertex->Particles.size() > 0) {
+      AnaParticlePD* recoDau1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+      AnaTrueParticlePD* trueDau1 = recoDau1 ? static_cast<AnaTrueParticlePD*>(recoDau1->TrueObject) : nullptr;
+      if (trueDau1 && trueDau1->Direction[0] > -900.f && trueDau1->Direction[1] > -900.f && trueDau1->Direction[2] > -900.f) {
+        k0vtxdau1truedirectionx_val = trueDau1->Direction[0];
+        k0vtxdau1truedirectiony_val = trueDau1->Direction[1];
+        k0vtxdau1truedirectionz_val = trueDau1->Direction[2];
+      }
+    }
+
+    if (vertex && vertex->Particles.size() > 1) {
+      AnaParticlePD* recoDau2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
+      AnaTrueParticlePD* trueDau2 = recoDau2 ? static_cast<AnaTrueParticlePD*>(recoDau2->TrueObject) : nullptr;
+      if (trueDau2 && trueDau2->Direction[0] > -900.f && trueDau2->Direction[1] > -900.f && trueDau2->Direction[2] > -900.f) {
+        k0vtxdau2truedirectionx_val = trueDau2->Direction[0];
+        k0vtxdau2truedirectiony_val = trueDau2->Direction[1];
+        k0vtxdau2truedirectionz_val = trueDau2->Direction[2];
+      }
+    }
+
+    // ===== RECO DAUGHTER DIRECTIONS: PANDORA =====
+    if (vertex && vertex->Particles.size() > 0) {
+      AnaParticlePD* recoDau1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+      if (recoDau1 && recoDau1->DirectionStart[0] > -900.f && recoDau1->DirectionStart[1] > -900.f && recoDau1->DirectionStart[2] > -900.f) {
+        k0vtxdau1directionpandorax_val = recoDau1->DirectionStart[0];
+        k0vtxdau1directionpandoray_val = recoDau1->DirectionStart[1];
+        k0vtxdau1directionpandoraz_val = recoDau1->DirectionStart[2];
+      }
+    }
+
+    if (vertex && vertex->Particles.size() > 1) {
+      AnaParticlePD* recoDau2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
+      if (recoDau2 && recoDau2->DirectionStart[0] > -900.f && recoDau2->DirectionStart[1] > -900.f && recoDau2->DirectionStart[2] > -900.f) {
+        k0vtxdau2directionpandorax_val = recoDau2->DirectionStart[0];
+        k0vtxdau2directionpandoray_val = recoDau2->DirectionStart[1];
+        k0vtxdau2directionpandoraz_val = recoDau2->DirectionStart[2];
+      }
+    }
+
+    // ===== RECO DAUGHTER DIRECTIONS: FIT-EXTRAPOLATED =====
+    const double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+    const double trackFitDistanceFromStart = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart");
+    if (vertex && vertex->Particles.size() > 0) {
+      AnaParticlePD* recoDau1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
+      if (recoDau1) {
+        std::vector<double> fit1;
+        pdAnaUtils::ExtrapolateTrack(recoDau1, fit1, trackFitLength, true, trackFitDistanceFromStart);
+        const bool fit1Valid = (fit1.size() >= 6 && fit1[3] > -900.0 && fit1[4] > -900.0 && fit1[5] > -900.0 &&
+                                std::isfinite(fit1[3]) && std::isfinite(fit1[4]) && std::isfinite(fit1[5]));
+        if (fit1Valid) {
+          k0vtxdau1directionfitx_val = static_cast<Float_t>(fit1[3]);
+          k0vtxdau1directionfity_val = static_cast<Float_t>(fit1[4]);
+          k0vtxdau1directionfitz_val = static_cast<Float_t>(fit1[5]);
+        }
+      }
+    }
+
+    if (vertex && vertex->Particles.size() > 1) {
+      AnaParticlePD* recoDau2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
+      if (recoDau2) {
+        std::vector<double> fit2;
+        pdAnaUtils::ExtrapolateTrack(recoDau2, fit2, trackFitLength, true, trackFitDistanceFromStart);
+        const bool fit2Valid = (fit2.size() >= 6 && fit2[3] > -900.0 && fit2[4] > -900.0 && fit2[5] > -900.0 &&
+                                std::isfinite(fit2[3]) && std::isfinite(fit2[4]) && std::isfinite(fit2[5]));
+        if (fit2Valid) {
+          k0vtxdau2directionfitx_val = static_cast<Float_t>(fit2[3]);
+          k0vtxdau2directionfity_val = static_cast<Float_t>(fit2[4]);
+          k0vtxdau2directionfitz_val = static_cast<Float_t>(fit2[5]);
+        }
+      }
+    }
+  }
+
+  // Fill all variables
+  output.FillVectorVar(k0truecreationx, k0truecreationx_val);
+  output.FillVectorVar(k0truecreationy, k0truecreationy_val);
+  output.FillVectorVar(k0truecreationz, k0truecreationz_val);
+  output.FillVectorVar(k0trueannihilationx, k0trueannihilationx_val);
+  output.FillVectorVar(k0trueannihilationy, k0trueannihilationy_val);
+  output.FillVectorVar(k0trueannihilationz, k0trueannihilationz_val);
+  output.FillVectorVar(k0truemomentum, k0truemomentum_val);
+  output.FillVectorVar(k0truedirectionx, k0truedirectionx_val);
+  output.FillVectorVar(k0truedirectiony, k0truedirectiony_val);
+  output.FillVectorVar(k0truedirectionz, k0truedirectionz_val);
+
+  output.FillVectorVar(k0creationpandorax, k0creationpandorax_val);
+  output.FillVectorVar(k0creationpandoray, k0creationpandoray_val);
+  output.FillVectorVar(k0creationpandoraz, k0creationpandoraz_val);
+
+  output.FillVectorVar(k0creationfitx, k0creationfitx_val);
+  output.FillVectorVar(k0creationfity, k0creationfity_val);
+  output.FillVectorVar(k0creationfitz, k0creationfitz_val);
+
+  output.FillVectorVar(k0directionpandorax, k0directionpandorax_val);
+  output.FillVectorVar(k0directionpandoray, k0directionpandoray_val);
+  output.FillVectorVar(k0directionpandoraz, k0directionpandoraz_val);
+
+  output.FillVectorVar(k0directionfitx, k0directionfitx_val);
+  output.FillVectorVar(k0directionfity, k0directionfity_val);
+  output.FillVectorVar(k0directionfitz, k0directionfitz_val);
+
+  output.FillVectorVar(k0vtxdau1truedirectionx, k0vtxdau1truedirectionx_val);
+  output.FillVectorVar(k0vtxdau1truedirectiony, k0vtxdau1truedirectiony_val);
+  output.FillVectorVar(k0vtxdau1truedirectionz, k0vtxdau1truedirectionz_val);
+  output.FillVectorVar(k0vtxdau2truedirectionx, k0vtxdau2truedirectionx_val);
+  output.FillVectorVar(k0vtxdau2truedirectiony, k0vtxdau2truedirectiony_val);
+  output.FillVectorVar(k0vtxdau2truedirectionz, k0vtxdau2truedirectionz_val);
+
+  output.FillVectorVar(k0vtxdau1directionpandorax, k0vtxdau1directionpandorax_val);
+  output.FillVectorVar(k0vtxdau1directionpandoray, k0vtxdau1directionpandoray_val);
+  output.FillVectorVar(k0vtxdau1directionpandoraz, k0vtxdau1directionpandoraz_val);
+  output.FillVectorVar(k0vtxdau2directionpandorax, k0vtxdau2directionpandorax_val);
+  output.FillVectorVar(k0vtxdau2directionpandoray, k0vtxdau2directionpandoray_val);
+  output.FillVectorVar(k0vtxdau2directionpandoraz, k0vtxdau2directionpandoraz_val);
+
+  output.FillVectorVar(k0vtxdau1directionfitx, k0vtxdau1directionfitx_val);
+  output.FillVectorVar(k0vtxdau1directionfity, k0vtxdau1directionfity_val);
+  output.FillVectorVar(k0vtxdau1directionfitz, k0vtxdau1directionfitz_val);
+  output.FillVectorVar(k0vtxdau2directionfitx, k0vtxdau2directionfitx_val);
+  output.FillVectorVar(k0vtxdau2directionfity, k0vtxdau2directionfity_val);
+  output.FillVectorVar(k0vtxdau2directionfitz, k0vtxdau2directionfitz_val);
 }
 
 //********************************************************************
