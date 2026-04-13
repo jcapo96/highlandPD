@@ -516,8 +516,14 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
 
     DaughterMomentumDebugInfo daughter1Debug;
     DaughterMomentumDebugInfo daughter2Debug;
-    vertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
-    vertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+    const int vtxSigCode = neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(vertex, event);
+    if (vtxSigCode == 1 || vtxSigCode == 5 || vtxSigCode == 6) {
+      vertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
+      vertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+    } else {
+      vertex->Daughter1MomentumMethod = kMomMethodUnassigned;
+      vertex->Daughter2MomentumMethod = kMomMethodUnassigned;
+    }
     vertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
     vertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
     vertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;
