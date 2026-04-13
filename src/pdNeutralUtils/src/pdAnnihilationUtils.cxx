@@ -40,6 +40,20 @@ bool IsVertexDaughter(const AnaAnnihilationVertexPD* vertex, const AnaParticlePD
   return false;
 }
 
+bool IsProtonLikeAndNotPionLike(const AnaParticlePD* particle) {
+  if (!particle) return false;
+  if (particle->Chi2ndf <= 0.f || particle->Chi2Proton <= 0.f) return false;
+
+  const double protonChi2Ndf = particle->Chi2Proton / particle->Chi2ndf;
+  if (protonChi2Ndf < 100.0) return true;
+
+  const std::pair<double, int> pionPid = pdAnaUtils::Chi2PID(*particle, 211);
+  if (pionPid.first < 0.0 || pionPid.second <= 0) return false;
+
+  const double pionChi2Ndf = pionPid.first / pionPid.second;
+  return (pionChi2Ndf > 25.0);
+}
+
 enum DaughterMomentumMethod {
   kMomMethodUnassigned = -1,
   kMomMethodPionRangeStopping = 0,
@@ -472,6 +486,7 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
     if (!daughter1) continue;
     if (daughter1->PositionStart[0] < -900 || daughter1->PositionStart[1] < -900 || daughter1->PositionStart[2] < -900) continue;
     if (daughter1->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
+    if (IsProtonLikeAndNotPionLike(daughter1)) continue;
 
     for (int j = i + 1; j < nParts; ++j) {
       AnaParticlePD* daughter2 = static_cast<AnaParticlePD*>(parts[j]);
@@ -479,6 +494,7 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       if (daughter1->ParentID != daughter2->ParentID) continue;
       if (daughter2->PositionStart[0] < -900 || daughter2->PositionStart[1] < -900 || daughter2->PositionStart[2] < -900) continue;
       if (daughter2->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
+      if (IsProtonLikeAndNotPionLike(daughter2)) continue;
 
       TVector3 s1(daughter1->PositionStart[0], daughter1->PositionStart[1], daughter1->PositionStart[2]);
       TVector3 s2(daughter2->PositionStart[0], daughter2->PositionStart[1], daughter2->PositionStart[2]);

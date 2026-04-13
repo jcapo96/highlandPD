@@ -162,6 +162,12 @@ namespace neutralKaonTree {
     k0vtxdau2recolength, // Reco length for daughter 2 [cm]
     k0vtxdau1nhitsreco, // Reco number of collection-plane hits for daughter 1
     k0vtxdau2nhitsreco, // Reco number of collection-plane hits for daughter 2
+    k0vtxdau1protonchi2ndf, // Reco proton PID chi2/ndf for daughter 1
+    k0vtxdau2protonchi2ndf, // Reco proton PID chi2/ndf for daughter 2
+    k0vtxdau1pionchi2ndf, // Reco pion PID chi2/ndf for daughter 1
+    k0vtxdau2pionchi2ndf, // Reco pion PID chi2/ndf for daughter 2
+    k0vtxdau1truepdg, // True PDG of daughter 1
+    k0vtxdau2truepdg, // True PDG of daughter 2
     k0vtxdau1ndaughtersreco, // Reco number of daughters of vertex daughter 1
     k0vtxdau2ndaughtersreco, // Reco number of daughters of vertex daughter 2
     k0vtxdau1nrecodau, // Number of true daughters of daughter 1 with at least one reco object
