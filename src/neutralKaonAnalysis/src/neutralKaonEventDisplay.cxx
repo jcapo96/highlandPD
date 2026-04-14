@@ -24,6 +24,7 @@
 #include <TArrow.h>
 #include <TLegend.h>
 #include <TMarker.h>
+#include <TTimer.h>
 #include <TH1F.h>
 #include <TVector3.h>
 #include <iostream>
@@ -70,6 +71,43 @@ TEveElement* FindElementByNameRecursive(TEveElement* parent, const char* name) {
     }
 
     return nullptr;
+}
+
+class GroupCheckboxSyncTimer : public TTimer {
+public:
+    explicit GroupCheckboxSyncTimer(neutralKaonEventDisplay* owner)
+        : TTimer(250, kTRUE), _owner(owner) {}
+
+    Bool_t Notify() override {
+        if (_owner) {
+            _owner->SyncGroupCheckboxBehavior();
+        }
+        Reset();
+        return kTRUE;
+    }
+
+private:
+    neutralKaonEventDisplay* _owner;
+};
+
+void HideAllChildrenInGroup(TEveScene* scene, const char* groupName) {
+    if (!scene || !groupName) return;
+
+    TEveElement* found = FindElementByNameRecursive(scene, groupName);
+    TEveElementList* group = dynamic_cast<TEveElementList*>(found);
+    if (!group) return;
+
+    for (TEveElement::List_i it = group->BeginChildren(); it != group->EndChildren(); ++it) {
+        TEveElement* child = *it;
+        if (!child) continue;
+        child->SetRnrSelf(kFALSE);
+        child->SetRnrChildren(kFALSE);
+        child->ElementChanged(kTRUE, kTRUE);
+    }
+
+    if (gEve) {
+        gEve->Redraw3D(kTRUE);
+    }
 }
 
 void BuildParentTrajectoryHistogram(const AnaParticlePD* parent, Float_t* outHist) {
@@ -168,6 +206,7 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
 
     _nK0Candidates = 0;
     _nTrueK0 = 0;
+    _nAllTrueParticles = 0;
 
     // Initialize arrays
     for (Int_t i = 0; i < kMaxK0; i++) {
@@ -186,6 +225,7 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         _k0_trueParentPDG[i] = 0;
         _k0_trueNDaughters[i] = 0;
         _k0_trueNSiblings[i] = 0;
+        _k0_trueParentNDaughters[i] = 0;
         for (Int_t j = 0; j < 5; j++) {
             _k0_creationVtxDegDist[i][j] = -999;
             _k0_annihilationVtxDegDist[i][j] = -999;
@@ -219,6 +259,11 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
             _k0_trueEndPos[i][j] = -999;
             _k0_trueParentStartPos[i][j] = -999;
             _k0_trueParentEndPos[i][j] = -999;
+            _k0_trueParentDaughterStartPos[i][j] = -999;
+            _k0_trueParentDaughterEndPos[i][j] = -999;
+        }
+        for (Int_t j = 0; j < kMaxTrueDaughters; ++j) {
+            _k0_trueParentDaughterPDG[i][j] = 0;
         }
         for (Int_t j = 0; j < kMaxTrueDaughters*3; ++j) {
             _k0_trueDaughterStartPos[i][j] = -999;
@@ -285,6 +330,15 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
             _trueK0_siblingPDG[i][j] = 0;
         }
     }
+
+    for (Int_t i = 0; i < kMaxAllTrueParticles; ++i) {
+        _allTrueParticle_PDG[i] = 0;
+        _allTrueParticle_processEnd[i] = -1;
+        for (Int_t j = 0; j < 3; ++j) {
+            _allTrueParticle_startPos[i][j] = -999;
+            _allTrueParticle_endPos[i][j] = -999;
+        }
+    }
 }
 
 void neutralKaonEventDisplay::EnsureSelectionHooks() {
@@ -304,6 +358,43 @@ void neutralKaonEventDisplay::EnsureSelectionHooks() {
     _parentDirSelectionHooked = kTRUE;
 }
 
+void neutralKaonEventDisplay::EnsureGroupCheckboxSync() {
+    if (_groupCheckboxSyncTimer) {
+        return;
+    }
+    _groupCheckboxSyncTimer = new GroupCheckboxSyncTimer(this);
+    _groupCheckboxSyncTimer->TurnOn();
+}
+
+Bool_t neutralKaonEventDisplay::SyncGroupCheckboxBehavior() {
+    if (!_scene3D) {
+        return kTRUE;
+    }
+
+    auto syncOneGroup = [&](const char* groupName, Bool_t& lastChecked) {
+        TEveElement* found = FindElementByNameRecursive(_scene3D, groupName);
+        TEveElementList* group = dynamic_cast<TEveElementList*>(found);
+        if (!group) return;
+
+        if (!group->GetRnrChildren()) {
+            group->SetRnrChildren(kTRUE);
+            group->ElementChanged(kTRUE, kTRUE);
+        }
+
+        const Bool_t nowChecked = group->GetRnrSelf();
+        if (_groupCheckboxStateInitialized && lastChecked && !nowChecked) {
+            HideAllChildrenInGroup(_scene3D, groupName);
+        }
+        lastChecked = nowChecked;
+    };
+
+    syncOneGroup("Neutral Particles", _lastNeutralGroupChecked);
+    syncOneGroup("True Particles", _lastTrueGroupChecked);
+    _groupCheckboxStateInitialized = kTRUE;
+
+    return kTRUE;
+}
+
 Bool_t neutralKaonEventDisplay::IsGroupVisible(const char* groupName) const {
     if (!_scene3D || !groupName || groupName[0] == '\0') {
         return kTRUE;
@@ -318,6 +409,8 @@ Bool_t neutralKaonEventDisplay::IsGroupVisible(const char* groupName) const {
 }
 
 void neutralKaonEventDisplay::OnSelectionAdded(TEveElement* element) {
+    if (!element) return;
+
     auto it = _parentDirElementToIndex.find(element);
     if (it == _parentDirElementToIndex.end()) {
         return;
@@ -449,6 +542,11 @@ neutralKaonEventDisplay::~neutralKaonEventDisplay() {
         delete _parentDirCanvas;
         _parentDirCanvas = nullptr;
     }
+    if (_groupCheckboxSyncTimer) {
+        _groupCheckboxSyncTimer->TurnOff();
+        delete _groupCheckboxSyncTimer;
+        _groupCheckboxSyncTimer = nullptr;
+    }
 }
 
 //********************************************************************
@@ -509,6 +607,10 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddVectorVar(tree_index, edk0_trueParentPDG, "ED_k0_trueParentPDG", "I", "True K0 parent PDG", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddMatrixVar(tree_index, edk0_trueParentStartPos, "ED_k0_trueParentStartPos", "F", "True K0 parent start position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_trueParentEndPos, "ED_k0_trueParentEndPos", "F", "True K0 parent end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
+    output.AddVectorVar(tree_index, edk0_trueParentNDaughters, "ED_k0_trueParentNDaughters", "I", "Number of true daughters of K0 parent", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddMatrixVar(tree_index, edk0_trueParentDaughterStartPos, "ED_k0_trueParentDaughterStartPos", "F", "True K0 parent daughters start positions", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxTrueDaughters*3);
+    output.AddMatrixVar(tree_index, edk0_trueParentDaughterEndPos, "ED_k0_trueParentDaughterEndPos", "F", "True K0 parent daughters end positions", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxTrueDaughters*3);
+    output.AddMatrixVar(tree_index, edk0_trueParentDaughterPDG, "ED_k0_trueParentDaughterPDG", "I", "True K0 parent daughters PDG codes", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxTrueDaughters);
     output.AddMatrixVar(tree_index, edk0_parentStartPos, "ED_k0_parentStartPos", "F", "Reco K0 parent start position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_parentEndPos, "ED_k0_parentEndPos", "F", "Reconstructed K0 parent end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_parentEndPosCorrected, "ED_k0_parentEndPosCorrected", "F", "Projected parent end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
@@ -556,6 +658,12 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edtrueK0_siblingEndPos, "ED_trueK0_siblingEndPos", "F", "Standalone true K0 siblings end positions", ednTrueK0, "ED_nTrueK0", -kMaxTrueK0, kMaxTrueSiblings*3);
     output.AddMatrixVar(tree_index, edtrueK0_siblingPDG, "ED_trueK0_siblingPDG", "I", "Standalone true K0 siblings PDG codes", ednTrueK0, "ED_nTrueK0", -kMaxTrueK0, kMaxTrueSiblings);
 
+    output.AddVar(tree_index, ednAllTrueParticles, "ED_nAllTrueParticles", "I", "Number of all true particles");
+    output.AddMatrixVar(tree_index, edallTrueParticle_startPos, "ED_allTrueParticle_startPos", "F", "All true particle start positions", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles, 3);
+    output.AddMatrixVar(tree_index, edallTrueParticle_endPos, "ED_allTrueParticle_endPos", "F", "All true particle end positions", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles, 3);
+    output.AddVectorVar(tree_index, edallTrueParticle_PDG, "ED_allTrueParticle_PDG", "I", "All true particle PDG codes", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles);
+    output.AddVectorVar(tree_index, edallTrueParticle_processEnd, "ED_allTrueParticle_processEnd", "I", "All true particle end process enums", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles);
+
     std::cout << "neutralKaonEventDisplay::AddAnalysisVariables() - K0 variables added" << std::endl;
 }
 
@@ -571,6 +679,37 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
         AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
         if (!truePart) continue;
         trueParticleByID[truePart->ID] = truePart;
+    }
+
+    Int_t allTrueParticlesStored = 0;
+    for (Int_t i = 0; i < event.nTrueParticles && allTrueParticlesStored < kMaxAllTrueParticles; ++i) {
+        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
+        if (!truePart) continue;
+
+        Float_t startPos[3] = {
+            static_cast<Float_t>(truePart->Position[0]),
+            static_cast<Float_t>(truePart->Position[1]),
+            static_cast<Float_t>(truePart->Position[2])
+        };
+        Float_t endPos[3] = {
+            static_cast<Float_t>(truePart->PositionEnd[0]),
+            static_cast<Float_t>(truePart->PositionEnd[1]),
+            static_cast<Float_t>(truePart->PositionEnd[2])
+        };
+
+        output.FillMatrixVarFromArray(edallTrueParticle_startPos, startPos, 3);
+        output.FillMatrixVarFromArray(edallTrueParticle_endPos, endPos, 3);
+        output.FillVectorVar(edallTrueParticle_PDG, truePart->PDG);
+        output.FillVectorVar(edallTrueParticle_processEnd, static_cast<Int_t>(truePart->ProcessEnd));
+        output.IncrementCounter(ednAllTrueParticles);
+
+        _allTrueParticle_PDG[allTrueParticlesStored] = truePart->PDG;
+        _allTrueParticle_processEnd[allTrueParticlesStored] = static_cast<Int_t>(truePart->ProcessEnd);
+        for (Int_t c = 0; c < 3; ++c) {
+            _allTrueParticle_startPos[allTrueParticlesStored][c] = startPos[c];
+            _allTrueParticle_endPos[allTrueParticlesStored][c] = endPos[c];
+        }
+        ++allTrueParticlesStored;
     }
 
     auto fillTrueRelations = [&](const AnaTrueParticlePD* trueK0,
@@ -1187,11 +1326,134 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Float_t daughterStartFlat[kMaxTrueDaughters*3];
             Float_t daughterEndFlat[kMaxTrueDaughters*3];
             Int_t daughterPDGArr[kMaxTrueDaughters];
+            Int_t nParentDaughters;
+            Float_t parentDaughterStartFlat[kMaxTrueDaughters*3];
+            Float_t parentDaughterEndFlat[kMaxTrueDaughters*3];
+            Int_t parentDaughterPDGArr[kMaxTrueDaughters];
             Int_t nSiblings;
             Float_t siblingStartFlat[kMaxTrueSiblings*3];
             Float_t siblingEndFlat[kMaxTrueSiblings*3];
             Int_t siblingPDGArr[kMaxTrueSiblings];
             fillTrueRelations(associatedTrueK0, processEndCode, parentPDG, parentStart, parentEnd, nDaughters, daughterStartFlat, daughterEndFlat, daughterPDGArr, nSiblings, siblingStartFlat, siblingEndFlat, siblingPDGArr);
+
+            auto fillParentDaughters = [&](const AnaTrueParticlePD* trueParent,
+                                           Int_t& outN,
+                                           Float_t startFlat[kMaxTrueDaughters*3],
+                                           Float_t endFlat[kMaxTrueDaughters*3],
+                                           Int_t pdgArr[kMaxTrueDaughters]) {
+                outN = 0;
+                std::fill_n(startFlat, kMaxTrueDaughters * 3, -999.f);
+                std::fill_n(endFlat, kMaxTrueDaughters * 3, -999.f);
+                std::fill_n(pdgArr, kMaxTrueDaughters, 0);
+                if (!trueParent) return;
+
+                std::set<Int_t> daughterIDs;
+                for (size_t d = 0; d < trueParent->Daughters.size(); ++d) {
+                    daughterIDs.insert(trueParent->Daughters[d]);
+                }
+
+                for (const auto& entry : trueParticleByID) {
+                    const AnaTrueParticlePD* candidate = entry.second;
+                    if (!candidate) continue;
+                    if (candidate->ParentID == trueParent->ID) {
+                        daughterIDs.insert(candidate->ID);
+                    }
+                }
+
+                for (std::set<Int_t>::const_iterator it = daughterIDs.begin();
+                     it != daughterIDs.end() && outN < kMaxTrueDaughters; ++it) {
+                    const Int_t daughterID = *it;
+                    auto dit = trueParticleByID.find(daughterID);
+                    if (dit == trueParticleByID.end() || !dit->second) continue;
+                    const AnaTrueParticlePD* trueDaughter = dit->second;
+                    const Int_t slot = outN;
+                    pdgArr[slot] = trueDaughter->PDG;
+                    startFlat[slot * 3 + 0] = trueDaughter->Position[0];
+                    startFlat[slot * 3 + 1] = trueDaughter->Position[1];
+                    startFlat[slot * 3 + 2] = trueDaughter->Position[2];
+                    endFlat[slot * 3 + 0] = trueDaughter->PositionEnd[0];
+                    endFlat[slot * 3 + 1] = trueDaughter->PositionEnd[1];
+                    endFlat[slot * 3 + 2] = trueDaughter->PositionEnd[2];
+                    ++outN;
+                }
+            };
+
+            const AnaTrueParticlePD* trueParentForDisplay = nullptr;
+            if (associatedTrueK0 && associatedTrueK0->ParentID > 0) {
+                auto pit = trueParticleByID.find(associatedTrueK0->ParentID);
+                if (pit != trueParticleByID.end()) trueParentForDisplay = pit->second;
+            }
+            if (!trueParentForDisplay && neutralParticle->Parent && neutralParticle->Parent->TrueObject) {
+                trueParentForDisplay = static_cast<const AnaTrueParticlePD*>(neutralParticle->Parent->TrueObject);
+            }
+            fillParentDaughters(trueParentForDisplay, nParentDaughters, parentDaughterStartFlat, parentDaughterEndFlat, parentDaughterPDGArr);
+
+            if (!associatedTrueK0) {
+                if (neutralParticle->Parent && neutralParticle->Parent->TrueObject) {
+                    const AnaTrueParticlePD* trueRecoParent =
+                        static_cast<const AnaTrueParticlePD*>(neutralParticle->Parent->TrueObject);
+                    if (trueRecoParent) {
+                        parentPDG = trueRecoParent->PDG;
+                        processEndCode = static_cast<Int_t>(trueRecoParent->ProcessEnd);
+                        for (Int_t c = 0; c < 3; ++c) {
+                            parentStart[c] = trueRecoParent->Position[c];
+                            parentEnd[c] = trueRecoParent->PositionEnd[c];
+                        }
+                        if (parentEnd[0] > -900.f && parentEnd[1] > -900.f && parentEnd[2] > -900.f) {
+                            trueStartPos[0] = parentEnd[0];
+                            trueStartPos[1] = parentEnd[1];
+                            trueStartPos[2] = parentEnd[2];
+                        }
+                    }
+                }
+
+                nDaughters = 0;
+                std::fill_n(daughterStartFlat, kMaxTrueDaughters * 3, -999.f);
+                std::fill_n(daughterEndFlat, kMaxTrueDaughters * 3, -999.f);
+                std::fill_n(daughterPDGArr, kMaxTrueDaughters, 0);
+
+                if (neutralParticle->Parent && neutralParticle->Parent->TrueObject) {
+                    const AnaTrueParticlePD* trueRecoParent =
+                        static_cast<const AnaTrueParticlePD*>(neutralParticle->Parent->TrueObject);
+                    if (trueRecoParent) {
+                        const Int_t maxDaughters = static_cast<Int_t>(std::min(trueRecoParent->Daughters.size(), static_cast<size_t>(kMaxTrueDaughters)));
+                        for (Int_t d = 0; d < maxDaughters; ++d) {
+                            const Int_t daughterID = trueRecoParent->Daughters[d];
+                            auto dit = trueParticleByID.find(daughterID);
+                            if (dit == trueParticleByID.end() || !dit->second) continue;
+                            const AnaTrueParticlePD* trueDaughter = dit->second;
+                            const Int_t slot = nDaughters;
+                            daughterPDGArr[slot] = trueDaughter->PDG;
+                            daughterStartFlat[slot * 3 + 0] = trueDaughter->Position[0];
+                            daughterStartFlat[slot * 3 + 1] = trueDaughter->Position[1];
+                            daughterStartFlat[slot * 3 + 2] = trueDaughter->Position[2];
+                            daughterEndFlat[slot * 3 + 0] = trueDaughter->PositionEnd[0];
+                            daughterEndFlat[slot * 3 + 1] = trueDaughter->PositionEnd[1];
+                            daughterEndFlat[slot * 3 + 2] = trueDaughter->PositionEnd[2];
+                            ++nDaughters;
+                        }
+                    }
+                }
+
+                if (trueDecayVtxFromRecoDaughters[0] > -900.f && trueDecayVtxFromRecoDaughters[1] > -900.f &&
+                    trueDecayVtxFromRecoDaughters[2] > -900.f) {
+                    trueEndPos[0] = trueDecayVtxFromRecoDaughters[0];
+                    trueEndPos[1] = trueDecayVtxFromRecoDaughters[1];
+                    trueEndPos[2] = trueDecayVtxFromRecoDaughters[2];
+                }
+
+                TVector3 trueFallbackDir(trueEndPos[0] - trueStartPos[0],
+                                         trueEndPos[1] - trueStartPos[1],
+                                         trueEndPos[2] - trueStartPos[2]);
+                if (trueFallbackDir.Mag2() > 1e-10 &&
+                    trueStartPos[0] > -900.f && trueStartPos[1] > -900.f && trueStartPos[2] > -900.f &&
+                    trueEndPos[0] > -900.f && trueEndPos[1] > -900.f && trueEndPos[2] > -900.f) {
+                    trueFallbackDir = trueFallbackDir.Unit();
+                    trueK0Dir[0] = trueFallbackDir.X();
+                    trueK0Dir[1] = trueFallbackDir.Y();
+                    trueK0Dir[2] = trueFallbackDir.Z();
+                }
+            }
 
             output.FillVectorVar(edk0_hasTrueObject, hasTrueObject);
             output.FillMatrixVarFromArray(edk0_trueStartPos, trueStartPos, 3);
@@ -1203,6 +1465,10 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_trueParentPDG, parentPDG);
             output.FillMatrixVarFromArray(edk0_trueParentStartPos, parentStart, 3);
             output.FillMatrixVarFromArray(edk0_trueParentEndPos, parentEnd, 3);
+            output.FillVectorVar(edk0_trueParentNDaughters, nParentDaughters);
+            output.FillMatrixVarFromArray(edk0_trueParentDaughterStartPos, parentDaughterStartFlat, kMaxTrueDaughters*3);
+            output.FillMatrixVarFromArray(edk0_trueParentDaughterEndPos, parentDaughterEndFlat, kMaxTrueDaughters*3);
+            output.FillMatrixVarFromArray(edk0_trueParentDaughterPDG, parentDaughterPDGArr, kMaxTrueDaughters);
             output.FillVectorVar(edk0_trueNDaughters, nDaughters);
             output.FillMatrixVarFromArray(edk0_trueDaughterStartPos, daughterStartFlat, kMaxTrueDaughters*3);
             output.FillMatrixVarFromArray(edk0_trueDaughterEndPos, daughterEndFlat, kMaxTrueDaughters*3);
@@ -1226,6 +1492,14 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                     _k0_trueDecayVtxFromRecoDaughters[i][c] = trueDecayVtxFromRecoDaughters[c];
                     _k0_trueParentStartPos[i][c] = parentStart[c];
                     _k0_trueParentEndPos[i][c] = parentEnd[c];
+                }
+                _k0_trueParentNDaughters[i] = nParentDaughters;
+                for (Int_t c = 0; c < kMaxTrueDaughters*3; ++c) {
+                    _k0_trueParentDaughterStartPos[i][c] = parentDaughterStartFlat[c];
+                    _k0_trueParentDaughterEndPos[i][c] = parentDaughterEndFlat[c];
+                }
+                for (Int_t c = 0; c < kMaxTrueDaughters; ++c) {
+                    _k0_trueParentDaughterPDG[i][c] = parentDaughterPDGArr[c];
                 }
                 _k0_trueNDaughters[i] = nDaughters;
                 for (Int_t c = 0; c < kMaxTrueDaughters*3; ++c) {
@@ -1536,6 +1810,10 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     tree->SetBranchAddress("ED_k0_trueDaughterStartPos", _k0_trueDaughterStartPos);
     tree->SetBranchAddress("ED_k0_trueDaughterEndPos", _k0_trueDaughterEndPos);
     tree->SetBranchAddress("ED_k0_trueDaughterPDG", _k0_trueDaughterPDG);
+    tree->SetBranchAddress("ED_k0_trueParentNDaughters", _k0_trueParentNDaughters);
+    tree->SetBranchAddress("ED_k0_trueParentDaughterStartPos", _k0_trueParentDaughterStartPos);
+    tree->SetBranchAddress("ED_k0_trueParentDaughterEndPos", _k0_trueParentDaughterEndPos);
+    tree->SetBranchAddress("ED_k0_trueParentDaughterPDG", _k0_trueParentDaughterPDG);
     tree->SetBranchAddress("ED_k0_trueNSiblings", _k0_trueNSiblings);
     tree->SetBranchAddress("ED_k0_trueSiblingStartPos", _k0_trueSiblingStartPos);
     tree->SetBranchAddress("ED_k0_trueSiblingEndPos", _k0_trueSiblingEndPos);
@@ -1557,6 +1835,12 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     tree->SetBranchAddress("ED_trueK0_siblingStartPos", _trueK0_siblingStartPos);
     tree->SetBranchAddress("ED_trueK0_siblingEndPos", _trueK0_siblingEndPos);
     tree->SetBranchAddress("ED_trueK0_siblingPDG", _trueK0_siblingPDG);
+
+    tree->SetBranchAddress("ED_nAllTrueParticles", &_nAllTrueParticles);
+    tree->SetBranchAddress("ED_allTrueParticle_startPos", _allTrueParticle_startPos);
+    tree->SetBranchAddress("ED_allTrueParticle_endPos", _allTrueParticle_endPos);
+    tree->SetBranchAddress("ED_allTrueParticle_PDG", _allTrueParticle_PDG);
+    tree->SetBranchAddress("ED_allTrueParticle_processEnd", _allTrueParticle_processEnd);
 
     // Load only analysis branches for the already-selected entry.
     // This avoids a full second TTree::GetEntry() pass while still refreshing
@@ -1584,6 +1868,8 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_k0_fitLineLength", "ED_k0_hasTrueObject",
             "ED_k0_trueStartPos", "ED_k0_trueEndPos", "ED_k0_truePDG", "ED_k0_trueProcessEnd",
             "ED_k0_trueParentPDG", "ED_k0_trueParentStartPos", "ED_k0_trueParentEndPos",
+            "ED_k0_trueParentNDaughters", "ED_k0_trueParentDaughterStartPos",
+            "ED_k0_trueParentDaughterEndPos", "ED_k0_trueParentDaughterPDG",
             "ED_k0_parentStartPos", "ED_k0_parentEndPos", "ED_k0_parentLength",
             "ED_k0_parentEndPosCorrected", "ED_k0_parentTailFitAnchor", "ED_k0_parentTailFitDir",
             "ED_k0_parentTailFitLength", "ED_k0_parentTailHitsRaw", "ED_k0_parentTailHitsProjected",
@@ -1602,7 +1888,9 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_trueK0_nDaughters", "ED_trueK0_daughterStartPos",
             "ED_trueK0_daughterEndPos", "ED_trueK0_daughterPDG",
             "ED_trueK0_nSiblings", "ED_trueK0_siblingStartPos",
-            "ED_trueK0_siblingEndPos", "ED_trueK0_siblingPDG"
+            "ED_trueK0_siblingEndPos", "ED_trueK0_siblingPDG",
+            "ED_nAllTrueParticles", "ED_allTrueParticle_startPos", "ED_allTrueParticle_endPos",
+            "ED_allTrueParticle_PDG", "ED_allTrueParticle_processEnd"
         };
         for (const char* bname : analysisBranches) {
             if (TBranch* br = tree->GetBranch(bname)) {
@@ -1619,6 +1907,9 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
 //********************************************************************
 void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 //********************************************************************
+    EnsureSelectionHooks();
+    EnsureGroupCheckboxSync();
+
     // Draw K0 candidates
     TEveElementList* neutralParticlesGroup = PrepareGroup(scene, "Neutral Particles");
     TEveElementList* trueParticlesGroup = PrepareGroup(scene, "True Particles");
@@ -2106,20 +2397,21 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                         _k0_trueEndPos[i][2]);
 
             std::string procLabel = ProcessEnumToString(_k0_trueProcessEnd[i]);
-            Int_t ndRecoTrue = _k0_trueNDaughters[i];
-            Int_t nsRecoTrue = _k0_trueNSiblings[i];
+            Int_t ndRecoTrue = _k0_trueParentNDaughters[i];
             std::string labelText;
             if (!procLabel.empty()) {
-                labelText = Form("%s (nd=%d ns=%d)", procLabel.c_str(), ndRecoTrue, nsRecoTrue);
+                labelText = Form("%s, true daughters=%d", procLabel.c_str(), ndRecoTrue);
             } else {
-                labelText = Form("nd=%d ns=%d", ndRecoTrue, nsRecoTrue);
+                labelText = Form("true daughters=%d", ndRecoTrue);
             }
             if (annotationGroup && !labelText.empty()) {
                 TEveText* procText = new TEveText(labelText.c_str());
                 procText->SetMainColor(trueColor);
-                procText->SetFontSize(14);
+                procText->SetFontSize(18);
                 TEveTrans& procTrans = procText->RefMainTrans();
-                procTrans.SetPos(_k0_trueEndPos[i][0], _k0_trueEndPos[i][1], _k0_trueEndPos[i][2]);
+                procTrans.SetPos(_k0_trueEndPos[i][0] + 5.f,
+                                 _k0_trueEndPos[i][1] + 5.f,
+                                 _k0_trueEndPos[i][2] + 5.f);
                 addElement(annotationGroup, procText);
             }
 
@@ -2143,15 +2435,15 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                             _k0_trueParentEndPos[i][2]);
             }
 
-            for (Int_t d = 0; d < _k0_trueNDaughters[i] && d < kMaxTrueDaughters; ++d) {
-                Float_t sx = _k0_trueDaughterStartPos[i][d*3 + 0];
-                Float_t sy = _k0_trueDaughterStartPos[i][d*3 + 1];
-                Float_t sz = _k0_trueDaughterStartPos[i][d*3 + 2];
-                Float_t ex = _k0_trueDaughterEndPos[i][d*3 + 0];
-                Float_t ey = _k0_trueDaughterEndPos[i][d*3 + 1];
-                Float_t ez = _k0_trueDaughterEndPos[i][d*3 + 2];
+            for (Int_t d = 0; d < _k0_trueParentNDaughters[i] && d < kMaxTrueDaughters; ++d) {
+                Float_t sx = _k0_trueParentDaughterStartPos[i][d*3 + 0];
+                Float_t sy = _k0_trueParentDaughterStartPos[i][d*3 + 1];
+                Float_t sz = _k0_trueParentDaughterStartPos[i][d*3 + 2];
+                Float_t ex = _k0_trueParentDaughterEndPos[i][d*3 + 0];
+                Float_t ey = _k0_trueParentDaughterEndPos[i][d*3 + 1];
+                Float_t ez = _k0_trueParentDaughterEndPos[i][d*3 + 2];
                 if (sx <= -900 || ex <= -900) continue;
-                Int_t daughterColor = GetParticleColor(_k0_trueDaughterPDG[i][d]);
+                Int_t daughterColor = GetParticleColor(_k0_trueParentDaughterPDG[i][d]);
                 if (daughterColor == kBlack) daughterColor = kGray + 1;
                 TEveLine* daughterLine = new TEveLine(Form("K0 #%d True Daughter %d", i, d));
                 daughterLine->SetPoint(0, sx, sy, sz);
@@ -2164,7 +2456,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 anchorPoint(daughterLine, ex, ey, ez);
             }
 
-            for (Int_t s = 0; s < _k0_trueNSiblings[i] && s < kMaxTrueSiblings && false; ++s) {
+            for (Int_t s = 0; s < _k0_trueNSiblings[i] && s < kMaxTrueSiblings; ++s) {
                 Float_t sx = _k0_trueSiblingStartPos[i][s*3 + 0];
                 Float_t sy = _k0_trueSiblingStartPos[i][s*3 + 1];
                 Float_t sz = _k0_trueSiblingStartPos[i][s*3 + 2];
@@ -2183,6 +2475,109 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 addElement(truthSiblingGroup, siblingLine);
                 anchorPoint(siblingLine, sx, sy, sz);
                 anchorPoint(siblingLine, ex, ey, ez);
+            }
+        }
+
+        if (!_k0_hasTrueObject[i]) {
+            const bool hasTrueCreationFromParent = (_k0_trueParentEndPos[i][0] > -900 &&
+                                                   _k0_trueParentEndPos[i][1] > -900 &&
+                                                   _k0_trueParentEndPos[i][2] > -900);
+            const bool hasTrueAnnihFromRecoDau = (_k0_trueDecayVtxFromRecoDaughters[i][0] > -900 &&
+                                                  _k0_trueDecayVtxFromRecoDaughters[i][1] > -900 &&
+                                                  _k0_trueDecayVtxFromRecoDaughters[i][2] > -900);
+            TVector3 fallbackLabelPos(
+                hasTrueAnnihFromRecoDau ? _k0_trueDecayVtxFromRecoDaughters[i][0] : _k0_trueParentEndPos[i][0],
+                hasTrueAnnihFromRecoDau ? _k0_trueDecayVtxFromRecoDaughters[i][1] : _k0_trueParentEndPos[i][1],
+                hasTrueAnnihFromRecoDau ? _k0_trueDecayVtxFromRecoDaughters[i][2] : _k0_trueParentEndPos[i][2]);
+
+            if (hasTrueCreationFromParent) {
+                TEvePointSet* trueCreation = new TEvePointSet(Form("K0 #%d True Creation Vertex", i));
+                trueCreation->SetNextPoint(_k0_trueParentEndPos[i][0], _k0_trueParentEndPos[i][1], _k0_trueParentEndPos[i][2]);
+                trueCreation->SetMarkerStyle(29);
+                trueCreation->SetMarkerSize(2.3);
+                trueCreation->SetMainColor(kBlue + 1);
+                addElement(truthGroup, trueCreation);
+                anchorPoint(trueCreation, _k0_trueParentEndPos[i][0], _k0_trueParentEndPos[i][1], _k0_trueParentEndPos[i][2]);
+            }
+
+            if (hasTrueAnnihFromRecoDau) {
+                TEvePointSet* trueAnnih = new TEvePointSet(Form("K0 #%d True Annihilation Vertex", i));
+                trueAnnih->SetNextPoint(_k0_trueDecayVtxFromRecoDaughters[i][0], _k0_trueDecayVtxFromRecoDaughters[i][1], _k0_trueDecayVtxFromRecoDaughters[i][2]);
+                trueAnnih->SetMarkerStyle(29);
+                trueAnnih->SetMarkerSize(2.3);
+                trueAnnih->SetMainColor(kRed + 1);
+                addElement(truthGroup, trueAnnih);
+                anchorPoint(trueAnnih, _k0_trueDecayVtxFromRecoDaughters[i][0], _k0_trueDecayVtxFromRecoDaughters[i][1], _k0_trueDecayVtxFromRecoDaughters[i][2]);
+            }
+
+            std::string procLabel = ProcessEnumToString(_k0_trueProcessEnd[i]);
+            Int_t ndRecoTrue = _k0_trueParentNDaughters[i];
+            std::string labelText;
+            if (!procLabel.empty()) {
+                labelText = Form("%s, true daughters=%d", procLabel.c_str(), ndRecoTrue);
+            } else {
+                labelText = Form("true daughters=%d", ndRecoTrue);
+            }
+            if (annotationGroup && !labelText.empty()) {
+                TEveText* procText = new TEveText(labelText.c_str());
+                procText->SetMainColor(kRed + 1);
+                procText->SetFontSize(18);
+                TEveTrans& procTrans = procText->RefMainTrans();
+                procTrans.SetPos(fallbackLabelPos.X() + 5.f,
+                                 fallbackLabelPos.Y() + 5.f,
+                                 fallbackLabelPos.Z() + 5.f);
+                addElement(annotationGroup, procText);
+            }
+
+            if (_k0_trueParentPDG[i] != 0 && _k0_trueParentStartPos[i][0] > -900 && _k0_trueParentEndPos[i][0] > -900) {
+                Int_t parentColor = GetParticleColor(_k0_trueParentPDG[i]);
+                if (parentColor == kBlack) parentColor = kGray + 1;
+                TEveLine* parentLine = new TEveLine(Form("K0 #%d True Parent", i));
+                parentLine->SetPoint(0, _k0_trueParentStartPos[i][0], _k0_trueParentStartPos[i][1], _k0_trueParentStartPos[i][2]);
+                parentLine->SetPoint(1, _k0_trueParentEndPos[i][0], _k0_trueParentEndPos[i][1], _k0_trueParentEndPos[i][2]);
+                parentLine->SetMainColor(parentColor);
+                parentLine->SetLineWidth(3);
+                parentLine->SetLineStyle(1);
+                addElement(truthParentGroup, parentLine);
+                anchorPoint(parentLine, _k0_trueParentStartPos[i][0], _k0_trueParentStartPos[i][1], _k0_trueParentStartPos[i][2]);
+                anchorPoint(parentLine, _k0_trueParentEndPos[i][0], _k0_trueParentEndPos[i][1], _k0_trueParentEndPos[i][2]);
+            }
+
+            for (Int_t d = 0; d < _k0_trueParentNDaughters[i] && d < kMaxTrueDaughters; ++d) {
+                Float_t sx = _k0_trueParentDaughterStartPos[i][d * 3 + 0];
+                Float_t sy = _k0_trueParentDaughterStartPos[i][d * 3 + 1];
+                Float_t sz = _k0_trueParentDaughterStartPos[i][d * 3 + 2];
+                Float_t ex = _k0_trueParentDaughterEndPos[i][d * 3 + 0];
+                Float_t ey = _k0_trueParentDaughterEndPos[i][d * 3 + 1];
+                Float_t ez = _k0_trueParentDaughterEndPos[i][d * 3 + 2];
+                if (sx <= -900 || ex <= -900) continue;
+                Int_t daughterColor = GetParticleColor(_k0_trueParentDaughterPDG[i][d]);
+                if (daughterColor == kBlack) daughterColor = kGray + 1;
+                TEveLine* daughterLine = new TEveLine(Form("K0 #%d True Vertex Daughter %d", i, d));
+                daughterLine->SetPoint(0, sx, sy, sz);
+                daughterLine->SetPoint(1, ex, ey, ez);
+                daughterLine->SetMainColor(daughterColor);
+                daughterLine->SetLineWidth(4);
+                daughterLine->SetLineStyle(1);
+                addElement(truthDaughterGroup, daughterLine);
+                anchorPoint(daughterLine, sx, sy, sz);
+                anchorPoint(daughterLine, ex, ey, ez);
+
+                TEvePointSet* dauStart = new TEvePointSet(Form("K0 #%d True Vertex Daughter %d Start", i, d));
+                dauStart->SetNextPoint(sx, sy, sz);
+                dauStart->SetMarkerStyle(29);
+                dauStart->SetMarkerSize(2.2);
+                dauStart->SetMainColor(daughterColor);
+                addElement(truthDaughterGroup, dauStart);
+                anchorPoint(dauStart, sx, sy, sz);
+
+                TEvePointSet* dauEnd = new TEvePointSet(Form("K0 #%d True Vertex Daughter %d End", i, d));
+                dauEnd->SetNextPoint(ex, ey, ez);
+                dauEnd->SetMarkerStyle(20);
+                dauEnd->SetMarkerSize(1.8);
+                dauEnd->SetMainColor(daughterColor);
+                addElement(truthDaughterGroup, dauEnd);
+                anchorPoint(dauEnd, ex, ey, ez);
             }
         }
 
@@ -2614,116 +3009,53 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         std::cout << "Drew " << _nK0Candidates << " K0 candidates in 3D" << std::endl;
     }
 
-    // Draw standalone true K0 trajectories
-    for (Int_t i = 0; i < _nTrueK0 && i < kMaxTrueK0; ++i) {
-        if (_trueK0_startPos[i][0] <= -900 || _trueK0_endPos[i][0] <= -900) continue;
+    // Draw all true particle trajectories
+    for (Int_t i = 0; i < _nAllTrueParticles && i < kMaxAllTrueParticles; ++i) {
+        if (_allTrueParticle_startPos[i][0] <= -900 || _allTrueParticle_endPos[i][0] <= -900) continue;
 
         TEveElementList* trueParticleGroup =
-            new TEveElementList(Form("True UID=%d PDG=%d", i, _trueK0_PDG[i]));
+            new TEveElementList(Form("True UID=%d PDG=%d", i, _allTrueParticle_PDG[i]));
         addElement(trueParticlesGroup, trueParticleGroup);
 
-        TEveElementList* standaloneTruthGroup = trueParticleGroup;
-        TEveElementList* standaloneParentGroup = trueParticleGroup;
-        TEveElementList* standaloneDaughterGroup = trueParticleGroup;
-        TEveElementList* standaloneSiblingGroup = trueParticleGroup;
-        TEveElementList* annotationGroup = trueParticleGroup;
+        Int_t trueColor = GetParticleColor(_allTrueParticle_PDG[i]);
+        if (trueColor == kBlack) trueColor = kGray + 1;
 
-        Int_t trueColor = GetParticleColor(_trueK0_PDG[i]);
-        if (trueColor == kBlack) {
-            trueColor = GetParticleColor(310);
-            if (trueColor == kBlack)
-                trueColor = kGray + 1;
-        }
+        TEveLine* trueLine = new TEveLine(Form("True Particle #%d", i));
+        trueLine->SetPoint(0, _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
+        trueLine->SetPoint(1, _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        trueLine->SetMainColor(trueColor);
+        trueLine->SetLineWidth(2);
+        trueLine->SetLineStyle(1);
+        addElement(trueParticleGroup, trueLine);
 
-        TEveLine* trueK0 = new TEveLine(Form("Standalone True K0 #%d", i));
-        trueK0->SetPoint(0, _trueK0_startPos[i][0], _trueK0_startPos[i][1], _trueK0_startPos[i][2]);
-        trueK0->SetPoint(1, _trueK0_endPos[i][0], _trueK0_endPos[i][1], _trueK0_endPos[i][2]);
-        trueK0->SetMainColor(trueColor);
-        trueK0->SetLineWidth(3);
-        trueK0->SetLineStyle(1);
-        addElement(standaloneTruthGroup, trueK0);
-
-        // Optional markers at start/end
-        TEvePointSet* trueStart = new TEvePointSet(Form("Standalone True K0 #%d Start", i));
-        trueStart->SetNextPoint(_trueK0_startPos[i][0], _trueK0_startPos[i][1], _trueK0_startPos[i][2]);
+        TEvePointSet* trueStart = new TEvePointSet(Form("True Particle #%d Start", i));
+        trueStart->SetNextPoint(_allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
         trueStart->SetMarkerStyle(29);
-        trueStart->SetMarkerSize(2.0);
+        trueStart->SetMarkerSize(1.8);
         trueStart->SetMainColor(trueColor);
-        addElement(standaloneTruthGroup, trueStart);
+        addElement(trueParticleGroup, trueStart);
 
-        TEvePointSet* trueEnd = new TEvePointSet(Form("Standalone True K0 #%d End", i));
-        trueEnd->SetNextPoint(_trueK0_endPos[i][0], _trueK0_endPos[i][1], _trueK0_endPos[i][2]);
+        TEvePointSet* trueEnd = new TEvePointSet(Form("True Particle #%d End", i));
+        trueEnd->SetNextPoint(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
         trueEnd->SetMarkerStyle(29);
-        trueEnd->SetMarkerSize(2.0);
+        trueEnd->SetMarkerSize(1.8);
         trueEnd->SetMainColor(trueColor);
-        addElement(standaloneTruthGroup, trueEnd);
+        addElement(trueParticleGroup, trueEnd);
 
-        std::string procLabel = ProcessEnumToString(_trueK0_processEnd[i]);
-        Int_t ndStandalone = _trueK0_nDaughters[i];
-        Int_t nsStandalone = _trueK0_nSiblings[i];
-        std::string standaloneLabel;
+        std::string procLabel = ProcessEnumToString(_allTrueParticle_processEnd[i]);
+        std::string labelText;
         if (!procLabel.empty()) {
-            standaloneLabel = Form("%s (nd=%d ns=%d)", procLabel.c_str(), ndStandalone, nsStandalone);
+            labelText = Form("%s, PDG=%d", procLabel.c_str(), _allTrueParticle_PDG[i]);
         } else {
-            standaloneLabel = Form("nd=%d ns=%d", ndStandalone, nsStandalone);
+            labelText = Form("PDG=%d", _allTrueParticle_PDG[i]);
         }
-        if (annotationGroup && !standaloneLabel.empty()) {
-            TEveText* procText = new TEveText(standaloneLabel.c_str());
+        if (!labelText.empty()) {
+            TEveText* procText = new TEveText(labelText.c_str());
             procText->SetMainColor(trueColor);
             procText->SetFontSize(14);
             TEveTrans& procTrans = procText->RefMainTrans();
-            procTrans.SetPos(_trueK0_endPos[i][0], _trueK0_endPos[i][1], _trueK0_endPos[i][2]);
-            addElement(annotationGroup, procText);
-        }
-
-        if (_trueK0_parentPDG[i] != 0 && _trueK0_parentStartPos[i][0] > -900 && _trueK0_parentEndPos[i][0] > -900) {
-            Int_t parentColor = GetParticleColor(_trueK0_parentPDG[i]);
-            if (parentColor == kBlack) parentColor = kGray + 1;
-            TEveLine* parentLine = new TEveLine(Form("Standalone True K0 #%d Parent", i));
-            parentLine->SetPoint(0, _trueK0_parentStartPos[i][0], _trueK0_parentStartPos[i][1], _trueK0_parentStartPos[i][2]);
-            parentLine->SetPoint(1, _trueK0_parentEndPos[i][0], _trueK0_parentEndPos[i][1], _trueK0_parentEndPos[i][2]);
-            parentLine->SetMainColor(parentColor);
-            parentLine->SetLineWidth(3);
-            parentLine->SetLineStyle(1);
-            addElement(standaloneParentGroup, parentLine);
-        }
-
-        for (Int_t d = 0; d < _trueK0_nDaughters[i] && d < kMaxTrueDaughters; ++d) {
-            Float_t sx = _trueK0_daughterStartPos[i][d*3 + 0];
-            Float_t sy = _trueK0_daughterStartPos[i][d*3 + 1];
-            Float_t sz = _trueK0_daughterStartPos[i][d*3 + 2];
-            Float_t ex = _trueK0_daughterEndPos[i][d*3 + 0];
-            Float_t ey = _trueK0_daughterEndPos[i][d*3 + 1];
-            Float_t ez = _trueK0_daughterEndPos[i][d*3 + 2];
-            if (sx <= -900 || ex <= -900) continue;
-            Int_t daughterColor = GetParticleColor(_trueK0_daughterPDG[i][d]);
-            if (daughterColor == kBlack) daughterColor = kGray + 1;
-            TEveLine* daughterLine = new TEveLine(Form("Standalone True K0 #%d Daughter %d", i, d));
-            daughterLine->SetPoint(0, sx, sy, sz);
-            daughterLine->SetPoint(1, ex, ey, ez);
-            daughterLine->SetMainColor(daughterColor);
-            daughterLine->SetLineWidth(3);
-            daughterLine->SetLineStyle(1);
-            addElement(standaloneDaughterGroup, daughterLine);
-        }
-
-        for (Int_t s = 0; s < _trueK0_nSiblings[i] && s < kMaxTrueSiblings; ++s) {
-            Float_t sx = _trueK0_siblingStartPos[i][s*3 + 0];
-            Float_t sy = _trueK0_siblingStartPos[i][s*3 + 1];
-            Float_t sz = _trueK0_siblingStartPos[i][s*3 + 2];
-            Float_t ex = _trueK0_siblingEndPos[i][s*3 + 0];
-            Float_t ey = _trueK0_siblingEndPos[i][s*3 + 1];
-            Float_t ez = _trueK0_siblingEndPos[i][s*3 + 2];
-            if (sx <= -900 || ex <= -900) continue;
-            Int_t siblingColor = GetParticleColor(_trueK0_siblingPDG[i][s]);
-            if (siblingColor == kBlack) siblingColor = kGray + 1;
-            TEveLine* siblingLine = new TEveLine(Form("Standalone True K0 #%d Sibling %d", i, s));
-            siblingLine->SetPoint(0, sx, sy, sz);
-            siblingLine->SetPoint(1, ex, ey, ez);
-            siblingLine->SetMainColor(siblingColor);
-            siblingLine->SetLineWidth(2);
-            siblingLine->SetLineStyle(1);
-            addElement(standaloneSiblingGroup, siblingLine);
+            procTrans.SetPos(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+            addElement(trueParticleGroup, procText);
         }
     }
 }
@@ -2746,9 +3078,6 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
     const Bool_t showCreationVertices = kFALSE;
     const Bool_t showAnnihilationVertices = IsGroupVisible("Neutral Particles");
     const Bool_t showStandaloneTruth = IsGroupVisible("True Particles");
-    const Bool_t showStandaloneParents = IsGroupVisible("True Particles");
-    const Bool_t showStandaloneDaughters = IsGroupVisible("True Particles");
-    const Bool_t showStandaloneSiblings = kFALSE;
     const Bool_t showMomentumArrows = IsGroupVisible("Neutral Particles");
 
     for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0 && false; i++) {
@@ -2941,18 +3270,17 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             trueEndMarker->Draw("SAME");
 
             std::string procLabel = ProcessEnumToString(_k0_trueProcessEnd[i]);
-            Int_t ndRecoTrue = _k0_trueNDaughters[i];
-            Int_t nsRecoTrue = _k0_trueNSiblings[i];
+            Int_t ndRecoTrue = _k0_trueParentNDaughters[i];
             std::string labelText;
             if (!procLabel.empty()) {
-                labelText = Form("#scale[0.6]{%s (nd=%d ns=%d)}", procLabel.c_str(), ndRecoTrue, nsRecoTrue);
+                labelText = Form("#scale[0.6]{%s, true daughters=%d}", procLabel.c_str(), ndRecoTrue);
             } else {
-                labelText = Form("#scale[0.6]{nd=%d ns=%d}", ndRecoTrue, nsRecoTrue);
+                labelText = Form("#scale[0.6]{true daughters=%d}", ndRecoTrue);
             }
             if (!labelText.empty()) {
                 TLatex* procLatex = new TLatex(tx2, ty2, labelText.c_str());
                 procLatex->SetTextColor(trueColor);
-                procLatex->SetTextSize(0.03);
+                procLatex->SetTextSize(0.04);
                 procLatex->Draw("SAME");
             }
 
@@ -2977,13 +3305,13 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 parentLine->Draw("SAME");
             }
 
-            for (Int_t d = 0; d < _k0_trueNDaughters[i] && d < kMaxTrueDaughters; ++d) {
-                Float_t sx = _k0_trueDaughterStartPos[i][d*3 + 0];
-                Float_t sy = _k0_trueDaughterStartPos[i][d*3 + 1];
-                Float_t sz = _k0_trueDaughterStartPos[i][d*3 + 2];
-                Float_t ex = _k0_trueDaughterEndPos[i][d*3 + 0];
-                Float_t ey = _k0_trueDaughterEndPos[i][d*3 + 1];
-                Float_t ez = _k0_trueDaughterEndPos[i][d*3 + 2];
+            for (Int_t d = 0; d < _k0_trueParentNDaughters[i] && d < kMaxTrueDaughters; ++d) {
+                Float_t sx = _k0_trueParentDaughterStartPos[i][d*3 + 0];
+                Float_t sy = _k0_trueParentDaughterStartPos[i][d*3 + 1];
+                Float_t sz = _k0_trueParentDaughterStartPos[i][d*3 + 2];
+                Float_t ex = _k0_trueParentDaughterEndPos[i][d*3 + 0];
+                Float_t ey = _k0_trueParentDaughterEndPos[i][d*3 + 1];
+                Float_t ez = _k0_trueParentDaughterEndPos[i][d*3 + 2];
                 if (sx <= -900 || ex <= -900) continue;
                 Float_t dx1, dy1, dx2, dy2;
                 if (projection_type == "XY") {
@@ -2996,7 +3324,7 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                     dx1 = sy; dy1 = sz;
                     dx2 = ey; dy2 = ez;
                 }
-                Int_t daughterColor = GetParticleColor(_k0_trueDaughterPDG[i][d]);
+                Int_t daughterColor = GetParticleColor(_k0_trueParentDaughterPDG[i][d]);
                 if (daughterColor == kBlack) daughterColor = kGray + 1;
                 TLine* daughterLine = new TLine(dx1, dy1, dx2, dy2);
                 daughterLine->SetLineColor(daughterColor);
@@ -3031,6 +3359,93 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 siblingLine->SetLineStyle(1);
                 siblingLine->SetLineWidth(2);
                 siblingLine->Draw("SAME");
+            }
+        }
+
+        if (!_k0_hasTrueObject[i]) {
+            if (_k0_trueParentEndPos[i][0] > -900) {
+                Float_t cx, cy;
+                if (projection_type == "XY") {
+                    cx = _k0_trueParentEndPos[i][0];
+                    cy = _k0_trueParentEndPos[i][1];
+                } else if (projection_type == "XZ") {
+                    cx = _k0_trueParentEndPos[i][0];
+                    cy = _k0_trueParentEndPos[i][2];
+                } else {
+                    cx = _k0_trueParentEndPos[i][1];
+                    cy = _k0_trueParentEndPos[i][2];
+                }
+                TMarker* trueCreationMarker = new TMarker(cx, cy, 29);
+                trueCreationMarker->SetMarkerColor(kBlue + 1);
+                trueCreationMarker->SetMarkerSize(2.0);
+                trueCreationMarker->Draw("SAME");
+            }
+
+            if (_k0_trueDecayVtxFromRecoDaughters[i][0] > -900) {
+                Float_t ax, ay;
+                if (projection_type == "XY") {
+                    ax = _k0_trueDecayVtxFromRecoDaughters[i][0];
+                    ay = _k0_trueDecayVtxFromRecoDaughters[i][1];
+                } else if (projection_type == "XZ") {
+                    ax = _k0_trueDecayVtxFromRecoDaughters[i][0];
+                    ay = _k0_trueDecayVtxFromRecoDaughters[i][2];
+                } else {
+                    ax = _k0_trueDecayVtxFromRecoDaughters[i][1];
+                    ay = _k0_trueDecayVtxFromRecoDaughters[i][2];
+                }
+                TMarker* trueAnnihMarker = new TMarker(ax, ay, 29);
+                trueAnnihMarker->SetMarkerColor(kRed + 1);
+                trueAnnihMarker->SetMarkerSize(2.0);
+                trueAnnihMarker->Draw("SAME");
+            }
+
+            if (_k0_trueParentPDG[i] != 0 && _k0_trueParentStartPos[i][0] > -900 && _k0_trueParentEndPos[i][0] > -900) {
+                Float_t px1, py1, px2, py2;
+                if (projection_type == "XY") {
+                    px1 = _k0_trueParentStartPos[i][0]; py1 = _k0_trueParentStartPos[i][1];
+                    px2 = _k0_trueParentEndPos[i][0]; py2 = _k0_trueParentEndPos[i][1];
+                } else if (projection_type == "XZ") {
+                    px1 = _k0_trueParentStartPos[i][0]; py1 = _k0_trueParentStartPos[i][2];
+                    px2 = _k0_trueParentEndPos[i][0]; py2 = _k0_trueParentEndPos[i][2];
+                } else {
+                    px1 = _k0_trueParentStartPos[i][1]; py1 = _k0_trueParentStartPos[i][2];
+                    px2 = _k0_trueParentEndPos[i][1]; py2 = _k0_trueParentEndPos[i][2];
+                }
+                Int_t parentColor = GetParticleColor(_k0_trueParentPDG[i]);
+                if (parentColor == kBlack) parentColor = kGray + 1;
+                TLine* parentLine = new TLine(px1, py1, px2, py2);
+                parentLine->SetLineColor(parentColor);
+                parentLine->SetLineStyle(1);
+                parentLine->SetLineWidth(3);
+                parentLine->Draw("SAME");
+            }
+
+            for (Int_t d = 0; d < _k0_trueParentNDaughters[i] && d < kMaxTrueDaughters; ++d) {
+                Float_t sx = _k0_trueParentDaughterStartPos[i][d * 3 + 0];
+                Float_t sy = _k0_trueParentDaughterStartPos[i][d * 3 + 1];
+                Float_t sz = _k0_trueParentDaughterStartPos[i][d * 3 + 2];
+                Float_t ex = _k0_trueParentDaughterEndPos[i][d * 3 + 0];
+                Float_t ey = _k0_trueParentDaughterEndPos[i][d * 3 + 1];
+                Float_t ez = _k0_trueParentDaughterEndPos[i][d * 3 + 2];
+                if (sx <= -900 || ex <= -900) continue;
+                Float_t dx1, dy1, dx2, dy2;
+                if (projection_type == "XY") {
+                    dx1 = sx; dy1 = sy;
+                    dx2 = ex; dy2 = ey;
+                } else if (projection_type == "XZ") {
+                    dx1 = sx; dy1 = sz;
+                    dx2 = ex; dy2 = ez;
+                } else {
+                    dx1 = sy; dy1 = sz;
+                    dx2 = ey; dy2 = ez;
+                }
+                Int_t daughterColor = GetParticleColor(_k0_trueParentDaughterPDG[i][d]);
+                if (daughterColor == kBlack) daughterColor = kGray + 1;
+                TLine* daughterLine = new TLine(dx1, dy1, dx2, dy2);
+                daughterLine->SetLineColor(daughterColor);
+                daughterLine->SetLineStyle(1);
+                daughterLine->SetLineWidth(3);
+                daughterLine->Draw("SAME");
             }
         }
 
@@ -3702,31 +4117,27 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
         std::cout << "Drew " << _nK0Candidates << " K0 candidates on " << projection_type << " canvas" << std::endl;
     }
 
-    // Draw standalone true K0 trajectories on 2D canvas
-    for (Int_t i = 0; i < _nTrueK0 && i < kMaxTrueK0; ++i) {
-        if (_trueK0_startPos[i][0] <= -900 || _trueK0_endPos[i][0] <= -900) continue;
+    // Draw all true particle trajectories on 2D canvas
+    for (Int_t i = 0; i < _nAllTrueParticles && i < kMaxAllTrueParticles; ++i) {
+        if (_allTrueParticle_startPos[i][0] <= -900 || _allTrueParticle_endPos[i][0] <= -900) continue;
 
         Float_t x1 = 0.f, y1 = 0.f, x2 = 0.f, y2 = 0.f;
 
         if (projection_type == "XY") {
-            x1 = _trueK0_startPos[i][0]; y1 = _trueK0_startPos[i][1];
-            x2 = _trueK0_endPos[i][0];   y2 = _trueK0_endPos[i][1];
+            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][1];
+            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][1];
         } else if (projection_type == "XZ") {
-            x1 = _trueK0_startPos[i][0]; y1 = _trueK0_startPos[i][2];
-            x2 = _trueK0_endPos[i][0];   y2 = _trueK0_endPos[i][2];
+            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][2];
+            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][2];
         } else if (projection_type == "YZ") {
-            x1 = _trueK0_startPos[i][1]; y1 = _trueK0_startPos[i][2];
-            x2 = _trueK0_endPos[i][1];   y2 = _trueK0_endPos[i][2];
+            x1 = _allTrueParticle_startPos[i][1]; y1 = _allTrueParticle_startPos[i][2];
+            x2 = _allTrueParticle_endPos[i][1];   y2 = _allTrueParticle_endPos[i][2];
         } else {
             continue;
         }
 
-        Int_t trueColor = GetParticleColor(_trueK0_PDG[i]);
-        if (trueColor == kBlack) {
-            trueColor = GetParticleColor(310);
-            if (trueColor == kBlack)
-                trueColor = kGray + 1;
-        }
+        Int_t trueColor = GetParticleColor(_allTrueParticle_PDG[i]);
+        if (trueColor == kBlack) trueColor = kGray + 1;
 
         if (showStandaloneTruth) {
             TLine* trueLine = new TLine(x1, y1, x2, y2);
@@ -3745,14 +4156,12 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
             trueEndMarker->SetMarkerSize(2.0);
             trueEndMarker->Draw("SAME");
 
-            std::string procLabel = ProcessEnumToString(_trueK0_processEnd[i]);
-            Int_t ndStandalone = _trueK0_nDaughters[i];
-            Int_t nsStandalone = _trueK0_nSiblings[i];
+            std::string procLabel = ProcessEnumToString(_allTrueParticle_processEnd[i]);
             std::string standaloneLabel;
             if (!procLabel.empty()) {
-                standaloneLabel = Form("%s (nd=%d ns=%d)", procLabel.c_str(), ndStandalone, nsStandalone);
+                standaloneLabel = Form("%s (PDG=%d)", procLabel.c_str(), _allTrueParticle_PDG[i]);
             } else {
-                standaloneLabel = Form("nd=%d ns=%d", ndStandalone, nsStandalone);
+                standaloneLabel = Form("PDG=%d", _allTrueParticle_PDG[i]);
             }
             if (!standaloneLabel.empty()) {
                 TLatex* procLatex = new TLatex(x2, y2, Form("#scale[0.6]{%s}", standaloneLabel.c_str()));
@@ -3760,87 +4169,6 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
                 procLatex->SetTextSize(0.03);
                 procLatex->Draw("SAME");
             }
-        }
-
-        if (showStandaloneParents && _trueK0_parentPDG[i] != 0 && _trueK0_parentStartPos[i][0] > -900 && _trueK0_parentEndPos[i][0] > -900) {
-            Float_t px1, py1, px2, py2;
-            if (projection_type == "XY") {
-                px1 = _trueK0_parentStartPos[i][0]; py1 = _trueK0_parentStartPos[i][1];
-                px2 = _trueK0_parentEndPos[i][0];   py2 = _trueK0_parentEndPos[i][1];
-            } else if (projection_type == "XZ") {
-                px1 = _trueK0_parentStartPos[i][0]; py1 = _trueK0_parentStartPos[i][2];
-                px2 = _trueK0_parentEndPos[i][0];   py2 = _trueK0_parentEndPos[i][2];
-            } else {
-                px1 = _trueK0_parentStartPos[i][1]; py1 = _trueK0_parentStartPos[i][2];
-                px2 = _trueK0_parentEndPos[i][1];   py2 = _trueK0_parentEndPos[i][2];
-            }
-            Int_t parentColor = GetParticleColor(_trueK0_parentPDG[i]);
-            if (parentColor == kBlack) parentColor = kGray + 1;
-            TLine* parentLine = new TLine(px1, py1, px2, py2);
-            parentLine->SetLineColor(parentColor);
-            parentLine->SetLineStyle(1);
-            parentLine->SetLineWidth(3);
-            parentLine->Draw("SAME");
-        }
-
-        if (showStandaloneDaughters) {
-            for (Int_t d = 0; d < _trueK0_nDaughters[i] && d < kMaxTrueDaughters; ++d) {
-            Float_t sx = _trueK0_daughterStartPos[i][d*3 + 0];
-            Float_t sy = _trueK0_daughterStartPos[i][d*3 + 1];
-            Float_t sz = _trueK0_daughterStartPos[i][d*3 + 2];
-            Float_t ex = _trueK0_daughterEndPos[i][d*3 + 0];
-            Float_t ey = _trueK0_daughterEndPos[i][d*3 + 1];
-            Float_t ez = _trueK0_daughterEndPos[i][d*3 + 2];
-            if (sx <= -900 || ex <= -900) continue;
-            Float_t dx1, dy1, dx2, dy2;
-            if (projection_type == "XY") {
-                dx1 = sx; dy1 = sy;
-                dx2 = ex; dy2 = ey;
-            } else if (projection_type == "XZ") {
-                dx1 = sx; dy1 = sz;
-                dx2 = ex; dy2 = ez;
-            } else {
-                dx1 = sy; dy1 = sz;
-                dx2 = ey; dy2 = ez;
-            }
-            Int_t daughterColor = GetParticleColor(_trueK0_daughterPDG[i][d]);
-            if (daughterColor == kBlack) daughterColor = kGray + 1;
-            TLine* daughterLine = new TLine(dx1, dy1, dx2, dy2);
-            daughterLine->SetLineColor(daughterColor);
-            daughterLine->SetLineStyle(1);
-            daughterLine->SetLineWidth(3);
-            daughterLine->Draw("SAME");
-        }
-        }
-
-        if (showStandaloneSiblings) {
-            for (Int_t s = 0; s < _trueK0_nSiblings[i] && s < kMaxTrueSiblings; ++s) {
-            Float_t sx = _trueK0_siblingStartPos[i][s*3 + 0];
-            Float_t sy = _trueK0_siblingStartPos[i][s*3 + 1];
-            Float_t sz = _trueK0_siblingStartPos[i][s*3 + 2];
-            Float_t ex = _trueK0_siblingEndPos[i][s*3 + 0];
-            Float_t ey = _trueK0_siblingEndPos[i][s*3 + 1];
-            Float_t ez = _trueK0_siblingEndPos[i][s*3 + 2];
-            if (sx <= -900 || ex <= -900) continue;
-            Float_t sx2d, sy2d, ex2d, ey2d;
-            if (projection_type == "XY") {
-                sx2d = sx; sy2d = sy;
-                ex2d = ex; ey2d = ey;
-            } else if (projection_type == "XZ") {
-                sx2d = sx; sy2d = sz;
-                ex2d = ex; ey2d = ez;
-            } else {
-                sx2d = sy; sy2d = sz;
-                ex2d = ey; ey2d = ez;
-            }
-            Int_t siblingColor = GetParticleColor(_trueK0_siblingPDG[i][s]);
-            if (siblingColor == kBlack) siblingColor = kGray + 1;
-            TLine* siblingLine = new TLine(sx2d, sy2d, ex2d, ey2d);
-            siblingLine->SetLineColor(siblingColor);
-            siblingLine->SetLineStyle(1);
-            siblingLine->SetLineWidth(2);
-            siblingLine->Draw("SAME");
-        }
         }
     }
 }

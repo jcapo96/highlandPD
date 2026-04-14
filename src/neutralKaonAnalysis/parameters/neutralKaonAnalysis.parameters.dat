@@ -38,8 +38,13 @@ need to be enabled in baseAnalysis parameter file
 --- ML residual-range dE/dx (annihilation pions) -----------
 # Among interior collection hits, only hits with residual range >= MinRRCm may be discarded as Landau-tail outliers;
 # low-RR hits are never removed. Fraction is the fraction of those high-RR hits (largest dE/dx first) to drop. Set to 0 to disable.
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm = 0.0 >
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction = 0.0 >
+< neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm = 5.0 >
+< neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction = 0.05 >
+
+--- Momentum Assurance Parameters -----------
+# Enable momentum assurance for signal codes only (1=only codes 1,5,6 / 0=all codes)
+# Signal codes: 1=two_stopping, 5=one_stopping, 6=interacting
+< neutralKaonAnalysis.EnsureMomentumSignalOnly = 1 >
 
 --- Other Parameters -----------
 

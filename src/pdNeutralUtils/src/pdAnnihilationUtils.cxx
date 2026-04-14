@@ -530,26 +530,54 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
     AnaParticlePD* daughter2 = vertex->Particles[1];
     if (!daughter1 || !daughter2) continue;
 
+    bool shouldAssignMomentum = true;
+    if (ND::params().HasParameter("neutralKaonAnalysis.EnsureMomentumSignalOnly") &&
+        ND::params().GetParameterI("neutralKaonAnalysis.EnsureMomentumSignalOnly") == 1) {
+      const int signalCode = neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(vertex, event);
+      shouldAssignMomentum = (signalCode == 1 || signalCode == 5 || signalCode == 6);
+    }
+
     DaughterMomentumDebugInfo daughter1Debug;
     DaughterMomentumDebugInfo daughter2Debug;
-    vertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
-    vertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
-    vertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
-    vertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
-    vertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;
-    vertex->Daughter2ExtensionAttempted = daughter2Debug.extensionAttempted;
-    vertex->Daughter1ExtensionValid = daughter1Debug.extensionValid;
-    vertex->Daughter2ExtensionValid = daughter2Debug.extensionValid;
-    vertex->Daughter1ExtensionChi2Ndf = daughter1Debug.extensionChi2Ndf;
-    vertex->Daughter2ExtensionChi2Ndf = daughter2Debug.extensionChi2Ndf;
-    vertex->Daughter1ExtensionNValidHits = daughter1Debug.extensionNValidHits;
-    vertex->Daughter2ExtensionNValidHits = daughter2Debug.extensionNValidHits;
-    vertex->Daughter1ExtensionDedxBias = daughter1Debug.extensionDedxBias;
-    vertex->Daughter2ExtensionDedxBias = daughter2Debug.extensionDedxBias;
-    vertex->Daughter1ExtensionDedxSigma = daughter1Debug.extensionDedxSigma;
-    vertex->Daughter2ExtensionDedxSigma = daughter2Debug.extensionDedxSigma;
-    vertex->Daughter1ExtensionDedxFitOk = daughter1Debug.extensionDedxFitOk;
-    vertex->Daughter2ExtensionDedxFitOk = daughter2Debug.extensionDedxFitOk;
+    if (shouldAssignMomentum) {
+      vertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
+      vertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+      vertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
+      vertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
+      vertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;
+      vertex->Daughter2ExtensionAttempted = daughter2Debug.extensionAttempted;
+      vertex->Daughter1ExtensionValid = daughter1Debug.extensionValid;
+      vertex->Daughter2ExtensionValid = daughter2Debug.extensionValid;
+      vertex->Daughter1ExtensionChi2Ndf = daughter1Debug.extensionChi2Ndf;
+      vertex->Daughter2ExtensionChi2Ndf = daughter2Debug.extensionChi2Ndf;
+      vertex->Daughter1ExtensionNValidHits = daughter1Debug.extensionNValidHits;
+      vertex->Daughter2ExtensionNValidHits = daughter2Debug.extensionNValidHits;
+      vertex->Daughter1ExtensionDedxBias = daughter1Debug.extensionDedxBias;
+      vertex->Daughter2ExtensionDedxBias = daughter2Debug.extensionDedxBias;
+      vertex->Daughter1ExtensionDedxSigma = daughter1Debug.extensionDedxSigma;
+      vertex->Daughter2ExtensionDedxSigma = daughter2Debug.extensionDedxSigma;
+      vertex->Daughter1ExtensionDedxFitOk = daughter1Debug.extensionDedxFitOk;
+      vertex->Daughter2ExtensionDedxFitOk = daughter2Debug.extensionDedxFitOk;
+    } else {
+      vertex->Daughter1MomentumMethod = kMomMethodUnassigned;
+      vertex->Daughter2MomentumMethod = kMomMethodUnassigned;
+      vertex->Daughter1HasPreexistingMomentum = -1;
+      vertex->Daughter2HasPreexistingMomentum = -1;
+      vertex->Daughter1ExtensionAttempted = 0;
+      vertex->Daughter2ExtensionAttempted = 0;
+      vertex->Daughter1ExtensionValid = 0;
+      vertex->Daughter2ExtensionValid = 0;
+      vertex->Daughter1ExtensionChi2Ndf = -999.0f;
+      vertex->Daughter2ExtensionChi2Ndf = -999.0f;
+      vertex->Daughter1ExtensionNValidHits = 0;
+      vertex->Daughter2ExtensionNValidHits = 0;
+      vertex->Daughter1ExtensionDedxBias = -999.0f;
+      vertex->Daughter2ExtensionDedxBias = -999.0f;
+      vertex->Daughter1ExtensionDedxSigma = -999.0f;
+      vertex->Daughter2ExtensionDedxSigma = -999.0f;
+      vertex->Daughter1ExtensionDedxFitOk = -1;
+      vertex->Daughter2ExtensionDedxFitOk = -1;
+    }
     FillVertexKinematicsFromDaughters(vertex, trackFitLength, trackFitDistanceFromStart);
   }
 

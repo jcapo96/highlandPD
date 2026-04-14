@@ -11,6 +11,7 @@ class TH1F;
 class TLine;
 class TLegend;
 class TCanvas;
+class TTimer;
 
 /// Neutral kaon analysis-specific event display
 /// Extends pdEventDisplay with K0 candidate visualization (vertices, radii)
@@ -18,6 +19,8 @@ class neutralKaonEventDisplay : public pdEventDisplay {
 public:
     neutralKaonEventDisplay();
     virtual ~neutralKaonEventDisplay();
+
+    Bool_t SyncGroupCheckboxBehavior();
 
     static constexpr Int_t kParentTrajHistBins = 60;
     static constexpr Float_t kParentTrajHistMin = -1.f;
@@ -49,6 +52,7 @@ private:
     // K0 candidate data (read from tree during visualization)
     static constexpr Int_t kMaxK0 = 10;
     static constexpr Int_t kMaxTrueK0 = 20;
+    static constexpr Int_t kMaxAllTrueParticles = 256;
     static constexpr Int_t kMaxTrueDaughters = 8;
     static constexpr Int_t kMaxTrueSiblings = 8;
     Int_t _nK0Candidates;
@@ -105,6 +109,10 @@ private:
     Int_t _k0_trueParentPDG[kMaxK0];
     Float_t _k0_trueParentStartPos[kMaxK0][3];
     Float_t _k0_trueParentEndPos[kMaxK0][3];
+    Int_t _k0_trueParentNDaughters[kMaxK0];
+    Float_t _k0_trueParentDaughterStartPos[kMaxK0][kMaxTrueDaughters*3];
+    Float_t _k0_trueParentDaughterEndPos[kMaxK0][kMaxTrueDaughters*3];
+    Int_t _k0_trueParentDaughterPDG[kMaxK0][kMaxTrueDaughters];
     Int_t _k0_trueNDaughters[kMaxK0];
     Float_t _k0_trueDaughterStartPos[kMaxK0][kMaxTrueDaughters*3];
     Float_t _k0_trueDaughterEndPos[kMaxK0][kMaxTrueDaughters*3];
@@ -152,6 +160,13 @@ private:
     Float_t _trueK0_siblingEndPos[kMaxTrueK0][kMaxTrueSiblings*3];
     Int_t _trueK0_siblingPDG[kMaxTrueK0][kMaxTrueSiblings];
 
+    // All true particles in the event
+    Int_t _nAllTrueParticles;
+    Float_t _allTrueParticle_startPos[kMaxAllTrueParticles][3];
+    Float_t _allTrueParticle_endPos[kMaxAllTrueParticles][3];
+    Int_t _allTrueParticle_PDG[kMaxAllTrueParticles];
+    Int_t _allTrueParticle_processEnd[kMaxAllTrueParticles];
+
     // Variable indices for OutputManager (extend pdEventDisplay enum)
     enum enumNK0EventDisplayVars {
         ednK0Candidates = pdEventDisplay::edmaxvars,
@@ -198,6 +213,10 @@ private:
         edk0_trueParentPDG,
         edk0_trueParentStartPos,
         edk0_trueParentEndPos,
+        edk0_trueParentNDaughters,
+        edk0_trueParentDaughterStartPos,
+        edk0_trueParentDaughterEndPos,
+        edk0_trueParentDaughterPDG,
         edk0_trueNDaughters,
         edk0_trueDaughterStartPos,
         edk0_trueDaughterEndPos,
@@ -242,12 +261,18 @@ private:
         edtrueK0_siblingStartPos,
         edtrueK0_siblingEndPos,
         edtrueK0_siblingPDG,
+        ednAllTrueParticles,
+        edallTrueParticle_startPos,
+        edallTrueParticle_endPos,
+        edallTrueParticle_PDG,
+        edallTrueParticle_processEnd,
         nk0maxvars
     };
 
     ClassDef(neutralKaonEventDisplay, 0);
 
     void EnsureSelectionHooks();
+    void EnsureGroupCheckboxSync();
     void OnSelectionAdded(TEveElement* element);
     void OnSelectionRepeated(TEveElement* element);
     void ShowParentTrajectoryHistograms(Int_t index);
@@ -264,6 +289,11 @@ private:
     TH1F* _parentDirHists[3] = {nullptr, nullptr, nullptr};
     TLine* _parentDirTrueLines[3] = {nullptr, nullptr, nullptr};
     TLegend* _parentDirLegends[3] = {nullptr, nullptr, nullptr};
+
+    TTimer* _groupCheckboxSyncTimer = nullptr;
+    Bool_t _groupCheckboxStateInitialized = kFALSE;
+    Bool_t _lastNeutralGroupChecked = kTRUE;
+    Bool_t _lastTrueGroupChecked = kTRUE;
 };
 
 #endif

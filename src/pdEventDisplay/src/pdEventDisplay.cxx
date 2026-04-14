@@ -101,8 +101,8 @@ void pdEventDisplay::InitializeParticleColors() {
     _particleColors[11] = kTeal;         // e-
     _particleColors[-11] = kTeal;        // e+
     _particleColors[22] = kGray+2;       // gamma
-    _particleColors[2112] = kSpring;     // Neutron
-    _particleColors[-2112] = kSpring;    // Anti-neutron
+    _particleColors[2112] = kAzure+1;    // Neutron
+    _particleColors[-2112] = kAzure+1;   // Anti-neutron
 }
 
 //********************************************************************
