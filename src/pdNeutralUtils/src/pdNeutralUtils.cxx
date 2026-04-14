@@ -9,8 +9,19 @@
 namespace pdNeutralUtils {
 namespace {
 
-AnaTrueParticlePD* GetCommonTrueParent(AnaEventB& event, AnaAnnihilationVertexPD* annihilationVtx) {
+/// Get the intermediate true particle between the reco parent and annihilation daughters.
+/// The intermediate particle must be:
+/// 1. The common true parent of the two annihilation vertex daughters
+/// 2. A true daughter of the reco parent's true object
+/// 3. Listed in its own parent's Daughters array
+AnaTrueParticlePD* GetIntermediateTrueParticle(AnaEventB& event,
+                                               AnaAnnihilationVertexPD* annihilationVtx,
+                                               AnaParticlePD* recoParent) {
   if (!annihilationVtx || annihilationVtx->Particles.size() < 2) {
+    return nullptr;
+  }
+
+  if (!recoParent || !recoParent->TrueObject) {
     return nullptr;
   }
 
@@ -26,27 +37,50 @@ AnaTrueParticlePD* GetCommonTrueParent(AnaEventB& event, AnaAnnihilationVertexPD
     return nullptr;
   }
 
+  // Verify both daughters have the same parent (the intermediate particle).
   if (trueDaughter1->ParentID <= 0 || trueDaughter1->ParentID != trueDaughter2->ParentID) {
     return nullptr;
   }
 
-  AnaTrueParticlePD* trueParent = pdAnaUtils::GetTrueParticle(&event, trueDaughter1->ParentID);
-  if (!trueParent || trueParent->ID != trueDaughter1->ParentID) {
+  AnaTrueParticlePD* intermediateParticle = pdAnaUtils::GetTrueParticle(&event, trueDaughter1->ParentID);
+  if (!intermediateParticle || intermediateParticle->ID != trueDaughter1->ParentID) {
     return nullptr;
   }
 
-  // Require exact daughter-parent consistency in truth.
+  // Require exact daughter-parent consistency for the intermediate particle.
   bool hasDaughter1 = false;
   bool hasDaughter2 = false;
-  for (size_t i = 0; i < trueParent->Daughters.size(); ++i) {
-    if (trueParent->Daughters[i] == trueDaughter1->ID) hasDaughter1 = true;
-    if (trueParent->Daughters[i] == trueDaughter2->ID) hasDaughter2 = true;
+  for (size_t i = 0; i < intermediateParticle->Daughters.size(); ++i) {
+    if (intermediateParticle->Daughters[i] == trueDaughter1->ID) hasDaughter1 = true;
+    if (intermediateParticle->Daughters[i] == trueDaughter2->ID) hasDaughter2 = true;
   }
   if (!hasDaughter1 || !hasDaughter2) {
     return nullptr;
   }
 
-  return trueParent;
+  // Key validation: The intermediate particle must be a true daughter of the reco parent's true object.
+  AnaTrueParticlePD* recoParentTrueObject = static_cast<AnaTrueParticlePD*>(recoParent->TrueObject);
+  if (!recoParentTrueObject) {
+    return nullptr;
+  }
+
+  if (intermediateParticle->ParentID != recoParentTrueObject->ID) {
+    return nullptr;
+  }
+
+  // Verify that recoParent's true object lists the intermediate in its Daughters array.
+  bool foundIntermediate = false;
+  for (size_t i = 0; i < recoParentTrueObject->Daughters.size(); ++i) {
+    if (recoParentTrueObject->Daughters[i] == intermediateParticle->ID) {
+      foundIntermediate = true;
+      break;
+    }
+  }
+  if (!foundIntermediate) {
+    return nullptr;
+  }
+
+  return intermediateParticle;
 }
 
 } // namespace
@@ -200,8 +234,8 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
     pdAnnihilationUtils::FillNeutralParticleAlignment(neutralParticle, event, trackFitLength,
                                                       trackFitDistanceFromStart);
 
-    AnaTrueParticlePD* trueParentParticle = GetCommonTrueParent(event, annihilationVtx);
-    neutralParticle->TrueObject = trueParentParticle;
+    AnaTrueParticlePD* intermediateParticle = GetIntermediateTrueParticle(event, annihilationVtx, parentParticle);
+    neutralParticle->TrueObject = intermediateParticle;
 
     neutralParticles.push_back(neutralParticle);
   }

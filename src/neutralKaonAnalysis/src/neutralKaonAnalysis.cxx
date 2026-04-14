@@ -158,8 +158,11 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
   neutralKaonTree::AddNeutralKaonVariables_K0Particle(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0AlignVariants(output(), nK0Max);
   neutralKaonTree::AddNeutralKaonVariables_K0Parent(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(output(), nK0Max);
   neutralKaonTree::AddNeutralKaonVariables_K0Vtx(output(), nK0Max);
+  neutralKaonTree::AddNeutralKaonVariables_K0Kinematics(output(), nK0Max);
 
   // Create EventDisplayData tree now that ana tree is fully defined
   // This prevents index conflicts during validation

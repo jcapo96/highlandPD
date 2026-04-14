@@ -204,10 +204,8 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
     return;
   }
 
-  int signalCode = 2;
-  if(IsSignalCandidate(neutralParticle, event)) {
-    signalCode = GetSignalStoppingSubtypeCode(neutralParticle);
-  }
+  AnaAnnihilationVertexPD* vertex = neutralParticle->AnnihilationVertex;
+  int signalCode = GetSignalCategoryCodeForAnnihilationVertex(vertex, event);
   anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);
 }
 
