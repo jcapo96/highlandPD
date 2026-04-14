@@ -44,7 +44,7 @@ need to be enabled in baseAnalysis parameter file
 --- Momentum Assurance Parameters -----------
 # Enable momentum assurance for signal codes only (1=only codes 1,5,6 / 0=all codes)
 # Signal codes: 1=two_stopping, 5=one_stopping, 6=interacting
-< neutralKaonAnalysis.EnsureMomentumSignalOnly = 1 >
+< neutralKaonAnalysis.EnsureMomentumSignalOnly = 0 >
 
 --- Other Parameters -----------
 
