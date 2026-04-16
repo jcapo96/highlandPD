@@ -551,11 +551,6 @@ public:
   Float_t ClosestPoint1Fit[3];
   Float_t ClosestPoint2Fit[3];
 
-  /// Quality score from vertex fit (lower is better, from Chi2/minimization)
-  Float_t Score;
-  Float_t ScorePandora;
-  Float_t ScoreFit;
-
   /// Parent ID of the vertex (both particles must have same parent)
   Int_t ParentID;
 
@@ -572,11 +567,9 @@ public:
   /// Flag: 1 if Pandora calculation used simple average, 0 if used line intersection
   Int_t IsJustAverage;
 
-  /// Degeneracy: number of particles with startPos within vertex radius (used for filtering)
+  /// Degeneracy: number of non-daughter particles with startPos inside the configured
+  /// annihilation-vertex degeneracy radius around the chosen vertex position
   Int_t Degeneracy;
-
-  /// Distances to the nearest particles contributing to degeneracy estimate
-  Float_t DegDist[5];
 
   /// Ensure particles in this vertex have proper momentum assigned
   /// Uses the most robust momentum calculation method available

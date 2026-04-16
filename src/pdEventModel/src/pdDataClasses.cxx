@@ -701,9 +701,6 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   ClosestPoint2Pandora[0] = ClosestPoint2Pandora[1] = ClosestPoint2Pandora[2] = kFloatUnassigned;
   ClosestPoint1Fit[0] = ClosestPoint1Fit[1] = ClosestPoint1Fit[2] = kFloatUnassigned;
   ClosestPoint2Fit[0] = ClosestPoint2Fit[1] = ClosestPoint2Fit[2] = kFloatUnassigned;
-  Score = kFloatUnassigned;
-  ScorePandora = kFloatUnassigned;
-  ScoreFit = kFloatUnassigned;
   ParentID = kIntUnassigned;
   DirectionFit[0] = kFloatUnassigned;
   DirectionFit[1] = kFloatUnassigned;
@@ -719,9 +716,6 @@ AnaVertexPD::AnaVertexPD():AnaVertexB(){
   DirectionFit[2] = kFloatUnassigned;
   IsJustAverage = 0;
   Degeneracy = 0;
-  for (Int_t i = 0; i < 5; ++i) {
-    DegDist[i] = kFloatUnassigned;
-  }
 }
 
 //********************************************************************
@@ -774,9 +768,6 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   ClosestPoint2Fit[0] = vertex.ClosestPoint2Fit[0];
   ClosestPoint2Fit[1] = vertex.ClosestPoint2Fit[1];
   ClosestPoint2Fit[2] = vertex.ClosestPoint2Fit[2];
-  Score = vertex.Score;
-  ScorePandora = vertex.ScorePandora;
-  ScoreFit = vertex.ScoreFit;
   ParentID = vertex.ParentID;
   DirectionFit[0] = vertex.DirectionFit[0];
   DirectionFit[1] = vertex.DirectionFit[1];
@@ -792,9 +783,6 @@ AnaVertexPD::AnaVertexPD(const AnaVertexPD& vertex):AnaVertexB(vertex){
   DirectionFit[2] = vertex.DirectionFit[2];
   IsJustAverage = vertex.IsJustAverage;
   Degeneracy = vertex.Degeneracy;
-  for (Int_t i = 0; i < 5; ++i) {
-    DegDist[i] = vertex.DegDist[i];
-  }
 }
 
 //********************************************************************
@@ -818,7 +806,6 @@ void AnaVertexPD::Print() const{
   std::cout << "Generation:            " << Generation << std::endl;
   std::cout << "Process:               " << Process << std::endl;
   std::cout << "MinimumDistance:       " << MinimumDistance << " cm" << std::endl;
-  std::cout << "Score:                 " << Score << std::endl;
   std::cout << "ParentID:              " << ParentID << std::endl;
 }
 

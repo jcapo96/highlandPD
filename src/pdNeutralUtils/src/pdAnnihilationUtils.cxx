@@ -26,10 +26,127 @@ TVector3 GetAnnihilationVertexPositionForDegeneracy(const AnaAnnihilationVertexP
   if (vertex && HasValidPosition3(vertex->PositionFit)) {
     return TVector3(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
   }
-  if (vertex && HasValidPosition3(vertex->PositionPandora)) {
-    return TVector3(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
-  }
   return TVector3(-999.0, -999.0, -999.0);
+}
+
+bool HasValidPoint(const TVector3& point) {
+  return std::isfinite(point.X()) && std::isfinite(point.Y()) && std::isfinite(point.Z()) &&
+         point.X() > -900.0 && point.Y() > -900.0 && point.Z() > -900.0;
+}
+
+TVector3 ProjectPointOntoLine(const TVector3& point, const TVector3& linePoint, const TVector3& lineDirection) {
+  if (!HasValidPoint(point) || !HasValidPoint(linePoint)) return TVector3(-999.0, -999.0, -999.0);
+  TVector3 dir = lineDirection;
+  if (!std::isfinite(dir.X()) || !std::isfinite(dir.Y()) || !std::isfinite(dir.Z()) || dir.Mag2() <= 1e-10) {
+    return TVector3(-999.0, -999.0, -999.0);
+  }
+  dir = dir.Unit();
+  return linePoint + (point - linePoint).Dot(dir) * dir;
+}
+
+bool GetParticleFitLine(const AnaParticlePD* particle,
+                        double trackFitLength,
+                        double trackFitDistanceFromStart,
+                        TVector3& fitAnchor,
+                        TVector3& fitDir) {
+  std::vector<double> fitParams;
+  pdAnaUtils::ExtrapolateTrack(const_cast<AnaParticlePD*>(particle), fitParams, trackFitLength, true,
+                               trackFitDistanceFromStart);
+  const bool fitValid = (fitParams.size() >= 6 && std::isfinite(fitParams[0]) && std::isfinite(fitParams[1]) &&
+                         std::isfinite(fitParams[2]) && std::isfinite(fitParams[3]) && std::isfinite(fitParams[4]) &&
+                         std::isfinite(fitParams[5]) && fitParams[0] > -900.0 && fitParams[1] > -900.0 &&
+                         fitParams[2] > -900.0);
+  if (!fitValid) return false;
+  fitAnchor.SetXYZ(fitParams[0], fitParams[1], fitParams[2]);
+  fitDir.SetXYZ(fitParams[3], fitParams[4], fitParams[5]);
+  return HasValidPoint(fitAnchor) && fitDir.Mag2() > 1e-10;
+}
+
+double EstimatePathDistanceFromStart(const AnaParticlePD* particle, const TVector3& position) {
+  if (!particle || !HasValidPoint(position)) return -1.0;
+
+  std::vector<std::pair<TVector3, double>> trajectoryPointsWithDistance;
+  if (particle->TrjPoints.size() >= 2) {
+    trajectoryPointsWithDistance.reserve(particle->TrjPoints.size());
+    double cumulative = 0.0;
+    TVector3 prev;
+    bool hasPrev = false;
+    for (size_t i = 0; i < particle->TrjPoints.size(); ++i) {
+      const TVector3 pos = particle->TrjPoints[i].Position;
+      if (!HasValidPoint(pos)) continue;
+      if (hasPrev) cumulative += (pos - prev).Mag();
+      trajectoryPointsWithDistance.push_back(std::make_pair(pos, cumulative));
+      prev = pos;
+      hasPrev = true;
+    }
+  }
+
+  if (!trajectoryPointsWithDistance.empty()) {
+    double bestDist2 = 1e30;
+    double bestArc = -1.0;
+    for (const auto& tp : trajectoryPointsWithDistance) {
+      const double d2 = (position - tp.first).Mag2();
+      if (d2 < bestDist2) {
+        bestDist2 = d2;
+        bestArc = tp.second;
+      }
+    }
+    return bestArc;
+  }
+
+  if (!HasValidStartPosition(particle)) return -1.0;
+  const TVector3 referencePos(particle->PositionStart[0], particle->PositionStart[1], particle->PositionStart[2]);
+  TVector3 travelDir(particle->DirectionStart[0], particle->DirectionStart[1], particle->DirectionStart[2]);
+  if (travelDir.Mag2() > 1e-10) {
+    travelDir = travelDir.Unit();
+    return (position - referencePos).Dot(travelDir);
+  }
+  return (position - referencePos).Mag();
+}
+
+bool ParticleHasRawTailSupportNearVertex(const AnaParticlePD* particle,
+                                         const TVector3& vertexPos,
+                                         double vertexRadius,
+                                         double trackFitDistanceFromStart) {
+  if (!particle || !HasValidPoint(vertexPos) || vertexRadius <= 0.0) return false;
+  if (HasValidStartPosition(particle)) {
+    const TVector3 rawStart(particle->PositionStart[0], particle->PositionStart[1], particle->PositionStart[2]);
+    if ((rawStart - vertexPos).Mag() <= vertexRadius) return true;
+  }
+  for (const AnaHitPD& hit : particle->Hits[2]) {
+    const TVector3 hitPos = hit.Position;
+    if (!HasValidPoint(hitPos)) continue;
+    const double pathDistance = EstimatePathDistanceFromStart(particle, hitPos);
+    if (pathDistance < 0.0 || pathDistance > trackFitDistanceFromStart) continue;
+    if ((hitPos - vertexPos).Mag() <= vertexRadius) return true;
+  }
+  return false;
+}
+
+bool ParticleHasProjectedTailSupportNearPoint(const AnaParticlePD* particle,
+                                              const TVector3& fitAnchor,
+                                              const TVector3& fitDir,
+                                              const TVector3& referencePoint,
+                                              double maxDistance,
+                                              double trackFitDistanceFromStart) {
+  if (!particle || !HasValidPoint(fitAnchor) || fitDir.Mag2() <= 1e-10 || !HasValidPoint(referencePoint) ||
+      maxDistance <= 0.0) {
+    return false;
+  }
+  if (HasValidStartPosition(particle)) {
+    const TVector3 rawStart(particle->PositionStart[0], particle->PositionStart[1], particle->PositionStart[2]);
+    const TVector3 projectedStart = ProjectPointOntoLine(rawStart, fitAnchor, fitDir);
+    if (HasValidPoint(projectedStart) && (projectedStart - referencePoint).Mag() <= maxDistance) return true;
+  }
+  for (const AnaHitPD& hit : particle->Hits[2]) {
+    const TVector3 hitPos = hit.Position;
+    if (!HasValidPoint(hitPos)) continue;
+    const double pathDistance = EstimatePathDistanceFromStart(particle, hitPos);
+    if (pathDistance < 0.0 || pathDistance > trackFitDistanceFromStart) continue;
+    const TVector3 projectedHit = ProjectPointOntoLine(hitPos, fitAnchor, fitDir);
+    if (HasValidPoint(projectedHit) && (projectedHit - referencePoint).Mag() <= maxDistance) return true;
+  }
+  return false;
 }
 
 bool IsVertexDaughter(const AnaAnnihilationVertexPD* vertex, const AnaParticlePD* candidate) {
@@ -207,20 +324,39 @@ Float_t AngleBetweenUnitVectors(const TVector3& a, const TVector3& b) {
 
 Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
                                           const AnaAnnihilationVertexPD* vertex,
-                                          double annihilationVertexRadius) {
-  if (!vertex || annihilationVertexRadius <= 0.0) return 0;
+                                          double annihilationVertexRadius,
+                                          double annihilationVertexLineToVertexDistance,
+                                          double annihilationVertexOriginSupportDistance,
+                                          double trackFitLength,
+                                          double trackFitDistanceFromStart) {
+  if (!vertex || annihilationVertexRadius <= 0.0 || annihilationVertexLineToVertexDistance <= 0.0 ||
+      annihilationVertexOriginSupportDistance <= 0.0) {
+    return 0;
+  }
 
   const TVector3 vertexPos = GetAnnihilationVertexPositionForDegeneracy(vertex);
-  if (vertexPos.X() < -900.0 || vertexPos.Y() < -900.0 || vertexPos.Z() < -900.0) return 0;
+  if (!HasValidPoint(vertexPos)) return 0;
 
   Int_t degeneracy = 0;
   for (Int_t p = 0; p < event.nParticles; ++p) {
     AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
-    if (!HasValidStartPosition(particle)) continue;
+    if (!particle) continue;
     if (IsVertexDaughter(vertex, particle)) continue;
+    if (!ParticleHasRawTailSupportNearVertex(particle, vertexPos, annihilationVertexRadius, trackFitDistanceFromStart)) {
+      continue;
+    }
 
-    const TVector3 startPos(particle->PositionStart[0], particle->PositionStart[1], particle->PositionStart[2]);
-    if ((startPos - vertexPos).Mag() <= annihilationVertexRadius) {
+    TVector3 fitAnchor;
+    TVector3 fitDir;
+    if (!GetParticleFitLine(particle, trackFitLength, trackFitDistanceFromStart, fitAnchor, fitDir)) continue;
+    fitDir = fitDir.Unit();
+
+    const TVector3 closestPointToVertex = ProjectPointOntoLine(vertexPos, fitAnchor, fitDir);
+    if (!HasValidPoint(closestPointToVertex)) continue;
+    if ((closestPointToVertex - vertexPos).Mag() > annihilationVertexLineToVertexDistance) continue;
+
+    if (ParticleHasProjectedTailSupportNearPoint(particle, fitAnchor, fitDir, closestPointToVertex,
+                                                 annihilationVertexOriginSupportDistance, trackFitDistanceFromStart)) {
       ++degeneracy;
     }
   }
@@ -475,6 +611,18 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
   const double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
   const double trackFitDistanceFromStart =
       ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart");
+  const double annihilationDegeneracyRadius =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius")
+          : maxDaughterDistance;
+  const double annihilationDegeneracyLineToVertexDistance =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance")
+          : annihilationDegeneracyRadius;
+  const double annihilationDegeneracyOriginSupportDistance =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance")
+          : 0.5 * annihilationDegeneracyLineToVertexDistance;
   const int minCollectionHitsPerDaughter =
       ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexMinCollectionHits");
 
@@ -511,7 +659,10 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       FillPositionPandora(reconstructedVertex);
       FillPositionFit(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
       reconstructedVertex->Degeneracy =
-          ComputeAnnihilationVertexDegeneracy(event, reconstructedVertex, maxDaughterDistance);
+          ComputeAnnihilationVertexDegeneracy(event, reconstructedVertex, annihilationDegeneracyRadius,
+                                             annihilationDegeneracyLineToVertexDistance,
+                                             annihilationDegeneracyOriginSupportDistance, trackFitLength,
+                                             trackFitDistanceFromStart);
       reconstructedVertices.push_back(reconstructedVertex);
     }
   }

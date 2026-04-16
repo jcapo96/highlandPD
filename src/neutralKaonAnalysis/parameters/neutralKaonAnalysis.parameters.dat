@@ -19,8 +19,21 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.CreateEventDisplay = 1 >
 
 --- Annihilation Vertex Finder ------------
-# Pairing threshold on daughter start-position distance (cm)
+# Pairing threshold on daughter start-position distance (cm).
+# This controls whether two reco daughters are allowed to form an annihilation-vertex candidate.
 < neutralKaonAnalysis.AnnihilationVertexRadius = 5.0 >
+
+# Radius used only for annihilation-vertex degeneracy counting (cm).
+# It is only a loose preselection on raw PositionStart / early hits near the vertex.
+# It does not affect vertex pairing or overlap filtering.
+< neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius = 10.0 >
+
+# Maximum distance between the annihilation-vertex fit position and the candidate particle fitted line (cm).
+< neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance = 2.0 >
+# Maximum distance between the closest point on the fitted line to the vertex and at least one projected PositionStart
+# or projected early hit used as origin support for degeneracy counting (cm).
+< neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance = 10.0 >
+
 # Minimum number of collection-plane hits required per daughter to create a vertex.
 # Vertex is created only if both daughters satisfy NHitsPerPlane[2] > this value.
 < neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 5 >
@@ -31,8 +44,8 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.VertexXBiasCorrectionCm = 1.0 > //x_corrected = x_reco - value (cm)
 
 --- Creation Parent Tail Projection -----------
- < neutralKaonAnalysis.TrackFitCreationLength = 25.0 > //fit length used to build beam creation line (cm)
- < neutralKaonAnalysis.TrackFitDistanceCreationFromEnd = 10.0 > //fit starts this many cm backward from beam end
+ < neutralKaonAnalysis.TrackFitCreationLength = 50.0 > //fit length used to build beam creation line (cm)
+ < neutralKaonAnalysis.TrackFitDistanceCreationFromEnd = 15.0 > //fit starts this many cm backward from beam end
  # The tail segment used for projection is derived from TrackFitDistanceCreationFromEnd.
 
 --- ML residual-range dE/dx (annihilation pions) -----------

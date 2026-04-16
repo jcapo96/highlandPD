@@ -26,6 +26,8 @@ public:
     static constexpr Float_t kParentTrajHistMin = -1.f;
     static constexpr Float_t kParentTrajHistMax = 1.f;
     static constexpr Int_t kMaxBeamTailHits = 60;
+    static constexpr Int_t kMaxAnnDegeneracyPoints = 240;
+    static constexpr Int_t kMaxAnnDegeneracyLines = 32;
 
 protected:
     // Override analysis-specific virtual methods from pdEventDisplay
@@ -96,15 +98,14 @@ private:
 
     Float_t _k0_fitLineLength[kMaxK0];            // Fit line length for drawing
 
-    // Degeneracy distances (distances from vertex to particles within sphere)
-    Float_t _k0_creationVtxDegDist[kMaxK0][5];   // Creation vertex degeneracy distances
-    Float_t _k0_annihilationVtxDegDist[kMaxK0][5]; // Annihilation vertex degeneracy distances
-
     // True K0 trajectory (if TrueObject exists)
     Int_t _k0_hasTrueObject[kMaxK0];              // Has associated true neutral particle
     Float_t _k0_trueStartPos[kMaxK0][3];          // True K0 start position
     Float_t _k0_trueEndPos[kMaxK0][3];            // True K0 end position
     Int_t _k0_truePDG[kMaxK0];                    // True K0 PDG code
+    Int_t _k0_secondParticleTruePDG[kMaxK0];
+    Int_t _k0_daughter1TruePDG[kMaxK0];
+    Int_t _k0_daughter2TruePDG[kMaxK0];
     Int_t _k0_signalCode[kMaxK0];                 // Assigned neutral signal category code
     Int_t _k0_trueProcessEnd[kMaxK0];
     Int_t _k0_trueParentPDG[kMaxK0];
@@ -132,6 +133,16 @@ private:
     Float_t _k0_parentTailHitsProjected[kMaxK0][kMaxBeamTailHits*3];
     Int_t _k0_parentTailHitsRawN[kMaxK0];
     Int_t _k0_parentTailHitsProjectedN[kMaxK0];
+    Float_t _k0_annDegHitsRaw[kMaxK0][kMaxAnnDegeneracyPoints*3];
+    Float_t _k0_annDegHitsProjected[kMaxK0][kMaxAnnDegeneracyPoints*3];
+    Int_t _k0_annDegHitsRawN[kMaxK0];
+    Int_t _k0_annDegHitsProjectedN[kMaxK0];
+    Int_t _k0_annDegParticleRawCount[kMaxK0][kMaxAnnDegeneracyLines];
+    Int_t _k0_annDegParticleProjectedCount[kMaxK0][kMaxAnnDegeneracyLines];
+    Int_t _k0_annDegParticleTruePDG[kMaxK0][kMaxAnnDegeneracyLines];
+    Float_t _k0_annDegFitAnchor[kMaxK0][kMaxAnnDegeneracyLines*3];
+    Float_t _k0_annDegFitDir[kMaxK0][kMaxAnnDegeneracyLines*3];
+    Int_t _k0_annDegFitLineN[kMaxK0];
     Float_t _k0_parentLength[kMaxK0];
     Float_t _k0_parentTrajDir[kMaxK0][3];
     Float_t _k0_parentTrajDirHist[kMaxK0][kParentTrajHistBins*3];
@@ -204,12 +215,13 @@ private:
         edk0_creationVtx_closestPtBeam,
         edk0_creationVtx_closestPtSecond,
         edk0_fitLineLength,
-        edk0_creationVtxDegDist,
-        edk0_annihilationVtxDegDist,
         edk0_hasTrueObject,
         edk0_trueStartPos,
         edk0_trueEndPos,
         edk0_truePDG,
+        edk0_secondParticleTruePDG,
+        edk0_daughter1TruePDG,
+        edk0_daughter2TruePDG,
         edk0_signalCode,
         edk0_trueProcessEnd,
         edk0_trueParentPDG,
@@ -237,6 +249,16 @@ private:
         edk0_parentTailHitsProjected,
         edk0_parentTailHitsRawN,
         edk0_parentTailHitsProjectedN,
+        edk0_annDegHitsRaw,
+        edk0_annDegHitsProjected,
+        edk0_annDegHitsRawN,
+        edk0_annDegHitsProjectedN,
+        edk0_annDegParticleRawCount,
+        edk0_annDegParticleProjectedCount,
+        edk0_annDegParticleTruePDG,
+        edk0_annDegFitAnchor,
+        edk0_annDegFitDir,
+        edk0_annDegFitLineN,
         edk0_parentLength,
         edk0_parentTrajDir,
         edk0_parentTrajDirHist,

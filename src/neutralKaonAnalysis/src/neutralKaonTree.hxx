@@ -126,7 +126,7 @@ namespace neutralKaonTree {
     k0vtxtruepos, //K0 vertex true position
     k0vtxoriginaldistance, //K0 vertex original distance
     k0vtxtrueoriginaldistance, //K0 vertex true original distance
-    k0vtxdegeneracy, //K0 annihilation-vertex degeneracy (Reco)
+    k0vtxdegeneracy, // K0 annihilation-vertex degeneracy count within the configured degeneracy radius
     k0vtxpandorapos, //Pandora-based vertex position
     k0vtxfitpos, //Algorithm-specific fitted vertex position
     k0vtxpandorax,
