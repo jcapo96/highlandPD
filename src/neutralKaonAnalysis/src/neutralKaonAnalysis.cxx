@@ -538,6 +538,7 @@ void neutralKaonAnalysis::FillCategories(){
   if(neutralKaonBox.neutralParticleCandidates.size() > 0){
     for(size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++){
       neutralKaonAnaUtils::FillSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
+      neutralKaonAnaUtils::FillVertexCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
     }
   }
 

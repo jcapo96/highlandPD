@@ -105,6 +105,7 @@ private:
     Float_t _k0_trueStartPos[kMaxK0][3];          // True K0 start position
     Float_t _k0_trueEndPos[kMaxK0][3];            // True K0 end position
     Int_t _k0_truePDG[kMaxK0];                    // True K0 PDG code
+    Int_t _k0_signalCode[kMaxK0];                 // Assigned neutral signal category code
     Int_t _k0_trueProcessEnd[kMaxK0];
     Int_t _k0_trueParentPDG[kMaxK0];
     Float_t _k0_trueParentStartPos[kMaxK0][3];
@@ -209,6 +210,7 @@ private:
         edk0_trueStartPos,
         edk0_trueEndPos,
         edk0_truePDG,
+        edk0_signalCode,
         edk0_trueProcessEnd,
         edk0_trueParentPDG,
         edk0_trueParentStartPos,

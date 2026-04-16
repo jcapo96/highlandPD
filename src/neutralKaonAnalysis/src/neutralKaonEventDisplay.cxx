@@ -3,6 +3,7 @@
 #include "pdDataClasses.hxx"
 #include "pdAnalysisUtils.hxx"
 #include "pdCreationUtils.hxx"
+#include "CategoriesUtils.hxx"
 #include "OutputManager.hxx"
 #include <TEveGeoShape.h>
 #include <TEveManager.h>
@@ -221,6 +222,7 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         _k0_fitLineLength[i] = 0;
         _k0_hasTrueObject[i] = 0;
         _k0_truePDG[i] = -999;
+        _k0_signalCode[i] = 2;
         _k0_trueProcessEnd[i] = -1;
         _k0_trueParentPDG[i] = 0;
         _k0_trueNDaughters[i] = 0;
@@ -603,6 +605,7 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edk0_trueStartPos, "ED_k0_trueStartPos", "F", "True K0 start position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_trueEndPos, "ED_k0_trueEndPos", "F", "True K0 end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddVectorVar(tree_index, edk0_truePDG, "ED_k0_truePDG", "I", "True K0 PDG", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_signalCode, "ED_k0_signalCode", "I", "Assigned neutral signal category", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_trueProcessEnd, "ED_k0_trueProcessEnd", "I", "True K0 end process enum", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_trueParentPDG, "ED_k0_trueParentPDG", "I", "True K0 parent PDG", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddMatrixVar(tree_index, edk0_trueParentStartPos, "ED_k0_trueParentStartPos", "F", "True K0 parent start position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
@@ -1461,6 +1464,12 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillMatrixVarFromArray(edk0_trueK0Dir, trueK0Dir, 3);
             output.FillMatrixVarFromArray(edk0_trueDecayVtxFromRecoDaughters, trueDecayVtxFromRecoDaughters, 3);
             output.FillVectorVar(edk0_truePDG, truePDG);
+            Int_t signalCode = 2;
+            if (anaUtils::_categ && anaUtils::_categ->HasCategory("signal")) {
+                signalCode = anaUtils::_categ->GetCategory("signal").GetObjectCode(1, static_cast<Int_t>(i));
+            }
+            _k0_signalCode[i] = signalCode;
+            output.FillVectorVar(edk0_signalCode, signalCode);
             output.FillVectorVar(edk0_trueProcessEnd, processEndCode);
             output.FillVectorVar(edk0_trueParentPDG, parentPDG);
             output.FillMatrixVarFromArray(edk0_trueParentStartPos, parentStart, 3);
@@ -1683,6 +1692,8 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Float_t noRecoDauVtx[3] = {-999.f, -999.f, -999.f};
             output.FillMatrixVarFromArray(edk0_trueDecayVtxFromRecoDaughters, noRecoDauVtx, 3);
             output.FillVectorVar(edk0_truePDG, _trueK0_PDG[idx]);
+            _k0_signalCode[idx] = 2;
+            output.FillVectorVar(edk0_signalCode, _k0_signalCode[idx]);
             output.FillVectorVar(edk0_trueProcessEnd, _trueK0_processEnd[idx]);
             output.FillVectorVar(edk0_trueParentPDG, _trueK0_parentPDG[idx]);
             output.FillMatrixVarFromArray(edk0_trueParentStartPos, _trueK0_parentStartPos[idx], 3);
@@ -1776,6 +1787,9 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     tree->SetBranchAddress("ED_k0_trueStartPos", _k0_trueStartPos);
     tree->SetBranchAddress("ED_k0_trueEndPos", _k0_trueEndPos);
     tree->SetBranchAddress("ED_k0_truePDG", _k0_truePDG);
+    if (tree->GetBranch("ED_k0_signalCode")) {
+        tree->SetBranchAddress("ED_k0_signalCode", _k0_signalCode);
+    }
     tree->SetBranchAddress("ED_k0_trueProcessEnd", _k0_trueProcessEnd);
     tree->SetBranchAddress("ED_k0_trueParentPDG", _k0_trueParentPDG);
     tree->SetBranchAddress("ED_k0_trueParentStartPos", _k0_trueParentStartPos);
@@ -1866,7 +1880,7 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_k0_creationVtx_fitLineSecondStart", "ED_k0_creationVtx_fitLineSecondDir",
             "ED_k0_creationVtx_closestPtBeam", "ED_k0_creationVtx_closestPtSecond",
             "ED_k0_fitLineLength", "ED_k0_hasTrueObject",
-            "ED_k0_trueStartPos", "ED_k0_trueEndPos", "ED_k0_truePDG", "ED_k0_trueProcessEnd",
+            "ED_k0_trueStartPos", "ED_k0_trueEndPos", "ED_k0_truePDG", "ED_k0_signalCode", "ED_k0_trueProcessEnd",
             "ED_k0_trueParentPDG", "ED_k0_trueParentStartPos", "ED_k0_trueParentEndPos",
             "ED_k0_trueParentNDaughters", "ED_k0_trueParentDaughterStartPos",
             "ED_k0_trueParentDaughterEndPos", "ED_k0_trueParentDaughterPDG",
@@ -1980,7 +1994,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
     for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0; i++) {
         Int_t parentColor = kBlue;
         TEveElementList* neutralParticleGroup =
-            new TEveElementList(Form("Neutral UID=%d TruePDG=%d", i, _k0_truePDG[i]));
+            new TEveElementList(Form("Neutral UID=%d TruePDG=%d Signal=%d", i, _k0_truePDG[i], _k0_signalCode[i]));
         addElement(neutralParticlesGroup, neutralParticleGroup);
 
         TEveElementList* trueParticleGroup =
