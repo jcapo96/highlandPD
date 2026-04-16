@@ -31,6 +31,16 @@ namespace pdAnnihilationUtils {
   void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, const AnaEventB& event, double trackFitLength,
                                     double trackFitDistanceFromStart);
 
+  // Assign particle momentum with the same free-range dE/dx fit used for annihilation daughters,
+  // but under a proton hypothesis (PDG 2212). Returns method code as in DaughterMomentumMethod.
+  Int_t AssignProtonMomentumFromResidualRange(AnaParticlePD* particle);
+
+  // Compute annihilation-vertex degeneracy using configured parameters while optionally
+  // excluding one reco particle by UniqueID (e.g., neutral parent candidate).
+  Int_t ComputeAnnihilationVertexDegeneracyWithExclusion(const AnaEventB& event,
+                                                         const AnaAnnihilationVertexPD* vertex,
+                                                         Int_t excludedParticleUniqueID = -1);
+
 }
 
 #endif

@@ -48,6 +48,11 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.TrackFitDistanceCreationFromEnd = 15.0 > //fit starts this many cm backward from beam end
  # The tail segment used for projection is derived from TrackFitDistanceCreationFromEnd.
 
+# Radius (cm) of the creation-candidate cylinder around the parent fitted line, from creation to annihilation position.
+< neutralKaonAnalysis.CreationVertexRadius = 5.0 >
+# Keep second-particle candidates only if proton Chi2/ndf is <= this threshold.
+< neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 150.0 >
+
 --- ML residual-range dE/dx (annihilation pions) -----------
 # Among interior collection hits, only hits with residual range >= MinRRCm may be discarded as Landau-tail outliers;
 # low-RR hits are never removed. Fraction is the fraction of those high-RR hits (largest dE/dx first) to drop. Set to 0 to disable.

@@ -22,7 +22,8 @@ namespace neutralKaonTree {
   void FillNeutralKaonVariables_K0Particle(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0Parent(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate);
-  void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
+  void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event,
+                                      Int_t excludedParentUniqueID = -1);
   void FillNeutralKaonVariables_K0vtxDaughters(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
   void FillNeutralKaonVariables_K0Kinematics(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0AlignVariants(OutputManager& output, AnaNeutralParticlePD* candidate);
@@ -122,6 +123,13 @@ namespace neutralKaonTree {
     k0cvtxfitresidualx, // creation Fit x_reco - x_true [cm]
     k0cvtxfitresidualy, // creation Fit y_reco - y_true [cm]
     k0cvtxfitresidualz, // creation Fit z_reco - z_true [cm]
+    k0protonmomentumreco, // Reco momentum magnitude of creation-vertex second particle [GeV/c]
+    k0protonmomentumtrue, // True momentum magnitude of creation-vertex second particle [GeV/c]
+    k0protontruepdg, // True PDG of creation-vertex second particle
+    k0protonchi2ndfproton, // Reco proton PID chi2/ndf for creation-vertex second particle
+    k0protontruelength, // True track length of creation-vertex second particle [cm]
+    k0protonrecolength, // Reco track length of creation-vertex second particle [cm]
+    k0hasproton, // 1 if a valid creation-vertex second particle is assigned, 0 otherwise
     // Active microtree variables (vertex-only set)
     k0vtxtruepos, //K0 vertex true position
     k0vtxoriginaldistance, //K0 vertex original distance

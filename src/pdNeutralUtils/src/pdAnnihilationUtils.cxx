@@ -202,7 +202,8 @@ Int_t CountValidCollectionPlaneHits(const AnaParticlePD* particle) {
   return count;
 }
 
-Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomentumDebugInfo* debugInfo = nullptr) {
+Int_t AssignMomentumFromResidualRange(AnaParticlePD* particle, Int_t pdgHypothesis,
+                                      DaughterMomentumDebugInfo* debugInfo = nullptr) {
   if (!particle) return kMomMethodUnassigned;
   const Int_t nCollHits = static_cast<Int_t>(particle->Hits[2].size());
   const Int_t attempted = (nCollHits >= 4) ? 1 : 0;
@@ -226,7 +227,7 @@ Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomen
     truncFrac = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction");
   }
   const pdAnaUtils::DEdxFreeRangeFitResult fit = pdAnaUtils::GetdEdxLikelihoodFreeRangeFit(
-      particle, 211, 500., 0.5, truncMinRR, truncFrac);
+      particle, pdgHypothesis, 500., 0.5, truncMinRR, truncFrac);
 
   if (debugInfo && std::isfinite(static_cast<double>(fit.logLikelihood))) {
     debugInfo->extensionChi2Ndf = static_cast<Float_t>(fit.logLikelihood);
@@ -249,6 +250,10 @@ Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomen
 
   if (debugInfo) debugInfo->extensionValid = 0;
   return kMomMethodFailed;
+}
+
+Int_t AssignPionMomentumFromResidualRange(AnaParticlePD* particle, DaughterMomentumDebugInfo* debugInfo = nullptr) {
+  return AssignMomentumFromResidualRange(particle, 211, debugInfo);
 }
 
 void DaughterPandoraAndFitDirs(AnaAnnihilationVertexPD* vertex, double trackFitLength, double trackFitDistanceFromStart,
@@ -328,7 +333,8 @@ Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
                                           double annihilationVertexLineToVertexDistance,
                                           double annihilationVertexOriginSupportDistance,
                                           double trackFitLength,
-                                          double trackFitDistanceFromStart) {
+                                          double trackFitDistanceFromStart,
+                                          Int_t excludedParticleUniqueID = -1) {
   if (!vertex || annihilationVertexRadius <= 0.0 || annihilationVertexLineToVertexDistance <= 0.0 ||
       annihilationVertexOriginSupportDistance <= 0.0) {
     return 0;
@@ -341,6 +347,7 @@ Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
   for (Int_t p = 0; p < event.nParticles; ++p) {
     AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
     if (!particle) continue;
+    if (excludedParticleUniqueID >= 0 && particle->UniqueID == excludedParticleUniqueID) continue;
     if (IsVertexDaughter(vertex, particle)) continue;
     if (!ParticleHasRawTailSupportNearVertex(particle, vertexPos, annihilationVertexRadius, trackFitDistanceFromStart)) {
       continue;
@@ -365,6 +372,44 @@ Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
 }
 
 } // namespace
+
+//***************************************************************
+Int_t AssignProtonMomentumFromResidualRange(AnaParticlePD* particle) {
+//***************************************************************
+  return AssignMomentumFromResidualRange(particle, 2212, nullptr);
+}
+
+//***************************************************************
+Int_t ComputeAnnihilationVertexDegeneracyWithExclusion(const AnaEventB& event,
+                                                       const AnaAnnihilationVertexPD* vertex,
+                                                       Int_t excludedParticleUniqueID) {
+//***************************************************************
+  const double annihilationDegeneracyRadius =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius")
+          : 0.0;
+  const double annihilationDegeneracyLineToVertexDistance =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance")
+          : 0.0;
+  const double annihilationDegeneracyOriginSupportDistance =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance")
+          : 0.5 * annihilationDegeneracyLineToVertexDistance;
+  const double trackFitLength =
+      ND::params().HasParameter("neutralKaonAnalysis.TrackFitLength")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength")
+          : 0.0;
+  const double trackFitDistanceFromStart =
+      ND::params().HasParameter("neutralKaonAnalysis.TrackFitDistanceFromStart")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart")
+          : 0.0;
+
+  return ComputeAnnihilationVertexDegeneracy(
+      event, vertex, annihilationDegeneracyRadius, annihilationDegeneracyLineToVertexDistance,
+      annihilationDegeneracyOriginSupportDistance, trackFitLength, trackFitDistanceFromStart,
+      excludedParticleUniqueID);
+}
 
 //***************************************************************
 void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, const AnaEventB& event, double trackFitLength,

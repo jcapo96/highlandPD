@@ -2,6 +2,7 @@
 #include "neutralKaonAnalysis.hxx"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdAnnihilationUtils.hxx"
 #include "pdDataClasses.hxx"
 #include "Parameters.hxx"
 #include "TVector3.h"
@@ -312,6 +313,13 @@ void neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(OutputManager& outpu
   AddVarMaxSizeVF(output, k0cvtxfitresidualx, "Creation Fit residual x_reco - x_true", nk0, nmax);
   AddVarMaxSizeVF(output, k0cvtxfitresidualy, "Creation Fit residual y_reco - y_true", nk0, nmax);
   AddVarMaxSizeVF(output, k0cvtxfitresidualz, "Creation Fit residual z_reco - z_true", nk0, nmax);
+  AddVarMaxSizeVF(output, k0protonmomentumreco, "Reco momentum magnitude of creation-vertex second particle", nk0, nmax);
+  AddVarMaxSizeVF(output, k0protonmomentumtrue, "True momentum magnitude of creation-vertex second particle", nk0, nmax);
+  AddVarMaxSizeVI(output, k0protontruepdg, "True PDG of creation-vertex second particle", nk0, nmax);
+  AddVarMaxSizeVF(output, k0protonchi2ndfproton, "Reco proton chi2/ndf of creation-vertex second particle", nk0, nmax);
+  AddVarMaxSizeVF(output, k0protontruelength, "True track length of creation-vertex second particle", nk0, nmax);
+  AddVarMaxSizeVF(output, k0protonrecolength, "Reco track length of creation-vertex second particle", nk0, nmax);
+  AddVarMaxSizeVI(output, k0hasproton, "1 if creation-vertex second particle is assigned and valid, 0 otherwise", nk0, nmax);
 }
 
 //********************************************************************
@@ -484,7 +492,8 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
 
   if(candidate){
     AnaAnnihilationVertexPD* vertex = candidate->AnnihilationVertex;
-    neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex, event);
+    const Int_t excludedParentUniqueID = candidate->Parent ? candidate->Parent->UniqueID : -1;
+    neutralKaonTree::FillNeutralKaonVariables_K0vtx(output, vertex, event, excludedParentUniqueID);
 
     // neutralKaonTreeDiagnostics::MaybeAccumulateSignalPionDedxMultiGraphs(candidate, event, neutralCandidateIndex);
 
@@ -814,6 +823,13 @@ void neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(OutputManager& outp
   Float_t k0cvtxfitresidualx_val = -999.0f;
   Float_t k0cvtxfitresidualy_val = -999.0f;
   Float_t k0cvtxfitresidualz_val = -999.0f;
+  Float_t k0protonmomentumreco_val = -999.0f;
+  Float_t k0protonmomentumtrue_val = -999.0f;
+  Int_t k0protontruepdg_val = -999;
+  Float_t k0protonchi2ndfproton_val = -999.0f;
+  Float_t k0protontruelength_val = -999.0f;
+  Float_t k0protonrecolength_val = -999.0f;
+  Int_t k0hasproton_val = 0;
 
   if (candidate) {
     AnaCreationVertexPD* creationVtx = candidate->CreationVertex;
@@ -864,6 +880,32 @@ void neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(OutputManager& outp
       k0cvtxfitresidualy_val = creationVtx->Position[1] - static_cast<Float_t>(trueCreation.Y());
       k0cvtxfitresidualz_val = creationVtx->Position[2] - static_cast<Float_t>(trueCreation.Z());
     }
+
+    if (creationVtx && creationVtx->SecondParticle) {
+      AnaParticlePD* secondParticle = creationVtx->SecondParticle;
+      const bool secondIsValid =
+          secondParticle->PositionStart[0] > -900.f &&
+          secondParticle->PositionStart[1] > -900.f &&
+          secondParticle->PositionStart[2] > -900.f;
+      k0hasproton_val = secondIsValid ? 1 : 0;
+      k0protonmomentumreco_val = secondParticle->Momentum;
+      k0protonrecolength_val = secondParticle->Length;
+      if (secondParticle->Chi2ndf > 0.f && secondParticle->Chi2Proton > 0.f) {
+        k0protonchi2ndfproton_val = secondParticle->Chi2Proton / secondParticle->Chi2ndf;
+      }
+
+      AnaTrueParticlePD* secondTrue =
+          secondParticle->TrueObject ? static_cast<AnaTrueParticlePD*>(secondParticle->TrueObject) : nullptr;
+      if (secondTrue) {
+        k0protonmomentumtrue_val = secondTrue->Momentum;
+        k0protontruepdg_val = secondTrue->PDG;
+        const TVector3 trueStart(secondTrue->Position[0], secondTrue->Position[1], secondTrue->Position[2]);
+        const TVector3 trueEnd(secondTrue->PositionEnd[0], secondTrue->PositionEnd[1], secondTrue->PositionEnd[2]);
+        if (IsValidPos(trueStart) && IsValidPos(trueEnd)) {
+          k0protontruelength_val = static_cast<Float_t>((trueEnd - trueStart).Mag());
+        }
+      }
+    }
   }
 
   output.FillVectorVar(k0cvtxpandoraresidual, k0cvtxpandoraresidual_val);
@@ -874,6 +916,13 @@ void neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(OutputManager& outp
   output.FillVectorVar(k0cvtxfitresidualx, k0cvtxfitresidualx_val);
   output.FillVectorVar(k0cvtxfitresidualy, k0cvtxfitresidualy_val);
   output.FillVectorVar(k0cvtxfitresidualz, k0cvtxfitresidualz_val);
+  output.FillVectorVar(k0protonmomentumreco, k0protonmomentumreco_val);
+  output.FillVectorVar(k0protonmomentumtrue, k0protonmomentumtrue_val);
+  output.FillVectorVar(k0protontruepdg, k0protontruepdg_val);
+  output.FillVectorVar(k0protonchi2ndfproton, k0protonchi2ndfproton_val);
+  output.FillVectorVar(k0protontruelength, k0protontruelength_val);
+  output.FillVectorVar(k0protonrecolength, k0protonrecolength_val);
+  output.FillVectorVar(k0hasproton, k0hasproton_val);
 }
 
 //********************************************************************
@@ -1161,7 +1210,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Kinematics(OutputManager& outpu
 
 //********************************************************************
 //********************************************************************
-void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event){
+void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex,
+                                                     const AnaEventB& event, Int_t excludedParentUniqueID){
     // Fill all variables for a single K0 vertex
   Float_t invalidPos[3] = {-999.0f, -999.0f, -999.0f};
   Float_t k0vtxtruepos_val[3] = {-999.0f, -999.0f, -999.0f};
@@ -1195,7 +1245,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
 
   if(vertex){
     k0vtxoriginaldistance_val = vertex->OriginalDistance;
-    k0vtxdegeneracy_val = static_cast<Float_t>(vertex->Degeneracy);
+    k0vtxdegeneracy_val = static_cast<Float_t>(
+        pdAnnihilationUtils::ComputeAnnihilationVertexDegeneracyWithExclusion(
+            event, vertex, excludedParentUniqueID));
     if (vertex->PositionPandora[0] > -900.f && vertex->PositionPandora[1] > -900.f && vertex->PositionPandora[2] > -900.f) {
       k0vtxpandorax_val = vertex->PositionPandora[0];
       k0vtxpandoray_val = vertex->PositionPandora[1];

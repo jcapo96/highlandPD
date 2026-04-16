@@ -2,6 +2,7 @@
 #include "ToyBoxNeutralKaon.hxx"
 #include "pdDataClasses.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdAnnihilationUtils.hxx"
 #include "pdCreationUtils.hxx"
 #include "CategoriesUtils.hxx"
 #include "OutputManager.hxx"
@@ -350,6 +351,7 @@ bool ParticleHasProjectedTailSupportNearPoint(const AnaParticlePD* particle,
 
 void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
                                                 const AnaAnnihilationVertexPD* vertex,
+                                                Int_t excludedParentUniqueID,
                                                 Float_t* rawBuffer,
                                                 Int_t& rawN,
                                                 Float_t* projectedBuffer,
@@ -383,6 +385,7 @@ void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
 
     for (Int_t p = 0; p < event.nParticles; ++p) {
         AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
+        if (excludedParentUniqueID >= 0 && particle && particle->UniqueID == excludedParentUniqueID) continue;
         if (!particle || IsVertexDaughter(vertex, particle)) continue;
         if (!ParticleHasRawTailSupportNearVertex(particle, vertexPos, radius, fitDistanceFromStart)) continue;
 
@@ -1275,6 +1278,7 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_parentTailHitsProjectedN, parentTailHitsProjectedN);
             if (neutralParticle->AnnihilationVertex) {
                 CollectAnnihilationDegeneracyDisplayPoints(event, neutralParticle->AnnihilationVertex,
+                                                           (neutralParticle->Parent ? neutralParticle->Parent->UniqueID : -1),
                                                            annDegHitsRaw, annDegHitsRawN,
                                                            annDegHitsProjected, annDegHitsProjectedN,
                                                            annDegParticleRawCount, annDegParticleProjectedCount, annDegParticleTruePDG,
@@ -1326,7 +1330,10 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_dau2TrajDirNPts, dau2TrajNpts);
 
             // Vertex radii (read from parameters file)
-            Float_t creationRadius = 0.0f;
+            Float_t creationRadius =
+                ND::params().HasParameter("neutralKaonAnalysis.CreationVertexRadius")
+                    ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius")
+                    : 0.0f;
             Float_t annihilationRadius = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
 
             output.FillVectorVar(edk0_creationVtxRadius, creationRadius);
@@ -1359,7 +1366,9 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                 annihilationFitPos[0] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[0];
                 annihilationFitPos[1] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[1];
                 annihilationFitPos[2] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[2];
-                annihilationDeg = neutralParticle->AnnihilationVertex->Degeneracy;
+                annihilationDeg = pdAnnihilationUtils::ComputeAnnihilationVertexDegeneracyWithExclusion(
+                    event, neutralParticle->AnnihilationVertex,
+                    (neutralParticle->Parent ? neutralParticle->Parent->UniqueID : -1));
             }
             output.FillVectorVar(edk0_annihilationVtxDeg, annihilationDeg);
 
@@ -1922,7 +1931,11 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_secondParticleTruePDG, -999);
             output.FillVectorVar(edk0_daughter1TruePDG, -999);
             output.FillVectorVar(edk0_daughter2TruePDG, -999);
-            output.FillVectorVar(edk0_creationVtxRadius, 0.f);
+            const Float_t creationRadius =
+                ND::params().HasParameter("neutralKaonAnalysis.CreationVertexRadius")
+                    ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius")
+                    : 0.0f;
+            output.FillVectorVar(edk0_creationVtxRadius, creationRadius);
             output.FillVectorVar(edk0_annihilationVtxRadius, 0.f);
             output.FillVectorVar(edk0_creationVtxDeg, 0);
             output.FillVectorVar(edk0_annihilationVtxDeg, 0);
@@ -2356,6 +2369,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             makeSubgroup(creationVertexGroup, FormatParticleGroupLabel("Parent Particle", _k0_trueParentPDG[i]).c_str());
         TEveElementList* creationSecondParticleGroup =
             makeSubgroup(creationVertexGroup, FormatParticleGroupLabel("Second Particle", _k0_secondParticleTruePDG[i]).c_str());
+        TEveElementList* creationSelectionCylinderGroup = makeSubgroup(creationVertexGroup, "Selection Cylinder");
         TEveElementList* annihilationVertexGroup =
             makeSubgroup(neutralParticleGroup, Form("Annihilation Vertex [deg=%d]", _k0_annihilationVtxDeg[i]));
         TEveElementList* annihilationVertexInfoGroup = makeSubgroup(annihilationVertexGroup, "Vertex");
@@ -2399,17 +2413,64 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 
         if (creationX > -900 && creationY > -900 && creationZ > -900) {
             Float_t radius = _k0_creationVtxRadius[i];
-            if (radius > 0.f) {
-                TGeoSphere* creationSphere = new TGeoSphere(0, radius);
-                TGeoVolume* creationVol = new TGeoVolume(Form("CreationSphere_%d", i), creationSphere);
-                TEveGeoShape* creationShape = new TEveGeoShape(Form("K0 #%d Creation Radius (%.0f cm)", i, radius));
-                creationShape->SetShape(creationVol->GetShape());
-                creationShape->SetMainColor(parentColor);
-                creationShape->SetMainTransparency(80);
-                TEveTrans& creationTrans = creationShape->RefMainTrans();
-                creationTrans.SetPos(creationX, creationY, creationZ);
-                addElement(creationVertexInfoGroup, creationShape);
-                anchorPoint(creationShape, creationX, creationY, creationZ);
+            // Creation-vertex selection cylinder around parent fitted line:
+            // from creation vertex to annihilation fit vertex, with CreationVertexRadius.
+            if (radius > 0.f &&
+                _k0_annihilationVtxFitPos[i][0] > -900.f &&
+                _k0_annihilationVtxFitPos[i][1] > -900.f &&
+                _k0_annihilationVtxFitPos[i][2] > -900.f) {
+                const TVector3 cylStart(creationX, creationY, creationZ);
+                const TVector3 cylEnd(_k0_annihilationVtxFitPos[i][0],
+                                      _k0_annihilationVtxFitPos[i][1],
+                                      _k0_annihilationVtxFitPos[i][2]);
+                const TVector3 axis = cylEnd - cylStart;
+                if (axis.Mag2() > 1e-8) {
+                    TVector3 u = axis.Unit();
+                    TVector3 ref(0., 0., 1.);
+                    if (std::fabs(u.Dot(ref)) > 0.9) ref.SetXYZ(0., 1., 0.);
+                    TVector3 v = u.Cross(ref);
+                    if (v.Mag2() > 1e-10) {
+                        v = v.Unit();
+                        TVector3 w = u.Cross(v).Unit();
+                        const Int_t nSeg = 24;
+
+                        TEveLine* cylBase =
+                            new TEveLine(Form("K0 #%d Creation Selection Cylinder Base (R=%.1f cm)", i, radius));
+                        TEveLine* cylTop =
+                            new TEveLine(Form("K0 #%d Creation Selection Cylinder Top (R=%.1f cm)", i, radius));
+                        cylBase->SetMainColor(kAzure + 1);
+                        cylTop->SetMainColor(kAzure + 1);
+                        cylBase->SetLineStyle(3);
+                        cylTop->SetLineStyle(3);
+                        cylBase->SetLineWidth(2);
+                        cylTop->SetLineWidth(2);
+
+                        for (Int_t s = 0; s <= nSeg; ++s) {
+                            const double phi = 2.0 * M_PI * static_cast<double>(s) / static_cast<double>(nSeg);
+                            const TVector3 radial = std::cos(phi) * v + std::sin(phi) * w;
+                            const TVector3 p0 = cylStart + static_cast<double>(radius) * radial;
+                            const TVector3 p1 = cylEnd + static_cast<double>(radius) * radial;
+                            cylBase->SetNextPoint(p0.X(), p0.Y(), p0.Z());
+                            cylTop->SetNextPoint(p1.X(), p1.Y(), p1.Z());
+                        }
+                        addElement(creationSelectionCylinderGroup, cylBase);
+                        addElement(creationSelectionCylinderGroup, cylTop);
+
+                        for (Int_t s = 0; s < nSeg; s += 4) {
+                            const double phi = 2.0 * M_PI * static_cast<double>(s) / static_cast<double>(nSeg);
+                            const TVector3 radial = std::cos(phi) * v + std::sin(phi) * w;
+                            const TVector3 p0 = cylStart + static_cast<double>(radius) * radial;
+                            const TVector3 p1 = cylEnd + static_cast<double>(radius) * radial;
+                            TEveLine* side = new TEveLine(Form("K0 #%d Creation Selection Cylinder Side %d", i, s));
+                            side->SetPoint(0, p0.X(), p0.Y(), p0.Z());
+                            side->SetPoint(1, p1.X(), p1.Y(), p1.Z());
+                            side->SetMainColor(kAzure + 1);
+                            side->SetLineStyle(3);
+                            side->SetLineWidth(1);
+                            addElement(creationSelectionCylinderGroup, side);
+                        }
+                    }
+                }
             }
 
             // Creation vertex marker
@@ -3187,20 +3248,29 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 // Only draw if second particle position was found and particle has hits
                 if (secondPosX < -900 || secondHits == 0) continue;
 
-                // Draw bidirectional fitted line with span >= reconstructed particle length.
-                TVector3 secondPos(secondPosX, secondPosY, secondPosZ);
-                TVector3 closestSecond(_k0_creationVtx_closestPtSecond[i][0],
-                                      _k0_creationVtx_closestPtSecond[i][1],
-                                      _k0_creationVtx_closestPtSecond[i][2]);
-                TVector3 secondDir = closestSecond - secondPos;
-                if (secondDir.Mag() > 0) secondDir = secondDir.Unit();
+                // Draw bidirectional fitted line from stored fit anchor/direction.
+                TVector3 secondAnchor(_k0_creationVtx_fitLineSecondStart[i][0],
+                                      _k0_creationVtx_fitLineSecondStart[i][1],
+                                      _k0_creationVtx_fitLineSecondStart[i][2]);
+                TVector3 secondDir(_k0_creationVtx_fitLineSecondDir[i][0],
+                                   _k0_creationVtx_fitLineSecondDir[i][1],
+                                   _k0_creationVtx_fitLineSecondDir[i][2]);
+                if (secondDir.Mag2() <= 1e-10) {
+                    TVector3 secondPos(secondPosX, secondPosY, secondPosZ);
+                    TVector3 closestSecond(_k0_creationVtx_closestPtSecond[i][0],
+                                          _k0_creationVtx_closestPtSecond[i][1],
+                                          _k0_creationVtx_closestPtSecond[i][2]);
+                    secondDir = closestSecond - secondPos;
+                }
+                if (secondDir.Mag2() <= 1e-10) continue;
+                secondDir = secondDir.Unit();
                 Float_t secondRecoLength = 0.f;
                 if (secondEndX > -900.f && secondEndY > -900.f && secondEndZ > -900.f) {
                     secondRecoLength = TVector3(secondEndX - secondPosX, secondEndY - secondPosY, secondEndZ - secondPosZ).Mag();
                 }
                 const double secondSpan = std::max<double>(100.0, std::max<double>(secondRecoLength, fitLength));
-                TVector3 secondLineStart = secondPos - secondSpan * secondDir;
-                TVector3 secondLineEnd = secondPos + secondSpan * secondDir;
+                TVector3 secondLineStart = secondAnchor - secondSpan * secondDir;
+                TVector3 secondLineEnd = secondAnchor + secondSpan * secondDir;
 
                 TEveLine* secondLine = new TEveLine(Form("K0 #%d Creation Second Fit", i));
                 secondLine->SetPoint(0, secondLineStart.X(),
@@ -3215,6 +3285,14 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 addElement(creationSecondParticleGroup, secondLine);
                 anchorPoint(secondLine, secondLineStart.X(), secondLineStart.Y(), secondLineStart.Z());
                 anchorPoint(secondLine, secondLineEnd.X(), secondLineEnd.Y(), secondLineEnd.Z());
+
+                TEvePointSet* secondFitAnchor = new TEvePointSet(Form("K0 #%d Creation Second Fit Anchor", i));
+                secondFitAnchor->SetNextPoint(secondAnchor.X(), secondAnchor.Y(), secondAnchor.Z());
+                secondFitAnchor->SetMarkerStyle(43);
+                secondFitAnchor->SetMarkerSize(2.1);
+                secondFitAnchor->SetMainColor(secondColor);
+                addElement(creationSecondParticleGroup, secondFitAnchor);
+                anchorPoint(secondFitAnchor, secondAnchor.X(), secondAnchor.Y(), secondAnchor.Z());
             }
 
             // Draw closest points on creation vertex fitted lines
@@ -3248,7 +3326,7 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                             _k0_creationVtx_closestPtSecond[i][2]);
             }
 
-            // Draw white dotted line connecting the two closest points
+            // Draw dotted connector between the two closest points.
             if (_k0_creationVtx_closestPtBeam[i][0] > -900 && _k0_creationVtx_closestPtSecond[i][0] > -900) {
                 TEveLine* connectLine = new TEveLine(Form("K0 #%d Creation Vtx Connect", i));
                 connectLine->SetPoint(0, _k0_creationVtx_closestPtBeam[i][0],
@@ -3257,10 +3335,16 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
                 connectLine->SetPoint(1, _k0_creationVtx_closestPtSecond[i][0],
                                          _k0_creationVtx_closestPtSecond[i][1],
                                          _k0_creationVtx_closestPtSecond[i][2]);
-                connectLine->SetMainColor(kWhite);
+                connectLine->SetMainColor(kOrange + 7);
                 connectLine->SetLineStyle(3); // Dotted
                 connectLine->SetLineWidth(2);
                 addElement(creationVertexInfoGroup, connectLine);
+                anchorPoint(connectLine, _k0_creationVtx_closestPtBeam[i][0],
+                            _k0_creationVtx_closestPtBeam[i][1],
+                            _k0_creationVtx_closestPtBeam[i][2]);
+                anchorPoint(connectLine, _k0_creationVtx_closestPtSecond[i][0],
+                            _k0_creationVtx_closestPtSecond[i][1],
+                            _k0_creationVtx_closestPtSecond[i][2]);
             }
         }
 
