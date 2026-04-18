@@ -40,12 +40,12 @@ need to be enabled in baseAnalysis parameter file
 
 # Minimum number of collection-plane hits required per daughter to create a vertex.
 # Vertex is created only if both daughters satisfy NHitsPerPlane[2] > this value.
-< neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 5 >
+< neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 21 >
 
 # Daughter PID veto when building annihilation vertex candidates (both daughters must pass).
-# Reject if Chi2Proton/Chi2ndf is strictly below this (proton-like).
+# Reject if Chi2PID(2212) chi2/npts is strictly below this (proton template; same machinery as truth tree).
 < neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow = 50.0 >
-# If not rejected above: reject if pion Chi2PID(211) chi2/ndf is strictly above this (not pion-like enough).
+# If not rejected above: reject if pion Chi2PID(211) chi2/npts is strictly above this (not pion-like enough).
 < neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove = 25.0 >
 
 --- Annihilation Line-Fit Parameters -----------
@@ -68,7 +68,7 @@ need to be enabled in baseAnalysis parameter file
 # Set to 0.5 * CreationVertexLineToVertexDistance default-equivalent to match current fallback behavior.
 < neutralKaonAnalysis.CreationVertexOriginSupportDistance = 5.0 >
 
-# Keep second-particle candidates only if proton Chi2/ndf is <= this threshold.
+# Keep second-particle candidates only if Chi2PID(2212) chi2/npts is <= this threshold (same as k0protonchi2ndfproton).
 < neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 15000.0 >
 
 # Neutral candidates from annihilation vertices: when 1, keep at most one neutral per vertex (winner among parents).
@@ -76,10 +76,20 @@ need to be enabled in baseAnalysis parameter file
 < neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex = 1 >
 
 --- ML residual-range dE/dx (annihilation pions) -----------
-# Among interior collection hits, only hits with residual range >= MinRRCm may be discarded as Landau-tail outliers;
-# low-RR hits are never removed. Fraction is the fraction of those high-RR hits (largest dE/dx first) to drop. Set to 0 to disable.
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm = 10.0 >
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction = 0.1 >
+# Likelihood free-range scan tuned like arXiv:2409.18288 Table 1 (TLEFit, charged pions). Collection plane only.
+# Minimum interior hits after skipping ends (before dE/dx window).
+< neutralKaonAnalysis.FreeRangeDedxMinInteriorHits = 15 >
+# Drop this many collection hits at track start and at track end before the fit.
+< neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst = 3 >
+< neutralKaonAnalysis.FreeRangeDedxSkipHitsLast = 3 >
+# Keep hits with measured dE/dx in [Min, Max] MeV/cm (π hypothesis only; disabled for other PDG in code).
+< neutralKaonAnalysis.FreeRangeDedxMinMeVcm = 0.5 >
+< neutralKaonAnalysis.FreeRangeDedxMaxMeVcm = 5.0 >
+# Scan additional track-length offset L in [0, Lmax] cm with this step (cm).
+< neutralKaonAnalysis.FreeRangeScanLmaxCm = 450.0 >
+< neutralKaonAnalysis.FreeRangeScanStepCm = 1.0 >
+# Path length δx (cm) for Landau ξ in the hit PDF (paper uses ~0.65 cm typical 3D hit spacing in ProtoDUNE-SP).
+< neutralKaonAnalysis.FreeRangeDedxPdfPathCm = 0.65 >
 
 --- Momentum Assurance Parameters -----------
 # Enable momentum assurance for signal codes only (1=only codes 1,5,6 / 0=all codes)

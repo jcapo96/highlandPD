@@ -34,17 +34,17 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
     AddVarMaxSizeVF(output, k0otherpairsfitmindistglobal,
                     "Global minimum over daughter-other pair fit distances (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau1recoprotonchi2ndf,
-                    "Reco proton chi2/ndf for K0 daughter1", ntruek0, nmax);
+                    "Chi2PID(2212)/npts K0 daughter1 (dE/dx template)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau1recokaonchi2ndf,
-                    "Reco kaon chi2/ndf for K0 daughter1", ntruek0, nmax);
+                    "Chi2PID(321)/npts K0 daughter1 (dE/dx template)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau1recopionchi2ndf,
-                    "Reco pion chi2/ndf for K0 daughter1", ntruek0, nmax);
+                    "Chi2PID(211)/npts K0 daughter1 (annihilation-style)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau2recoprotonchi2ndf,
-                    "Reco proton chi2/ndf for K0 daughter2", ntruek0, nmax);
+                    "Chi2PID(2212)/npts K0 daughter2 (dE/dx template)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau2recokaonchi2ndf,
-                    "Reco kaon chi2/ndf for K0 daughter2", ntruek0, nmax);
+                    "Chi2PID(321)/npts K0 daughter2 (dE/dx template)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau2recopionchi2ndf,
-                    "Reco pion chi2/ndf for K0 daughter2", ntruek0, nmax);
+                    "Chi2PID(211)/npts K0 daughter2 (annihilation-style)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0truemomentum, "True momentum magnitude for K0 (GeV/c)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0partruestartmom,
                     "True start momentum magnitude for K0 parent (GeV/c)", ntruek0, nmax);
@@ -62,15 +62,23 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
     AddVarMaxSizeVI(output, k0partruepdg, "True PDG of K0 parent", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau1truepdg, "True PDG of K0 daughter1", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau2truepdg, "True PDG of K0 daughter2", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau1truelength, "True length K0 daughter1 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1truelength, "True |end-start| K0 daughter1 (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau1recolength, "Reco length K0 daughter1 (cm)", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau2truelength, "True length K0 daughter2 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2truelength, "True |end-start| K0 daughter2 (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau2recolength, "Reco length K0 daughter2 (cm)", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0truelength, "True length K0 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0truelength, "True |end-start| K0 (cm)", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau1recohits, "Reco NHits K0 daughter1", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau2recohits, "Reco NHits K0 daughter2", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1truensubreco,
+                    "True sub-daughters of K0 daughter1 with valid reco (start/end + hits)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1truensubrecohitstot, "Sum reco NHits over those sub-daughters (daughter1)", ntruek0,
+                    nmax);
+    AddVarMaxSizeVI(output, k0dau2truensubreco,
+                    "True sub-daughters of K0 daughter2 with valid reco (start/end + hits)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2truensubrecohitstot, "Sum reco NHits over those sub-daughters (daughter2)", ntruek0,
+                    nmax);
     AddVarMaxSizeVI(output, k0parrecohits, "Reco NHits true parent of K0", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0partruelength, "True length K0 parent (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0partruelength, "True |end-start| K0 parent (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0parrecolength, "Reco length K0 parent (cm)", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau1otherminpairtruepdg,
                     "True PDG of partner for k0dau1otherpairfitmindist", ntruek0, nmax);
@@ -129,6 +137,10 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
                                                          Float_t k0TrueLength,
                                                          Int_t daughter1RecoNHits,
                                                          Int_t daughter2RecoNHits,
+                                                         Int_t daughter1TrueSubRecoQualCount,
+                                                         Int_t daughter1TrueSubRecoQualHitsTot,
+                                                         Int_t daughter2TrueSubRecoQualCount,
+                                                         Int_t daughter2TrueSubRecoQualHitsTot,
                                                          Int_t parentRecoNHits,
                                                          Float_t parentTrueLength,
                                                          Float_t parentRecoLength,
@@ -179,6 +191,10 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
     output.FillVectorVar(k0truelength, k0TrueLength);
     output.FillVectorVar(k0dau1recohits, daughter1RecoNHits);
     output.FillVectorVar(k0dau2recohits, daughter2RecoNHits);
+    output.FillVectorVar(k0dau1truensubreco, daughter1TrueSubRecoQualCount);
+    output.FillVectorVar(k0dau1truensubrecohitstot, daughter1TrueSubRecoQualHitsTot);
+    output.FillVectorVar(k0dau2truensubreco, daughter2TrueSubRecoQualCount);
+    output.FillVectorVar(k0dau2truensubrecohitstot, daughter2TrueSubRecoQualHitsTot);
     output.FillVectorVar(k0parrecohits, parentRecoNHits);
     output.FillVectorVar(k0partruelength, parentTrueLength);
     output.FillVectorVar(k0parrecolength, parentRecoLength);

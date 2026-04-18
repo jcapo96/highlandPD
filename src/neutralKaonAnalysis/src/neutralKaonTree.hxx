@@ -128,7 +128,7 @@ namespace neutralKaonTree {
     k0protonmomentumreco, // Reco momentum magnitude of creation-vertex second particle [GeV/c]
     k0protonmomentumtrue, // True momentum magnitude of creation-vertex second particle [GeV/c]
     k0protontruepdg, // True PDG of creation-vertex second particle
-    k0protonchi2ndfproton, // Reco proton PID chi2/ndf for creation-vertex second particle
+    k0protonchi2ndfproton, // Chi2PID(2212)/npts for creation-vertex second particle (same as truth tree)
     k0protontruelength, // True track length of creation-vertex second particle [cm]
     k0protonrecolength, // Reco track length of creation-vertex second particle [cm]
     k0hasproton, // 1 if a valid creation-vertex second particle is assigned, 0 otherwise
@@ -204,10 +204,12 @@ namespace neutralKaonTree {
     k0vtxdau2recostartz, // Reco start z for daughter 2 [cm]
     k0vtxdau1nhitsreco, // Reco number of collection-plane hits for daughter 1
     k0vtxdau2nhitsreco, // Reco number of collection-plane hits for daughter 2
-    k0vtxdau1protonchi2ndf, // Reco proton PID chi2/ndf for daughter 1
-    k0vtxdau2protonchi2ndf, // Reco proton PID chi2/ndf for daughter 2
-    k0vtxdau1pionchi2ndf, // Reco pion PID chi2/ndf for daughter 1
-    k0vtxdau2pionchi2ndf, // Reco pion PID chi2/ndf for daughter 2
+    k0vtxdau1protonchi2ndf, // Chi2PID(2212)/npts vertex daughter 1 (same as truth tree / annihilation)
+    k0vtxdau2protonchi2ndf, // Chi2PID(2212)/npts vertex daughter 2
+    k0vtxdau1pionchi2ndf, // Chi2PID(211)/npts vertex daughter 1
+    k0vtxdau2pionchi2ndf, // Chi2PID(211)/npts vertex daughter 2
+    k0vtxdau1kaonchi2ndf, // Chi2PID(321)/npts vertex daughter 1
+    k0vtxdau2kaonchi2ndf, // Chi2PID(321)/npts vertex daughter 2
     k0vtxdau1truepdg, // True PDG of daughter 1
     k0vtxdau2truepdg, // True PDG of daughter 2
     k0vtxdau1ndaughtersreco, // Reco number of daughters of vertex daughter 1

@@ -74,29 +74,51 @@ void MaybeAccumulateSignalPionDedxMultiGraphs(AnaNeutralParticlePD* candidate, c
     const AnaTrueParticlePD* tpart = reco->TrueObject ? static_cast<AnaTrueParticlePD*>(reco->TrueObject) : nullptr;
     if (!tpart || std::abs(tpart->PDG) != 211) continue;
 
-    double truncMinRR = 0.;
-    double truncFrac = 0.;
-    if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm")) {
-      truncMinRR = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm");
-    }
-    if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction")) {
-      truncFrac = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction");
-    }
+    const double Lmax = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanLmaxCm")
+                            ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanLmaxCm")
+                            : 450.;
+    const double step = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepCm")
+                            ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepCm")
+                            : 1.;
+    const int minInterior =
+        ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
+            ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
+            : 15;
+    const int skipFirst =
+        ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
+            ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
+            : 3;
+    const int skipLast =
+        ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
+            ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
+            : 3;
+    const double dedxMin =
+        ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
+            : 0.5;
+    const double dedxMax =
+        ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
+            : 5.0;
+    const double pdfPath =
+        ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
+            : 0.65;
 
     char dedxXAxis[200];
     std::snprintf(dedxXAxis, sizeof(dedxXAxis),
                   "(run %d, subrun %d, evt %d) Residual range [cm]", static_cast<int>(runId),
                   static_cast<int>(subRunId), static_cast<int>(evtId));
-    TMultiGraph* mg = pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(reco, 500., 0.5, truncMinRR, truncFrac,
-                                                                      dedxXAxis);
+    TMultiGraph* mg = pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(
+        reco, Lmax, step, skipFirst, skipLast, dedxMin, dedxMax, minInterior, pdfPath, dedxXAxis);
     if (!mg) continue;
 
     char biasHistTitle[240];
     std::snprintf(biasHistTitle, sizeof(biasHistTitle),
                   "(run %d, subrun %d, evt %d) #Delta(dE/dx)=measured-expected(PDF mode);#Delta(dE/dx) [MeV/cm];Entries",
                   static_cast<int>(runId), static_cast<int>(subRunId), static_cast<int>(evtId));
-    TH1F* hBias = pdAnaUtils::MakePionFreeRangeDedxBiasHistogram(reco, 500., 0.5, truncMinRR, truncFrac,
-                                                                 biasHistTitle);
+    TH1F* hBias = pdAnaUtils::MakePionFreeRangeDedxBiasHistogram(reco, Lmax, step, skipFirst, skipLast, dedxMin,
+                                                                 dedxMax, minInterior, pdfPath, biasHistTitle);
     if (!hBias) {
       DeleteMultiGraphAndGraphs(mg);
       continue;

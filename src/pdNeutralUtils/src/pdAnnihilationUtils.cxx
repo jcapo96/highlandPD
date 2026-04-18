@@ -1,5 +1,6 @@
 #include "pdAnnihilationUtils.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdUtilsDEdx.hxx"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "Parameters.hxx"
 #include "TVector3.h"
@@ -323,16 +324,16 @@ Int_t ComputeVertexDegeneracyAtPosition(const AnaEventB& event,
 bool IsProtonLikeAndNotPionLike(const AnaParticlePD* particle, double protonChi2NdfRejectBelow,
                                 double pionChi2NdfRejectAbove) {
   if (!particle) return false;
-  if (particle->Chi2ndf <= 0.f || particle->Chi2Proton <= 0.f) return false;
 
-  const double protonChi2Ndf = particle->Chi2Proton / particle->Chi2ndf;
-  if (protonChi2Ndf < protonChi2NdfRejectBelow) return true;
+  const Float_t protonChi2Ndf = pdAnaUtils::Chi2PIDChi2PerHit(particle, 2212);
+  if (!(protonChi2Ndf > -900.f)) return false;
 
-  const std::pair<double, int> pionPid = pdAnaUtils::Chi2PID(*particle, 211);
-  if (pionPid.first < 0.0 || pionPid.second <= 0) return false;
+  if (static_cast<double>(protonChi2Ndf) < protonChi2NdfRejectBelow) return true;
 
-  const double pionChi2Ndf = pionPid.first / pionPid.second;
-  return (pionChi2Ndf > pionChi2NdfRejectAbove);
+  const Float_t pionChi2Ndf = pdAnaUtils::Chi2PIDChi2PerHit(particle, 211);
+  if (!(pionChi2Ndf > -900.f)) return false;
+
+  return static_cast<double>(pionChi2Ndf) > pionChi2NdfRejectAbove;
 }
 
 enum DaughterMomentumMethod {
@@ -369,8 +370,44 @@ Int_t CountValidCollectionPlaneHits(const AnaParticlePD* particle) {
 Int_t AssignMomentumFromResidualRange(AnaParticlePD* particle, Int_t pdgHypothesis,
                                       DaughterMomentumDebugInfo* debugInfo = nullptr) {
   if (!particle) return kMomMethodUnassigned;
+
+  const double scanLmaxCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanLmaxCm")
+                                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanLmaxCm")
+                                : 450.;
+  const double scanStepCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepCm")
+                                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepCm")
+                                : 1.;
+  const int minInteriorHits =
+      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
+          : 15;
+  const int skipFirst =
+      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
+          : 3;
+  const int skipLast =
+      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
+          : 3;
+  double dedxMinMeVcm =
+      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
+          : 0.5;
+  double dedxMaxMeVcm =
+      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
+          : 5.0;
+  if (pdgHypothesis != 211) {
+    dedxMinMeVcm = 0.;
+    dedxMaxMeVcm = 0.;
+  }
+  const double pdfPathCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
+                               ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
+                               : 0.65;
+
   const Int_t nCollHits = static_cast<Int_t>(particle->Hits[2].size());
-  const Int_t attempted = (nCollHits >= 4) ? 1 : 0;
+  const Int_t minHitsOnTrack = skipFirst + skipLast + std::max(1, minInteriorHits);
+  const Int_t attempted = (nCollHits >= minHitsOnTrack) ? 1 : 0;
   if (debugInfo) {
     debugInfo->hasPreexistingMomentum = -1;
     debugInfo->extensionAttempted = attempted;
@@ -382,16 +419,9 @@ Int_t AssignMomentumFromResidualRange(AnaParticlePD* particle, Int_t pdgHypothes
     debugInfo->extensionNValidHits = CountValidCollectionPlaneHits(particle);
   }
 
-  double truncMinRR = 0.;
-  double truncFrac = 0.;
-  if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm")) {
-    truncMinRR = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm");
-  }
-  if (ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction")) {
-    truncFrac = ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction");
-  }
   const pdAnaUtils::DEdxFreeRangeFitResult fit = pdAnaUtils::GetdEdxLikelihoodFreeRangeFit(
-      particle, pdgHypothesis, 500., 0.5, truncMinRR, truncFrac);
+      particle, pdgHypothesis, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
+      pdfPathCm);
 
   if (debugInfo && std::isfinite(static_cast<double>(fit.logLikelihood))) {
     debugInfo->extensionChi2Ndf = static_cast<Float_t>(fit.logLikelihood);

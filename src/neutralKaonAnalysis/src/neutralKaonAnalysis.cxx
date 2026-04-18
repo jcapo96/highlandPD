@@ -9,6 +9,7 @@
 #include "ToyBoxNeutralKaon.hxx"
 
 #include "pdAnalysisUtils.hxx"
+#include "pdUtilsRangePID.hxx"
 #include "standardPDTree.hxx"
 #include <sstream>
 
@@ -27,6 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <utility>
 #include "TVector3.h"
 
 namespace {
@@ -66,11 +68,19 @@ namespace {
     return m;
   }
 
-  Float_t TrueLengthOrSentinel(const AnaTrueParticlePD* truePart){
+  // Same as neutralKaonTree: |PositionEnd - Position| when both vertices are valid (not AnaTrueParticle::Length).
+  bool IsValidTruePos3(Float_t x, Float_t y, Float_t z){
+    return std::isfinite(x) && std::isfinite(y) && std::isfinite(z) && x > -900.f && y > -900.f && z > -900.f;
+  }
+
+  Float_t TrueLengthVertexSeparationCm(const AnaTrueParticlePD* truePart){
     if(!truePart) return static_cast<Float_t>(-999.0);
-    const Float_t L = truePart->Length;
-    if(!std::isfinite(L) || L < 0.f) return static_cast<Float_t>(-999.0);
-    return L;
+    const TVector3 trueStart(truePart->Position[0], truePart->Position[1], truePart->Position[2]);
+    const TVector3 trueEnd(truePart->PositionEnd[0], truePart->PositionEnd[1], truePart->PositionEnd[2]);
+    if(!IsValidTruePos3(trueStart.X(), trueStart.Y(), trueStart.Z()) ||
+       !IsValidTruePos3(trueEnd.X(), trueEnd.Y(), trueEnd.Z()))
+      return static_cast<Float_t>(-999.0);
+    return static_cast<Float_t>((trueEnd - trueStart).Mag());
   }
 
   Float_t RecoLengthOrSentinel(const AnaParticlePD* recoPart){
@@ -152,37 +162,16 @@ namespace {
     return static_cast<Float_t>(minDistance);
   }
 
-  Float_t RecoChi2NdfFromPidPlane(const AnaParticlePD* recoPart, int plane, int pidIndex){
-    if(!recoPart || plane < 0 || plane > 2) return static_cast<Float_t>(-999.0);
-    const Float_t ndf = recoPart->PID[plane][0];
-    const Float_t chi2 = recoPart->PID[plane][pidIndex];
-    if(ndf <= 0.f || !std::isfinite(ndf) || !std::isfinite(chi2) || chi2 < 0.f) return static_cast<Float_t>(-999.0);
-    return chi2 / ndf;
-  }
-
-  Float_t RecoChi2NdfFromPidBestPlane(const AnaParticlePD* recoPart, int pidIndex){
-    if(!recoPart) return static_cast<Float_t>(-999.0);
-    for(int plane = 2; plane >= 0; --plane){
-      const Float_t v = RecoChi2NdfFromPidPlane(recoPart, plane, pidIndex);
-      if(std::isfinite(v) && v > -900.f) return v;
-    }
-    return static_cast<Float_t>(-999.0);
-  }
-
   Float_t RecoProtonChi2Ndf(const AnaParticlePD* recoPart){
-    if(!recoPart) return static_cast<Float_t>(-999.0);
-    if(recoPart->Chi2ndf > 0.f && recoPart->Chi2Proton > 0.f &&
-       std::isfinite(recoPart->Chi2ndf) && std::isfinite(recoPart->Chi2Proton))
-      return recoPart->Chi2Proton / recoPart->Chi2ndf;
-    return RecoChi2NdfFromPidBestPlane(recoPart, 3);
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 2212);
   }
 
   Float_t RecoKaonChi2Ndf(const AnaParticlePD* recoPart){
-    return RecoChi2NdfFromPidBestPlane(recoPart, 4);
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 321);
   }
 
   Float_t RecoPionChi2Ndf(const AnaParticlePD* recoPart){
-    return RecoChi2NdfFromPidBestPlane(recoPart, 5);
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 211);
   }
 
   Int_t RecoDaughterParentUidMinusTrueParentRecoUid(const AnaBunchB& bunch,
@@ -522,6 +511,32 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
   AnaParticlePD* daughter1Reco = findRecoFromTrue(daughter1True, false);
   AnaParticlePD* daughter2Reco = findRecoFromTrue(daughter2True, false);
 
+  auto trueSubDaughterRecoStats = [&](const AnaTrueParticlePD* mother) -> std::pair<Int_t, Int_t> {
+    if (!mother) return {-999, -999};
+    Int_t nQual = 0;
+    Int_t hitsTot = 0;
+    for (Int_t childId : mother->Daughters) {
+      AnaTrueParticlePD* childTrue = nullptr;
+      for (int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti) {
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if (tp && tp->ID == childId) {
+          childTrue = tp;
+          break;
+        }
+      }
+      if (!childTrue) continue;
+      AnaParticlePD* childReco = findRecoFromTrue(childTrue, false);
+      if (!HasRecoObjectForTruthFlags(childReco)) continue;
+      ++nQual;
+      const Int_t nh = RecoNHitsOrSentinel(childReco);
+      if (nh >= 0) hitsTot += nh;
+    }
+    return {nQual, hitsTot};
+  };
+
+  const std::pair<Int_t, Int_t> daughter1TrueSubReco = trueSubDaughterRecoStats(daughter1True);
+  const std::pair<Int_t, Int_t> daughter2TrueSubReco = trueSubDaughterRecoStats(daughter2True);
+
   AnaParticlePD* parentReco = findRecoFromTrue(parentTrue, true);
 
   const bool parentHasReco = HasRecoObjectForTruthFlags(parentReco);
@@ -620,15 +635,15 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
   const Int_t daughter1TruePdg = daughter1True ? daughter1True->PDG : -999;
   const Int_t daughter2TruePdg = daughter2True ? daughter2True->PDG : -999;
 
-  const Float_t daughter1TrueLength = TrueLengthOrSentinel(daughter1True);
+  const Float_t daughter1TrueLength = TrueLengthVertexSeparationCm(daughter1True);
   const Float_t daughter1RecoLength = RecoLengthOrSentinel(daughter1Reco);
-  const Float_t daughter2TrueLength = TrueLengthOrSentinel(daughter2True);
+  const Float_t daughter2TrueLength = TrueLengthVertexSeparationCm(daughter2True);
   const Float_t daughter2RecoLength = RecoLengthOrSentinel(daughter2Reco);
-  const Float_t k0TrueLength = TrueLengthOrSentinel(&part);
+  const Float_t k0TrueLength = TrueLengthVertexSeparationCm(&part);
   const Int_t daughter1RecoNHits = RecoNHitsOrSentinel(daughter1Reco);
   const Int_t daughter2RecoNHits = RecoNHitsOrSentinel(daughter2Reco);
   const Int_t parentRecoNHits = RecoNHitsOrSentinel(parentReco);
-  const Float_t parentTrueLength = TrueLengthOrSentinel(parentTrue);
+  const Float_t parentTrueLength = TrueLengthVertexSeparationCm(parentTrue);
   const Float_t parentRecoLength = RecoLengthOrSentinel(parentReco);
 
   const Int_t parentRecoZStartGreaterThanEnd = RecoZStartGreaterThanEndFlag(parentReco);
@@ -680,6 +695,10 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       k0TrueLength,
                                                       daughter1RecoNHits,
                                                       daughter2RecoNHits,
+                                                      daughter1TrueSubReco.first,
+                                                      daughter1TrueSubReco.second,
+                                                      daughter2TrueSubReco.first,
+                                                      daughter2TrueSubReco.second,
                                                       parentRecoNHits,
                                                       parentTrueLength,
                                                       parentRecoLength,

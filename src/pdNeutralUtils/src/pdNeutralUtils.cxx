@@ -395,9 +395,9 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
             if (!candidateSecond) continue;
             if (candidateSecond == parentParticle || candidateSecond == vertexDaughter1 || candidateSecond == vertexDaughter2) continue;
             if (!HasValidRecoPoint3(candidateSecond->PositionStart)) continue;
-            if (candidateSecond->Chi2ndf <= 0.f || candidateSecond->Chi2Proton <= 0.f) continue;
 
-            const Float_t protonScore = candidateSecond->Chi2Proton / candidateSecond->Chi2ndf;
+            const Float_t protonScore = pdAnaUtils::Chi2PIDChi2PerHit(candidateSecond, 2212);
+            if (!(protonScore > -900.f)) continue;
             if (!(std::isfinite(protonScore) && protonScore <= creationVertexSecondParticleMaxProtonChi2Ndf)) continue;
 
             const TVector3 candidateStart(candidateSecond->PositionStart[0],

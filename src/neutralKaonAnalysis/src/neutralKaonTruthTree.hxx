@@ -50,6 +50,10 @@ namespace neutralKaonTruthTree{
                                      Float_t k0TrueLength,
                                      Int_t daughter1RecoNHits,
                                      Int_t daughter2RecoNHits,
+                                     Int_t daughter1TrueSubRecoQualCount,
+                                     Int_t daughter1TrueSubRecoQualHitsTot,
+                                     Int_t daughter2TrueSubRecoQualCount,
+                                     Int_t daughter2TrueSubRecoQualHitsTot,
                                      Int_t parentRecoNHits,
                                      Float_t parentTrueLength,
                                      Float_t parentRecoLength,
@@ -80,12 +84,12 @@ namespace neutralKaonTruthTree{
     k0dau1otherpairfitmindist, // Minimum of those line-separation distances for daughter1 vs any other reco (not the other K0 daughter), within vertex radius (-999 if none)
     k0dau2otherpairfitmindist, // Same for daughter2 vs other reco tracks (-999 if none)
     k0otherpairsfitmindistglobal, // Minimum of k0dau1otherpairfitmindist and k0dau2otherpairfitmindist when both valid (-999 if neither valid)
-    k0dau1recoprotonchi2ndf, // Reco chi2/ndf under proton hypothesis for daughter1 track (collection plane / Chi2Proton; -999 if invalid)
-    k0dau1recokaonchi2ndf, // Reco chi2/ndf under kaon hypothesis for daughter1 (-999 if invalid)
-    k0dau1recopionchi2ndf, // Reco chi2/ndf under pion hypothesis for daughter1 (-999 if invalid)
-    k0dau2recoprotonchi2ndf, // Reco chi2/ndf under proton hypothesis for daughter2 (-999 if invalid)
-    k0dau2recokaonchi2ndf, // Reco chi2/ndf under kaon hypothesis for daughter2 (-999 if invalid)
-    k0dau2recopionchi2ndf, // Reco chi2/ndf under pion hypothesis for daughter2 (-999 if invalid)
+    k0dau1recoprotonchi2ndf, // Chi2PID(2212)/npts collection plane (-999 if invalid)
+    k0dau1recokaonchi2ndf, // Chi2PID(321)/npts collection plane (-999 if invalid)
+    k0dau1recopionchi2ndf, // Chi2PID(211)/npts collection plane, same as annihilation vertex logic (-999 if invalid)
+    k0dau2recoprotonchi2ndf, // Chi2PID(2212)/npts collection plane (-999 if invalid)
+    k0dau2recokaonchi2ndf, // Chi2PID(321)/npts collection plane (-999 if invalid)
+    k0dau2recopionchi2ndf, // Chi2PID(211)/npts collection plane, same as annihilation vertex logic (-999 if invalid)
     k0truemomentum, // True |p| at K0 trajectory start (MC Momentum; -999 if unavailable)
     k0partruestartmom, // True |p| at start for true K0 parent (-999 if no parent)
     k0partrueendmom, // True |p| at end for true K0 parent (-999 if no parent)
@@ -97,15 +101,19 @@ namespace neutralKaonTruthTree{
     k0partruepdg, // True PDG of K0 parent (-999 if parent not found in spill)
     k0dau1truepdg, // True PDG of daughter 1 (Daughters[0])
     k0dau2truepdg, // True PDG of daughter 2 (Daughters[1])
-    k0dau1truelength, // True trajectory Length for daughter 1 (cm; -999 if invalid)
+    k0dau1truelength, // |PositionEnd-Position| for daughter 1 (cm; same as ana tree; -999 if invalid)
     k0dau1recolength, // Reco Length for daughter 1 (cm; -999 if no reco)
-    k0dau2truelength, // True Length for daughter 2 (cm; -999 if invalid)
+    k0dau2truelength, // |PositionEnd-Position| for daughter 2 (cm; -999 if invalid)
     k0dau2recolength, // Reco Length for daughter 2 (cm; -999 if no reco)
-    k0truelength, // True Length for K0 (cm; -999 if invalid)
+    k0truelength, // |PositionEnd-Position| for K0 (cm; -999 if invalid)
     k0dau1recohits, // Reco NHits for daughter 1 (-999 if no reco)
     k0dau2recohits, // Reco NHits for daughter 2 (-999 if no reco)
+    k0dau1truensubreco, // Number of true sub-daughters of daughter 1 with reco valid start/end + hits
+    k0dau1truensubrecohitstot, // Sum of reco NHits over those sub-daughters (0 if none)
+    k0dau2truensubreco, // Same for true daughter 2
+    k0dau2truensubrecohitstot,
     k0parrecohits, // Reco NHits for true K0 parent (-999 if no reco)
-    k0partruelength, // True Length for K0 parent (cm; -999 if no parent)
+    k0partruelength, // |PositionEnd-Position| for K0 parent (cm; -999 if no parent / invalid verts)
     k0parrecolength, // Reco Length for K0 parent (cm; -999 if no reco)
     k0dau1otherminpairtruepdg, // True PDG of reco particle attaining k0dau1otherpairfitmindist (-999 if none)
     k0vertexminisdaupair, // 1 if min of {dau-dau, dau1-other, dau2-other} fit-line distances equals dau-dau (and dau-dau valid); else 0

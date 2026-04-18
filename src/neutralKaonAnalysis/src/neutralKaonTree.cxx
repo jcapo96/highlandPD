@@ -349,7 +349,7 @@ void neutralKaonTree::AddNeutralKaonVariables_K0CreationVtx(OutputManager& outpu
   AddVarMaxSizeVF(output, k0protonmomentumreco, "Reco momentum magnitude of creation-vertex second particle", nk0, nmax);
   AddVarMaxSizeVF(output, k0protonmomentumtrue, "True momentum magnitude of creation-vertex second particle", nk0, nmax);
   AddVarMaxSizeVI(output, k0protontruepdg, "True PDG of creation-vertex second particle", nk0, nmax);
-  AddVarMaxSizeVF(output, k0protonchi2ndfproton, "Reco proton chi2/ndf of creation-vertex second particle", nk0, nmax);
+  AddVarMaxSizeVF(output, k0protonchi2ndfproton, "Chi2PID(2212)/npts creation-vertex second particle", nk0, nmax);
   AddVarMaxSizeVF(output, k0protontruelength, "True track length of creation-vertex second particle", nk0, nmax);
   AddVarMaxSizeVF(output, k0protonrecolength, "Reco track length of creation-vertex second particle", nk0, nmax);
   AddVarMaxSizeVI(output, k0hasproton, "1 if creation-vertex second particle is assigned and valid, 0 otherwise", nk0, nmax);
@@ -439,10 +439,12 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
   AddVarMaxSizeVF(output, k0vtxdau2recostartz, "Reco start z for daughter 2 [cm]", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1nhitsreco, "Reco collection-plane hit count for daughter 1", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2nhitsreco, "Reco collection-plane hit count for daughter 2", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxdau1protonchi2ndf, "Reco proton chi2/ndf for daughter 1", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxdau2protonchi2ndf, "Reco proton chi2/ndf for daughter 2", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxdau1pionchi2ndf, "Reco pion chi2/ndf for daughter 1", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxdau2pionchi2ndf, "Reco pion chi2/ndf for daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1protonchi2ndf, "Chi2PID(2212)/npts vertex daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2protonchi2ndf, "Chi2PID(2212)/npts vertex daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1pionchi2ndf, "Chi2PID(211)/npts vertex daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2pionchi2ndf, "Chi2PID(211)/npts vertex daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1kaonchi2ndf, "Chi2PID(321)/npts vertex daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2kaonchi2ndf, "Chi2PID(321)/npts vertex daughter 2", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1truepdg, "True PDG for daughter 1", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2truepdg, "True PDG for daughter 2", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1ndaughtersreco, "Reco number of daughters for daughter 1", nk0, nmax);
@@ -933,9 +935,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(OutputManager& outp
       k0hasproton_val = secondIsValid ? 1 : 0;
       k0protonmomentumreco_val = secondParticle->Momentum;
       k0protonrecolength_val = secondParticle->Length;
-      if (secondParticle->Chi2ndf > 0.f && secondParticle->Chi2Proton > 0.f) {
-        k0protonchi2ndfproton_val = secondParticle->Chi2Proton / secondParticle->Chi2ndf;
-      }
+      k0protonchi2ndfproton_val = pdAnaUtils::Chi2PIDChi2PerHit(secondParticle, 2212);
 
       AnaTrueParticlePD* secondTrue =
           secondParticle->TrueObject ? static_cast<AnaTrueParticlePD*>(secondParticle->TrueObject) : nullptr;
@@ -1472,6 +1472,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   Float_t k0vtxdau2protonchi2ndf_val = -999.0f;
   Float_t k0vtxdau1pionchi2ndf_val = -999.0f;
   Float_t k0vtxdau2pionchi2ndf_val = -999.0f;
+  Float_t k0vtxdau1kaonchi2ndf_val = -999.0f;
+  Float_t k0vtxdau2kaonchi2ndf_val = -999.0f;
   Int_t k0vtxdau1truepdg_val = -999;
   Int_t k0vtxdau2truepdg_val = -999;
   Int_t k0vtxdau1ndaughtersreco_val = -1;
@@ -1509,13 +1511,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
           k0vtxdau1recostarty_val = static_cast<Float_t>(recoStart1.Y());
           k0vtxdau1recostartz_val = static_cast<Float_t>(recoStart1.Z());
         }
-        if (recoParticle1->Chi2ndf > 0.f && recoParticle1->Chi2Proton > 0.f) {
-          k0vtxdau1protonchi2ndf_val = recoParticle1->Chi2Proton / recoParticle1->Chi2ndf;
-        }
-        std::pair<double, int> pionPid1 = pdAnaUtils::Chi2PID(*recoParticle1, 211);
-        if (pionPid1.first > 0.0 && pionPid1.second > 0) {
-          k0vtxdau1pionchi2ndf_val = static_cast<Float_t>(pionPid1.first / pionPid1.second);
-        }
+        k0vtxdau1protonchi2ndf_val = pdAnaUtils::Chi2PIDChi2PerHit(recoParticle1, 2212);
+        k0vtxdau1pionchi2ndf_val = pdAnaUtils::Chi2PIDChi2PerHit(recoParticle1, 211);
+        k0vtxdau1kaonchi2ndf_val = pdAnaUtils::Chi2PIDChi2PerHit(recoParticle1, 321);
         k0vtxdau1ndaughtersreco_val = static_cast<Int_t>(recoParticle1->Daughters.size());
       }
       if (recoParticle2) {
@@ -1528,13 +1526,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
           k0vtxdau2recostarty_val = static_cast<Float_t>(recoStart2.Y());
           k0vtxdau2recostartz_val = static_cast<Float_t>(recoStart2.Z());
         }
-        if (recoParticle2->Chi2ndf > 0.f && recoParticle2->Chi2Proton > 0.f) {
-          k0vtxdau2protonchi2ndf_val = recoParticle2->Chi2Proton / recoParticle2->Chi2ndf;
-        }
-        std::pair<double, int> pionPid2 = pdAnaUtils::Chi2PID(*recoParticle2, 211);
-        if (pionPid2.first > 0.0 && pionPid2.second > 0) {
-          k0vtxdau2pionchi2ndf_val = static_cast<Float_t>(pionPid2.first / pionPid2.second);
-        }
+        k0vtxdau2protonchi2ndf_val = pdAnaUtils::Chi2PIDChi2PerHit(recoParticle2, 2212);
+        k0vtxdau2pionchi2ndf_val = pdAnaUtils::Chi2PIDChi2PerHit(recoParticle2, 211);
+        k0vtxdau2kaonchi2ndf_val = pdAnaUtils::Chi2PIDChi2PerHit(recoParticle2, 321);
         k0vtxdau2ndaughtersreco_val = static_cast<Int_t>(recoParticle2->Daughters.size());
       }
       if (trueParticle1) {
@@ -1634,6 +1628,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxdau2protonchi2ndf, k0vtxdau2protonchi2ndf_val);
   output.FillVectorVar(k0vtxdau1pionchi2ndf, k0vtxdau1pionchi2ndf_val);
   output.FillVectorVar(k0vtxdau2pionchi2ndf, k0vtxdau2pionchi2ndf_val);
+  output.FillVectorVar(k0vtxdau1kaonchi2ndf, k0vtxdau1kaonchi2ndf_val);
+  output.FillVectorVar(k0vtxdau2kaonchi2ndf, k0vtxdau2kaonchi2ndf_val);
   output.FillVectorVar(k0vtxdau1truepdg, k0vtxdau1truepdg_val);
   output.FillVectorVar(k0vtxdau2truepdg, k0vtxdau2truepdg_val);
   output.FillVectorVar(k0vtxdau1ndaughtersreco, k0vtxdau1ndaughtersreco_val);
