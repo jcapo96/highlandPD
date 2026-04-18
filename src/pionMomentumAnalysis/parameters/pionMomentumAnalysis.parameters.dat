@@ -1,0 +1,22 @@
+--- Pion momentum analysis (microTree; truth tree when input is mlskim skim file) --------
+# Input: either ProtoDUNE minitree (MiniTree) or skim ROOT from pionMomentumSkim.exe (tree mlskim).
+# Auto-detect picks mlskim if that tree exists in the file.
+
+ < pionMomentumAnalysis.MinAccumLevelToSave = 0 >
+
+###############################################################################
+  baseAnalysis parameters (subset)
+###############################################################################
+
+ < baseAnalysis.InitializeTrees = 1 >
+
+ < baseAnalysis.Corrections.DisableAllCorrections  = 0 >
+ < baseAnalysis.Corrections.ForceApplyCorrections  = 0 >
+
+ < baseAnalysis.Systematics.NumberOfToys = 100 >
+ < baseAnalysis.Systematics.RandomSeed = 1 >
+ < baseAnalysis.Systematics.IndividualRandomGenerator = 0 >
+
+ < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 0 >
+ < baseAnalysis.Configurations.EnableSingleWeightSystConfigurations    = 0 >
+ < baseAnalysis.Configurations.EnableAllSystematics = 0 >
