@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numeric>
 
 namespace pdNeutralUtils {
 namespace {
@@ -150,62 +151,90 @@ int ParentRecoHitSum(const AnaParticlePD* p) {
   return p->NHitsPerPlane[0] + p->NHitsPerPlane[1] + p->NHitsPerPlane[2];
 }
 
-/// When several parents share one annihilation vertex, keep one neutral: each criterion
-/// awards a "win" to every candidate tied for best (shortest length, best beam-Z alignment,
-/// most parent hits). Final choice maximizes wins; ties break on shortest length then parent UID.
+/// sortedIdx: candidate indices best-to-worst; keys[i] is metric for candidate i.
+/// tierPoints[k] is awarded to every candidate in the k-th distinct tier; tied values share a tier
+/// and the next tier skips (e.g. two tied for 1st both get tierPoints[0], next group gets tierPoints[2] if 3 tiers).
+void AddTieredLeaderboardPoints(std::vector<int>& scores,
+                                const std::vector<size_t>& sortedIdx,
+                                const std::vector<double>& keys,
+                                const int* tierPoints,
+                                int nTiers,
+                                double eps) {
+  const size_t n = sortedIdx.size();
+  size_t pos = 0;
+  for (int t = 0; t < nTiers && pos < n; ++t) {
+    const double groupKey = keys[sortedIdx[pos]];
+    size_t end = pos + 1;
+    while (end < n && std::fabs(keys[sortedIdx[end]] - groupKey) <= eps) {
+      ++end;
+    }
+    const int pts = tierPoints[t];
+    for (size_t k = pos; k < end; ++k) {
+      scores[sortedIdx[k]] += pts;
+    }
+    pos = end;
+  }
+}
+
+/// When several parents share one annihilation vertex, keep one neutral: score from three matches
+/// (length 5/3/1, alignment 3/2/1, parent hits 1 for top tier only). Ties share tier points and skip
+/// intermediate tiers. Final tie-break: shortest effective length, then parent UniqueID.
 size_t SelectWinnerNeutralCandidateIndex(const std::vector<AnaNeutralParticlePD*>& cands) {
   const size_t n = cands.size();
   if (n == 0) return 0;
   if (n == 1) return 0;
 
-  std::vector<int> wins(n, 0);
+  std::vector<int> scores(n, 0);
   constexpr double kLenEps = 1e-5;
   constexpr double kBeamEps = 1e-9;
 
-  double minLen = std::numeric_limits<double>::infinity();
+  std::vector<double> lenKey(n);
+  std::vector<double> beamKey(n);
+  std::vector<double> hitKey(n);
   for (size_t i = 0; i < n; ++i) {
-    minLen = std::min(minLen, EffectiveNeutralLengthCm(cands[i]));
-  }
-  for (size_t i = 0; i < n; ++i) {
-    if (EffectiveNeutralLengthCm(cands[i]) <= minLen + kLenEps) wins[i]++;
-  }
-
-  double maxBeam = -1.0;
-  for (size_t i = 0; i < n; ++i) {
-    maxBeam = std::max(maxBeam, NeutralBeamZAbsCosTheta(cands[i]));
-  }
-  for (size_t i = 0; i < n; ++i) {
-    const double b = NeutralBeamZAbsCosTheta(cands[i]);
-    if (maxBeam < 0.0) {
-      wins[i]++;
-    } else if (b >= maxBeam - kBeamEps) {
-      wins[i]++;
-    }
+    lenKey[i] = EffectiveNeutralLengthCm(cands[i]);
+    beamKey[i] = NeutralBeamZAbsCosTheta(cands[i]);
+    hitKey[i] = static_cast<double>(ParentRecoHitSum(cands[i] ? cands[i]->Parent : nullptr));
   }
 
-  int maxHits = std::numeric_limits<int>::min();
-  for (size_t i = 0; i < n; ++i) {
-    maxHits = std::max(maxHits, ParentRecoHitSum(cands[i] ? cands[i]->Parent : nullptr));
+  std::vector<size_t> idx(n);
+  std::iota(idx.begin(), idx.end(), 0);
+
+  std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b) { return lenKey[a] < lenKey[b]; });
+  {
+    const int pts[] = {5, 3, 1};
+    AddTieredLeaderboardPoints(scores, idx, lenKey, pts, 3, kLenEps);
   }
-  for (size_t i = 0; i < n; ++i) {
-    if (ParentRecoHitSum(cands[i] ? cands[i]->Parent : nullptr) >= maxHits) wins[i]++;
+
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b) { return beamKey[a] > beamKey[b]; });
+  {
+    const int pts[] = {3, 2, 1};
+    AddTieredLeaderboardPoints(scores, idx, beamKey, pts, 3, kBeamEps);
+  }
+
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b) { return hitKey[a] > hitKey[b]; });
+  {
+    const int pts[] = {1};
+    AddTieredLeaderboardPoints(scores, idx, hitKey, pts, 1, 0.0);
   }
 
   size_t bestIdx = 0;
-  int bestWins = wins[0];
+  int bestScore = scores[0];
   double bestLen = EffectiveNeutralLengthCm(cands[0]);
   int bestParentUid = (cands[0] && cands[0]->Parent) ? cands[0]->Parent->UniqueID : std::numeric_limits<int>::max();
 
   for (size_t i = 1; i < n; ++i) {
-    const int wi = wins[i];
+    const int sc = scores[i];
     const double len = EffectiveNeutralLengthCm(cands[i]);
     const int puid = (cands[i] && cands[i]->Parent) ? cands[i]->Parent->UniqueID : std::numeric_limits<int>::max();
-    if (wi > bestWins) {
+    if (sc > bestScore) {
       bestIdx = i;
-      bestWins = wi;
+      bestScore = sc;
       bestLen = len;
       bestParentUid = puid;
-    } else if (wi == bestWins) {
+    } else if (sc == bestScore) {
       if (len < bestLen - kLenEps) {
         bestIdx = i;
         bestLen = len;
@@ -240,6 +269,9 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
       ND::params().HasParameter("neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf")
           ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf")
           : 100.0;
+  const bool selectSingleNeutralPerAnnihilationVertex =
+      !ND::params().HasParameter("neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex") ||
+      ND::params().GetParameterD("neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex") != 0.0;
 
   for (AnaAnnihilationVertexPD* annihilationVtx : annihilationVertices) {
     if (!annihilationVtx) continue;
@@ -429,6 +461,11 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
         }
       }
 
+      if (creationVtx) {
+        creationVtx->Degeneracy = pdAnnihilationUtils::ComputeCreationVertexDegeneracy(
+            event, creationVtx, annihilationVtx, -1);
+      }
+
       AnaNeutralParticlePD* neutralParticle = new AnaNeutralParticlePD();
       neutralParticle->AnnihilationVertex = annihilationVtx;
       neutralParticle->CreationVertex = creationVtx;
@@ -504,16 +541,23 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
 
     if (vertexCandidates.empty()) continue;
 
-    const size_t winnerIdx = (vertexCandidates.size() == 1)
-                                 ? 0
-                                 : SelectWinnerNeutralCandidateIndex(vertexCandidates);
-    for (size_t ic = 0; ic < vertexCandidates.size(); ++ic) {
-      if (ic == winnerIdx) {
+    if (selectSingleNeutralPerAnnihilationVertex) {
+      const size_t winnerIdx = (vertexCandidates.size() == 1)
+                                   ? 0
+                                   : SelectWinnerNeutralCandidateIndex(vertexCandidates);
+      for (size_t ic = 0; ic < vertexCandidates.size(); ++ic) {
+        if (ic == winnerIdx) {
+          vertexCandidates[ic]->UniqueID = neutralParticleID++;
+          neutralParticles.push_back(vertexCandidates[ic]);
+        } else {
+          delete vertexCandidates[ic]->CreationVertex;
+          delete vertexCandidates[ic];
+        }
+      }
+    } else {
+      for (size_t ic = 0; ic < vertexCandidates.size(); ++ic) {
         vertexCandidates[ic]->UniqueID = neutralParticleID++;
         neutralParticles.push_back(vertexCandidates[ic]);
-      } else {
-        delete vertexCandidates[ic]->CreationVertex;
-        delete vertexCandidates[ic];
       }
     }
   }

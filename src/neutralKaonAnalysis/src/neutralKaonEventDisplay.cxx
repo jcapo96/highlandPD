@@ -351,6 +351,7 @@ bool ParticleHasProjectedTailSupportNearPoint(const AnaParticlePD* particle,
 
 void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
                                                 const AnaAnnihilationVertexPD* vertex,
+                                                const AnaCreationVertexPD* creationVertex,
                                                 Int_t excludedParentUniqueID,
                                                 Float_t* rawBuffer,
                                                 Int_t& rawN,
@@ -374,6 +375,17 @@ void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
     if (!HasValidRecoPoint(vertex->PositionFit)) return;
 
     const TVector3 vertexPos(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
+    TVector3 creationPos(-999.0, -999.0, -999.0);
+    if (creationVertex) {
+        if (creationVertex->Position[0] > -900.f && creationVertex->Position[1] > -900.f &&
+            creationVertex->Position[2] > -900.f) {
+            creationPos.SetXYZ(creationVertex->Position[0], creationVertex->Position[1], creationVertex->Position[2]);
+        } else if (creationVertex->PositionPandora[0] > -900.f && creationVertex->PositionPandora[1] > -900.f &&
+                   creationVertex->PositionPandora[2] > -900.f) {
+            creationPos.SetXYZ(creationVertex->PositionPandora[0], creationVertex->PositionPandora[1],
+                               creationVertex->PositionPandora[2]);
+        }
+    }
     const double radius = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius");
     const double lineToVertexDistance =
         ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance");
@@ -399,6 +411,115 @@ void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
         if ((closestPointToVertex - vertexPos).Mag() > lineToVertexDistance) continue;
 
         if (!ParticleHasProjectedTailSupportNearPoint(particle, fitAnchor, fitDir, closestPointToVertex,
+                                                      originSupportDistance, fitDistanceFromStart)) {
+            continue;
+        }
+
+        if (HasValidRecoPoint(creationPos)) {
+            const TVector3 closestPointToCreation = pdCreationUtils::ProjectPointOntoLine(creationPos, fitAnchor, fitDir);
+            if (HasValidRecoPoint(closestPointToCreation)) {
+                const double dAnnihilation = (closestPointToVertex - vertexPos).Mag();
+                const double dCreation = (closestPointToCreation - creationPos).Mag();
+                if (dCreation < dAnnihilation) continue;
+            }
+        }
+
+        if (fitLineN >= maxLines) break;
+
+        const Int_t lineIdx = fitLineN;
+        const Int_t rawStartIdx = rawN;
+        const Int_t projectedStartIdx = projectedN;
+        AppendVecToFlatBuffer(fitAnchor, fitAnchorBuffer, lineIdx, maxLines);
+        AppendVecToFlatBuffer(fitDir, fitDirBuffer, lineIdx, maxLines);
+        if (truePdgBuffer) truePdgBuffer[lineIdx] = TruePDGOrSentinel(particle);
+        ++fitLineN;
+
+        if (HasValidRecoPoint(particle->PositionStart)) {
+            const TVector3 rawStart(particle->PositionStart[0], particle->PositionStart[1], particle->PositionStart[2]);
+            AppendPointToFlatBuffer(rawStart, rawBuffer, rawN, maxPoints);
+            AppendPointToFlatBuffer(pdCreationUtils::ProjectPointOntoLine(rawStart, fitAnchor, fitDir),
+                                    projectedBuffer, projectedN, maxPoints);
+        }
+
+        for (const AnaHitPD& hit : particle->Hits[2]) {
+            const TVector3 hitPos = hit.Position;
+            if (!HasValidRecoPoint(hitPos)) continue;
+            const double pathDistance = EstimatePathDistanceFromStart(particle, hitPos);
+            if (pathDistance < 0.0 || pathDistance > fitDistanceFromStart) continue;
+            AppendPointToFlatBuffer(hitPos, rawBuffer, rawN, maxPoints);
+            AppendPointToFlatBuffer(pdCreationUtils::ProjectPointOntoLine(hitPos, fitAnchor, fitDir),
+                                    projectedBuffer, projectedN, maxPoints);
+            if (rawN >= maxPoints || projectedN >= maxPoints) break;
+        }
+
+        if (rawCountBuffer) rawCountBuffer[lineIdx] = rawN - rawStartIdx;
+        if (projectedCountBuffer) projectedCountBuffer[lineIdx] = projectedN - projectedStartIdx;
+        if (rawN >= maxPoints || projectedN >= maxPoints) break;
+    }
+}
+
+void CollectCreationDegeneracyDisplayPoints(const AnaEventB& event,
+                                            const AnaCreationVertexPD* creationVertex,
+                                            const AnaAnnihilationVertexPD* annihilationVertex,
+                                            Int_t excludedParentUniqueID,
+                                            Float_t* rawBuffer,
+                                            Int_t& rawN,
+                                            Float_t* projectedBuffer,
+                                            Int_t& projectedN,
+                                            Int_t* rawCountBuffer,
+                                            Int_t* projectedCountBuffer,
+                                            Int_t* truePdgBuffer,
+                                            Float_t* fitAnchorBuffer,
+                                            Float_t* fitDirBuffer,
+                                            Int_t& fitLineN,
+                                            Int_t maxLines,
+                                            Int_t maxPoints) {
+    rawN = 0;
+    projectedN = 0;
+    fitLineN = 0;
+    if (rawCountBuffer) std::fill_n(rawCountBuffer, maxLines, 0);
+    if (projectedCountBuffer) std::fill_n(projectedCountBuffer, maxLines, 0);
+    if (truePdgBuffer) std::fill_n(truePdgBuffer, maxLines, -999);
+    if (!creationVertex || !rawBuffer || !projectedBuffer) return;
+
+    TVector3 creationPos(-999.0, -999.0, -999.0);
+    if (HasValidRecoPoint(creationVertex->Position)) {
+        creationPos = creationVertex->Position;
+    } else if (HasValidRecoPoint(creationVertex->PositionPandora)) {
+        creationPos = creationVertex->PositionPandora;
+    }
+    if (!HasValidRecoPoint(creationPos)) return;
+
+    const double radius = ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius");
+    const double lineToVertexDistance =
+        ND::params().HasParameter("neutralKaonAnalysis.CreationVertexLineToVertexDistance")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexLineToVertexDistance")
+            : radius;
+    const double originSupportDistance =
+        ND::params().HasParameter("neutralKaonAnalysis.CreationVertexOriginSupportDistance")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexOriginSupportDistance")
+            : 0.5 * lineToVertexDistance;
+    const double fitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+    const double fitDistanceFromStart = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart");
+    if (radius <= 0.0 || lineToVertexDistance <= 0.0 || originSupportDistance <= 0.0 || fitDistanceFromStart < 0.0) return;
+
+    for (Int_t p = 0; p < event.nParticles; ++p) {
+        AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
+        if (!particle) continue;
+        if (excludedParentUniqueID >= 0 && particle->UniqueID == excludedParentUniqueID) continue;
+        if (IsVertexDaughter(annihilationVertex, particle)) continue;
+        if (!ParticleHasRawTailSupportNearVertex(particle, creationPos, radius, fitDistanceFromStart)) continue;
+
+        TVector3 fitAnchor;
+        TVector3 fitDir;
+        if (!GetParticleFitLine(particle, fitLength, fitDistanceFromStart, fitAnchor, fitDir)) continue;
+        fitDir = fitDir.Unit();
+
+        const TVector3 closestPointToCreation = pdCreationUtils::ProjectPointOntoLine(creationPos, fitAnchor, fitDir);
+        if (!HasValidRecoPoint(closestPointToCreation)) continue;
+        if ((closestPointToCreation - creationPos).Mag() > lineToVertexDistance) continue;
+
+        if (!ParticleHasProjectedTailSupportNearPoint(particle, fitAnchor, fitDir, closestPointToCreation,
                                                       originSupportDistance, fitDistanceFromStart)) {
             continue;
         }
@@ -546,6 +667,16 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         std::fill_n(_k0_annDegFitAnchor[i], kMaxAnnDegeneracyLines * 3, -999.f);
         std::fill_n(_k0_annDegFitDir[i], kMaxAnnDegeneracyLines * 3, -999.f);
         _k0_annDegFitLineN[i] = 0;
+        std::fill_n(_k0_creationDegHitsRaw[i], kMaxAnnDegeneracyPoints * 3, -999.f);
+        std::fill_n(_k0_creationDegHitsProjected[i], kMaxAnnDegeneracyPoints * 3, -999.f);
+        _k0_creationDegHitsRawN[i] = 0;
+        _k0_creationDegHitsProjectedN[i] = 0;
+        std::fill_n(_k0_creationDegParticleRawCount[i], kMaxAnnDegeneracyLines, 0);
+        std::fill_n(_k0_creationDegParticleProjectedCount[i], kMaxAnnDegeneracyLines, 0);
+        std::fill_n(_k0_creationDegParticleTruePDG[i], kMaxAnnDegeneracyLines, -999);
+        std::fill_n(_k0_creationDegFitAnchor[i], kMaxAnnDegeneracyLines * 3, -999.f);
+        std::fill_n(_k0_creationDegFitDir[i], kMaxAnnDegeneracyLines * 3, -999.f);
+        _k0_creationDegFitLineN[i] = 0;
         _k0_parentLength[i] = -999.f;
         std::fill_n(_k0_parentTrajDirHist[i], kParentTrajHistBins * 3, 0.f);
         _k0_parentTrajDirNPts[i] = 0;
@@ -882,6 +1013,16 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edk0_annDegFitAnchor, "ED_k0_annDegFitAnchor", "F", "Fit anchors for annihilation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
     output.AddMatrixVar(tree_index, edk0_annDegFitDir, "ED_k0_annDegFitDir", "F", "Fit directions for annihilation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
     output.AddVectorVar(tree_index, edk0_annDegFitLineN, "ED_k0_annDegFitLineN", "I", "Number of annihilation-degeneracy fitted lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddMatrixVar(tree_index, edk0_creationDegHitsRaw, "ED_k0_creationDegHitsRaw", "F", "Raw early hits and start points for creation-degeneracy candidates", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyPoints * 3);
+    output.AddMatrixVar(tree_index, edk0_creationDegHitsProjected, "ED_k0_creationDegHitsProjected", "F", "Projected early hits and start points for creation-degeneracy candidates", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyPoints * 3);
+    output.AddVectorVar(tree_index, edk0_creationDegHitsRawN, "ED_k0_creationDegHitsRawN", "I", "Raw creation-degeneracy point count", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_creationDegHitsProjectedN, "ED_k0_creationDegHitsProjectedN", "I", "Projected creation-degeneracy point count", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddMatrixVar(tree_index, edk0_creationDegParticleRawCount, "ED_k0_creationDegParticleRawCount", "I", "Raw creation-degeneracy point count per candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
+    output.AddMatrixVar(tree_index, edk0_creationDegParticleProjectedCount, "ED_k0_creationDegParticleProjectedCount", "I", "Projected creation-degeneracy point count per candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
+    output.AddMatrixVar(tree_index, edk0_creationDegParticleTruePDG, "ED_k0_creationDegParticleTruePDG", "I", "True PDG per creation-degeneracy candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
+    output.AddMatrixVar(tree_index, edk0_creationDegFitAnchor, "ED_k0_creationDegFitAnchor", "F", "Fit anchors for creation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
+    output.AddMatrixVar(tree_index, edk0_creationDegFitDir, "ED_k0_creationDegFitDir", "F", "Fit directions for creation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
+    output.AddVectorVar(tree_index, edk0_creationDegFitLineN, "ED_k0_creationDegFitLineN", "I", "Number of creation-degeneracy fitted lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_parentLength, "ED_k0_parentLength", "F", "Reconstructed K0 parent length", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddMatrixVar(tree_index, edk0_parentTrajDir, "ED_k0_parentTrajDir", "F", "K0 parent trajectory direction MPV", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddMatrixVar(tree_index, edk0_parentTrajDirHist, "ED_k0_parentTrajDirHist", "F", "K0 parent trajectory direction histograms (XYZ, 60 bins each)", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kParentTrajHistBins * 3);
@@ -1176,6 +1317,23 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             std::fill_n(annDegFitAnchor, kMaxAnnDegeneracyLines * 3, -999.f);
             std::fill_n(annDegFitDir, kMaxAnnDegeneracyLines * 3, -999.f);
             Int_t annDegFitLineN = 0;
+            Float_t creationDegHitsRaw[kMaxAnnDegeneracyPoints * 3];
+            Float_t creationDegHitsProjected[kMaxAnnDegeneracyPoints * 3];
+            std::fill_n(creationDegHitsRaw, kMaxAnnDegeneracyPoints * 3, -999.f);
+            std::fill_n(creationDegHitsProjected, kMaxAnnDegeneracyPoints * 3, -999.f);
+            Int_t creationDegHitsRawN = 0;
+            Int_t creationDegHitsProjectedN = 0;
+            Int_t creationDegParticleRawCount[kMaxAnnDegeneracyLines];
+            Int_t creationDegParticleProjectedCount[kMaxAnnDegeneracyLines];
+            Int_t creationDegParticleTruePDG[kMaxAnnDegeneracyLines];
+            std::fill_n(creationDegParticleRawCount, kMaxAnnDegeneracyLines, 0);
+            std::fill_n(creationDegParticleProjectedCount, kMaxAnnDegeneracyLines, 0);
+            std::fill_n(creationDegParticleTruePDG, kMaxAnnDegeneracyLines, -999);
+            Float_t creationDegFitAnchor[kMaxAnnDegeneracyLines * 3];
+            Float_t creationDegFitDir[kMaxAnnDegeneracyLines * 3];
+            std::fill_n(creationDegFitAnchor, kMaxAnnDegeneracyLines * 3, -999.f);
+            std::fill_n(creationDegFitDir, kMaxAnnDegeneracyLines * 3, -999.f);
+            Int_t creationDegFitLineN = 0;
             Float_t parentTrajDir[3] = {-999.f, -999.f, -999.f};
             Float_t secondTrajDir[3] = {-999.f, -999.f, -999.f};
             Float_t dau1TrajDir[3] = {-999.f, -999.f, -999.f};
@@ -1278,6 +1436,7 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_parentTailHitsProjectedN, parentTailHitsProjectedN);
             if (neutralParticle->AnnihilationVertex) {
                 CollectAnnihilationDegeneracyDisplayPoints(event, neutralParticle->AnnihilationVertex,
+                                                           neutralParticle->CreationVertex,
                                                            (neutralParticle->Parent ? neutralParticle->Parent->UniqueID : -1),
                                                            annDegHitsRaw, annDegHitsRawN,
                                                            annDegHitsProjected, annDegHitsProjectedN,
@@ -1285,6 +1444,17 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                                                            annDegFitAnchor, annDegFitDir, annDegFitLineN,
                                                            kMaxAnnDegeneracyLines,
                                                            kMaxAnnDegeneracyPoints);
+            }
+            if (neutralParticle->CreationVertex) {
+                CollectCreationDegeneracyDisplayPoints(event, neutralParticle->CreationVertex,
+                                                       neutralParticle->AnnihilationVertex,
+                                                       (neutralParticle->Parent ? neutralParticle->Parent->UniqueID : -1),
+                                                       creationDegHitsRaw, creationDegHitsRawN,
+                                                       creationDegHitsProjected, creationDegHitsProjectedN,
+                                                       creationDegParticleRawCount, creationDegParticleProjectedCount,
+                                                       creationDegParticleTruePDG, creationDegFitAnchor, creationDegFitDir,
+                                                       creationDegFitLineN, kMaxAnnDegeneracyLines,
+                                                       kMaxAnnDegeneracyPoints);
             }
             output.FillMatrixVarFromArray(edk0_annDegHitsRaw, annDegHitsRaw, kMaxAnnDegeneracyPoints * 3);
             output.FillMatrixVarFromArray(edk0_annDegHitsProjected, annDegHitsProjected, kMaxAnnDegeneracyPoints * 3);
@@ -1296,6 +1466,16 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillMatrixVarFromArray(edk0_annDegFitAnchor, annDegFitAnchor, kMaxAnnDegeneracyLines * 3);
             output.FillMatrixVarFromArray(edk0_annDegFitDir, annDegFitDir, kMaxAnnDegeneracyLines * 3);
             output.FillVectorVar(edk0_annDegFitLineN, annDegFitLineN);
+            output.FillMatrixVarFromArray(edk0_creationDegHitsRaw, creationDegHitsRaw, kMaxAnnDegeneracyPoints * 3);
+            output.FillMatrixVarFromArray(edk0_creationDegHitsProjected, creationDegHitsProjected, kMaxAnnDegeneracyPoints * 3);
+            output.FillVectorVar(edk0_creationDegHitsRawN, creationDegHitsRawN);
+            output.FillVectorVar(edk0_creationDegHitsProjectedN, creationDegHitsProjectedN);
+            output.FillMatrixVarFromArray(edk0_creationDegParticleRawCount, creationDegParticleRawCount, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_creationDegParticleProjectedCount, creationDegParticleProjectedCount, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_creationDegParticleTruePDG, creationDegParticleTruePDG, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_creationDegFitAnchor, creationDegFitAnchor, kMaxAnnDegeneracyLines * 3);
+            output.FillMatrixVarFromArray(edk0_creationDegFitDir, creationDegFitDir, kMaxAnnDegeneracyLines * 3);
+            output.FillVectorVar(edk0_creationDegFitLineN, creationDegFitLineN);
             output.FillVectorVar(edk0_parentLength, parentLength);
             output.FillMatrixVarFromArray(edk0_parentTrajDir, parentTrajDir, 3);
             Float_t parentTrajHist[kParentTrajHistBins * 3];
@@ -1368,7 +1548,8 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                 annihilationFitPos[2] = (Float_t)neutralParticle->AnnihilationVertex->PositionFit[2];
                 annihilationDeg = pdAnnihilationUtils::ComputeAnnihilationVertexDegeneracyWithExclusion(
                     event, neutralParticle->AnnihilationVertex,
-                    (neutralParticle->Parent ? neutralParticle->Parent->UniqueID : -1));
+                    (neutralParticle->Parent ? neutralParticle->Parent->UniqueID : -1),
+                    neutralParticle->CreationVertex);
             }
             output.FillVectorVar(edk0_annihilationVtxDeg, annihilationDeg);
 
@@ -2160,6 +2341,36 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     if (tree->GetBranch("ED_k0_annDegFitLineN")) {
         tree->SetBranchAddress("ED_k0_annDegFitLineN", _k0_annDegFitLineN);
     }
+    if (tree->GetBranch("ED_k0_creationDegHitsRaw")) {
+        tree->SetBranchAddress("ED_k0_creationDegHitsRaw", _k0_creationDegHitsRaw);
+    }
+    if (tree->GetBranch("ED_k0_creationDegHitsProjected")) {
+        tree->SetBranchAddress("ED_k0_creationDegHitsProjected", _k0_creationDegHitsProjected);
+    }
+    if (tree->GetBranch("ED_k0_creationDegHitsRawN")) {
+        tree->SetBranchAddress("ED_k0_creationDegHitsRawN", _k0_creationDegHitsRawN);
+    }
+    if (tree->GetBranch("ED_k0_creationDegHitsProjectedN")) {
+        tree->SetBranchAddress("ED_k0_creationDegHitsProjectedN", _k0_creationDegHitsProjectedN);
+    }
+    if (tree->GetBranch("ED_k0_creationDegParticleRawCount")) {
+        tree->SetBranchAddress("ED_k0_creationDegParticleRawCount", _k0_creationDegParticleRawCount);
+    }
+    if (tree->GetBranch("ED_k0_creationDegParticleProjectedCount")) {
+        tree->SetBranchAddress("ED_k0_creationDegParticleProjectedCount", _k0_creationDegParticleProjectedCount);
+    }
+    if (tree->GetBranch("ED_k0_creationDegParticleTruePDG")) {
+        tree->SetBranchAddress("ED_k0_creationDegParticleTruePDG", _k0_creationDegParticleTruePDG);
+    }
+    if (tree->GetBranch("ED_k0_creationDegFitAnchor")) {
+        tree->SetBranchAddress("ED_k0_creationDegFitAnchor", _k0_creationDegFitAnchor);
+    }
+    if (tree->GetBranch("ED_k0_creationDegFitDir")) {
+        tree->SetBranchAddress("ED_k0_creationDegFitDir", _k0_creationDegFitDir);
+    }
+    if (tree->GetBranch("ED_k0_creationDegFitLineN")) {
+        tree->SetBranchAddress("ED_k0_creationDegFitLineN", _k0_creationDegFitLineN);
+    }
     tree->SetBranchAddress("ED_k0_parentLength", _k0_parentLength);
     tree->SetBranchAddress("ED_k0_parentTrajDir", _k0_parentTrajDir);
     tree->SetBranchAddress("ED_k0_parentTrajDirHist", _k0_parentTrajDirHist);
@@ -2243,6 +2454,11 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_k0_annDegHitsRawN", "ED_k0_annDegHitsProjectedN",
             "ED_k0_annDegParticleRawCount", "ED_k0_annDegParticleProjectedCount", "ED_k0_annDegParticleTruePDG",
             "ED_k0_annDegFitAnchor", "ED_k0_annDegFitDir", "ED_k0_annDegFitLineN",
+            "ED_k0_creationDegHitsRaw", "ED_k0_creationDegHitsProjected",
+            "ED_k0_creationDegHitsRawN", "ED_k0_creationDegHitsProjectedN",
+            "ED_k0_creationDegParticleRawCount", "ED_k0_creationDegParticleProjectedCount",
+            "ED_k0_creationDegParticleTruePDG",
+            "ED_k0_creationDegFitAnchor", "ED_k0_creationDegFitDir", "ED_k0_creationDegFitLineN",
             "ED_k0_parentTrajDir", "ED_k0_parentTrajDirHist", "ED_k0_parentTrajDirNPts",
             "ED_k0_secondTrajDir", "ED_k0_secondTrajDirNPts",
             "ED_k0_dau1TrajDir", "ED_k0_dau1TrajDirNPts",
@@ -2363,13 +2579,15 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         addElement(trueParticlesGroup, trueParticleGroup);
 
         TEveElementList* recoTrajectoryGroup = makeSubgroup(neutralParticleGroup, "Neutral Trajectory");
-        TEveElementList* creationVertexGroup = makeSubgroup(neutralParticleGroup, "Creation Vertex");
+        TEveElementList* creationVertexGroup =
+            makeSubgroup(neutralParticleGroup, Form("Creation Vertex [deg=%d]", _k0_creationVtxDeg[i]));
         TEveElementList* creationVertexInfoGroup = makeSubgroup(creationVertexGroup, "Vertex");
         TEveElementList* creationParentParticleGroup =
             makeSubgroup(creationVertexGroup, FormatParticleGroupLabel("Parent Particle", _k0_trueParentPDG[i]).c_str());
         TEveElementList* creationSecondParticleGroup =
             makeSubgroup(creationVertexGroup, FormatParticleGroupLabel("Second Particle", _k0_secondParticleTruePDG[i]).c_str());
         TEveElementList* creationSelectionCylinderGroup = makeSubgroup(creationVertexGroup, "Selection Cylinder");
+        TEveElementList* creationDegeneracyGroup = makeSubgroup(creationVertexGroup, "Degeneracy Particles");
         TEveElementList* annihilationVertexGroup =
             makeSubgroup(neutralParticleGroup, Form("Annihilation Vertex [deg=%d]", _k0_annihilationVtxDeg[i]));
         TEveElementList* annihilationVertexInfoGroup = makeSubgroup(annihilationVertexGroup, "Vertex");
@@ -2655,6 +2873,130 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             fitAnchor->SetMainColor(kCyan + 1);
             addElement(creationFitGroup, fitAnchor);
             anchorPoint(fitAnchor, anchor.X(), anchor.Y(), anchor.Z());
+        }
+
+        const Int_t creationDegLineN = std::max(0, std::min(_k0_creationDegFitLineN[i], kMaxAnnDegeneracyLines));
+        Int_t creationDegRawOffset = 0;
+        Int_t creationDegProjectedOffset = 0;
+        for (Int_t l = 0; l < creationDegLineN; ++l) {
+            TEveElementList* creationDegParticleGroup =
+                makeSubgroup(creationDegeneracyGroup,
+                             FormatParticleGroupLabel(Form("Particle %d", l + 1), _k0_creationDegParticleTruePDG[i][l]).c_str());
+            const Int_t rawCount =
+                std::max(0, std::min(_k0_creationDegParticleRawCount[i][l], kMaxAnnDegeneracyPoints - creationDegRawOffset));
+            const Int_t projectedCount =
+                std::max(0, std::min(_k0_creationDegParticleProjectedCount[i][l], kMaxAnnDegeneracyPoints - creationDegProjectedOffset));
+            const Int_t nextCreationDegRawOffset = creationDegRawOffset + rawCount;
+            const Int_t nextCreationDegProjectedOffset = creationDegProjectedOffset + projectedCount;
+
+            if (rawCount > 0) {
+                TEvePointSet* creationDegRaw = new TEvePointSet(Form("K0 #%d Creation Degeneracy Hits Raw %d", i, l));
+                creationDegRaw->SetMarkerStyle(20);
+                creationDegRaw->SetMarkerSize(1.3);
+                creationDegRaw->SetMainColor(kViolet + 1);
+                for (Int_t t = 0; t < rawCount; ++t) {
+                    const Int_t idx = creationDegRawOffset + t;
+                    const Float_t x = _k0_creationDegHitsRaw[i][idx * 3 + 0];
+                    const Float_t y = _k0_creationDegHitsRaw[i][idx * 3 + 1];
+                    const Float_t z = _k0_creationDegHitsRaw[i][idx * 3 + 2];
+                    if (x <= -900.f || y <= -900.f || z <= -900.f) continue;
+                    creationDegRaw->SetNextPoint(x, y, z);
+                    anchorPoint(creationDegRaw, x, y, z);
+                }
+                addElement(creationDegParticleGroup, creationDegRaw);
+            }
+
+            if (projectedCount > 0) {
+                TEvePointSet* creationDegProjected =
+                    new TEvePointSet(Form("K0 #%d Creation Degeneracy Hits Projected %d", i, l));
+                creationDegProjected->SetMarkerStyle(24);
+                creationDegProjected->SetMarkerSize(1.5);
+                creationDegProjected->SetMainColor(kGreen + 2);
+                for (Int_t t = 0; t < projectedCount; ++t) {
+                    const Int_t idx = creationDegProjectedOffset + t;
+                    const Float_t x = _k0_creationDegHitsProjected[i][idx * 3 + 0];
+                    const Float_t y = _k0_creationDegHitsProjected[i][idx * 3 + 1];
+                    const Float_t z = _k0_creationDegHitsProjected[i][idx * 3 + 2];
+                    if (x <= -900.f || y <= -900.f || z <= -900.f) continue;
+                    creationDegProjected->SetNextPoint(x, y, z);
+                    anchorPoint(creationDegProjected, x, y, z);
+                }
+                addElement(creationDegParticleGroup, creationDegProjected);
+            }
+
+            const Float_t anchorX = _k0_creationDegFitAnchor[i][l * 3 + 0];
+            const Float_t anchorY = _k0_creationDegFitAnchor[i][l * 3 + 1];
+            const Float_t anchorZ = _k0_creationDegFitAnchor[i][l * 3 + 2];
+            const Float_t dirX = _k0_creationDegFitDir[i][l * 3 + 0];
+            const Float_t dirY = _k0_creationDegFitDir[i][l * 3 + 1];
+            const Float_t dirZ = _k0_creationDegFitDir[i][l * 3 + 2];
+            if (anchorX <= -900.f || anchorY <= -900.f || anchorZ <= -900.f) {
+                creationDegRawOffset = nextCreationDegRawOffset;
+                creationDegProjectedOffset = nextCreationDegProjectedOffset;
+                continue;
+            }
+            TVector3 creationDegDir(dirX, dirY, dirZ);
+            if (creationDegDir.Mag2() <= 1e-10) {
+                creationDegRawOffset = nextCreationDegRawOffset;
+                creationDegProjectedOffset = nextCreationDegProjectedOffset;
+                continue;
+            }
+            creationDegDir = creationDegDir.Unit();
+            const TVector3 anchor(anchorX, anchorY, anchorZ);
+            const double fitSpan = std::max<double>(std::max<double>(_k0_fitLineLength[i], 20.0), 30.0);
+            const TVector3 lineStart = anchor - fitSpan * creationDegDir;
+            const TVector3 lineEnd = anchor + fitSpan * creationDegDir;
+
+            TEveLine* creationDegLine = new TEveLine(Form("K0 #%d Creation Degeneracy Fit Line %d", i, l));
+            creationDegLine->SetPoint(0, lineStart.X(), lineStart.Y(), lineStart.Z());
+            creationDegLine->SetPoint(1, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+            creationDegLine->SetMainColor(kGreen + 2);
+            creationDegLine->SetLineStyle(2);
+            creationDegLine->SetLineWidth(2);
+            addElement(creationDegParticleGroup, creationDegLine);
+            anchorPoint(creationDegLine, lineStart.X(), lineStart.Y(), lineStart.Z());
+            anchorPoint(creationDegLine, lineEnd.X(), lineEnd.Y(), lineEnd.Z());
+
+            TEvePointSet* creationDegAnchor = new TEvePointSet(Form("K0 #%d Creation Degeneracy Fit Anchor %d", i, l));
+            creationDegAnchor->SetNextPoint(anchor.X(), anchor.Y(), anchor.Z());
+            creationDegAnchor->SetMarkerStyle(43);
+            creationDegAnchor->SetMarkerSize(1.8);
+            creationDegAnchor->SetMainColor(kGreen + 3);
+            addElement(creationDegParticleGroup, creationDegAnchor);
+            anchorPoint(creationDegAnchor, anchor.X(), anchor.Y(), anchor.Z());
+
+            if (_k0_creationVtxPos[i][0] > -900.f &&
+                _k0_creationVtxPos[i][1] > -900.f &&
+                _k0_creationVtxPos[i][2] > -900.f) {
+                const TVector3 creationVertex(_k0_creationVtxPos[i][0],
+                                              _k0_creationVtxPos[i][1],
+                                              _k0_creationVtxPos[i][2]);
+                const TVector3 closestPoint = pdCreationUtils::ProjectPointOntoLine(creationVertex, anchor, creationDegDir);
+                if (HasValidRecoPoint(closestPoint)) {
+                    TEvePointSet* creationDegClosest =
+                        new TEvePointSet(Form("K0 #%d Creation Degeneracy Closest Point %d", i, l));
+                    creationDegClosest->SetNextPoint(closestPoint.X(), closestPoint.Y(), closestPoint.Z());
+                    creationDegClosest->SetMarkerStyle(34);
+                    creationDegClosest->SetMarkerSize(2.0);
+                    creationDegClosest->SetMainColor(kOrange + 7);
+                    addElement(creationDegParticleGroup, creationDegClosest);
+                    anchorPoint(creationDegClosest, closestPoint.X(), closestPoint.Y(), closestPoint.Z());
+
+                    TEveLine* creationDegConnector =
+                        new TEveLine(Form("K0 #%d Creation Degeneracy Vertex Connector %d", i, l));
+                    creationDegConnector->SetPoint(0, creationVertex.X(), creationVertex.Y(), creationVertex.Z());
+                    creationDegConnector->SetPoint(1, closestPoint.X(), closestPoint.Y(), closestPoint.Z());
+                    creationDegConnector->SetMainColor(kOrange + 7);
+                    creationDegConnector->SetLineStyle(3);
+                    creationDegConnector->SetLineWidth(2);
+                    addElement(creationDegParticleGroup, creationDegConnector);
+                    anchorPoint(creationDegConnector, creationVertex.X(), creationVertex.Y(), creationVertex.Z());
+                    anchorPoint(creationDegConnector, closestPoint.X(), closestPoint.Y(), closestPoint.Z());
+                }
+            }
+
+            creationDegRawOffset = nextCreationDegRawOffset;
+            creationDegProjectedOffset = nextCreationDegProjectedOffset;
         }
 
         const Int_t annDegLineN = std::max(0, std::min(_k0_annDegFitLineN[i], kMaxAnnDegeneracyLines));

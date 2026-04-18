@@ -19,9 +19,13 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.CreateEventDisplay = 1 >
 
 --- Annihilation Vertex Finder ------------
-# Pairing threshold on daughter start-position distance (cm).
-# This controls whether two reco daughters are allowed to form an annihilation-vertex candidate.
+# Pairing threshold on daughter endpoint distance (cm); see AnnihilationVertexUseEndpointCombinatorics.
+# When combinatorics is on, distance is the minimum over valid start/end pairs; when off, start–start only.
 < neutralKaonAnalysis.AnnihilationVertexRadius = 5.0 >
+
+# 1 = minimize distance over start/end combinations (SS/SE/ES/EE), then optionally reverse daughters for SE/ES/EE.
+# 0 = plain start–start distance only; PairingEndpointCombo stays SS and no track reversal is applied.
+< neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics = 0 >
 
 # Radius used only for annihilation-vertex degeneracy counting (cm).
 # It is only a loose preselection on raw PositionStart / early hits near the vertex.
@@ -32,11 +36,17 @@ need to be enabled in baseAnalysis parameter file
 < neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance = 2.0 >
 # Maximum distance between the closest point on the fitted line to the vertex and at least one projected PositionStart
 # or projected early hit used as origin support for degeneracy counting (cm).
-< neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance = 10.0 >
+< neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance = 5.0 >
 
 # Minimum number of collection-plane hits required per daughter to create a vertex.
 # Vertex is created only if both daughters satisfy NHitsPerPlane[2] > this value.
 < neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 5 >
+
+# Daughter PID veto when building annihilation vertex candidates (both daughters must pass).
+# Reject if Chi2Proton/Chi2ndf is strictly below this (proton-like).
+< neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow = 50.0 >
+# If not rejected above: reject if pion Chi2PID(211) chi2/ndf is strictly above this (not pion-like enough).
+< neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove = 25.0 >
 
 --- Annihilation Line-Fit Parameters -----------
  < neutralKaonAnalysis.TrackFitLength = 25.0 > //length of track used for line fitting (cm)
@@ -50,14 +60,26 @@ need to be enabled in baseAnalysis parameter file
 
 # Radius (cm) of the creation-candidate cylinder around the parent fitted line, from creation to annihilation position.
 < neutralKaonAnalysis.CreationVertexRadius = 5.0 >
+# Maximum distance between the creation-vertex reference position and a candidate particle fitted line (cm).
+# Set to CreationVertexRadius default-equivalent to match current fallback behavior.
+< neutralKaonAnalysis.CreationVertexLineToVertexDistance = 2.0 >
+# Maximum distance between the closest point on the fitted line to the creation vertex and at least one projected
+# PositionStart or projected early hit used as origin support for creation-degeneracy counting (cm).
+# Set to 0.5 * CreationVertexLineToVertexDistance default-equivalent to match current fallback behavior.
+< neutralKaonAnalysis.CreationVertexOriginSupportDistance = 5.0 >
+
 # Keep second-particle candidates only if proton Chi2/ndf is <= this threshold.
-< neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 150.0 >
+< neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 15000.0 >
+
+# Neutral candidates from annihilation vertices: when 1, keep at most one neutral per vertex (winner among parents).
+# When 0, keep every neutral built for each qualifying parent (no per-vertex elimination).
+< neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex = 1 >
 
 --- ML residual-range dE/dx (annihilation pions) -----------
 # Among interior collection hits, only hits with residual range >= MinRRCm may be discarded as Landau-tail outliers;
 # low-RR hits are never removed. Fraction is the fraction of those high-RR hits (largest dE/dx first) to drop. Set to 0 to disable.
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm = 5.0 >
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction = 0.05 >
+< neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm = 10.0 >
+< neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction = 0.1 >
 
 --- Momentum Assurance Parameters -----------
 # Enable momentum assurance for signal codes only (1=only codes 1,5,6 / 0=all codes)

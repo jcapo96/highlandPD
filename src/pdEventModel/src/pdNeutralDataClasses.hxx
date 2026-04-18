@@ -52,6 +52,8 @@ public:
 	Float_t MinimumDistancePandora;
 	Float_t MinimumDistanceFit;
 	Float_t OriginalDistance;
+	/// Which endpoint pair minimized distance: 0=SS, 1=SE, 2=ES, 3=EE (-1 unset). Used for daughter reversal policy.
+	Int_t PairingEndpointCombo;
 	Int_t Degeneracy;
 	Float_t Momentum;
 	Float_t InvariantMass;

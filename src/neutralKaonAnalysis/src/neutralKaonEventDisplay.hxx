@@ -143,6 +143,16 @@ private:
     Float_t _k0_annDegFitAnchor[kMaxK0][kMaxAnnDegeneracyLines*3];
     Float_t _k0_annDegFitDir[kMaxK0][kMaxAnnDegeneracyLines*3];
     Int_t _k0_annDegFitLineN[kMaxK0];
+    Float_t _k0_creationDegHitsRaw[kMaxK0][kMaxAnnDegeneracyPoints*3];
+    Float_t _k0_creationDegHitsProjected[kMaxK0][kMaxAnnDegeneracyPoints*3];
+    Int_t _k0_creationDegHitsRawN[kMaxK0];
+    Int_t _k0_creationDegHitsProjectedN[kMaxK0];
+    Int_t _k0_creationDegParticleRawCount[kMaxK0][kMaxAnnDegeneracyLines];
+    Int_t _k0_creationDegParticleProjectedCount[kMaxK0][kMaxAnnDegeneracyLines];
+    Int_t _k0_creationDegParticleTruePDG[kMaxK0][kMaxAnnDegeneracyLines];
+    Float_t _k0_creationDegFitAnchor[kMaxK0][kMaxAnnDegeneracyLines*3];
+    Float_t _k0_creationDegFitDir[kMaxK0][kMaxAnnDegeneracyLines*3];
+    Int_t _k0_creationDegFitLineN[kMaxK0];
     Float_t _k0_parentLength[kMaxK0];
     Float_t _k0_parentTrajDir[kMaxK0][3];
     Float_t _k0_parentTrajDirHist[kMaxK0][kParentTrajHistBins*3];
@@ -259,6 +269,16 @@ private:
         edk0_annDegFitAnchor,
         edk0_annDegFitDir,
         edk0_annDegFitLineN,
+        edk0_creationDegHitsRaw,
+        edk0_creationDegHitsProjected,
+        edk0_creationDegHitsRawN,
+        edk0_creationDegHitsProjectedN,
+        edk0_creationDegParticleRawCount,
+        edk0_creationDegParticleProjectedCount,
+        edk0_creationDegParticleTruePDG,
+        edk0_creationDegFitAnchor,
+        edk0_creationDegFitDir,
+        edk0_creationDegFitLineN,
         edk0_parentLength,
         edk0_parentTrajDir,
         edk0_parentTrajDirHist,

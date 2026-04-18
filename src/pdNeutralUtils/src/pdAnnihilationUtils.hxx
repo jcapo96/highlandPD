@@ -7,7 +7,9 @@
 
 namespace pdAnnihilationUtils {
 
-  // Create annihilation-vertex candidates from daughter pairs passing the start-distance cut.
+  // Create annihilation-vertex candidates from daughter pairs passing the endpoint-distance cut
+  // (minimum of SS/SE/ES/EE within maxDaughterDistance). Reversal: SS none; SE/ES/EE flip each daughter
+  // if PositionStart(Z)>PositionEnd(Z), swapping endpoints/directions and reversing TrjPoints and Hits order.
   // Optional outputs return counts before/after overlap filtering by smallest MinimumDistanceFit.
   std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double maxDaughterDistance = 5.0,
                                                        Int_t* nBeforeFiltering = nullptr,
@@ -39,7 +41,15 @@ namespace pdAnnihilationUtils {
   // excluding one reco particle by UniqueID (e.g., neutral parent candidate).
   Int_t ComputeAnnihilationVertexDegeneracyWithExclusion(const AnaEventB& event,
                                                          const AnaAnnihilationVertexPD* vertex,
-                                                         Int_t excludedParticleUniqueID = -1);
+                                                         Int_t excludedParticleUniqueID = -1,
+                                                         const AnaCreationVertexPD* creationVertex = nullptr);
+
+  // Compute creation-vertex degeneracy with the same geometric algorithm used for
+  // annihilation vertices. The annihilation daughters are excluded from counting.
+  Int_t ComputeCreationVertexDegeneracy(const AnaEventB& event,
+                                        const AnaCreationVertexPD* creationVertex,
+                                        const AnaAnnihilationVertexPD* annihilationVertex,
+                                        Int_t excludedParticleUniqueID = -1);
 
 }
 

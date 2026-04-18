@@ -5,6 +5,7 @@
 #include "TVector3.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <unordered_set>
 
 namespace pdAnnihilationUtils {
@@ -17,14 +18,116 @@ bool HasValidStartPosition(const AnaParticlePD* particle) {
           particle->PositionStart[2] > -900.0);
 }
 
+bool HasValidEndPosition(const AnaParticlePD* particle) {
+  if (!particle) return false;
+  return (particle->PositionEnd[0] > -900.0 &&
+          particle->PositionEnd[1] > -900.0 &&
+          particle->PositionEnd[2] > -900.0);
+}
+
 bool HasValidPosition3(const Float_t pos[3]) {
   if (!pos) return false;
   return (pos[0] > -900.0f && pos[1] > -900.0f && pos[2] > -900.0f);
 }
 
+// Endpoint pairing: combo 0=SS, 1=SE, 2=ES, 3=EE; combo -1 if no valid pair.
+struct AnnihilationEndpointPairing {
+  float distance = std::numeric_limits<float>::infinity();
+  int combo = -1;
+};
+
+AnnihilationEndpointPairing BestAnnihilationPairEndpoint(const AnaParticlePD* d1, const AnaParticlePD* d2) {
+  AnnihilationEndpointPairing out;
+  if (!d1 || !d2) return out;
+  const bool v1s = HasValidStartPosition(d1);
+  const bool v1e = HasValidEndPosition(d1);
+  const bool v2s = HasValidStartPosition(d2);
+  const bool v2e = HasValidEndPosition(d2);
+
+  auto consider = [&](int comboId, const Float_t a[4], const Float_t b[4]) {
+    if (!HasValidPosition3(a) || !HasValidPosition3(b)) return;
+    const TVector3 va(a[0], a[1], a[2]);
+    const TVector3 vb(b[0], b[1], b[2]);
+    const float dist = static_cast<float>((va - vb).Mag());
+    if (dist < out.distance) {
+      out.distance = dist;
+      out.combo = comboId;
+    }
+  };
+
+  if (v1s && v2s) consider(0, d1->PositionStart, d2->PositionStart);
+  if (v1s && v2e) consider(1, d1->PositionStart, d2->PositionEnd);
+  if (v1e && v2s) consider(2, d1->PositionEnd, d2->PositionStart);
+  if (v1e && v2e) consider(3, d1->PositionEnd, d2->PositionEnd);
+
+  return out;
+}
+
+// Start–start distance only (legacy/plain pairing). combo=SS so no ApplyAnnihilationPairingReversal.
+AnnihilationEndpointPairing StartStartAnnihilationPairing(const AnaParticlePD* d1, const AnaParticlePD* d2) {
+  AnnihilationEndpointPairing out;
+  if (!d1 || !d2) return out;
+  if (!HasValidStartPosition(d1) || !HasValidStartPosition(d2)) return out;
+  const TVector3 a(d1->PositionStart[0], d1->PositionStart[1], d1->PositionStart[2]);
+  const TVector3 b(d2->PositionStart[0], d2->PositionStart[1], d2->PositionStart[2]);
+  out.distance = static_cast<float>((a - b).Mag());
+  out.combo = 0;
+  return out;
+}
+
+// Swap start/end, reverse trajectory and hit order, flip TrajectoryDirection when start Z > end Z.
+void ReverseParticleIfStartZGreaterThanEndZ(AnaParticlePD* p) {
+  if (!p) return;
+  if (!HasValidStartPosition(p) || !HasValidEndPosition(p)) return;
+  if (p->PositionStart[2] <= p->PositionEnd[2]) return;
+
+  for (int k = 0; k < 4; ++k) {
+    std::swap(p->PositionStart[k], p->PositionEnd[k]);
+  }
+  for (int k = 0; k < 3; ++k) {
+    std::swap(p->DirectionStart[k], p->DirectionEnd[k]);
+  }
+  for (int k = 0; k < 4; ++k) {
+    std::swap(p->PositionStartSCE[k], p->PositionEndSCE[k]);
+  }
+  for (int k = 0; k < 3; ++k) {
+    std::swap(p->DirectionStartSCE[k], p->DirectionEndSCE[k]);
+  }
+  std::swap(p->Momentum, p->MomentumEnd);
+
+  std::reverse(p->TrjPoints.begin(), p->TrjPoints.end());
+  for (int pl = 0; pl < 3; ++pl) {
+    std::reverse(p->Hits[pl].begin(), p->Hits[pl].end());
+  }
+  if (p->TrajectoryDirectionNPoints > 0) {
+    p->TrajectoryDirection = -1.0 * p->TrajectoryDirection;
+  }
+  if (p->Hits[2].size() >= 2) {
+    pdAnaUtils::EstimateHitsDirection(p);
+    pdAnaUtils::ComputeResidualRange(p);
+  }
+}
+
+// SS: no reversal. SE/ES/EE: reverse each daughter if PositionStart(Z) > PositionEnd(Z).
+void ApplyAnnihilationPairingReversal(int combo, AnaParticlePD* d1, AnaParticlePD* d2) {
+  if (combo <= 0) return;
+  ReverseParticleIfStartZGreaterThanEndZ(d1);
+  ReverseParticleIfStartZGreaterThanEndZ(d2);
+}
+
 TVector3 GetAnnihilationVertexPositionForDegeneracy(const AnaAnnihilationVertexPD* vertex) {
   if (vertex && HasValidPosition3(vertex->PositionFit)) {
     return TVector3(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
+  }
+  return TVector3(-999.0, -999.0, -999.0);
+}
+
+TVector3 GetCreationVertexPositionForDegeneracy(const AnaCreationVertexPD* vertex) {
+  if (vertex && HasValidPosition3(vertex->Position)) {
+    return TVector3(vertex->Position[0], vertex->Position[1], vertex->Position[2]);
+  }
+  if (vertex && HasValidPosition3(vertex->PositionPandora)) {
+    return TVector3(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
   }
   return TVector3(-999.0, -999.0, -999.0);
 }
@@ -157,18 +260,79 @@ bool IsVertexDaughter(const AnaAnnihilationVertexPD* vertex, const AnaParticlePD
   return false;
 }
 
-bool IsProtonLikeAndNotPionLike(const AnaParticlePD* particle) {
+Int_t ComputeVertexDegeneracyAtPosition(const AnaEventB& event,
+                                        const TVector3& referencePos,
+                                        double vertexRadius,
+                                        double lineToVertexDistance,
+                                        double originSupportDistance,
+                                        double trackFitLength,
+                                        double trackFitDistanceFromStart,
+                                        const std::unordered_set<Int_t>& excludedUniqueIds,
+                                        const AnaAnnihilationVertexPD* daughterExclusionVertex = nullptr,
+                                        const TVector3* annihilationPosForVeto = nullptr,
+                                        const TVector3* creationPosForVeto = nullptr) {
+  if (!HasValidPoint(referencePos) || vertexRadius <= 0.0 || lineToVertexDistance <= 0.0 ||
+      originSupportDistance <= 0.0) {
+    return 0;
+  }
+
+  const bool applyCreationVsAnnihilationVeto =
+      annihilationPosForVeto && creationPosForVeto && HasValidPoint(*annihilationPosForVeto) &&
+      HasValidPoint(*creationPosForVeto);
+
+  Int_t degeneracy = 0;
+  for (Int_t p = 0; p < event.nParticles; ++p) {
+    AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
+    if (!particle) continue;
+    if (!excludedUniqueIds.empty() && excludedUniqueIds.count(particle->UniqueID) > 0) continue;
+    if (daughterExclusionVertex && IsVertexDaughter(daughterExclusionVertex, particle)) continue;
+    if (!ParticleHasRawTailSupportNearVertex(particle, referencePos, vertexRadius, trackFitDistanceFromStart)) {
+      continue;
+    }
+
+    TVector3 fitAnchor;
+    TVector3 fitDir;
+    if (!GetParticleFitLine(particle, trackFitLength, trackFitDistanceFromStart, fitAnchor, fitDir)) continue;
+    fitDir = fitDir.Unit();
+
+    const TVector3 closestPointToReference = ProjectPointOntoLine(referencePos, fitAnchor, fitDir);
+    if (!HasValidPoint(closestPointToReference)) continue;
+    if ((closestPointToReference - referencePos).Mag() > lineToVertexDistance) continue;
+
+    if (!ParticleHasProjectedTailSupportNearPoint(particle, fitAnchor, fitDir, closestPointToReference,
+                                                  originSupportDistance, trackFitDistanceFromStart)) {
+      continue;
+    }
+
+    if (applyCreationVsAnnihilationVeto) {
+      const TVector3 closestToAnnihilation = ProjectPointOntoLine(*annihilationPosForVeto, fitAnchor, fitDir);
+      const TVector3 closestToCreation = ProjectPointOntoLine(*creationPosForVeto, fitAnchor, fitDir);
+      if (HasValidPoint(closestToAnnihilation) && HasValidPoint(closestToCreation)) {
+        const double dAnnihilation = (closestToAnnihilation - *annihilationPosForVeto).Mag();
+        const double dCreation = (closestToCreation - *creationPosForVeto).Mag();
+        if (dCreation < dAnnihilation) continue;
+      }
+    }
+
+    ++degeneracy;
+  }
+
+  return degeneracy;
+}
+
+bool IsProtonLikeAndNotPionLike(const AnaParticlePD* particle, double protonChi2NdfRejectBelow,
+                                double pionChi2NdfRejectAbove) {
   if (!particle) return false;
   if (particle->Chi2ndf <= 0.f || particle->Chi2Proton <= 0.f) return false;
 
   const double protonChi2Ndf = particle->Chi2Proton / particle->Chi2ndf;
-  if (protonChi2Ndf < 100.0) return true;
+  if (protonChi2Ndf < protonChi2NdfRejectBelow) return true;
 
   const std::pair<double, int> pionPid = pdAnaUtils::Chi2PID(*particle, 211);
   if (pionPid.first < 0.0 || pionPid.second <= 0) return false;
 
   const double pionChi2Ndf = pionPid.first / pionPid.second;
-  return (pionChi2Ndf > 25.0);
+  return (pionChi2Ndf > pionChi2NdfRejectAbove);
 }
 
 enum DaughterMomentumMethod {
@@ -334,41 +498,60 @@ Int_t ComputeAnnihilationVertexDegeneracy(const AnaEventB& event,
                                           double annihilationVertexOriginSupportDistance,
                                           double trackFitLength,
                                           double trackFitDistanceFromStart,
-                                          Int_t excludedParticleUniqueID = -1) {
+                                          Int_t excludedParticleUniqueID = -1,
+                                          const AnaCreationVertexPD* creationVertex = nullptr) {
   if (!vertex || annihilationVertexRadius <= 0.0 || annihilationVertexLineToVertexDistance <= 0.0 ||
       annihilationVertexOriginSupportDistance <= 0.0) {
     return 0;
   }
 
-  const TVector3 vertexPos = GetAnnihilationVertexPositionForDegeneracy(vertex);
-  if (!HasValidPoint(vertexPos)) return 0;
+  const TVector3 annihilationPos = GetAnnihilationVertexPositionForDegeneracy(vertex);
+  if (!HasValidPoint(annihilationPos)) return 0;
 
-  Int_t degeneracy = 0;
-  for (Int_t p = 0; p < event.nParticles; ++p) {
-    AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[p]);
-    if (!particle) continue;
-    if (excludedParticleUniqueID >= 0 && particle->UniqueID == excludedParticleUniqueID) continue;
-    if (IsVertexDaughter(vertex, particle)) continue;
-    if (!ParticleHasRawTailSupportNearVertex(particle, vertexPos, annihilationVertexRadius, trackFitDistanceFromStart)) {
-      continue;
-    }
+  std::unordered_set<Int_t> excludedUniqueIds;
+  if (excludedParticleUniqueID >= 0) {
+    excludedUniqueIds.insert(excludedParticleUniqueID);
+  }
+  const TVector3 creationPos = GetCreationVertexPositionForDegeneracy(creationVertex);
 
-    TVector3 fitAnchor;
-    TVector3 fitDir;
-    if (!GetParticleFitLine(particle, trackFitLength, trackFitDistanceFromStart, fitAnchor, fitDir)) continue;
-    fitDir = fitDir.Unit();
+  return ComputeVertexDegeneracyAtPosition(event, annihilationPos, annihilationVertexRadius,
+                                           annihilationVertexLineToVertexDistance,
+                                           annihilationVertexOriginSupportDistance, trackFitLength,
+                                           trackFitDistanceFromStart, excludedUniqueIds, vertex,
+                                           &annihilationPos, HasValidPoint(creationPos) ? &creationPos : nullptr);
+}
 
-    const TVector3 closestPointToVertex = ProjectPointOntoLine(vertexPos, fitAnchor, fitDir);
-    if (!HasValidPoint(closestPointToVertex)) continue;
-    if ((closestPointToVertex - vertexPos).Mag() > annihilationVertexLineToVertexDistance) continue;
+Int_t ComputeCreationVertexDegeneracy(const AnaEventB& event,
+                                      const AnaCreationVertexPD* creationVertex,
+                                      const AnaAnnihilationVertexPD* annihilationVertex,
+                                      double creationVertexRadius,
+                                      double creationVertexLineToVertexDistance,
+                                      double creationVertexOriginSupportDistance,
+                                      double trackFitLength,
+                                      double trackFitDistanceFromStart,
+                                      Int_t excludedParticleUniqueID = -1) {
+  if (!creationVertex || creationVertexRadius <= 0.0 || creationVertexLineToVertexDistance <= 0.0 ||
+      creationVertexOriginSupportDistance <= 0.0) {
+    return 0;
+  }
+  const TVector3 creationPos = GetCreationVertexPositionForDegeneracy(creationVertex);
+  if (!HasValidPoint(creationPos)) return 0;
 
-    if (ParticleHasProjectedTailSupportNearPoint(particle, fitAnchor, fitDir, closestPointToVertex,
-                                                 annihilationVertexOriginSupportDistance, trackFitDistanceFromStart)) {
-      ++degeneracy;
+  std::unordered_set<Int_t> excludedUniqueIds;
+  if (excludedParticleUniqueID >= 0) {
+    excludedUniqueIds.insert(excludedParticleUniqueID);
+  }
+  if (annihilationVertex) {
+    for (AnaParticlePD* daughter : annihilationVertex->Particles) {
+      if (daughter) excludedUniqueIds.insert(daughter->UniqueID);
     }
   }
 
-  return degeneracy;
+  return ComputeVertexDegeneracyAtPosition(event, creationPos, creationVertexRadius,
+                                           creationVertexLineToVertexDistance,
+                                           creationVertexOriginSupportDistance, trackFitLength,
+                                           trackFitDistanceFromStart, excludedUniqueIds, nullptr,
+                                           nullptr, nullptr);
 }
 
 } // namespace
@@ -382,7 +565,8 @@ Int_t AssignProtonMomentumFromResidualRange(AnaParticlePD* particle) {
 //***************************************************************
 Int_t ComputeAnnihilationVertexDegeneracyWithExclusion(const AnaEventB& event,
                                                        const AnaAnnihilationVertexPD* vertex,
-                                                       Int_t excludedParticleUniqueID) {
+                                                       Int_t excludedParticleUniqueID,
+                                                       const AnaCreationVertexPD* creationVertex) {
 //***************************************************************
   const double annihilationDegeneracyRadius =
       ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius")
@@ -408,7 +592,39 @@ Int_t ComputeAnnihilationVertexDegeneracyWithExclusion(const AnaEventB& event,
   return ComputeAnnihilationVertexDegeneracy(
       event, vertex, annihilationDegeneracyRadius, annihilationDegeneracyLineToVertexDistance,
       annihilationDegeneracyOriginSupportDistance, trackFitLength, trackFitDistanceFromStart,
-      excludedParticleUniqueID);
+      excludedParticleUniqueID, creationVertex);
+}
+
+//***************************************************************
+Int_t ComputeCreationVertexDegeneracy(const AnaEventB& event,
+                                      const AnaCreationVertexPD* creationVertex,
+                                      const AnaAnnihilationVertexPD* annihilationVertex,
+                                      Int_t excludedParticleUniqueID) {
+//***************************************************************
+  const double degeneracyRadius =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius")
+          : 0.0;
+  const double lineToVertexDistance =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance")
+          : 0.0;
+  const double originSupportDistance =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance")
+          : 0.5 * lineToVertexDistance;
+  const double trackFitLength =
+      ND::params().HasParameter("neutralKaonAnalysis.TrackFitLength")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength")
+          : 0.0;
+  const double trackFitDistanceFromStart =
+      ND::params().HasParameter("neutralKaonAnalysis.TrackFitDistanceFromStart")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart")
+          : 0.0;
+
+  return ComputeCreationVertexDegeneracy(event, creationVertex, annihilationVertex, degeneracyRadius,
+                                         lineToVertexDistance, originSupportDistance, trackFitLength,
+                                         trackFitDistanceFromStart, excludedParticleUniqueID);
 }
 
 //***************************************************************
@@ -670,6 +886,18 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
           : 0.5 * annihilationDegeneracyLineToVertexDistance;
   const int minCollectionHitsPerDaughter =
       ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexMinCollectionHits");
+  const double annihilationProtonChi2NdfRejectBelow =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow")
+          : 100.0;
+  const double annihilationPionChi2NdfRejectAbove =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
+          : 25.0;
+  const int annihilationUseEndpointCombinatorics =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics")
+          : 1;
 
   std::vector<AnaAnnihilationVertexPD*> reconstructedVertices;
   int vertexID = 0;
@@ -679,7 +907,9 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
     if (!daughter1) continue;
     if (daughter1->PositionStart[0] < -900 || daughter1->PositionStart[1] < -900 || daughter1->PositionStart[2] < -900) continue;
     if (daughter1->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
-    if (IsProtonLikeAndNotPionLike(daughter1)) continue;
+    if (IsProtonLikeAndNotPionLike(daughter1, annihilationProtonChi2NdfRejectBelow,
+                                   annihilationPionChi2NdfRejectAbove))
+      continue;
 
     for (int j = i + 1; j < nParts; ++j) {
       AnaParticlePD* daughter2 = static_cast<AnaParticlePD*>(parts[j]);
@@ -687,27 +917,26 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       if (daughter1->ParentID != daughter2->ParentID) continue;
       if (daughter2->PositionStart[0] < -900 || daughter2->PositionStart[1] < -900 || daughter2->PositionStart[2] < -900) continue;
       if (daughter2->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
-      if (IsProtonLikeAndNotPionLike(daughter2)) continue;
+      if (IsProtonLikeAndNotPionLike(daughter2, annihilationProtonChi2NdfRejectBelow,
+                                     annihilationPionChi2NdfRejectAbove))
+        continue;
 
-      TVector3 s1(daughter1->PositionStart[0], daughter1->PositionStart[1], daughter1->PositionStart[2]);
-      TVector3 s2(daughter2->PositionStart[0], daughter2->PositionStart[1], daughter2->PositionStart[2]);
-      float distance = (s1 - s2).Mag();
-      if (distance > maxDaughterDistance) continue;
+      const AnnihilationEndpointPairing pairing =
+          (annihilationUseEndpointCombinatorics != 0) ? BestAnnihilationPairEndpoint(daughter1, daughter2)
+                                                      : StartStartAnnihilationPairing(daughter1, daughter2);
+      if (!std::isfinite(pairing.distance) || pairing.distance > maxDaughterDistance) continue;
 
       AnaAnnihilationVertexPD* reconstructedVertex = new AnaAnnihilationVertexPD();
-      reconstructedVertex->OriginalDistance = distance;
+      reconstructedVertex->OriginalDistance = pairing.distance;
+      reconstructedVertex->PairingEndpointCombo = pairing.combo;
       reconstructedVertex->UniqueID = vertexID++;
       reconstructedVertex->Particles.push_back(daughter1);
       reconstructedVertex->Particles.push_back(daughter2);
       reconstructedVertex->NParticles = reconstructedVertex->Particles.size();
 
+      // Pre-reversal fit for overlap filtering (MinimumDistanceFit); refined after ApplyAnnihilationPairingReversal.
       FillPositionPandora(reconstructedVertex);
       FillPositionFit(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
-      reconstructedVertex->Degeneracy =
-          ComputeAnnihilationVertexDegeneracy(event, reconstructedVertex, annihilationDegeneracyRadius,
-                                             annihilationDegeneracyLineToVertexDistance,
-                                             annihilationDegeneracyOriginSupportDistance, trackFitLength,
-                                             trackFitDistanceFromStart);
       reconstructedVertices.push_back(reconstructedVertex);
     }
   }
@@ -718,6 +947,21 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
   std::vector<AnaAnnihilationVertexPD*> filteredVertices = FilterVerticesByMinimumDistanceFit(reconstructedVertices);
   if (nAfterFiltering) {
     *nAfterFiltering = static_cast<Int_t>(filteredVertices.size());
+  }
+
+  for (AnaAnnihilationVertexPD* vertex : filteredVertices) {
+    if (!vertex || vertex->Particles.size() < 2) continue;
+    AnaParticlePD* d1 = vertex->Particles[0];
+    AnaParticlePD* d2 = vertex->Particles[1];
+    if (!d1 || !d2) continue;
+    ApplyAnnihilationPairingReversal(vertex->PairingEndpointCombo, d1, d2);
+    FillPositionPandora(vertex);
+    FillPositionFit(vertex, trackFitLength, trackFitDistanceFromStart);
+    vertex->Degeneracy =
+        ComputeAnnihilationVertexDegeneracy(event, vertex, annihilationDegeneracyRadius,
+                                           annihilationDegeneracyLineToVertexDistance,
+                                           annihilationDegeneracyOriginSupportDistance, trackFitLength,
+                                           trackFitDistanceFromStart);
   }
 
   for (AnaAnnihilationVertexPD* vertex : filteredVertices) {

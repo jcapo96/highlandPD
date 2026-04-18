@@ -23,7 +23,8 @@ namespace neutralKaonTree {
   void FillNeutralKaonVariables_K0Parent(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0CreationVtx(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event,
-                                      Int_t excludedParentUniqueID = -1);
+                                      Int_t excludedParentUniqueID = -1,
+                                      AnaCreationVertexPD* creationVertex = nullptr);
   void FillNeutralKaonVariables_K0vtxDaughters(OutputManager& output, AnaAnnihilationVertexPD* vertex, const AnaEventB& event);
   void FillNeutralKaonVariables_K0Kinematics(OutputManager& output, AnaNeutralParticlePD* candidate);
   void FillNeutralKaonVariables_K0AlignVariants(OutputManager& output, AnaNeutralParticlePD* candidate);
@@ -78,6 +79,7 @@ namespace neutralKaonTree {
     k0creationfitx, // Reco K0 creation Fit x from projected parent end [cm]
     k0creationfity, // Reco K0 creation Fit y from projected parent end [cm]
     k0creationfitz, // Reco K0 creation Fit z from projected parent end [cm]
+    k0creationdegeneracy, // K0 creation-vertex degeneracy count from geometric support algorithm
     // Reco K0 direction: Pandora variant
     k0directionpandorax, // Reco K0 direction Pandora (normalized) x component
     k0directionpandoray, // Reco K0 direction Pandora (normalized) y component
@@ -212,6 +214,7 @@ namespace neutralKaonTree {
     k0vtxdau2ndaughtersreco, // Reco number of daughters of vertex daughter 2
     k0vtxdau1nrecodau, // Number of true daughters of daughter 1 with at least one reco object
     k0vtxdau2nrecodau, // Number of true daughters of daughter 2 with at least one reco object
+    k0vtxdaughtersrecovisiblee, // Sum visible calo energy [GeV] in reco daughter subtrees of both vertex pions (coll. plane)
   enumNeutralKaonMicroTreesLast
   };
 }
