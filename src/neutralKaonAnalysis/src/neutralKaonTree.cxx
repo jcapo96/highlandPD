@@ -449,6 +449,10 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
   AddVarMaxSizeVI(output, k0vtxdau2ndaughtersreco, "Reco number of daughters for daughter 2", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1nrecodau, "Number of true daughters of daughter 1 with reco match", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2nrecodau, "Number of true daughters of daughter 2 with reco match", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1recovisiblee,
+                  "Visible calo energy [GeV] in reco daughter subtree of vertex pion 1 (coll. plane dE/dx*dx)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2recovisiblee,
+                  "Visible calo energy [GeV] in reco daughter subtree of vertex pion 2 (coll. plane dE/dx*dx)", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdaughtersrecovisiblee,
                   "Visible calo energy [GeV] in reco daughter subtrees of both vertex pions (coll. plane dE/dx*dx)", nk0,
                   nmax);
@@ -1474,6 +1478,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   Int_t k0vtxdau2ndaughtersreco_val = -1;
   Int_t k0vtxdau1nrecodau_val = -1;
   Int_t k0vtxdau2nrecodau_val = -1;
+  Float_t k0vtxdau1recovisiblee_val = -999.0f;
+  Float_t k0vtxdau2recovisiblee_val = -999.0f;
   Float_t k0vtxdaughtersrecovisiblee_val = -999.0f;
 
   if (vertex) {
@@ -1570,9 +1576,17 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
         }
       }
 
-      const double visMeV =
-          SumRecoDaughterSubtreesVisibleEnergyMeV(recoParticle1) + SumRecoDaughterSubtreesVisibleEnergyMeV(recoParticle2);
-      k0vtxdaughtersrecovisiblee_val = static_cast<Float_t>(visMeV / 1000.0);
+      double vis1MeV = 0.;
+      double vis2MeV = 0.;
+      if (recoParticle1) {
+        vis1MeV = SumRecoDaughterSubtreesVisibleEnergyMeV(recoParticle1);
+        k0vtxdau1recovisiblee_val = static_cast<Float_t>(vis1MeV / 1000.0);
+      }
+      if (recoParticle2) {
+        vis2MeV = SumRecoDaughterSubtreesVisibleEnergyMeV(recoParticle2);
+        k0vtxdau2recovisiblee_val = static_cast<Float_t>(vis2MeV / 1000.0);
+      }
+      k0vtxdaughtersrecovisiblee_val = static_cast<Float_t>((vis1MeV + vis2MeV) / 1000.0);
     }
   }
 
@@ -1626,6 +1640,8 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxdau2ndaughtersreco, k0vtxdau2ndaughtersreco_val);
   output.FillVectorVar(k0vtxdau1nrecodau, k0vtxdau1nrecodau_val);
   output.FillVectorVar(k0vtxdau2nrecodau, k0vtxdau2nrecodau_val);
+  output.FillVectorVar(k0vtxdau1recovisiblee, k0vtxdau1recovisiblee_val);
+  output.FillVectorVar(k0vtxdau2recovisiblee, k0vtxdau2recovisiblee_val);
   output.FillVectorVar(k0vtxdaughtersrecovisiblee, k0vtxdaughtersrecovisiblee_val);
 }
 

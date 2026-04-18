@@ -214,6 +214,8 @@ namespace neutralKaonTree {
     k0vtxdau2ndaughtersreco, // Reco number of daughters of vertex daughter 2
     k0vtxdau1nrecodau, // Number of true daughters of daughter 1 with at least one reco object
     k0vtxdau2nrecodau, // Number of true daughters of daughter 2 with at least one reco object
+    k0vtxdau1recovisiblee, // Visible calo energy [GeV] in reco daughter subtree of vertex pion 1 (coll. plane)
+    k0vtxdau2recovisiblee, // Visible calo energy [GeV] in reco daughter subtree of vertex pion 2 (coll. plane)
     k0vtxdaughtersrecovisiblee, // Sum visible calo energy [GeV] in reco daughter subtrees of both vertex pions (coll. plane)
   enumNeutralKaonMicroTreesLast
   };
