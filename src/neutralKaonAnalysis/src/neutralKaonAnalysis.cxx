@@ -68,6 +68,46 @@ namespace {
     return m;
   }
 
+  // Rest mass (MeV) for common MC secondaries; unknown PDG -> 0 (E ~ |p| for highly relativistic).
+  double TrueRestMassMeV(Int_t pdg){
+    const int ap = std::abs(static_cast<int>(pdg));
+    switch(ap){
+      case 211:
+        return 139.57;
+      case 111:
+        return 134.98;
+      case 2212:
+        return 938.27;
+      case 2112:
+        return 939.57;
+      case 11:
+        return 0.511;
+      case 13:
+        return 105.66;
+      case 321:
+        return 493.68;
+      case 310:
+      case 130:
+        return 497.61;
+      case 22:
+        return 0.0;
+      case 12:
+      case 14:
+      case 16:
+        return 0.0;
+      default:
+        return 0.0;
+    }
+  }
+
+  Float_t TrueTotalEnergyGeV(const AnaTrueParticlePD* truePart, bool atEnd){
+    if(!truePart) return static_cast<Float_t>(-999.0);
+    const double p = static_cast<double>(atEnd ? truePart->MomentumEnd : truePart->Momentum);
+    if(!std::isfinite(p) || p < 0.0) return static_cast<Float_t>(-999.0);
+    const double mGeV = TrueRestMassMeV(truePart->PDG) / 1000.0;
+    return static_cast<Float_t>(std::sqrt(p * p + mGeV * mGeV));
+  }
+
   // Same as neutralKaonTree: |PositionEnd - Position| when both vertices are valid (not AnaTrueParticle::Length).
   bool IsValidTruePos3(Float_t x, Float_t y, Float_t z){
     return std::isfinite(x) && std::isfinite(y) && std::isfinite(z) && x > -900.f && y > -900.f && z > -900.f;
@@ -534,6 +574,27 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
     return {nQual, hitsTot};
   };
 
+  auto trueSubDaughterRecoTrueEnergySum = [&](const AnaTrueParticlePD* mother) -> Float_t {
+    if(!mother) return static_cast<Float_t>(-999.0);
+    double sumGeV = 0.0;
+    for(Int_t childId : mother->Daughters){
+      AnaTrueParticlePD* childTrue = nullptr;
+      for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if(tp && tp->ID == childId){
+          childTrue = tp;
+          break;
+        }
+      }
+      if(!childTrue) continue;
+      AnaParticlePD* childReco = findRecoFromTrue(childTrue, false);
+      if(!HasRecoObjectForTruthFlags(childReco)) continue;
+      const Float_t eGeV = TrueTotalEnergyGeV(childTrue, false);
+      if(std::isfinite(eGeV) && eGeV >= 0.f && eGeV < 1.e4f) sumGeV += static_cast<double>(eGeV);
+    }
+    return static_cast<Float_t>(sumGeV);
+  };
+
   const std::pair<Int_t, Int_t> daughter1TrueSubReco = trueSubDaughterRecoStats(daughter1True);
   const std::pair<Int_t, Int_t> daughter2TrueSubReco = trueSubDaughterRecoStats(daughter2True);
 
@@ -630,6 +691,12 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
   const Float_t daughter2TrueStartMomentum = TrueScalarMomentum(daughter2True, false);
   const Float_t daughter2TrueEndMomentum = TrueScalarMomentum(daughter2True, true);
 
+  const Float_t k0TrueEnergy = TrueTotalEnergyGeV(&part, false);
+  const Float_t daughter1TrueEnergy = TrueTotalEnergyGeV(daughter1True, false);
+  const Float_t daughter2TrueEnergy = TrueTotalEnergyGeV(daughter2True, false);
+  const Float_t daughter1TrueSubRecoEnergySum = trueSubDaughterRecoTrueEnergySum(daughter1True);
+  const Float_t daughter2TrueSubRecoEnergySum = trueSubDaughterRecoTrueEnergySum(daughter2True);
+
   const Int_t k0TruePdg = part.PDG;
   const Int_t parentTruePdg = parentTrue ? parentTrue->PDG : -999;
   const Int_t daughter1TruePdg = daughter1True ? daughter1True->PDG : -999;
@@ -652,6 +719,40 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 
   const Int_t parentIsPandoraBeam =
     (parentReco && parentReco->isPandora) ? 1 : 0;
+
+  Int_t parentExactlyOneRecoProtonNearK0Creation = 0;
+  if(parentTrue && HasValidTrueStart(&part)){
+    const double creationRadiusCm = ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius");
+    const double k0x = static_cast<double>(part.Position[0]);
+    const double k0y = static_cast<double>(part.Position[1]);
+    const double k0z = static_cast<double>(part.Position[2]);
+
+    int nRecoProtonsFromParent = 0;
+    AnaParticlePD* soleRecoProton = nullptr;
+    for(Int_t childId : parentTrue->Daughters){
+      AnaTrueParticlePD* childTrue = nullptr;
+      for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if(tp && tp->ID == childId){
+          childTrue = tp;
+          break;
+        }
+      }
+      if(!childTrue || childTrue->PDG != 2212) continue;
+      AnaParticlePD* protonReco = findRecoFromTrue(childTrue, false);
+      if(!HasRecoObjectForTruthFlags(protonReco)) continue;
+      ++nRecoProtonsFromParent;
+      soleRecoProton = protonReco;
+    }
+
+    if(nRecoProtonsFromParent == 1 && soleRecoProton && HasValidRecoStart(soleRecoProton)){
+      const double dx = static_cast<double>(soleRecoProton->PositionStart[0]) - k0x;
+      const double dy = static_cast<double>(soleRecoProton->PositionStart[1]) - k0y;
+      const double dz = static_cast<double>(soleRecoProton->PositionStart[2]) - k0z;
+      const double distCm = std::sqrt(dx * dx + dy * dy + dz * dz);
+      if(distCm <= creationRadiusCm) parentExactlyOneRecoProtonNearK0Creation = 1;
+    }
+  }
 
   neutralKaonTruthTree::FillNeutralKaonTruthVariables(output(),
                                                       parentHasReco,
@@ -684,6 +785,11 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       daughter1TrueEndMomentum,
                                                       daughter2TrueStartMomentum,
                                                       daughter2TrueEndMomentum,
+                                                      k0TrueEnergy,
+                                                      daughter1TrueEnergy,
+                                                      daughter2TrueEnergy,
+                                                      daughter1TrueSubRecoEnergySum,
+                                                      daughter2TrueSubRecoEnergySum,
                                                       k0TruePdg,
                                                       parentTruePdg,
                                                       daughter1TruePdg,
@@ -707,7 +813,8 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       parentRecoZStartGreaterThanEnd,
                                                       daughter1RecoZStartGreaterThanEnd,
                                                       daughter2RecoZStartGreaterThanEnd,
-                                                      parentIsPandoraBeam);
+                                                      parentIsPandoraBeam,
+                                                      parentExactlyOneRecoProtonNearK0Creation);
   output().IncrementCounter(neutralKaonTruthTree::ntruek0);
 }
 

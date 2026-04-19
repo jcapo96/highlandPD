@@ -59,6 +59,7 @@ need to be enabled in baseAnalysis parameter file
  # The tail segment used for projection is derived from TrackFitDistanceCreationFromEnd.
 
 # Radius (cm) of the creation-candidate cylinder around the parent fitted line, from creation to annihilation position.
+# Truth-tree k0pardonerecoprotonatcreation: proton reco PositionStart must be within this distance of true K0 birth.
 < neutralKaonAnalysis.CreationVertexRadius = 5.0 >
 # Maximum distance between the creation-vertex reference position and a candidate particle fitted line (cm).
 # Set to CreationVertexRadius default-equivalent to match current fallback behavior.

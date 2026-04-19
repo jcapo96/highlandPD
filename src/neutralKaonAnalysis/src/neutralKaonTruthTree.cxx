@@ -46,6 +46,7 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
     AddVarMaxSizeVF(output, k0dau2recopionchi2ndf,
                     "Chi2PID(211)/npts K0 daughter2 (annihilation-style)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0truemomentum, "True momentum magnitude for K0 (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0trueenergy, "True total energy at K0 trajectory start sqrt(p^2+m^2) (GeV)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0partruestartmom,
                     "True start momentum magnitude for K0 parent (GeV/c)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0partrueendmom,
@@ -58,6 +59,10 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
                     "True start momentum magnitude for K0 daughter2 (GeV/c)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau2trueendmom,
                     "True end momentum magnitude for K0 daughter2 (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1trueenergy,
+                    "True total energy at start for K0 daughter1 sqrt(p^2+m^2) (GeV)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2trueenergy,
+                    "True total energy at start for K0 daughter2 sqrt(p^2+m^2) (GeV)", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0truepdg, "True PDG of K0", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0partruepdg, "True PDG of K0 parent", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau1truepdg, "True PDG of K0 daughter1", ntruek0, nmax);
@@ -77,6 +82,12 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
                     "True sub-daughters of K0 daughter2 with valid reco (start/end + hits)", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau2truensubrecohitstot, "Sum reco NHits over those sub-daughters (daughter2)", ntruek0,
                     nmax);
+    AddVarMaxSizeVF(output, k0dau1truesubrecoenergy,
+                    "Sum true E at start (GeV) over direct true daughters of K0 daughter1 with valid reco", ntruek0,
+                    nmax);
+    AddVarMaxSizeVF(output, k0dau2truesubrecoenergy,
+                    "Sum true E at start (GeV) over direct true daughters of K0 daughter2 with valid reco", ntruek0,
+                    nmax);
     AddVarMaxSizeVI(output, k0parrecohits, "Reco NHits true parent of K0", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0partruelength, "True |end-start| K0 parent (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0parrecolength, "Reco length K0 parent (cm)", ntruek0, nmax);
@@ -92,6 +103,10 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
                     "1 if K0 daughter2 reco startZ > endZ", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0parispandorabeam,
                     "1 if K0 parent reco is Pandora beam (isPandora)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0pardonerecoprotonatcreation,
+                    "1 iff exactly one parent true-daughter proton (2212) has valid reco start near true K0 birth "
+                    "(CreationVertexRadius)",
+                    ntruek0, nmax);
 }
 
 //********************************************************************
@@ -126,6 +141,11 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
                                                          Float_t daughter1TrueEndMomentum,
                                                          Float_t daughter2TrueStartMomentum,
                                                          Float_t daughter2TrueEndMomentum,
+                                                         Float_t k0TrueEnergy,
+                                                         Float_t daughter1TrueEnergy,
+                                                         Float_t daughter2TrueEnergy,
+                                                         Float_t daughter1TrueSubRecoEnergySum,
+                                                         Float_t daughter2TrueSubRecoEnergySum,
                                                          Int_t k0TruePdg,
                                                          Int_t parentTruePdg,
                                                          Int_t daughter1TruePdg,
@@ -149,7 +169,8 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
                                                          Int_t parentRecoZStartGreaterThanEnd,
                                                          Int_t daughter1RecoZStartGreaterThanEnd,
                                                          Int_t daughter2RecoZStartGreaterThanEnd,
-                                                         Int_t parentIsPandoraBeam){
+                                                         Int_t parentIsPandoraBeam,
+                                                         Int_t parentExactlyOneRecoProtonNearK0Creation){
     output.FillVectorVar(k0parhasrecoobject, parentHasRecoObject ? 1 : 0);
     output.FillVectorVar(k0dau1hasrecoobject, daughter1HasRecoObject ? 1 : 0);
     output.FillVectorVar(k0dau2hasrecoobject, daughter2HasRecoObject ? 1 : 0);
@@ -174,12 +195,15 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
     output.FillVectorVar(k0dau2recokaonchi2ndf, daughter2RecoKaonChi2Ndf);
     output.FillVectorVar(k0dau2recopionchi2ndf, daughter2RecoPionChi2Ndf);
     output.FillVectorVar(k0truemomentum, k0TrueMomentum);
+    output.FillVectorVar(k0trueenergy, k0TrueEnergy);
     output.FillVectorVar(k0partruestartmom, parentTrueStartMomentum);
     output.FillVectorVar(k0partrueendmom, parentTrueEndMomentum);
     output.FillVectorVar(k0dau1truestartmom, daughter1TrueStartMomentum);
     output.FillVectorVar(k0dau1trueendmom, daughter1TrueEndMomentum);
     output.FillVectorVar(k0dau2truestartmom, daughter2TrueStartMomentum);
     output.FillVectorVar(k0dau2trueendmom, daughter2TrueEndMomentum);
+    output.FillVectorVar(k0dau1trueenergy, daughter1TrueEnergy);
+    output.FillVectorVar(k0dau2trueenergy, daughter2TrueEnergy);
     output.FillVectorVar(k0truepdg, k0TruePdg);
     output.FillVectorVar(k0partruepdg, parentTruePdg);
     output.FillVectorVar(k0dau1truepdg, daughter1TruePdg);
@@ -195,6 +219,8 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
     output.FillVectorVar(k0dau1truensubrecohitstot, daughter1TrueSubRecoQualHitsTot);
     output.FillVectorVar(k0dau2truensubreco, daughter2TrueSubRecoQualCount);
     output.FillVectorVar(k0dau2truensubrecohitstot, daughter2TrueSubRecoQualHitsTot);
+    output.FillVectorVar(k0dau1truesubrecoenergy, daughter1TrueSubRecoEnergySum);
+    output.FillVectorVar(k0dau2truesubrecoenergy, daughter2TrueSubRecoEnergySum);
     output.FillVectorVar(k0parrecohits, parentRecoNHits);
     output.FillVectorVar(k0partruelength, parentTrueLength);
     output.FillVectorVar(k0parrecolength, parentRecoLength);
@@ -204,4 +230,5 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
     output.FillVectorVar(k0dau1recozstartgtzend, daughter1RecoZStartGreaterThanEnd);
     output.FillVectorVar(k0dau2recozstartgtzend, daughter2RecoZStartGreaterThanEnd);
     output.FillVectorVar(k0parispandorabeam, parentIsPandoraBeam);
+    output.FillVectorVar(k0pardonerecoprotonatcreation, parentExactlyOneRecoProtonNearK0Creation);
 }

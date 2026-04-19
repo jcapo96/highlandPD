@@ -39,6 +39,11 @@ namespace neutralKaonTruthTree{
                                      Float_t daughter1TrueEndMomentum,
                                      Float_t daughter2TrueStartMomentum,
                                      Float_t daughter2TrueEndMomentum,
+                                     Float_t k0TrueEnergy,
+                                     Float_t daughter1TrueEnergy,
+                                     Float_t daughter2TrueEnergy,
+                                     Float_t daughter1TrueSubRecoEnergySum,
+                                     Float_t daughter2TrueSubRecoEnergySum,
                                      Int_t k0TruePdg,
                                      Int_t parentTruePdg,
                                      Int_t daughter1TruePdg,
@@ -62,7 +67,8 @@ namespace neutralKaonTruthTree{
                                      Int_t parentRecoZStartGreaterThanEnd,
                                      Int_t daughter1RecoZStartGreaterThanEnd,
                                      Int_t daughter2RecoZStartGreaterThanEnd,
-                                     Int_t parentIsPandoraBeam);
+                                     Int_t parentIsPandoraBeam,
+                                     Int_t parentExactlyOneRecoProtonNearK0Creation);
 
   // enum with unique indexes for output tree variables (true K0s -> pi+ pi- only; see FillTruthTree)
   enum enumNeutralKaonTruthMicroTrees{
@@ -91,12 +97,15 @@ namespace neutralKaonTruthTree{
     k0dau2recokaonchi2ndf, // Chi2PID(321)/npts collection plane (-999 if invalid)
     k0dau2recopionchi2ndf, // Chi2PID(211)/npts collection plane, same as annihilation vertex logic (-999 if invalid)
     k0truemomentum, // True |p| at K0 trajectory start (MC Momentum; -999 if unavailable)
+    k0trueenergy, // True total energy sqrt(p^2+m^2) at K0 trajectory start (GeV; -999 if unavailable)
     k0partruestartmom, // True |p| at start for true K0 parent (-999 if no parent)
     k0partrueendmom, // True |p| at end for true K0 parent (-999 if no parent)
     k0dau1truestartmom, // True |p| at start for true daughter 1 (Daughters[0])
     k0dau1trueendmom, // True |p| at end for true daughter 1
     k0dau2truestartmom, // True |p| at start for true daughter 2 (Daughters[1])
     k0dau2trueendmom, // True |p| at end for true daughter 2
+    k0dau1trueenergy, // True total energy at start for daughter 1 (GeV; -999 if unavailable)
+    k0dau2trueenergy, // True total energy at start for daughter 2 (GeV; -999 if unavailable)
     k0truepdg, // True PDG of the K0 (this row)
     k0partruepdg, // True PDG of K0 parent (-999 if parent not found in spill)
     k0dau1truepdg, // True PDG of daughter 1 (Daughters[0])
@@ -112,6 +121,8 @@ namespace neutralKaonTruthTree{
     k0dau1truensubrecohitstot, // Sum of reco NHits over those sub-daughters (0 if none)
     k0dau2truensubreco, // Same for true daughter 2
     k0dau2truensubrecohitstot,
+    k0dau1truesubrecoenergy, // Sum true E at start (GeV) over direct true daughters of daughter 1 with valid reco (0 if none)
+    k0dau2truesubrecoenergy, // Same for daughter 2
     k0parrecohits, // Reco NHits for true K0 parent (-999 if no reco)
     k0partruelength, // |PositionEnd-Position| for K0 parent (cm; -999 if no parent / invalid verts)
     k0parrecolength, // Reco Length for K0 parent (cm; -999 if no reco)
@@ -121,6 +132,7 @@ namespace neutralKaonTruthTree{
     k0dau1recozstartgtzend, // same for daughter1 reco
     k0dau2recozstartgtzend, // same for daughter2 reco
     k0parispandorabeam, // 1 if reco matched to true K0 parent has isPandora (Pandora beam); else 0
+    k0pardonerecoprotonatcreation, // 1 iff exactly one true daughter of K0's true parent is proton (2212) with valid reco and reco start within CreationVertexRadius of true K0 birth; else 0
 
     enumNeutralKaonTruthMicroTreesLast_neutralKaonTruthTree
   };
