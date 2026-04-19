@@ -720,15 +720,11 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
   const Int_t parentIsPandoraBeam =
     (parentReco && parentReco->isPandora) ? 1 : 0;
 
+  // Among true K0 parent's direct true daughters: exactly one has valid reco, and that particle is a proton (2212).
   Int_t parentExactlyOneRecoProtonNearK0Creation = 0;
-  if(parentTrue && HasValidTrueStart(&part)){
-    const double creationRadiusCm = ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius");
-    const double k0x = static_cast<double>(part.Position[0]);
-    const double k0y = static_cast<double>(part.Position[1]);
-    const double k0z = static_cast<double>(part.Position[2]);
-
-    int nRecoProtonsFromParent = 0;
-    AnaParticlePD* soleRecoProton = nullptr;
+  if(parentTrue){
+    int nSiblingsWithReco = 0;
+    AnaTrueParticlePD* soleSiblingTrueWithReco = nullptr;
     for(Int_t childId : parentTrue->Daughters){
       AnaTrueParticlePD* childTrue = nullptr;
       for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
@@ -738,20 +734,14 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
           break;
         }
       }
-      if(!childTrue || childTrue->PDG != 2212) continue;
-      AnaParticlePD* protonReco = findRecoFromTrue(childTrue, false);
-      if(!HasRecoObjectForTruthFlags(protonReco)) continue;
-      ++nRecoProtonsFromParent;
-      soleRecoProton = protonReco;
+      if(!childTrue) continue;
+      AnaParticlePD* siblingReco = findRecoFromTrue(childTrue, false);
+      if(!HasRecoObjectForTruthFlags(siblingReco)) continue;
+      ++nSiblingsWithReco;
+      soleSiblingTrueWithReco = childTrue;
     }
-
-    if(nRecoProtonsFromParent == 1 && soleRecoProton && HasValidRecoStart(soleRecoProton)){
-      const double dx = static_cast<double>(soleRecoProton->PositionStart[0]) - k0x;
-      const double dy = static_cast<double>(soleRecoProton->PositionStart[1]) - k0y;
-      const double dz = static_cast<double>(soleRecoProton->PositionStart[2]) - k0z;
-      const double distCm = std::sqrt(dx * dx + dy * dy + dz * dz);
-      if(distCm <= creationRadiusCm) parentExactlyOneRecoProtonNearK0Creation = 1;
-    }
+    if(nSiblingsWithReco == 1 && soleSiblingTrueWithReco && soleSiblingTrueWithReco->PDG == 2212)
+      parentExactlyOneRecoProtonNearK0Creation = 1;
   }
 
   neutralKaonTruthTree::FillNeutralKaonTruthVariables(output(),

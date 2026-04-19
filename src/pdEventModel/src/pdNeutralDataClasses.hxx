@@ -62,7 +62,7 @@ public:
 	Float_t MomentumFit;
 	Float_t InvariantMassFit;
 	// Daughter momentum method flags (see pdAnnihilationUtils DaughterMomentumMethod):
-	// -1 unassigned, 0 pion-range stopping (legacy), 1 calorimetric (legacy), 2 failed, 3 free-range ML
+	// -1 unassigned, 0 pion-range stopping (legacy), 1 calorimetric (legacy), 2 failed, 3 free-range ML, 4 joint K0s grid
 	Int_t Daughter1MomentumMethod;
 	Int_t Daughter2MomentumMethod;
 	Int_t Daughter1HasPreexistingMomentum;
@@ -81,6 +81,22 @@ public:
 	Float_t Daughter2ExtensionDedxSigma; // Gaussian sigma of (measured - Bethe-Bloch) dEdx [MeV/cm]
 	Int_t Daughter1ExtensionDedxFitOk;
 	Int_t Daughter2ExtensionDedxFitOk;
+	/// 0: independent free-range (or joint disabled / joint failed); 1: joint K0s grid+momentum applied.
+	Int_t JointK0sMomentumUsed;
+	Float_t JointK0sBestScore;
+	Float_t JointK0sInvMassAtBest;
+	/// Joint mass-penalty diagnostics (GeV for sigmas; -999 unset). Filled when joint fit is attempted with event σ_m.
+	Float_t JointK0sSigmaP1GeV;
+	Float_t JointK0sSigmaP2GeV;
+	Float_t JointK0sSigmaMEventGeV;
+	Float_t JointK0sDmDp1;
+	Float_t JointK0sDmDp2;
+	/// Post-fit: |C_mass|/max(|logL1+logL2|,eps) at joint optimum (−999 unset).
+	Float_t JointK0sMomentumConstraintRatioR;
+	/// Post-fit: χ²_TLE(after)−χ²_TLE(before); extension χ² from pdMomReconstruction template (−999 unset).
+	Float_t JointK0sMomentumDedxChi2Degradation;
+	/// Debug only: 0 unset; 1 data-driven (R<0.3 and Δχ²≤0); 2 constraint-dominated (R≥1); 3 calorimetric tension (Δχ²>5).
+	Int_t JointK0sDebugClass;
 };
 
 //** ------------------------------------------------------------ */

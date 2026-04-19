@@ -132,7 +132,7 @@ namespace neutralKaonTruthTree{
     k0dau1recozstartgtzend, // same for daughter1 reco
     k0dau2recozstartgtzend, // same for daughter2 reco
     k0parispandorabeam, // 1 if reco matched to true K0 parent has isPandora (Pandora beam); else 0
-    k0pardonerecoprotonatcreation, // 1 iff exactly one true daughter of K0's true parent is proton (2212) with valid reco and reco start within CreationVertexRadius of true K0 birth; else 0
+    k0pardonerecoprotonatcreation, // 1 iff among true K0 parent's direct true daughters exactly one has valid reco and its PDG is proton (2212); else 0
 
     enumNeutralKaonTruthMicroTreesLast_neutralKaonTruthTree
   };

@@ -393,6 +393,17 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_
   AddVarMaxSizeVF(output, k0vtxopeninganglefit, "K0 vertex opening angle using fit daughter directions", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxresultantmomentumreco, "Reco resultant momentum magnitude of annihilation vertex", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxresultantmomentumtrue, "True resultant momentum magnitude from true daughters", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxjointk0smomused, "1 if joint K0s momentum was applied for this vertex", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxjointsigmap1, "Joint-fit sigma(p1) from TLE curvature at marginal best [GeV/c]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxjointsigmap2, "Joint-fit sigma(p2) from TLE curvature at marginal best [GeV/c]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxjointsigmam, "Joint-fit event sigma_m used in mass penalty [GeV]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxjointdmdp1, "Joint-fit dm/dp1 at marginal (p1_0,p2_0)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxjointdmdp2, "Joint-fit dm/dp2 at marginal (p1_0,p2_0)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxjointrconstraint, "Joint post-fit kinematic constraint dominance ratio R", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxjointdeltachidedx, "Joint post-fit dE/dx template chi2 degradation (or chi2 at joint)", nk0,
+                  nmax);
+  AddVarMaxSizeVI(output, k0vtxjointdebugclass, "Joint post-fit debug classification (see enum in neutralKaonTree.hxx)",
+                  nk0, nmax);
   AddNeutralKaonVariables_K0VtxDaughters(output, nmax);
 }
 
@@ -1291,6 +1302,15 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
   Float_t k0vtxopeninganglefit_val = -999.0f;
   Float_t k0vtxresultantmomentumreco_val = -999.0f;
   Float_t k0vtxresultantmomentumtrue_val = -999.0f;
+  Int_t k0vtxjointk0smomused_val = -1;
+  Float_t k0vtxjointsigmap1_val = -999.0f;
+  Float_t k0vtxjointsigmap2_val = -999.0f;
+  Float_t k0vtxjointsigmam_val = -999.0f;
+  Float_t k0vtxjointdmdp1_val = -999.0f;
+  Float_t k0vtxjointdmdp2_val = -999.0f;
+  Float_t k0vtxjointrconstraint_val = -999.0f;
+  Float_t k0vtxjointdeltachidedx_val = -999.0f;
+  Int_t k0vtxjointdebugclass_val = 0;
 
   if(vertex){
     k0vtxoriginaldistance_val = vertex->OriginalDistance;
@@ -1314,6 +1334,15 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
     k0vtxmomentumfit_val = vertex->MomentumFit;
     k0vtxinvariantmassfit_val = vertex->InvariantMassFit;
     k0vtxresultantmomentumreco_val = vertex->Momentum;
+    k0vtxjointk0smomused_val = vertex->JointK0sMomentumUsed;
+    k0vtxjointsigmap1_val = vertex->JointK0sSigmaP1GeV;
+    k0vtxjointsigmap2_val = vertex->JointK0sSigmaP2GeV;
+    k0vtxjointsigmam_val = vertex->JointK0sSigmaMEventGeV;
+    k0vtxjointdmdp1_val = vertex->JointK0sDmDp1;
+    k0vtxjointdmdp2_val = vertex->JointK0sDmDp2;
+    k0vtxjointrconstraint_val = vertex->JointK0sMomentumConstraintRatioR;
+    k0vtxjointdeltachidedx_val = vertex->JointK0sMomentumDedxChi2Degradation;
+    k0vtxjointdebugclass_val = vertex->JointK0sDebugClass;
 
     if(vertex->Particles.size() >= 2) {
       AnaParticlePD* recoParticle1 = static_cast<AnaParticlePD*>(vertex->Particles[0]);
@@ -1422,6 +1451,15 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
   output.FillVectorVar(k0vtxopeninganglefit, k0vtxopeninganglefit_val);
   output.FillVectorVar(k0vtxresultantmomentumreco, k0vtxresultantmomentumreco_val);
   output.FillVectorVar(k0vtxresultantmomentumtrue, k0vtxresultantmomentumtrue_val);
+  output.FillVectorVar(k0vtxjointk0smomused, k0vtxjointk0smomused_val);
+  output.FillVectorVar(k0vtxjointsigmap1, k0vtxjointsigmap1_val);
+  output.FillVectorVar(k0vtxjointsigmap2, k0vtxjointsigmap2_val);
+  output.FillVectorVar(k0vtxjointsigmam, k0vtxjointsigmam_val);
+  output.FillVectorVar(k0vtxjointdmdp1, k0vtxjointdmdp1_val);
+  output.FillVectorVar(k0vtxjointdmdp2, k0vtxjointdmdp2_val);
+  output.FillVectorVar(k0vtxjointrconstraint, k0vtxjointrconstraint_val);
+  output.FillVectorVar(k0vtxjointdeltachidedx, k0vtxjointdeltachidedx_val);
+  output.FillVectorVar(k0vtxjointdebugclass, k0vtxjointdebugclass_val);
   FillNeutralKaonVariables_K0vtxDaughters(output, vertex, event);
 }
 

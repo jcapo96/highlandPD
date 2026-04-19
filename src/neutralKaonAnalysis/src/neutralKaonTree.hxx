@@ -163,6 +163,15 @@ namespace neutralKaonTree {
     k0vtxopeninganglefit, // Opening angle between daughter directions using fit dirs [rad]
     k0vtxresultantmomentumreco, // Reco resultant momentum magnitude at vertex [GeV/c]
     k0vtxresultantmomentumtrue, // True resultant momentum magnitude at vertex [GeV/c]
+    k0vtxjointk0smomused, // 1 if joint K0s grid momentum was applied for this vertex (else 0)
+    k0vtxjointsigmap1, // Event σ(p1) from TLE log L curvature at marginal best p1 [GeV/c] (-999 if unset)
+    k0vtxjointsigmap2, // Event σ(p2) [GeV/c]
+    k0vtxjointsigmam, // Event σ_m used in mass penalty after floor/cap/collinear inflate [GeV]
+    k0vtxjointdmdp1, // ∂m/∂p1 at marginal (p1_0,p2_0) [GeV/GeV]
+    k0vtxjointdmdp2, // ∂m/∂p2
+    k0vtxjointrconstraint, // Post-fit mass-vs-TLE dominance ratio R (−999 unset)
+    k0vtxjointdeltachidedx, // Post-fit TLE template χ²(joint)−χ²(marginal); else χ²(joint) if baseline missing
+    k0vtxjointdebugclass, // Post-fit debug: 0 unset; 1 data-driven; 2 constraint-dominated; 3 calorimetric tension
     // Daughter-level variables (filled in FillNeutralKaonVariables_K0vtxDaughters)
     k0vtxdau1momentumreco, // Reco momentum magnitude of daughter 1 [GeV/c]
     k0vtxdau2momentumreco, // Reco momentum magnitude of daughter 2 [GeV/c]

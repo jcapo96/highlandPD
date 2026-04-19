@@ -1,5 +1,7 @@
 #include "pdAnnihilationUtils.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "pdJointK0sPionMomentum.hxx"
+#include "pdMomReconstruction.hxx"
 #include "pdUtilsDEdx.hxx"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "Parameters.hxx"
@@ -8,6 +10,7 @@
 #include <cmath>
 #include <limits>
 #include <unordered_set>
+#include <vector>
 
 namespace pdAnnihilationUtils {
 namespace {
@@ -341,7 +344,8 @@ enum DaughterMomentumMethod {
   kMomMethodPionRangeStopping = 0,
   kMomMethodCalorimetric = 1,
   kMomMethodFailed = 2,
-  kMomMethodFreeRangeML = 3
+  kMomMethodFreeRangeML = 3,
+  kMomMethodJointK0sGrid = 4
 };
 
 struct DaughterMomentumDebugInfo {
@@ -582,6 +586,91 @@ Int_t ComputeCreationVertexDegeneracy(const AnaEventB& event,
                                            creationVertexOriginSupportDistance, trackFitLength,
                                            trackFitDistanceFromStart, excludedUniqueIds, nullptr,
                                            nullptr, nullptr);
+}
+
+} // namespace
+
+namespace {
+
+constexpr double kJointK0sPionMassMeV = 139.57;
+
+bool JointK0sCollectionResidualRangeLooksUnset(const AnaParticlePD* part) {
+  if (!part || part->Hits[2].empty()) return false;
+  for (const AnaHitPD& h : part->Hits[2]) {
+    if (h.ResidualRange > 0 && std::isfinite(static_cast<double>(h.ResidualRange))) return false;
+  }
+  return true;
+}
+
+bool JointK0sInteriorDedxRr(AnaParticlePD* part, int minInteriorHits, int skipFirst, int skipLast,
+                           double dedxMinMeVcm, double dedxMaxMeVcm, std::vector<double>& dedx,
+                           std::vector<double>& rr) {
+  dedx.clear();
+  rr.clear();
+  if (!part || part->Hits[2].empty()) return false;
+  if (skipFirst < 0) skipFirst = 0;
+  if (skipLast < 0) skipLast = 0;
+  const int n = static_cast<int>(part->Hits[2].size());
+  if (n < skipFirst + skipLast + 1) return false;
+  for (int ihit = skipFirst; ihit < n - skipLast; ++ihit) {
+    const AnaHitPD& h = part->Hits[2][ihit];
+    dedx.push_back(static_cast<double>(h.dEdx));
+    rr.push_back(static_cast<double>(h.ResidualRange));
+  }
+  const bool dedxWindow = (dedxMinMeVcm > 0. && dedxMaxMeVcm > dedxMinMeVcm);
+  if (dedxWindow) {
+    std::vector<double> nd, nr;
+    nd.reserve(dedx.size());
+    nr.reserve(rr.size());
+    for (size_t i = 0; i < dedx.size(); ++i) {
+      if (dedx[i] >= dedxMinMeVcm && dedx[i] <= dedxMaxMeVcm) {
+        nd.push_back(dedx[i]);
+        nr.push_back(rr[i]);
+      }
+    }
+    dedx.swap(nd);
+    rr.swap(nr);
+  }
+  return static_cast<int>(dedx.size()) >= minInteriorHits;
+}
+
+double JointK0sMeasuredLenCm(const AnaParticlePD* part, const std::vector<double>& rrInterior) {
+  if (part && part->Length > 0.f && part->Length != -999.f) return static_cast<double>(part->Length);
+  double mx = 0.;
+  for (double r : rrInterior) {
+    if (r > mx) mx = r;
+  }
+  return mx;
+}
+
+bool JointK0sPrepPionInterior(AnaParticlePD* part, int minInteriorHits, int skipFirst, int skipLast,
+                             double dedxMinMeVcm, double dedxMaxMeVcm, std::vector<double>& dedx,
+                             std::vector<double>& rr) {
+  if (JointK0sCollectionResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
+  return JointK0sInteriorDedxRr(part, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm, dedx, rr);
+}
+
+bool JointK0sBestExtensionForMomentum(const AnaParticlePD* part, const std::vector<double>& rrInterior,
+                                     double pTargetGeV, double scanLmaxCm, TGraph* ke, double& extOut) {
+  extOut = 0.;
+  if (!part || !ke || !(pTargetGeV > 0.) || !std::isfinite(pTargetGeV) || !(scanLmaxCm > 0.)) return false;
+  const double len = JointK0sMeasuredLenCm(part, rrInterior);
+  double bestDiff = 1e300;
+  double bestExt = 0.;
+  constexpr int kNScan = 128;
+  for (int k = 0; k <= kNScan; ++k) {
+    const double ext = scanLmaxCm * (static_cast<double>(k) / static_cast<double>(kNScan));
+    const double p = pdMomShared::RangeCmToMomentumGeV(len + ext, 211, ke, kJointK0sPionMassMeV);
+    if (!std::isfinite(p)) continue;
+    const double diff = std::abs(p - pTargetGeV);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestExt = ext;
+    }
+  }
+  if (!(bestDiff < 1e299)) return false;
+  extOut = bestExt;
+  return true;
 }
 
 } // namespace
@@ -1009,9 +1098,205 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
 
     DaughterMomentumDebugInfo daughter1Debug;
     DaughterMomentumDebugInfo daughter2Debug;
+    vertex->JointK0sMomentumUsed = 0;
+    vertex->JointK0sBestScore = -999.0f;
+    vertex->JointK0sInvMassAtBest = -999.0f;
+    vertex->JointK0sSigmaP1GeV = -999.0f;
+    vertex->JointK0sSigmaP2GeV = -999.0f;
+    vertex->JointK0sSigmaMEventGeV = -999.0f;
+    vertex->JointK0sDmDp1 = -999.0f;
+    vertex->JointK0sDmDp2 = -999.0f;
+    vertex->JointK0sMomentumConstraintRatioR = -999.0f;
+    vertex->JointK0sMomentumDedxChi2Degradation = -999.0f;
+    vertex->JointK0sDebugClass = 0;
+
     if (shouldAssignMomentum) {
-      vertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
-      vertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+      const bool jointEnable = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumEnable") &&
+                               ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMomentumEnable") == 1;
+
+      bool jointApplied = false;
+      if (jointEnable) {
+        const double scanLmaxCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanLmaxCm")
+                                      ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanLmaxCm")
+                                      : 450.;
+        const double scanStepCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepCm")
+                                      ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepCm")
+                                      : 1.;
+        const int minInteriorHits =
+            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
+                ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
+                : 15;
+        const int skipFirst =
+            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
+                ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
+                : 3;
+        const int skipLast =
+            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
+                ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
+                : 3;
+        double dedxMinMeVcm =
+            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
+                : 0.5;
+        double dedxMaxMeVcm =
+            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
+                : 5.0;
+        const double pdfPathCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
+                                     ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
+                                     : 0.65;
+
+        const double pMinGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
+                                   ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
+                                   : 0.05;
+        const double pMaxGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPMaxGeV")
+                                   ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPMaxGeV")
+                                   : 2.0;
+        const double pStepGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPStepGeV")
+                                    ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPStepGeV")
+                                    : 0.05;
+        const double sigmaMassMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMeV")
+                                          ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMeV")
+                                          : 10.0;
+        const double penaltyScale = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassPenaltyScale")
+                                        ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassPenaltyScale")
+                                        : 1.0;
+        const int refineFactor =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumRefineFactor")
+                ? ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMomentumRefineFactor")
+                : 2;
+        constexpr double kK0sMassGeV = 0.497611;
+        const double sigmaMassGeV = sigmaMassMeV * 1e-3;
+
+        const bool useEventSigmaM =
+            !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") ||
+            ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") != 0;
+
+        std::vector<double> p1v, logL1, p2v, logL2;
+        if (pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
+                daughter1, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
+                pdfPathCm, p1v, logL1) &&
+            pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
+                daughter2, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
+                pdfPathCm, p2v, logL2)) {
+          TVector3 dirP1, dirP2, dirFit1, dirFit2;
+          DaughterPandoraAndFitDirs(vertex, trackFitLength, trackFitDistanceFromStart, dirP1, dirP2, dirFit1, dirFit2);
+
+          double sigma_m_for_grid = sigmaMassGeV;
+          JointK0sSigmaMEventDiagnostics sigmaDiag;
+          if (useEventSigmaM &&
+              pdJointK0sPionMomentum::ComputeSigmaMEventGeV(p1v, logL1, p2v, logL2, dirFit1, dirFit2, sigmaMassGeV,
+                                                            sigmaDiag) &&
+              std::isfinite(sigmaDiag.sigma_m_event_gev) && sigmaDiag.sigma_m_event_gev > 0.) {
+            sigma_m_for_grid = sigmaDiag.sigma_m_event_gev;
+            vertex->JointK0sSigmaP1GeV = static_cast<Float_t>(sigmaDiag.sigma_p1_gev);
+            vertex->JointK0sSigmaP2GeV = static_cast<Float_t>(sigmaDiag.sigma_p2_gev);
+            vertex->JointK0sSigmaMEventGeV = static_cast<Float_t>(sigmaDiag.sigma_m_event_gev);
+            vertex->JointK0sDmDp1 = static_cast<Float_t>(sigmaDiag.dm_dp1);
+            vertex->JointK0sDmDp2 = static_cast<Float_t>(sigmaDiag.dm_dp2);
+          }
+
+          const JointK0sPionMomentumGridResult jr = pdJointK0sPionMomentum::FitJointMomentaOnGrid(
+              p1v, logL1, p2v, logL2, dirFit1, dirFit2, pMinGeV, pMaxGeV, pStepGeV, kK0sMassGeV, sigma_m_for_grid,
+              penaltyScale, refineFactor);
+          if (jr.ok && std::isfinite(static_cast<double>(jr.p1)) && std::isfinite(static_cast<double>(jr.p2)) &&
+              jr.p1 > 0.f && jr.p2 > 0.f) {
+            daughter1->Momentum = jr.p1;
+            daughter2->Momentum = jr.p2;
+            jointApplied = true;
+            vertex->JointK0sMomentumUsed = 1;
+            vertex->JointK0sBestScore = jr.bestScore;
+            vertex->JointK0sInvMassAtBest = jr.invMassAtBest;
+            vertex->JointK0sMomentumConstraintRatioR = jr.constraintRatioR;
+            vertex->JointK0sMomentumDedxChi2Degradation = -999.0f;
+            vertex->JointK0sDebugClass = 0;
+            {
+              TProfile* jointPionTmpl = nullptr;
+              TGraph* jointPionKe = nullptr;
+              if (pdMomShared::LoadPionTemplates(jointPionTmpl, jointPionKe,
+                                                  "pionRangeEnergyGraph_joint_postfit_dedx")) {
+                std::vector<double> jk_d1x, jk_d1r, jk_d2x, jk_d2r;
+                const bool jk_ok1 = JointK0sPrepPionInterior(daughter1, minInteriorHits, skipFirst, skipLast,
+                                                            dedxMinMeVcm, dedxMaxMeVcm, jk_d1x, jk_d1r);
+                const bool jk_ok2 = JointK0sPrepPionInterior(daughter2, minInteriorHits, skipFirst, skipLast,
+                                                            dedxMinMeVcm, dedxMaxMeVcm, jk_d2x, jk_d2r);
+                if (jk_ok1 && jk_ok2) {
+                  size_t im1 = 0;
+                  size_t im2 = 0;
+                  for (size_t i = 1; i < logL1.size(); ++i) {
+                    if (logL1[i] > logL1[im1]) im1 = i;
+                  }
+                  for (size_t i = 1; i < logL2.size(); ++i) {
+                    if (logL2[i] > logL2[im2]) im2 = i;
+                  }
+                  const double p1_marg = p1v[im1];
+                  const double p2_marg = p2v[im2];
+                  double e1m = 0.;
+                  double e2m = 0.;
+                  double e1j = 0.;
+                  double e2j = 0.;
+                  const bool sol1m =
+                      JointK0sBestExtensionForMomentum(daughter1, jk_d1r, p1_marg, scanLmaxCm, jointPionKe, e1m);
+                  const bool sol2m =
+                      JointK0sBestExtensionForMomentum(daughter2, jk_d2r, p2_marg, scanLmaxCm, jointPionKe, e2m);
+                  const bool sol1j = JointK0sBestExtensionForMomentum(daughter1, jk_d1r, static_cast<double>(jr.p1),
+                                                                      scanLmaxCm, jointPionKe, e1j);
+                  const bool sol2j = JointK0sBestExtensionForMomentum(daughter2, jk_d2r, static_cast<double>(jr.p2),
+                                                                      scanLmaxCm, jointPionKe, e2j);
+                  const double c1b = pdMomReconstruction::CalculateExtensionChi2(jk_d1x, jk_d1r, e1m, jointPionTmpl);
+                  const double c2b = pdMomReconstruction::CalculateExtensionChi2(jk_d2x, jk_d2r, e2m, jointPionTmpl);
+                  const double c1a = pdMomReconstruction::CalculateExtensionChi2(jk_d1x, jk_d1r, e1j, jointPionTmpl);
+                  const double c2a = pdMomReconstruction::CalculateExtensionChi2(jk_d2x, jk_d2r, e2j, jointPionTmpl);
+                  const auto chi2FiniteOk = [](double x) { return std::isfinite(x) && x < 9000.; };
+                  const bool okBefore =
+                      chi2FiniteOk(c1b) && chi2FiniteOk(c2b) && sol1m && sol2m;
+                  const bool okAfter = chi2FiniteOk(c1a) && chi2FiniteOk(c2a) && sol1j && sol2j;
+                  const double sumB = c1b + c2b;
+                  const double sumA = c1a + c2a;
+                  if (okBefore && okAfter) {
+                    vertex->JointK0sMomentumDedxChi2Degradation = static_cast<Float_t>(sumA - sumB);
+                  } else if (okAfter) {
+                    // Independent-TLE χ² baseline unavailable: store χ² at joint extensions only.
+                    vertex->JointK0sMomentumDedxChi2Degradation = static_cast<Float_t>(sumA);
+                  }
+                  const Float_t Rv = jr.constraintRatioR;
+                  if (okBefore && okAfter) {
+                    const double del = sumA - sumB;
+                    if (Rv < 0.3f && del <= 0.) vertex->JointK0sDebugClass = 1;
+                    else if (Rv >= 1.f) vertex->JointK0sDebugClass = 2;
+                    else if (del > 5.) vertex->JointK0sDebugClass = 3;
+                  } else if (Rv >= 1.f) {
+                    vertex->JointK0sDebugClass = 2;
+                  }
+                }
+              }
+            }
+            daughter1Debug.hasPreexistingMomentum = -1;
+            daughter2Debug.hasPreexistingMomentum = -1;
+            daughter1Debug.extensionAttempted = 1;
+            daughter2Debug.extensionAttempted = 1;
+            daughter1Debug.extensionValid = 1;
+            daughter2Debug.extensionValid = 1;
+            daughter1Debug.extensionChi2Ndf = jr.bestScore;
+            daughter2Debug.extensionChi2Ndf = jr.bestScore;
+            daughter1Debug.extensionNValidHits = CountValidCollectionPlaneHits(daughter1);
+            daughter2Debug.extensionNValidHits = CountValidCollectionPlaneHits(daughter2);
+            daughter1Debug.extensionDedxBias = -999.0f;
+            daughter2Debug.extensionDedxBias = -999.0f;
+            daughter1Debug.extensionDedxSigma = -999.0f;
+            daughter2Debug.extensionDedxSigma = -999.0f;
+            daughter1Debug.extensionDedxFitOk = 1;
+            daughter2Debug.extensionDedxFitOk = 1;
+            vertex->Daughter1MomentumMethod = kMomMethodJointK0sGrid;
+            vertex->Daughter2MomentumMethod = kMomMethodJointK0sGrid;
+          }
+        }
+      }
+
+      if (!jointApplied) {
+        vertex->Daughter1MomentumMethod = AssignPionMomentumFromResidualRange(daughter1, &daughter1Debug);
+        vertex->Daughter2MomentumMethod = AssignPionMomentumFromResidualRange(daughter2, &daughter2Debug);
+      }
       vertex->Daughter1HasPreexistingMomentum = daughter1Debug.hasPreexistingMomentum;
       vertex->Daughter2HasPreexistingMomentum = daughter2Debug.hasPreexistingMomentum;
       vertex->Daughter1ExtensionAttempted = daughter1Debug.extensionAttempted;

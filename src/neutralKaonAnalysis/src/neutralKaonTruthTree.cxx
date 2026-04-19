@@ -104,8 +104,8 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
     AddVarMaxSizeVI(output, k0parispandorabeam,
                     "1 if K0 parent reco is Pandora beam (isPandora)", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0pardonerecoprotonatcreation,
-                    "1 iff exactly one parent true-daughter proton (2212) has valid reco start near true K0 birth "
-                    "(CreationVertexRadius)",
+                    "1 iff among K0 true parent's direct true daughters exactly one has valid reco and it is proton "
+                    "(2212)",
                     ntruek0, nmax);
 }
 

@@ -21,7 +21,7 @@ need to be enabled in baseAnalysis parameter file
 --- Annihilation Vertex Finder ------------
 # Pairing threshold on daughter endpoint distance (cm); see AnnihilationVertexUseEndpointCombinatorics.
 # When combinatorics is on, distance is the minimum over valid start/end pairs; when off, start–start only.
-< neutralKaonAnalysis.AnnihilationVertexRadius = 5.0 >
+< neutralKaonAnalysis.AnnihilationVertexRadius = 11.0 >
 
 # 1 = minimize distance over start/end combinations (SS/SE/ES/EE), then optionally reverse daughters for SE/ES/EE.
 # 0 = plain start–start distance only; PairingEndpointCombo stays SS and no track reversal is applied.
@@ -59,8 +59,7 @@ need to be enabled in baseAnalysis parameter file
  # The tail segment used for projection is derived from TrackFitDistanceCreationFromEnd.
 
 # Radius (cm) of the creation-candidate cylinder around the parent fitted line, from creation to annihilation position.
-# Truth-tree k0pardonerecoprotonatcreation: proton reco PositionStart must be within this distance of true K0 birth.
-< neutralKaonAnalysis.CreationVertexRadius = 5.0 >
+< neutralKaonAnalysis.CreationVertexRadius = 7.5 >
 # Maximum distance between the creation-vertex reference position and a candidate particle fitted line (cm).
 # Set to CreationVertexRadius default-equivalent to match current fallback behavior.
 < neutralKaonAnalysis.CreationVertexLineToVertexDistance = 2.0 >
@@ -70,7 +69,7 @@ need to be enabled in baseAnalysis parameter file
 < neutralKaonAnalysis.CreationVertexOriginSupportDistance = 5.0 >
 
 # Keep second-particle candidates only if Chi2PID(2212) chi2/npts is <= this threshold (same as k0protonchi2ndfproton).
-< neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 15000.0 >
+< neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 50.0 >
 
 # Neutral candidates from annihilation vertices: when 1, keep at most one neutral per vertex (winner among parents).
 # When 0, keep every neutral built for each qualifying parent (no per-vertex elimination).
@@ -92,10 +91,26 @@ need to be enabled in baseAnalysis parameter file
 # Path length δx (cm) for Landau ξ in the hit PDF (paper uses ~0.65 cm typical 3D hit spacing in ProtoDUNE-SP).
 < neutralKaonAnalysis.FreeRangeDedxPdfPathCm = 0.65 >
 
+# Joint K0s-constrained ππ momenta (2D grid on |p1|,|p2| with soft m(K0s) penalty on interpolated free-range log L).
+# 0 = disabled (each daughter: independent free-range ML as today). 1 = try joint; on failure falls back to independent.
+# Validation: MC (P_reco-P_true)/P_true for joint vs independent; slice interacting vertices; stress-test bad opening angles.
+< neutralKaonAnalysis.JointK0sMomentumEnable = 1 >
+< neutralKaonAnalysis.JointK0sMomentumPMinGeV = 0.05 >
+< neutralKaonAnalysis.JointK0sMomentumPMaxGeV = 7.0 >
+< neutralKaonAnalysis.JointK0sMomentumPStepGeV = 0.05 >
+# Gaussian mass prior width σ_M in MeV (converted to GeV internally).
+< neutralKaonAnalysis.JointK0sMassSigmaMeV = 50.0 >
+# Multiplier on 0.5*((M-m_K0s)/σ)^2; m_K0s fixed at 0.497611 GeV in code.
+< neutralKaonAnalysis.JointK0sMassPenaltyScale = 1.0 >
+# 1 = σ_m per event from (∂m/∂p_i σ_pi)^2 using TLE log L curvature at marginal maxima; 0 = fixed JointK0sMassSigmaMeV only.
+< neutralKaonAnalysis.JointK0sMassSigmaEventPropagation = 1 >
+# Second pass: step coarse / factor on a local box around the best cell; set 0 or 1 to disable refinement.
+< neutralKaonAnalysis.JointK0sMomentumRefineFactor = 2 >
+
 --- Momentum Assurance Parameters -----------
 # Enable momentum assurance for signal codes only (1=only codes 1,5,6 / 0=all codes)
 # Signal codes: 1=two_stopping, 5=one_stopping, 6=interacting
-< neutralKaonAnalysis.EnsureMomentumSignalOnly = 1 >
+< neutralKaonAnalysis.EnsureMomentumSignalOnly = 0 >
 
 --- Other Parameters -----------
 

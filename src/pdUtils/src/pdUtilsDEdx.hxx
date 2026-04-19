@@ -3,6 +3,7 @@
 
 #include "pdDataClasses.hxx"
 #include <utility>
+#include <vector>
 
 class TGraph;
 class TMultiGraph;
@@ -56,6 +57,14 @@ namespace pdAnaUtils {
   DEdxFreeRangeFitResult dEdxLikelihoodFreeRangeFit(TGraph* tg, TGraph* tg_ke, Float_t mass, double L0,
                                                     double Lmax, double step, double measuredTrackLengthCm,
                                                     bool computeMomentum, double pdfPathCm = 0.65);
+
+  /// For π (PDG 211): same free-range scan as GetdEdxLikelihoodFreeRangeFit, map each trial offset L to
+  /// momentum via R_eff = measured_length + L and RangeCmToMomentumGeV. Duplicate p bins keep max log L.
+  /// Returns false if fewer than two usable (p, logL) points.
+  bool BuildPionFreeRangeLogLikelihoodVsMomentumCurve(AnaParticlePD* part, double Lmax, double step,
+                                                       int minInteriorPoints, int skipHitsFirst, int skipHitsLast,
+                                                       double dedxMinMeVcm, double dedxMaxMeVcm, double pdfPathCm,
+                                                       std::vector<double>& pGeV, std::vector<double>& logL);
 
   double GetDensityCorrection(double beta, double gamma);
   double GetdEdxBetheBloch(double KE, double mass);

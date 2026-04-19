@@ -185,6 +185,9 @@ double pdAnaUtils::dEdxPDF(double *x, double *par){
   return this_vav;
 }
 
+static TF1* FreeRangeLikelihoodPdf();
+static bool BuildDedxPdfParams(double ke, Float_t mass, double width, double* par);
+
 namespace {
 
 bool PdgToMassAndKeName(Int_t PDG, Float_t& mass, std::string& ssparticle) {
@@ -320,7 +323,98 @@ pdAnaUtils::DEdxFreeRangeFitResult ParticleFreeRangeFit(AnaParticlePD* part, Int
   return result;
 }
 
+bool BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(AnaParticlePD* part, double Lmax, double step,
+                                                            int minInteriorPoints, int skipHitsFirst, int skipHitsLast,
+                                                            double dedxMinMeVcm, double dedxMaxMeVcm, double pdfPathCm,
+                                                            std::vector<double>& pGeV, std::vector<double>& logL) {
+  pGeV.clear();
+  logL.clear();
+  if (!part || part->Hits[2].empty()) return false;
+  constexpr Int_t kPdg = 211;
+  std::string ssparticle;
+  Float_t mass = 0.f;
+  if (!PdgToMassAndKeName(kPdg, mass, ssparticle)) return false;
+
+  if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
+
+  std::vector<double> dedx, rr;
+  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), minInteriorPoints, dedx, rr, skipHitsFirst,
+                           skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm))
+    return false;
+
+  TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
+  if (!tg_ke) return false;
+
+  TGraph* tg = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
+  const double lenCm = MeasuredTrackLengthCm(part, rr);
+
+  if (!tg || tg->GetN() < 1 || step <= 0. || Lmax < 0.) {
+    delete tg;
+    return false;
+  }
+  if (!std::isfinite(pdfPathCm) || pdfPathCm <= 0.) {
+    delete tg;
+    return false;
+  }
+
+  std::vector<std::pair<double, double>> pairs;
+  pairs.reserve(static_cast<size_t>(std::max(1.0, Lmax / step) + 2.));
+
+  const double width = pdfPathCm;
+  TF1* pdf = FreeRangeLikelihoodPdf();
+  for (double L = 0.; L <= Lmax + 1e-9; L += step) {
+    double ll = 0.;
+    for (int i = 0; i < tg->GetN(); i++) {
+      const double range = tg->GetPointX(i) + L;
+      const double dEdx = tg->GetPointY(i);
+      if (!(range > 0.) || !std::isfinite(range)) continue;
+      const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, range);
+      if (ke < 0. || !std::isfinite(ke)) continue;
+      double par[5] = {0., 0., 0., 0., 0.};
+      if (!BuildDedxPdfParams(ke, mass, width, par)) continue;
+      pdf->SetParameters(par);
+      const double pval = pdf->Eval(dEdx);
+      if (pval == 0.) continue;
+      ll += std::log(pval);
+    }
+    if (!std::isfinite(ll)) continue;
+    const double R_eff = lenCm + L;
+    if (!(R_eff > 0.) || !std::isfinite(R_eff)) continue;
+    const double p = pdMomShared::RangeCmToMomentumGeV(R_eff, kPdg, tg_ke, mass);
+    if (!std::isfinite(p) || p <= 0.) continue;
+    pairs.push_back({p, ll});
+  }
+  delete tg;
+
+  if (pairs.size() < 2u) return false;
+
+  std::sort(pairs.begin(), pairs.end(),
+            [](const std::pair<double, double>& a, const std::pair<double, double>& b) { return a.first < b.first; });
+
+  for (const auto& pr : pairs) {
+    if (!pGeV.empty() && std::abs(pr.first - pGeV.back()) <= 1e-12 * std::max(1.0, std::abs(pr.first))) {
+      if (pr.second > logL.back()) logL.back() = pr.second;
+    } else {
+      pGeV.push_back(pr.first);
+      logL.push_back(pr.second);
+    }
+  }
+  return pGeV.size() >= 2u;
+}
+
 } // namespace
+
+//***************************************************************
+bool pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(AnaParticlePD* part, double Lmax, double step,
+                                                                int minInteriorPoints, int skipHitsFirst,
+                                                                int skipHitsLast, double dedxMinMeVcm,
+                                                                double dedxMaxMeVcm, double pdfPathCm,
+                                                                std::vector<double>& pGeV, std::vector<double>& logL) {
+//***************************************************************
+  return BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(part, Lmax, step, minInteriorPoints, skipHitsFirst,
+                                                                skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm, pdfPathCm,
+                                                                pGeV, logL);
+}
 
 static TF1* FreeRangeLikelihoodPdf() {
   static TF1* pdf =
