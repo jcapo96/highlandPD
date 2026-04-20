@@ -408,6 +408,9 @@ Int_t AssignMomentumFromResidualRange(AnaParticlePD* particle, Int_t pdgHypothes
   const double pdfPathCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
                                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
                                : 0.65;
+  const bool computeDedxBiasDiagnostics =
+      !ND::params().HasParameter("neutralKaonAnalysis.FreeRangeComputeDedxBiasDiagnostics") ||
+      ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeComputeDedxBiasDiagnostics") != 0;
 
   const Int_t nCollHits = static_cast<Int_t>(particle->Hits[2].size());
   const Int_t minHitsOnTrack = skipFirst + skipLast + std::max(1, minInteriorHits);
@@ -425,7 +428,7 @@ Int_t AssignMomentumFromResidualRange(AnaParticlePD* particle, Int_t pdgHypothes
 
   const pdAnaUtils::DEdxFreeRangeFitResult fit = pdAnaUtils::GetdEdxLikelihoodFreeRangeFit(
       particle, pdgHypothesis, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
-      pdfPathCm);
+      pdfPathCm, computeDedxBiasDiagnostics);
 
   if (debugInfo && std::isfinite(static_cast<double>(fit.logLikelihood))) {
     debugInfo->extensionChi2Ndf = static_cast<Float_t>(fit.logLikelihood);

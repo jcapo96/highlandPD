@@ -1,4 +1,5 @@
 #include "pdJointK0sPionMomentum.hxx"
+#include <TH2F.h>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -301,6 +302,77 @@ JointK0sPionMomentumGridResult FitJointMomentaOnGrid(const std::vector<double>& 
   out.invMassAtBest = static_cast<Float_t>(bestM);
   out.constraintRatioR = rDiag;
   return out;
+}
+
+bool MakeJointK0sObjectiveTH2CoarsePass(const std::vector<double>& p1Axis, const std::vector<double>& logL1,
+                                        const std::vector<double>& p2Axis, const std::vector<double>& logL2,
+                                        const TVector3& dir1, const TVector3& dir2, double pMinGeV, double pMaxGeV,
+                                        double pStepGeV, double mK0sGeV, double sigmaMassGeV, double penaltyScale,
+                                        const char* nameObjective, const char* titleObjective, const char* namePenalty,
+                                        const char* titlePenalty, const char* nameTrackLL, const char* titleTrackLL,
+                                        TH2F*& hObjective, TH2F*& hMassPenalty, TH2F*& hTrackLogLSum) {
+  hObjective = nullptr;
+  hMassPenalty = nullptr;
+  hTrackLogLSum = nullptr;
+  if (!nameObjective || !namePenalty || !nameTrackLL || !titleObjective || !titlePenalty || !titleTrackLL)
+    return false;
+  if (!(pStepGeV > 0.) || !(pMaxGeV > pMinGeV) || !std::isfinite(pMinGeV) || !std::isfinite(pMaxGeV)) return false;
+  const int nSteps = static_cast<int>(std::floor((pMaxGeV - pMinGeV) / pStepGeV + 1e-9)) + 1;
+  if (nSteps < 2) return false;
+  const double xLo = pMinGeV - 0.5 * pStepGeV;
+  const double xHi = pMaxGeV + 0.5 * pStepGeV;
+  TH2F* hS = new TH2F(nameObjective, titleObjective, nSteps, xLo, xHi, nSteps, xLo, xHi);
+  TH2F* hP = new TH2F(namePenalty, titlePenalty, nSteps, xLo, xHi, nSteps, xLo, xHi);
+  TH2F* hLL = new TH2F(nameTrackLL, titleTrackLL, nSteps, xLo, xHi, nSteps, xLo, xHi);
+  if (!hS || !hP || !hLL) {
+    delete hS;
+    delete hP;
+    delete hLL;
+    return false;
+  }
+  hS->SetStats(0);
+  hP->SetStats(0);
+  hLL->SetStats(0);
+
+  auto massPenaltyChi2 = [&](double massGeV) -> double {
+    if (!(penaltyScale > 0.) || !std::isfinite(penaltyScale)) return 0.;
+    const double sig = (sigmaMassGeV > 1e-9 && std::isfinite(sigmaMassGeV)) ? sigmaMassGeV : 1e-3;
+    if (!std::isfinite(massGeV) || !std::isfinite(mK0sGeV)) return 1.e9;
+    const double d = (massGeV - mK0sGeV) / sig;
+    return 0.5 * penaltyScale * d * d;
+  };
+
+  int nFilled = 0;
+  for (double a1 = pMinGeV; a1 <= pMaxGeV + 1e-12; a1 += pStepGeV) {
+    const double L1 = InterpolateLogLikelihoodClamped(p1Axis, logL1, a1);
+    if (!std::isfinite(L1)) continue;
+    for (double a2 = pMinGeV; a2 <= pMaxGeV + 1e-12; a2 += pStepGeV) {
+      const double L2 = InterpolateLogLikelihoodClamped(p2Axis, logL2, a2);
+      if (!std::isfinite(L2)) continue;
+      double mPiPi = 0.;
+      if (!PionPairInvariantMassGeV(a1, a2, dir1, dir2, mPiPi)) continue;
+      const double pen = massPenaltyChi2(mPiPi);
+      const double S = L1 + L2 - pen;
+      if (!std::isfinite(S) || !std::isfinite(pen)) continue;
+      const int ix = hS->GetXaxis()->FindBin(a1);
+      const int iy = hS->GetYaxis()->FindBin(a2);
+      if (ix < 1 || iy < 1 || ix > hS->GetNbinsX() || iy > hS->GetNbinsY()) continue;
+      hS->SetBinContent(ix, iy, S);
+      hP->SetBinContent(ix, iy, pen);
+      hLL->SetBinContent(ix, iy, L1 + L2);
+      ++nFilled;
+    }
+  }
+  if (nFilled == 0) {
+    delete hS;
+    delete hP;
+    delete hLL;
+    return false;
+  }
+  hObjective = hS;
+  hMassPenalty = hP;
+  hTrackLogLSum = hLL;
+  return true;
 }
 
 } // namespace pdJointK0sPionMomentum

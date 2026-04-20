@@ -6,6 +6,8 @@
 #include <limits>
 #include <vector>
 
+class TH2F;
+
 struct JointK0sPionMomentumGridResult {
   bool ok = false;
   Float_t p1 = -999.f;
@@ -56,6 +58,18 @@ JointK0sPionMomentumGridResult FitJointMomentaOnGrid(const std::vector<double>& 
                                                      const TVector3& dir1, const TVector3& dir2, double pMinGeV,
                                                      double pMaxGeV, double pStepGeV, double mK0sGeV, double sigmaMassGeV,
                                                      double penaltyScale, int refineFactor);
+
+/// First-pass joint grid only (same double loop as the initial ScanRectangle in FitJointMomentaOnGrid; no refinement).
+/// hObjective: logL1+logL2 - mass penalty. hMassPenalty: 0.5*penaltyScale*((M-mK0s)/sigma)^2 only.
+/// hTrackLogLSum: logL1+logL2 only (free-range TLE terms, no mass penalty).
+/// On failure returns false and leaves all pointers null. On success caller owns the histograms.
+bool MakeJointK0sObjectiveTH2CoarsePass(const std::vector<double>& p1Axis, const std::vector<double>& logL1,
+                                         const std::vector<double>& p2Axis, const std::vector<double>& logL2,
+                                         const TVector3& dir1, const TVector3& dir2, double pMinGeV, double pMaxGeV,
+                                         double pStepGeV, double mK0sGeV, double sigmaMassGeV, double penaltyScale,
+                                         const char* nameObjective, const char* titleObjective, const char* namePenalty,
+                                         const char* titlePenalty, const char* nameTrackLL, const char* titleTrackLL,
+                                         TH2F*& hObjective, TH2F*& hMassPenalty, TH2F*& hTrackLogLSum);
 
 } // namespace pdJointK0sPionMomentum
 

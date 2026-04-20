@@ -37,12 +37,14 @@ namespace pdAnaUtils {
                                                        double step = 1.0, int minInteriorPoints = 15,
                                                        int skipHitsFirst = 3, int skipHitsLast = 3,
                                                        double dedxMinMeVcm = 0.5, double dedxMaxMeVcm = 5.0,
-                                                       double pdfPathCm = 0.65);
+                                                       double pdfPathCm = 0.65,
+                                                       bool computeDedxBiasDiagnostics = true);
   DEdxFreeRangeFitResult GetdEdxLikelihoodFreeRange_UpToRR_Fit(AnaParticlePD* part, Int_t PDG, const double maxRR,
                                                                double Lmax = 500., double step = 0.5,
                                                                int minInteriorPoints = 2, int skipHitsFirst = 1,
                                                                int skipHitsLast = 1, double dedxMinMeVcm = 0.,
-                                                               double dedxMaxMeVcm = 0., double pdfPathCm = 0.65);
+                                                               double dedxMaxMeVcm = 0., double pdfPathCm = 0.65,
+                                                               bool computeDedxBiasDiagnostics = true);
 
   TMultiGraph* MakePionFreeRangeDedxVsRRMultiGraph(AnaParticlePD* part, double Lmax, double step, int skipHitsFirst,
                                                    int skipHitsLast, double dedxMinMeVcm, double dedxMaxMeVcm,
@@ -56,7 +58,8 @@ namespace pdAnaUtils {
   std::pair<Float_t,Float_t> dEdxLikelihoodFreeRange(TGraph* tg, TGraph* tg_ke, Float_t mass);
   DEdxFreeRangeFitResult dEdxLikelihoodFreeRangeFit(TGraph* tg, TGraph* tg_ke, Float_t mass, double L0,
                                                     double Lmax, double step, double measuredTrackLengthCm,
-                                                    bool computeMomentum, double pdfPathCm = 0.65);
+                                                    bool computeMomentum, double pdfPathCm = 0.65,
+                                                    bool computeDedxBiasDiagnostics = true);
 
   /// For π (PDG 211): same free-range scan as GetdEdxLikelihoodFreeRangeFit, map each trial offset L to
   /// momentum via R_eff = measured_length + L and RangeCmToMomentumGeV. Duplicate p bins keep max log L.

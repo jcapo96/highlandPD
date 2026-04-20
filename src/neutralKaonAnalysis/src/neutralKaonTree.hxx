@@ -40,6 +40,7 @@ namespace neutralKaonTree {
     k0lengthpandora, // Neutral length from creation to annihilation Pandora position [cm]
     k0lengthfit, // Neutral length from creation to annihilation Fit position [cm]
     k0truelength, // True K0 length from true creation to true decay vertex [cm]
+    k0truepdg, // True PDG of reconstructed neutral candidate
     k0alignmentpandora, // Angle (rad): neutral axis vs vertex momentum (Pandora dirs)
     k0alignmentfit, // Angle (rad): neutral axis vs vertex momentum (fit dirs)
     k0al_alltrue, // Alignment with all true quantities
@@ -68,6 +69,7 @@ namespace neutralKaonTree {
     k0trueannihilationy, // True K0 end position (decay) y [cm]
     k0trueannihilationz, // True K0 end position (decay) z [cm]
     k0truemomentum, // True K0 momentum magnitude [GeV/c]
+    k0truevsrecomomentumcos, // Cosine of angle between true and reco K0 momentum vectors
     k0truedirectionx, // True K0 direction (normalized) x component
     k0truedirectiony, // True K0 direction (normalized) y component
     k0truedirectionz, // True K0 direction (normalized) z component
@@ -102,6 +104,8 @@ namespace neutralKaonTree {
     k0vtxdau2directionpandorax, // Reco daughter 2 Pandora direction x component
     k0vtxdau2directionpandoray, // Reco daughter 2 Pandora direction y component
     k0vtxdau2directionpandoraz, // Reco daughter 2 Pandora direction z component
+    k0vtxdau1directionpandoratruecos, // Cos(angle) between reco Pandora and true direction for daughter 1
+    k0vtxdau2directionpandoratruecos, // Cos(angle) between reco Pandora and true direction for daughter 2
     // Reco daughter directions: Fit variant
     k0vtxdau1directionfitx, // Reco daughter 1 Fit direction x component
     k0vtxdau1directionfity, // Reco daughter 1 Fit direction y component
@@ -109,6 +113,8 @@ namespace neutralKaonTree {
     k0vtxdau2directionfitx, // Reco daughter 2 Fit direction x component
     k0vtxdau2directionfity, // Reco daughter 2 Fit direction y component
     k0vtxdau2directionfitz, // Reco daughter 2 Fit direction z component
+    k0vtxdau1directionfittruecos, // Cos(angle) between reco Fit and true direction for daughter 1
+    k0vtxdau2directionfittruecos, // Cos(angle) between reco Fit and true direction for daughter 2
     // Parent-level variables (parent of reconstructed neutral candidate)
     k0partruepdg, // True PDG of neutral parent
     k0partrueendmom, // True end momentum of neutral parent [GeV/c]
@@ -163,6 +169,7 @@ namespace neutralKaonTree {
     k0vtxopeninganglefit, // Opening angle between daughter directions using fit dirs [rad]
     k0vtxresultantmomentumreco, // Reco resultant momentum magnitude at vertex [GeV/c]
     k0vtxresultantmomentumtrue, // True resultant momentum magnitude at vertex [GeV/c]
+    k0vtxresultantmomentumcos, // Cosine of angle between reco and true resultant daughter momentum vectors
     k0vtxjointk0smomused, // 1 if joint K0s grid momentum was applied for this vertex (else 0)
     k0vtxjointsigmap1, // Event σ(p1) from TLE log L curvature at marginal best p1 [GeV/c] (-999 if unset)
     k0vtxjointsigmap2, // Event σ(p2) [GeV/c]

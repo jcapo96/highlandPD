@@ -247,12 +247,14 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
 
   int signalCode = 2;
 
+  const bool hasNeutralTrueObject = (neutralParticle->TrueObject != nullptr);
+
   if (GetSignalTrueParent(neutralParticle, event) != nullptr) {
     signalCode = GetSignalStoppingSubtypeCode(neutralParticle);
-  } else if (HasMatchingRecoParentTruthToVertex(neutralParticle, event)) {
-    signalCode = 4;
   } else if (HasNonK0TrueObject(neutralParticle)) {
     signalCode = 3;
+  } else if (!hasNeutralTrueObject && HasMatchingRecoParentTruthToVertex(neutralParticle, event)) {
+    signalCode = 4;
   }
 
   anaUtils::_categ->SetObjectCode("signal", signalCode, CATOTHER, -1);

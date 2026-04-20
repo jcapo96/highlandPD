@@ -1754,9 +1754,13 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Float_t trueStartPos[3] = {-999, -999, -999};
             Float_t trueEndPos[3] = {-999, -999, -999};
             Int_t truePDG = -999;
-            const AnaTrueParticlePD* associatedTrueK0 = NULL;
-
-            associatedTrueK0 = resolveAssociatedTrueNeutral(neutralParticle, daughter1, daughter2);
+            const AnaTrueParticlePD* associatedTrueK0 =
+                neutralParticle->TrueObject
+                    ? static_cast<const AnaTrueParticlePD*>(neutralParticle->TrueObject)
+                    : NULL;
+            if (!associatedTrueK0) {
+                associatedTrueK0 = resolveAssociatedTrueNeutral(neutralParticle, daughter1, daughter2);
+            }
             if (associatedTrueK0) {
                 hasTrueObject = 1;
                 trueStartPos[0] = associatedTrueK0->Position[0];

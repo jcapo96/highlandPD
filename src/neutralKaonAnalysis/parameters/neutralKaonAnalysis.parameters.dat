@@ -21,7 +21,7 @@ need to be enabled in baseAnalysis parameter file
 --- Annihilation Vertex Finder ------------
 # Pairing threshold on daughter endpoint distance (cm); see AnnihilationVertexUseEndpointCombinatorics.
 # When combinatorics is on, distance is the minimum over valid start/end pairs; when off, start–start only.
-< neutralKaonAnalysis.AnnihilationVertexRadius = 11.0 >
+< neutralKaonAnalysis.AnnihilationVertexRadius = 10.0 >
 
 # 1 = minimize distance over start/end combinations (SS/SE/ES/EE), then optionally reverse daughters for SE/ES/EE.
 # 0 = plain start–start distance only; PairingEndpointCombo stays SS and no track reversal is applied.
@@ -74,6 +74,10 @@ need to be enabled in baseAnalysis parameter file
 # Neutral candidates from annihilation vertices: when 1, keep at most one neutral per vertex (winner among parents).
 # When 0, keep every neutral built for each qualifying parent (no per-vertex elimination).
 < neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex = 1 >
+# Creation-vertex beam-particle assignment mode:
+# 0 = build all creation-vertex parent hypotheses, then compete.
+# 1 = use the common reco parent of the two annihilation daughters as BeamParticle.
+< neutralKaonAnalysis.CreationVertexBeamParticleMode = 1 >
 
 --- ML residual-range dE/dx (annihilation pions) -----------
 # Likelihood free-range scan tuned like arXiv:2409.18288 Table 1 (TLEFit, charged pions). Collection plane only.
@@ -110,7 +114,14 @@ need to be enabled in baseAnalysis parameter file
 --- Momentum Assurance Parameters -----------
 # Enable momentum assurance for signal codes only (1=only codes 1,5,6 / 0=all codes)
 # Signal codes: 1=two_stopping, 5=one_stopping, 6=interacting
-< neutralKaonAnalysis.EnsureMomentumSignalOnly = 0 >
+< neutralKaonAnalysis.EnsureMomentumSignalOnly = 1 >
+# Enable writing momentum diagnostics: sigdedx, siglogl, joint 2D TH2s h_sigjoint2d, h_sigjointpen, h_sigjointlogl
+# (S, mass penalty, logL1+logL2 TLE), marker TGraphs g_sigjoint2d_mrk_{tle,true,joint}_*, canvases c_sigjoint2d_*, c_sigjointpen_*, c_sigjointlogl_*.
+# 1 = enabled, 0 = disabled.
+< neutralKaonAnalysis.EnableMomentumDiagnosticMultigraphs = 1 >
+# Fill extra free-range diagnostics (mean/sigma dE/dx bias Gaussian fit) for the per-daughter TLEFit path.
+# 1 = enabled, 0 = disabled (faster, keeps these fields at sentinel values).
+< neutralKaonAnalysis.FreeRangeComputeDedxBiasDiagnostics = 0 >
 
 --- Other Parameters -----------
 
