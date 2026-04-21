@@ -45,12 +45,13 @@ bool PionPiPiInvariantMassAndDerivativesGeV(double p1, double p2, double cos_the
 double EstimateSigmaPFromLogLikelihoodCurve(const std::vector<double>& pAxis, const std::vector<double>& logL,
                                              double p0_gev);
 
-/// Event σ_m from error propagation at marginal TLE maxima (p1_0,p2_0); floor/cap/inflate near-collinear.
+/// Event σ_m from error propagation at marginal TLE maxima (p1_0,p2_0); bounded in [sigmaMinGeV, sigmaMaxGeV]
+/// and inflated near-collinear.
 /// fallback_sigma_m_gev used if propagation is non-finite (returns true anyway with safe value).
 bool ComputeSigmaMEventGeV(const std::vector<double>& p1Axis, const std::vector<double>& logL1,
                            const std::vector<double>& p2Axis, const std::vector<double>& logL2,
                            const TVector3& dir1, const TVector3& dir2, double fallback_sigma_m_gev,
-                           JointK0sSigmaMEventDiagnostics& out);
+                           JointK0sSigmaMEventDiagnostics& out, double sigmaMinGeV, double sigmaMaxGeV);
 
 /// Maximize logL1(p1)+logL2(p2) - 0.5*penaltyScale*((M-mK0s)/sigmaMassGeV)^2 on a coarse grid, optional refinement.
 JointK0sPionMomentumGridResult FitJointMomentaOnGrid(const std::vector<double>& p1Axis, const std::vector<double>& logL1,

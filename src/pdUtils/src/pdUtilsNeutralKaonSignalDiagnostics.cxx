@@ -7,6 +7,7 @@
 #include "TH1F.h"
 #include "TMultiGraph.h"
 #include "TCanvas.h"
+#include "TPad.h"
 #include "TTree.h"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "pdJointK0sPionMomentum.hxx"
@@ -15,8 +16,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <map>
 #include <unordered_map>
 #include <string>
+#include <tuple>
 #include <unordered_set>
 #include <TH2F.h>
 #include <TVector3.h>
@@ -36,6 +39,8 @@ namespace {
   std::vector<TH2F*> gK0JointObjectiveTH2Sum;
   std::vector<TH2F*> gK0JointObjectiveTH2Penalty;
   std::vector<TH2F*> gK0JointObjectiveTH2TrackLogLSum;
+  std::vector<double> gK0JointObjectiveOpeningAngleDeg;
+  std::vector<double> gK0JointObjectiveSigmaMGeV;
   std::vector<TGraph*> gK0JointObjectiveBestMarker;
   /// One-point marker TGraphs per joint 2D plot: TLE, true, joint (flat, 3 per TH2; nullptr if unavailable).
   std::vector<TGraph*> gK0JointObjective2DMarkerGraphs;
@@ -479,6 +484,12 @@ void MaybeAccumulateJointObjective2DHeatmaps(AnaNeutralParticlePD* candidate, co
   gK0JointObjectiveTH2Sum.push_back(hObj);
   gK0JointObjectiveTH2Penalty.push_back(hPen);
   gK0JointObjectiveTH2TrackLogLSum.push_back(hLogL);
+  double openingAngleDeg = -999.;
+  if (dirFit1.Mag2() > 0. && dirFit2.Mag2() > 0.) {
+    openingAngleDeg = dirFit1.Angle(dirFit2) * 57.29577951308232;
+  }
+  gK0JointObjectiveOpeningAngleDeg.push_back(openingAngleDeg);
+  gK0JointObjectiveSigmaMGeV.push_back(sigma_m_gev);
 
   size_t im1 = 0;
   for (size_t i = 1; i < logL1.size(); ++i) {
@@ -568,27 +579,59 @@ void WriteSignalPionDedxDiagnostics(OutputManager& output) {
   if (!file) return;
 
   file->cd();
-  for (TMultiGraph* mg : gK0SignalDedxMultiGraphs) {
-    if (mg) {
-      file->cd();
-      mg->Write(mg->GetName(), TObject::kOverwrite);
-      DeleteMultiGraphAndGraphs(mg);
-    }
-  }
   for (TH1F* h : gK0SignalDedxBiasHistograms) {
     if (h) {
-      file->cd();
-      h->Write(h->GetName(), TObject::kOverwrite);
       delete h;
     }
   }
-  for (TMultiGraph* mg : gK0JointMomentumLogLMultiGraphs) {
-    if (mg) {
-      file->cd();
-      mg->Write(mg->GetName(), TObject::kOverwrite);
-      DeleteMultiGraphAndGraphs(mg);
+  // Build one canvas per daughter with sigdedx + siglogl stacked.
+  // Only canvases are persisted; source objects are kept transient.
+  std::map<std::tuple<int, int, int>, std::pair<TMultiGraph*, TMultiGraph*> > mgBySignalPairDau;
+  for (TMultiGraph* mg : gK0SignalDedxMultiGraphs) {
+    if (!mg || !mg->GetName()) continue;
+    int sc = -1;
+    int dau = -1;
+    int pj = -1;
+    if (std::sscanf(mg->GetName(), "mg_sigdedx_%d_dau%d_%d", &sc, &dau, &pj) == 3) {
+      mgBySignalPairDau[std::make_tuple(sc, pj, dau)].first = mg;
     }
   }
+  for (TMultiGraph* mg : gK0JointMomentumLogLMultiGraphs) {
+    if (!mg || !mg->GetName()) continue;
+    int sc = -1;
+    int dau = -1;
+    int pj = -1;
+    if (std::sscanf(mg->GetName(), "mg_siglogl_%d_dau%d_%d", &sc, &dau, &pj) == 3) {
+      mgBySignalPairDau[std::make_tuple(sc, pj, dau)].second = mg;
+    }
+  }
+  for (const auto& it : mgBySignalPairDau) {
+    const int sc = std::get<0>(it.first);
+    const int pj = std::get<1>(it.first);
+    const int dau = std::get<2>(it.first);
+    TMultiGraph* mgDedx = it.second.first;
+    TMultiGraph* mgLogL = it.second.second;
+    if (!mgDedx && !mgLogL) continue;
+
+    TCanvas* cv = new TCanvas(Form("c_sigmomdiag_%d_dau%d_%d", sc, dau, pj),
+                              Form("Signal momentum diagnostics (signal %d, pair %d, dau %d)", sc, pj, dau),
+                              900, 900);
+    cv->Divide(1, 2);
+    cv->cd(1);
+    if (mgDedx) mgDedx->Draw("A");
+    cv->cd(2);
+    if (mgLogL) mgLogL->Draw("A");
+    file->cd();
+    cv->Write(cv->GetName(), TObject::kOverwrite);
+    delete cv;
+  }
+  for (TMultiGraph* mg : gK0SignalDedxMultiGraphs) {
+    DeleteMultiGraphAndGraphs(mg);
+  }
+  for (TMultiGraph* mg : gK0JointMomentumLogLMultiGraphs) {
+    DeleteMultiGraphAndGraphs(mg);
+  }
+
   const size_t nJoint2d = gK0JointObjectiveTH2Sum.size();
   for (size_t ij = 0; ij < nJoint2d; ++ij) {
     TH2F* hS = gK0JointObjectiveTH2Sum[ij];
@@ -599,50 +642,40 @@ void WriteSignalPionDedxDiagnostics(OutputManager& output) {
     TGraph* m1 = (3 * ij + 1 < gK0JointObjective2DMarkerGraphs.size()) ? gK0JointObjective2DMarkerGraphs[3 * ij + 1] : nullptr;
     TGraph* m2 = (3 * ij + 2 < gK0JointObjective2DMarkerGraphs.size()) ? gK0JointObjective2DMarkerGraphs[3 * ij + 2] : nullptr;
 
-    if (hS) {
-      file->cd();
-      hS->Write(hS->GetName(), TObject::kOverwrite);
-    }
-    if (hP) {
-      file->cd();
-      hP->Write(hP->GetName(), TObject::kOverwrite);
-    }
-    if (hLL) {
-      file->cd();
-      hLL->Write(hLL->GetName(), TObject::kOverwrite);
-    }
-    if (bestM) {
-      file->cd();
-      bestM->Write(bestM->GetName(), TObject::kOverwrite);
-    }
-    for (TGraph* g : {m0, m1, m2}) {
-      if (g) {
-        file->cd();
-        g->Write(g->GetName(), TObject::kOverwrite);
-      }
-    }
-
     int sc = -1;
     int pj = -1;
     if (hS && std::sscanf(hS->GetName(), "h_sigjoint2d_%d_%d", &sc, &pj) == 2 && sc >= 0 && pj >= 0) {
-      auto drawJointRefCanvas = [&](const char* cname, const char* ctitle, TH2F* h) {
-        if (!h) return;
-        TCanvas* cv = new TCanvas(cname, ctitle, 700, 550);
-        cv->cd();
-        h->Draw("COLZ");
-        if (m0) m0->Draw("P SAME");
-        if (m1) m1->Draw("P SAME");
-        if (m2) m2->Draw("P SAME");
-        file->cd();
-        cv->Write(cv->GetName(), TObject::kOverwrite);
-        delete cv;
-      };
-      drawJointRefCanvas(Form("c_sigjoint2d_%d_%d", sc, pj),
-                         Form("Joint S=logL1+logL2-pen + refs (signal %d pair %d)", sc, pj), hS);
-      drawJointRefCanvas(Form("c_sigjointpen_%d_%d", sc, pj),
-                         Form("Joint mass penalty + refs (signal %d pair %d)", sc, pj), hP);
-      drawJointRefCanvas(Form("c_sigjointlogl_%d_%d", sc, pj),
-                         Form("Joint logL1+logL2 (TLE) + refs (signal %d pair %d)", sc, pj), hLL);
+      const double openingAngleDeg =
+          (ij < gK0JointObjectiveOpeningAngleDeg.size()) ? gK0JointObjectiveOpeningAngleDeg[ij] : -999.;
+      const double sigmaMGeV =
+          (ij < gK0JointObjectiveSigmaMGeV.size()) ? gK0JointObjectiveSigmaMGeV[ij] : -999.;
+      const double sigmaMMeV = (std::isfinite(sigmaMGeV) && sigmaMGeV > 0.) ? sigmaMGeV * 1e3 : -999.;
+      TCanvas* cv2d = new TCanvas(Form("c_sigjoint_bundle_%d_%d", sc, pj),
+                                  Form("Joint 2D diagnostics (signal %d pair %d, theta12=%.2f deg, sigma_m=%.2f MeV)",
+                                       sc, pj, openingAngleDeg, sigmaMMeV),
+                                  1800, 550);
+      cv2d->Divide(3, 1);
+      TPad* p1 = static_cast<TPad*>(cv2d->cd(1));
+      if (p1) p1->SetRightMargin(0.18);
+      if (hS) hS->Draw("COLZ");
+      if (m0) m0->Draw("P SAME");
+      if (m1) m1->Draw("P SAME");
+      if (m2) m2->Draw("P SAME");
+      TPad* p2 = static_cast<TPad*>(cv2d->cd(2));
+      if (p2) p2->SetRightMargin(0.18);
+      if (hP) hP->Draw("COLZ");
+      if (m0) m0->Draw("P SAME");
+      if (m1) m1->Draw("P SAME");
+      if (m2) m2->Draw("P SAME");
+      TPad* p3 = static_cast<TPad*>(cv2d->cd(3));
+      if (p3) p3->SetRightMargin(0.18);
+      if (hLL) hLL->Draw("COLZ");
+      if (m0) m0->Draw("P SAME");
+      if (m1) m1->Draw("P SAME");
+      if (m2) m2->Draw("P SAME");
+      file->cd();
+      cv2d->Write(cv2d->GetName(), TObject::kOverwrite);
+      delete cv2d;
     }
 
     if (hS) delete hS;
@@ -659,6 +692,8 @@ void WriteSignalPionDedxDiagnostics(OutputManager& output) {
   gK0JointObjectiveTH2Sum.clear();
   gK0JointObjectiveTH2Penalty.clear();
   gK0JointObjectiveTH2TrackLogLSum.clear();
+  gK0JointObjectiveOpeningAngleDeg.clear();
+  gK0JointObjectiveSigmaMGeV.clear();
   gK0JointObjectiveBestMarker.clear();
   gK0JointObjective2DMarkerGraphs.clear();
   sSigDedxAcceptedDauKeys.clear();

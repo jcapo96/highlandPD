@@ -7,8 +7,6 @@
 namespace pdJointK0sPionMomentum {
 namespace {
 
-constexpr double kFloorSigmaMGeV = 0.005;  // 5 MeV
-constexpr double kCapSigmaMGeV = 0.05;    // 50 MeV
 constexpr double kCollinearCosCut = 0.95;
 constexpr double kCollinearInflate = 2.0;
 
@@ -191,7 +189,7 @@ double EstimateSigmaPFromLogLikelihoodCurve(const std::vector<double>& pAxis, co
 bool ComputeSigmaMEventGeV(const std::vector<double>& p1Axis, const std::vector<double>& logL1,
                            const std::vector<double>& p2Axis, const std::vector<double>& logL2,
                            const TVector3& dir1, const TVector3& dir2, double fallback_sigma_m_gev,
-                           JointK0sSigmaMEventDiagnostics& out) {
+                           JointK0sSigmaMEventDiagnostics& out, double sigmaMinGeV, double sigmaMaxGeV) {
   constexpr double kPionMassGeV = 0.13957;
   out = JointK0sSigmaMEventDiagnostics();
 
@@ -240,8 +238,12 @@ bool ComputeSigmaMEventGeV(const std::vector<double>& p1Axis, const std::vector<
 
   double sm = std::sqrt(sm2);
   if (ct > kCollinearCosCut) sm *= kCollinearInflate;
-  sm = std::max(sm, kFloorSigmaMGeV);
-  sm = std::min(sm, kCapSigmaMGeV);
+  const double sMin = std::isfinite(sigmaMinGeV) ? sigmaMinGeV : 0.005;
+  const double sMax = std::isfinite(sigmaMaxGeV) ? sigmaMaxGeV : 0.05;
+  const double lo = std::min(sMin, sMax);
+  const double hi = std::max(sMin, sMax);
+  sm = std::max(sm, lo);
+  sm = std::min(sm, hi);
   out.sigma_m_event_gev = sm;
   return true;
 }

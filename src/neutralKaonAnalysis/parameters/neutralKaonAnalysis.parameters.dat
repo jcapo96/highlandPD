@@ -97,13 +97,15 @@ need to be enabled in baseAnalysis parameter file
 
 # Joint K0s-constrained ππ momenta (2D grid on |p1|,|p2| with soft m(K0s) penalty on interpolated free-range log L).
 # 0 = disabled (each daughter: independent free-range ML as today). 1 = try joint; on failure falls back to independent.
-# Validation: MC (P_reco-P_true)/P_true for joint vs independent; slice interacting vertices; stress-test bad opening angles.
 < neutralKaonAnalysis.JointK0sMomentumEnable = 1 >
 < neutralKaonAnalysis.JointK0sMomentumPMinGeV = 0.05 >
 < neutralKaonAnalysis.JointK0sMomentumPMaxGeV = 7.0 >
 < neutralKaonAnalysis.JointK0sMomentumPStepGeV = 0.05 >
 # Gaussian mass prior width σ_M in MeV (converted to GeV internally).
 < neutralKaonAnalysis.JointK0sMassSigmaMeV = 50.0 >
+# Bounds for event-propagated sigma_m used by joint fit (MeV). If min > max, code swaps them.
+< neutralKaonAnalysis.JointK0sMassSigmaMinMeV = 0.0 >
+< neutralKaonAnalysis.JointK0sMassSigmaMaxMeV = 100.0 >
 # Multiplier on 0.5*((M-m_K0s)/σ)^2; m_K0s fixed at 0.497611 GeV in code.
 < neutralKaonAnalysis.JointK0sMassPenaltyScale = 1.0 >
 # 1 = σ_m per event from (∂m/∂p_i σ_pi)^2 using TLE log L curvature at marginal maxima; 0 = fixed JointK0sMassSigmaMeV only.

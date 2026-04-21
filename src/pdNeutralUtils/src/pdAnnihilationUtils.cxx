@@ -1161,6 +1161,12 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
         const double sigmaMassMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMeV")
                                           ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMeV")
                                           : 10.0;
+        const double sigmaMassMinMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMinMeV")
+                                           ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMinMeV")
+                                           : 5.0;
+        const double sigmaMassMaxMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMaxMeV")
+                                           ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMaxMeV")
+                                           : 50.0;
         const double penaltyScale = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassPenaltyScale")
                                         ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassPenaltyScale")
                                         : 1.0;
@@ -1170,6 +1176,10 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
                 : 2;
         constexpr double kK0sMassGeV = 0.497611;
         const double sigmaMassGeV = sigmaMassMeV * 1e-3;
+        const double sigmaMassMinGeV = sigmaMassMinMeV * 1e-3;
+        const double sigmaMassMaxGeV = sigmaMassMaxMeV * 1e-3;
+        const double sigmaMassLoGeV = std::min(sigmaMassMinGeV, sigmaMassMaxGeV);
+        const double sigmaMassHiGeV = std::max(sigmaMassMinGeV, sigmaMassMaxGeV);
 
         const bool useEventSigmaM =
             !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") ||
@@ -1189,15 +1199,19 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
           JointK0sSigmaMEventDiagnostics sigmaDiag;
           if (useEventSigmaM &&
               pdJointK0sPionMomentum::ComputeSigmaMEventGeV(p1v, logL1, p2v, logL2, dirFit1, dirFit2, sigmaMassGeV,
-                                                            sigmaDiag) &&
+                                                            sigmaDiag, sigmaMassLoGeV, sigmaMassHiGeV) &&
               std::isfinite(sigmaDiag.sigma_m_event_gev) && sigmaDiag.sigma_m_event_gev > 0.) {
             sigma_m_for_grid = sigmaDiag.sigma_m_event_gev;
             vertex->JointK0sSigmaP1GeV = static_cast<Float_t>(sigmaDiag.sigma_p1_gev);
             vertex->JointK0sSigmaP2GeV = static_cast<Float_t>(sigmaDiag.sigma_p2_gev);
-            vertex->JointK0sSigmaMEventGeV = static_cast<Float_t>(sigmaDiag.sigma_m_event_gev);
             vertex->JointK0sDmDp1 = static_cast<Float_t>(sigmaDiag.dm_dp1);
             vertex->JointK0sDmDp2 = static_cast<Float_t>(sigmaDiag.dm_dp2);
           }
+          if (std::isfinite(sigma_m_for_grid) && sigma_m_for_grid > 0.) {
+            sigma_m_for_grid = std::max(sigma_m_for_grid, sigmaMassLoGeV);
+            sigma_m_for_grid = std::min(sigma_m_for_grid, sigmaMassHiGeV);
+          }
+          vertex->JointK0sSigmaMEventGeV = static_cast<Float_t>(sigma_m_for_grid);
 
           const JointK0sPionMomentumGridResult jr = pdJointK0sPionMomentum::FitJointMomentaOnGrid(
               p1v, logL1, p2v, logL2, dirFit1, dirFit2, pMinGeV, pMaxGeV, pStepGeV, kK0sMassGeV, sigma_m_for_grid,
