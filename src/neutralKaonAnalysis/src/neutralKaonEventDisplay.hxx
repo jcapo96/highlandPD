@@ -106,6 +106,14 @@ private:
     Int_t _k0_secondParticleTruePDG[kMaxK0];
     Int_t _k0_daughter1TruePDG[kMaxK0];
     Int_t _k0_daughter2TruePDG[kMaxK0];
+    Float_t _k0_parentTrueStartMom[kMaxK0];
+    Float_t _k0_parentTrueEndMom[kMaxK0];
+    Float_t _k0_secondTrueStartMom[kMaxK0];
+    Float_t _k0_secondTrueEndMom[kMaxK0];
+    Float_t _k0_daughter1TrueStartMom[kMaxK0];
+    Float_t _k0_daughter1TrueEndMom[kMaxK0];
+    Float_t _k0_daughter2TrueStartMom[kMaxK0];
+    Float_t _k0_daughter2TrueEndMom[kMaxK0];
     Int_t _k0_signalCode[kMaxK0];                 // Assigned neutral signal category code
     Int_t _k0_trueProcessEnd[kMaxK0];
     Int_t _k0_trueParentPDG[kMaxK0];
@@ -140,6 +148,8 @@ private:
     Int_t _k0_annDegParticleRawCount[kMaxK0][kMaxAnnDegeneracyLines];
     Int_t _k0_annDegParticleProjectedCount[kMaxK0][kMaxAnnDegeneracyLines];
     Int_t _k0_annDegParticleTruePDG[kMaxK0][kMaxAnnDegeneracyLines];
+    Float_t _k0_annDegParticleTrueStartMom[kMaxK0][kMaxAnnDegeneracyLines];
+    Float_t _k0_annDegParticleTrueEndMom[kMaxK0][kMaxAnnDegeneracyLines];
     Float_t _k0_annDegFitAnchor[kMaxK0][kMaxAnnDegeneracyLines*3];
     Float_t _k0_annDegFitDir[kMaxK0][kMaxAnnDegeneracyLines*3];
     Int_t _k0_annDegFitLineN[kMaxK0];
@@ -150,6 +160,8 @@ private:
     Int_t _k0_creationDegParticleRawCount[kMaxK0][kMaxAnnDegeneracyLines];
     Int_t _k0_creationDegParticleProjectedCount[kMaxK0][kMaxAnnDegeneracyLines];
     Int_t _k0_creationDegParticleTruePDG[kMaxK0][kMaxAnnDegeneracyLines];
+    Float_t _k0_creationDegParticleTrueStartMom[kMaxK0][kMaxAnnDegeneracyLines];
+    Float_t _k0_creationDegParticleTrueEndMom[kMaxK0][kMaxAnnDegeneracyLines];
     Float_t _k0_creationDegFitAnchor[kMaxK0][kMaxAnnDegeneracyLines*3];
     Float_t _k0_creationDegFitDir[kMaxK0][kMaxAnnDegeneracyLines*3];
     Int_t _k0_creationDegFitLineN[kMaxK0];
@@ -230,8 +242,16 @@ private:
         edk0_trueEndPos,
         edk0_truePDG,
         edk0_secondParticleTruePDG,
+        edk0_parentTrueStartMom,
+        edk0_parentTrueEndMom,
+        edk0_secondTrueStartMom,
+        edk0_secondTrueEndMom,
         edk0_daughter1TruePDG,
         edk0_daughter2TruePDG,
+        edk0_daughter1TrueStartMom,
+        edk0_daughter1TrueEndMom,
+        edk0_daughter2TrueStartMom,
+        edk0_daughter2TrueEndMom,
         edk0_signalCode,
         edk0_trueProcessEnd,
         edk0_trueParentPDG,
@@ -266,6 +286,8 @@ private:
         edk0_annDegParticleRawCount,
         edk0_annDegParticleProjectedCount,
         edk0_annDegParticleTruePDG,
+        edk0_annDegParticleTrueStartMom,
+        edk0_annDegParticleTrueEndMom,
         edk0_annDegFitAnchor,
         edk0_annDegFitDir,
         edk0_annDegFitLineN,
@@ -276,6 +298,8 @@ private:
         edk0_creationDegParticleRawCount,
         edk0_creationDegParticleProjectedCount,
         edk0_creationDegParticleTruePDG,
+        edk0_creationDegParticleTrueStartMom,
+        edk0_creationDegParticleTrueEndMom,
         edk0_creationDegFitAnchor,
         edk0_creationDegFitDir,
         edk0_creationDegFitLineN,

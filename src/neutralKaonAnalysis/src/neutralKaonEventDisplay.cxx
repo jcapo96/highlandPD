@@ -215,9 +215,39 @@ Int_t TruePDGOrSentinel(const AnaParticlePD* particle) {
     return trueParticle ? trueParticle->PDG : -999;
 }
 
-std::string FormatParticleGroupLabel(const std::string& base, Int_t truePDG) {
-    if (truePDG == -999) return base;
-    return base + Form(" [true PDG=%d]", truePDG);
+Float_t TrueStartMomentumOrSentinel(const AnaParticlePD* particle) {
+    if (!particle || !particle->TrueObject) return -999.f;
+    const AnaTrueParticlePD* trueParticle = static_cast<const AnaTrueParticlePD*>(particle->TrueObject);
+    if (!trueParticle) return -999.f;
+    const Float_t p = trueParticle->Momentum;
+    return (std::isfinite(p) && p > 0.f) ? p : -999.f;
+}
+
+Float_t TrueEndMomentumOrSentinel(const AnaParticlePD* particle) {
+    if (!particle || !particle->TrueObject) return -999.f;
+    const AnaTrueParticlePD* trueParticle = static_cast<const AnaTrueParticlePD*>(particle->TrueObject);
+    if (!trueParticle) return -999.f;
+    const Float_t p = trueParticle->MomentumEnd;
+    return (std::isfinite(p) && p > 0.f) ? p : -999.f;
+}
+
+std::string FormatParticleGroupLabel(const std::string& base, Int_t truePDG, Float_t p0 = -999.f, Float_t pf = -999.f) {
+    const bool hasP0 = (std::isfinite(p0) && p0 > 0.f);
+    const bool hasPf = (std::isfinite(pf) && pf > 0.f);
+    if (truePDG == -999 && !hasP0 && !hasPf) return base;
+    if (truePDG != -999 && hasP0 && hasPf) {
+        return base + Form(" [true PDG=%d, p0=%.1f GeV, pf=%.1f GeV]", truePDG, p0, pf);
+    }
+    if (truePDG != -999 && hasP0) {
+        return base + Form(" [true PDG=%d, p0=%.1f GeV]", truePDG, p0);
+    }
+    if (truePDG != -999 && hasPf) {
+        return base + Form(" [true PDG=%d, pf=%.1f GeV]", truePDG, pf);
+    }
+    if (truePDG != -999) return base + Form(" [true PDG=%d]", truePDG);
+    if (hasP0 && hasPf) return base + Form(" [p0=%.1f GeV, pf=%.1f GeV]", p0, pf);
+    if (hasP0) return base + Form(" [p0=%.1f GeV]", p0);
+    return base + Form(" [pf=%.1f GeV]", pf);
 }
 
 bool IsVertexDaughter(const AnaAnnihilationVertexPD* vertex, const AnaParticlePD* particle) {
@@ -360,6 +390,8 @@ void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
                                                 Int_t* rawCountBuffer,
                                                 Int_t* projectedCountBuffer,
                                                 Int_t* truePdgBuffer,
+                                                Float_t* trueStartMomentumBuffer,
+                                                Float_t* trueEndMomentumBuffer,
                                                 Float_t* fitAnchorBuffer,
                                                 Float_t* fitDirBuffer,
                                                 Int_t& fitLineN,
@@ -371,6 +403,8 @@ void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
     if (rawCountBuffer) std::fill_n(rawCountBuffer, maxLines, 0);
     if (projectedCountBuffer) std::fill_n(projectedCountBuffer, maxLines, 0);
     if (truePdgBuffer) std::fill_n(truePdgBuffer, maxLines, -999);
+    if (trueStartMomentumBuffer) std::fill_n(trueStartMomentumBuffer, maxLines, -999.f);
+    if (trueEndMomentumBuffer) std::fill_n(trueEndMomentumBuffer, maxLines, -999.f);
     if (!vertex || !rawBuffer || !projectedBuffer) return;
     if (!HasValidRecoPoint(vertex->PositionFit)) return;
 
@@ -432,6 +466,8 @@ void CollectAnnihilationDegeneracyDisplayPoints(const AnaEventB& event,
         AppendVecToFlatBuffer(fitAnchor, fitAnchorBuffer, lineIdx, maxLines);
         AppendVecToFlatBuffer(fitDir, fitDirBuffer, lineIdx, maxLines);
         if (truePdgBuffer) truePdgBuffer[lineIdx] = TruePDGOrSentinel(particle);
+        if (trueStartMomentumBuffer) trueStartMomentumBuffer[lineIdx] = TrueStartMomentumOrSentinel(particle);
+        if (trueEndMomentumBuffer) trueEndMomentumBuffer[lineIdx] = TrueEndMomentumOrSentinel(particle);
         ++fitLineN;
 
         if (HasValidRecoPoint(particle->PositionStart)) {
@@ -469,6 +505,8 @@ void CollectCreationDegeneracyDisplayPoints(const AnaEventB& event,
                                             Int_t* rawCountBuffer,
                                             Int_t* projectedCountBuffer,
                                             Int_t* truePdgBuffer,
+                                            Float_t* trueStartMomentumBuffer,
+                                            Float_t* trueEndMomentumBuffer,
                                             Float_t* fitAnchorBuffer,
                                             Float_t* fitDirBuffer,
                                             Int_t& fitLineN,
@@ -480,6 +518,8 @@ void CollectCreationDegeneracyDisplayPoints(const AnaEventB& event,
     if (rawCountBuffer) std::fill_n(rawCountBuffer, maxLines, 0);
     if (projectedCountBuffer) std::fill_n(projectedCountBuffer, maxLines, 0);
     if (truePdgBuffer) std::fill_n(truePdgBuffer, maxLines, -999);
+    if (trueStartMomentumBuffer) std::fill_n(trueStartMomentumBuffer, maxLines, -999.f);
+    if (trueEndMomentumBuffer) std::fill_n(trueEndMomentumBuffer, maxLines, -999.f);
     if (!creationVertex || !rawBuffer || !projectedBuffer) return;
 
     TVector3 creationPos(-999.0, -999.0, -999.0);
@@ -532,6 +572,8 @@ void CollectCreationDegeneracyDisplayPoints(const AnaEventB& event,
         AppendVecToFlatBuffer(fitAnchor, fitAnchorBuffer, lineIdx, maxLines);
         AppendVecToFlatBuffer(fitDir, fitDirBuffer, lineIdx, maxLines);
         if (truePdgBuffer) truePdgBuffer[lineIdx] = TruePDGOrSentinel(particle);
+        if (trueStartMomentumBuffer) trueStartMomentumBuffer[lineIdx] = TrueStartMomentumOrSentinel(particle);
+        if (trueEndMomentumBuffer) trueEndMomentumBuffer[lineIdx] = TrueEndMomentumOrSentinel(particle);
         ++fitLineN;
 
         if (HasValidRecoPoint(particle->PositionStart)) {
@@ -586,6 +628,14 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         _k0_secondParticleTruePDG[i] = -999;
         _k0_daughter1TruePDG[i] = -999;
         _k0_daughter2TruePDG[i] = -999;
+        _k0_parentTrueStartMom[i] = -999.f;
+        _k0_parentTrueEndMom[i] = -999.f;
+        _k0_secondTrueStartMom[i] = -999.f;
+        _k0_secondTrueEndMom[i] = -999.f;
+        _k0_daughter1TrueStartMom[i] = -999.f;
+        _k0_daughter1TrueEndMom[i] = -999.f;
+        _k0_daughter2TrueStartMom[i] = -999.f;
+        _k0_daughter2TrueEndMom[i] = -999.f;
         _k0_signalCode[i] = 2;
         _k0_trueProcessEnd[i] = -1;
         _k0_trueParentPDG[i] = 0;
@@ -664,6 +714,8 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         std::fill_n(_k0_annDegParticleRawCount[i], kMaxAnnDegeneracyLines, 0);
         std::fill_n(_k0_annDegParticleProjectedCount[i], kMaxAnnDegeneracyLines, 0);
         std::fill_n(_k0_annDegParticleTruePDG[i], kMaxAnnDegeneracyLines, -999);
+        std::fill_n(_k0_annDegParticleTrueStartMom[i], kMaxAnnDegeneracyLines, -999.f);
+        std::fill_n(_k0_annDegParticleTrueEndMom[i], kMaxAnnDegeneracyLines, -999.f);
         std::fill_n(_k0_annDegFitAnchor[i], kMaxAnnDegeneracyLines * 3, -999.f);
         std::fill_n(_k0_annDegFitDir[i], kMaxAnnDegeneracyLines * 3, -999.f);
         _k0_annDegFitLineN[i] = 0;
@@ -674,6 +726,8 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         std::fill_n(_k0_creationDegParticleRawCount[i], kMaxAnnDegeneracyLines, 0);
         std::fill_n(_k0_creationDegParticleProjectedCount[i], kMaxAnnDegeneracyLines, 0);
         std::fill_n(_k0_creationDegParticleTruePDG[i], kMaxAnnDegeneracyLines, -999);
+        std::fill_n(_k0_creationDegParticleTrueStartMom[i], kMaxAnnDegeneracyLines, -999.f);
+        std::fill_n(_k0_creationDegParticleTrueEndMom[i], kMaxAnnDegeneracyLines, -999.f);
         std::fill_n(_k0_creationDegFitAnchor[i], kMaxAnnDegeneracyLines * 3, -999.f);
         std::fill_n(_k0_creationDegFitDir[i], kMaxAnnDegeneracyLines * 3, -999.f);
         _k0_creationDegFitLineN[i] = 0;
@@ -982,8 +1036,16 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edk0_trueEndPos, "ED_k0_trueEndPos", "F", "True K0 end position", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, 3);
     output.AddVectorVar(tree_index, edk0_truePDG, "ED_k0_truePDG", "I", "True K0 PDG", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_secondParticleTruePDG, "ED_k0_secondParticleTruePDG", "I", "True PDG of creation-vertex second particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_parentTrueStartMom, "ED_k0_parentTrueStartMom", "F", "True start momentum of creation-vertex parent particle [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_parentTrueEndMom, "ED_k0_parentTrueEndMom", "F", "True end momentum of creation-vertex parent particle [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_secondTrueStartMom, "ED_k0_secondTrueStartMom", "F", "True start momentum of creation-vertex second particle [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_secondTrueEndMom, "ED_k0_secondTrueEndMom", "F", "True end momentum of creation-vertex second particle [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_daughter1TruePDG, "ED_k0_daughter1TruePDG", "I", "True PDG of annihilation daughter 1", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_daughter2TruePDG, "ED_k0_daughter2TruePDG", "I", "True PDG of annihilation daughter 2", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_daughter1TrueStartMom, "ED_k0_daughter1TrueStartMom", "F", "True start momentum of annihilation daughter 1 [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_daughter1TrueEndMom, "ED_k0_daughter1TrueEndMom", "F", "True end momentum of annihilation daughter 1 [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_daughter2TrueStartMom, "ED_k0_daughter2TrueStartMom", "F", "True start momentum of annihilation daughter 2 [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
+    output.AddVectorVar(tree_index, edk0_daughter2TrueEndMom, "ED_k0_daughter2TrueEndMom", "F", "True end momentum of annihilation daughter 2 [GeV]", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_signalCode, "ED_k0_signalCode", "I", "Assigned neutral signal category", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_trueProcessEnd, "ED_k0_trueProcessEnd", "I", "True K0 end process enum", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
     output.AddVectorVar(tree_index, edk0_trueParentPDG, "ED_k0_trueParentPDG", "I", "True K0 parent PDG", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
@@ -1010,6 +1072,8 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edk0_annDegParticleRawCount, "ED_k0_annDegParticleRawCount", "I", "Raw annihilation-degeneracy point count per candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
     output.AddMatrixVar(tree_index, edk0_annDegParticleProjectedCount, "ED_k0_annDegParticleProjectedCount", "I", "Projected annihilation-degeneracy point count per candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
     output.AddMatrixVar(tree_index, edk0_annDegParticleTruePDG, "ED_k0_annDegParticleTruePDG", "I", "True PDG per annihilation-degeneracy candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
+    output.AddMatrixVar(tree_index, edk0_annDegParticleTrueStartMom, "ED_k0_annDegParticleTrueStartMom", "F", "True start momentum [GeV] per annihilation-degeneracy candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
+    output.AddMatrixVar(tree_index, edk0_annDegParticleTrueEndMom, "ED_k0_annDegParticleTrueEndMom", "F", "True end momentum [GeV] per annihilation-degeneracy candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
     output.AddMatrixVar(tree_index, edk0_annDegFitAnchor, "ED_k0_annDegFitAnchor", "F", "Fit anchors for annihilation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
     output.AddMatrixVar(tree_index, edk0_annDegFitDir, "ED_k0_annDegFitDir", "F", "Fit directions for annihilation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
     output.AddVectorVar(tree_index, edk0_annDegFitLineN, "ED_k0_annDegFitLineN", "I", "Number of annihilation-degeneracy fitted lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
@@ -1020,6 +1084,8 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edk0_creationDegParticleRawCount, "ED_k0_creationDegParticleRawCount", "I", "Raw creation-degeneracy point count per candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
     output.AddMatrixVar(tree_index, edk0_creationDegParticleProjectedCount, "ED_k0_creationDegParticleProjectedCount", "I", "Projected creation-degeneracy point count per candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
     output.AddMatrixVar(tree_index, edk0_creationDegParticleTruePDG, "ED_k0_creationDegParticleTruePDG", "I", "True PDG per creation-degeneracy candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
+    output.AddMatrixVar(tree_index, edk0_creationDegParticleTrueStartMom, "ED_k0_creationDegParticleTrueStartMom", "F", "True start momentum [GeV] per creation-degeneracy candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
+    output.AddMatrixVar(tree_index, edk0_creationDegParticleTrueEndMom, "ED_k0_creationDegParticleTrueEndMom", "F", "True end momentum [GeV] per creation-degeneracy candidate particle", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines);
     output.AddMatrixVar(tree_index, edk0_creationDegFitAnchor, "ED_k0_creationDegFitAnchor", "F", "Fit anchors for creation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
     output.AddMatrixVar(tree_index, edk0_creationDegFitDir, "ED_k0_creationDegFitDir", "F", "Fit directions for creation-degeneracy candidate lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0, kMaxAnnDegeneracyLines * 3);
     output.AddVectorVar(tree_index, edk0_creationDegFitLineN, "ED_k0_creationDegFitLineN", "I", "Number of creation-degeneracy fitted lines", ednK0Candidates, "ED_nK0Candidates", -kMaxK0);
@@ -1285,8 +1351,18 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_secondParticleID, secondParticleID);
             output.FillVectorVar(edk0_secondParticleTruePDG,
                                  TruePDGOrSentinel(neutralParticle->CreationVertex ? neutralParticle->CreationVertex->SecondParticle : nullptr));
+            output.FillVectorVar(edk0_parentTrueStartMom, TrueStartMomentumOrSentinel(neutralParticle->Parent));
+            output.FillVectorVar(edk0_parentTrueEndMom, TrueEndMomentumOrSentinel(neutralParticle->Parent));
+            output.FillVectorVar(edk0_secondTrueStartMom,
+                                 TrueStartMomentumOrSentinel(neutralParticle->CreationVertex ? neutralParticle->CreationVertex->SecondParticle : nullptr));
+            output.FillVectorVar(edk0_secondTrueEndMom,
+                                 TrueEndMomentumOrSentinel(neutralParticle->CreationVertex ? neutralParticle->CreationVertex->SecondParticle : nullptr));
             output.FillVectorVar(edk0_daughter1TruePDG, TruePDGOrSentinel(daughter1));
             output.FillVectorVar(edk0_daughter2TruePDG, TruePDGOrSentinel(daughter2));
+            output.FillVectorVar(edk0_daughter1TrueStartMom, TrueStartMomentumOrSentinel(daughter1));
+            output.FillVectorVar(edk0_daughter1TrueEndMom, TrueEndMomentumOrSentinel(daughter1));
+            output.FillVectorVar(edk0_daughter2TrueStartMom, TrueStartMomentumOrSentinel(daughter2));
+            output.FillVectorVar(edk0_daughter2TrueEndMom, TrueEndMomentumOrSentinel(daughter2));
 
             Float_t parentStartPos[3] = {-999.f, -999.f, -999.f};
             Float_t parentEndPos[3] = {-999.f, -999.f, -999.f};
@@ -1309,9 +1385,13 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Int_t annDegParticleRawCount[kMaxAnnDegeneracyLines];
             Int_t annDegParticleProjectedCount[kMaxAnnDegeneracyLines];
             Int_t annDegParticleTruePDG[kMaxAnnDegeneracyLines];
+            Float_t annDegParticleTrueStartMom[kMaxAnnDegeneracyLines];
+            Float_t annDegParticleTrueEndMom[kMaxAnnDegeneracyLines];
             std::fill_n(annDegParticleRawCount, kMaxAnnDegeneracyLines, 0);
             std::fill_n(annDegParticleProjectedCount, kMaxAnnDegeneracyLines, 0);
             std::fill_n(annDegParticleTruePDG, kMaxAnnDegeneracyLines, -999);
+            std::fill_n(annDegParticleTrueStartMom, kMaxAnnDegeneracyLines, -999.f);
+            std::fill_n(annDegParticleTrueEndMom, kMaxAnnDegeneracyLines, -999.f);
             Float_t annDegFitAnchor[kMaxAnnDegeneracyLines * 3];
             Float_t annDegFitDir[kMaxAnnDegeneracyLines * 3];
             std::fill_n(annDegFitAnchor, kMaxAnnDegeneracyLines * 3, -999.f);
@@ -1326,9 +1406,13 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Int_t creationDegParticleRawCount[kMaxAnnDegeneracyLines];
             Int_t creationDegParticleProjectedCount[kMaxAnnDegeneracyLines];
             Int_t creationDegParticleTruePDG[kMaxAnnDegeneracyLines];
+            Float_t creationDegParticleTrueStartMom[kMaxAnnDegeneracyLines];
+            Float_t creationDegParticleTrueEndMom[kMaxAnnDegeneracyLines];
             std::fill_n(creationDegParticleRawCount, kMaxAnnDegeneracyLines, 0);
             std::fill_n(creationDegParticleProjectedCount, kMaxAnnDegeneracyLines, 0);
             std::fill_n(creationDegParticleTruePDG, kMaxAnnDegeneracyLines, -999);
+            std::fill_n(creationDegParticleTrueStartMom, kMaxAnnDegeneracyLines, -999.f);
+            std::fill_n(creationDegParticleTrueEndMom, kMaxAnnDegeneracyLines, -999.f);
             Float_t creationDegFitAnchor[kMaxAnnDegeneracyLines * 3];
             Float_t creationDegFitDir[kMaxAnnDegeneracyLines * 3];
             std::fill_n(creationDegFitAnchor, kMaxAnnDegeneracyLines * 3, -999.f);
@@ -1441,6 +1525,7 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                                                            annDegHitsRaw, annDegHitsRawN,
                                                            annDegHitsProjected, annDegHitsProjectedN,
                                                            annDegParticleRawCount, annDegParticleProjectedCount, annDegParticleTruePDG,
+                                                           annDegParticleTrueStartMom, annDegParticleTrueEndMom,
                                                            annDegFitAnchor, annDegFitDir, annDegFitLineN,
                                                            kMaxAnnDegeneracyLines,
                                                            kMaxAnnDegeneracyPoints);
@@ -1452,7 +1537,8 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                                                        creationDegHitsRaw, creationDegHitsRawN,
                                                        creationDegHitsProjected, creationDegHitsProjectedN,
                                                        creationDegParticleRawCount, creationDegParticleProjectedCount,
-                                                       creationDegParticleTruePDG, creationDegFitAnchor, creationDegFitDir,
+                                                       creationDegParticleTruePDG, creationDegParticleTrueStartMom,
+                                                       creationDegParticleTrueEndMom, creationDegFitAnchor, creationDegFitDir,
                                                        creationDegFitLineN, kMaxAnnDegeneracyLines,
                                                        kMaxAnnDegeneracyPoints);
             }
@@ -1463,6 +1549,8 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillMatrixVarFromArray(edk0_annDegParticleRawCount, annDegParticleRawCount, kMaxAnnDegeneracyLines);
             output.FillMatrixVarFromArray(edk0_annDegParticleProjectedCount, annDegParticleProjectedCount, kMaxAnnDegeneracyLines);
             output.FillMatrixVarFromArray(edk0_annDegParticleTruePDG, annDegParticleTruePDG, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_annDegParticleTrueStartMom, annDegParticleTrueStartMom, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_annDegParticleTrueEndMom, annDegParticleTrueEndMom, kMaxAnnDegeneracyLines);
             output.FillMatrixVarFromArray(edk0_annDegFitAnchor, annDegFitAnchor, kMaxAnnDegeneracyLines * 3);
             output.FillMatrixVarFromArray(edk0_annDegFitDir, annDegFitDir, kMaxAnnDegeneracyLines * 3);
             output.FillVectorVar(edk0_annDegFitLineN, annDegFitLineN);
@@ -1473,6 +1561,8 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillMatrixVarFromArray(edk0_creationDegParticleRawCount, creationDegParticleRawCount, kMaxAnnDegeneracyLines);
             output.FillMatrixVarFromArray(edk0_creationDegParticleProjectedCount, creationDegParticleProjectedCount, kMaxAnnDegeneracyLines);
             output.FillMatrixVarFromArray(edk0_creationDegParticleTruePDG, creationDegParticleTruePDG, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_creationDegParticleTrueStartMom, creationDegParticleTrueStartMom, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_creationDegParticleTrueEndMom, creationDegParticleTrueEndMom, kMaxAnnDegeneracyLines);
             output.FillMatrixVarFromArray(edk0_creationDegFitAnchor, creationDegFitAnchor, kMaxAnnDegeneracyLines * 3);
             output.FillMatrixVarFromArray(edk0_creationDegFitDir, creationDegFitDir, kMaxAnnDegeneracyLines * 3);
             output.FillVectorVar(edk0_creationDegFitLineN, creationDegFitLineN);
@@ -1971,6 +2061,16 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
                 _k0_hasTrueObject[i] = hasTrueObject;
                 _k0_trueProcessEnd[i] = processEndCode;
                 _k0_trueParentPDG[i] = parentPDG;
+                _k0_parentTrueStartMom[i] = TrueStartMomentumOrSentinel(neutralParticle->Parent);
+                _k0_parentTrueEndMom[i] = TrueEndMomentumOrSentinel(neutralParticle->Parent);
+                _k0_secondTrueStartMom[i] =
+                    TrueStartMomentumOrSentinel(neutralParticle->CreationVertex ? neutralParticle->CreationVertex->SecondParticle : nullptr);
+                _k0_secondTrueEndMom[i] =
+                    TrueEndMomentumOrSentinel(neutralParticle->CreationVertex ? neutralParticle->CreationVertex->SecondParticle : nullptr);
+                _k0_daughter1TrueStartMom[i] = TrueStartMomentumOrSentinel(daughter1);
+                _k0_daughter1TrueEndMom[i] = TrueEndMomentumOrSentinel(daughter1);
+                _k0_daughter2TrueStartMom[i] = TrueStartMomentumOrSentinel(daughter2);
+                _k0_daughter2TrueEndMom[i] = TrueEndMomentumOrSentinel(daughter2);
                 for (Int_t c = 0; c < 3; ++c) {
                     _k0_trueStartPos[i][c] = trueStartPos[c];
                     _k0_trueEndPos[i][c] = trueEndPos[c];
@@ -2114,8 +2214,16 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             output.FillVectorVar(edk0_parentID, -1);
             output.FillVectorVar(edk0_secondParticleID, -1);
             output.FillVectorVar(edk0_secondParticleTruePDG, -999);
+            output.FillVectorVar(edk0_parentTrueStartMom, -999.f);
+            output.FillVectorVar(edk0_parentTrueEndMom, -999.f);
+            output.FillVectorVar(edk0_secondTrueStartMom, -999.f);
+            output.FillVectorVar(edk0_secondTrueEndMom, -999.f);
             output.FillVectorVar(edk0_daughter1TruePDG, -999);
             output.FillVectorVar(edk0_daughter2TruePDG, -999);
+            output.FillVectorVar(edk0_daughter1TrueStartMom, -999.f);
+            output.FillVectorVar(edk0_daughter1TrueEndMom, -999.f);
+            output.FillVectorVar(edk0_daughter2TrueStartMom, -999.f);
+            output.FillVectorVar(edk0_daughter2TrueEndMom, -999.f);
             const Float_t creationRadius =
                 ND::params().HasParameter("neutralKaonAnalysis.CreationVertexRadius")
                     ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexRadius")
@@ -2168,11 +2276,17 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
             Int_t invalidAnnDegPDG[kMaxAnnDegeneracyLines];
             std::fill_n(invalidAnnDegPDG, kMaxAnnDegeneracyLines, -999);
             output.FillMatrixVarFromArray(edk0_annDegParticleTruePDG, invalidAnnDegPDG, kMaxAnnDegeneracyLines);
+            Float_t invalidAnnDegMom[kMaxAnnDegeneracyLines];
+            std::fill_n(invalidAnnDegMom, kMaxAnnDegeneracyLines, -999.f);
+            output.FillMatrixVarFromArray(edk0_annDegParticleTrueStartMom, invalidAnnDegMom, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_annDegParticleTrueEndMom, invalidAnnDegMom, kMaxAnnDegeneracyLines);
             Float_t invalidAnnDegLines[kMaxAnnDegeneracyLines * 3];
             std::fill_n(invalidAnnDegLines, kMaxAnnDegeneracyLines * 3, -999.f);
             output.FillMatrixVarFromArray(edk0_annDegFitAnchor, invalidAnnDegLines, kMaxAnnDegeneracyLines * 3);
             output.FillMatrixVarFromArray(edk0_annDegFitDir, invalidAnnDegLines, kMaxAnnDegeneracyLines * 3);
             output.FillVectorVar(edk0_annDegFitLineN, 0);
+            output.FillMatrixVarFromArray(edk0_creationDegParticleTrueStartMom, invalidAnnDegMom, kMaxAnnDegeneracyLines);
+            output.FillMatrixVarFromArray(edk0_creationDegParticleTrueEndMom, invalidAnnDegMom, kMaxAnnDegeneracyLines);
             output.FillVectorVar(edk0_hasTrueObject, 1);
             output.FillMatrixVarFromArray(edk0_trueStartPos, _trueK0_startPos[idx], 3);
             output.FillMatrixVarFromArray(edk0_trueEndPos, _trueK0_endPos[idx], 3);
@@ -2286,11 +2400,35 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     if (tree->GetBranch("ED_k0_secondParticleTruePDG")) {
         tree->SetBranchAddress("ED_k0_secondParticleTruePDG", _k0_secondParticleTruePDG);
     }
+    if (tree->GetBranch("ED_k0_parentTrueStartMom")) {
+        tree->SetBranchAddress("ED_k0_parentTrueStartMom", _k0_parentTrueStartMom);
+    }
+    if (tree->GetBranch("ED_k0_parentTrueEndMom")) {
+        tree->SetBranchAddress("ED_k0_parentTrueEndMom", _k0_parentTrueEndMom);
+    }
+    if (tree->GetBranch("ED_k0_secondTrueStartMom")) {
+        tree->SetBranchAddress("ED_k0_secondTrueStartMom", _k0_secondTrueStartMom);
+    }
+    if (tree->GetBranch("ED_k0_secondTrueEndMom")) {
+        tree->SetBranchAddress("ED_k0_secondTrueEndMom", _k0_secondTrueEndMom);
+    }
     if (tree->GetBranch("ED_k0_daughter1TruePDG")) {
         tree->SetBranchAddress("ED_k0_daughter1TruePDG", _k0_daughter1TruePDG);
     }
     if (tree->GetBranch("ED_k0_daughter2TruePDG")) {
         tree->SetBranchAddress("ED_k0_daughter2TruePDG", _k0_daughter2TruePDG);
+    }
+    if (tree->GetBranch("ED_k0_daughter1TrueStartMom")) {
+        tree->SetBranchAddress("ED_k0_daughter1TrueStartMom", _k0_daughter1TrueStartMom);
+    }
+    if (tree->GetBranch("ED_k0_daughter1TrueEndMom")) {
+        tree->SetBranchAddress("ED_k0_daughter1TrueEndMom", _k0_daughter1TrueEndMom);
+    }
+    if (tree->GetBranch("ED_k0_daughter2TrueStartMom")) {
+        tree->SetBranchAddress("ED_k0_daughter2TrueStartMom", _k0_daughter2TrueStartMom);
+    }
+    if (tree->GetBranch("ED_k0_daughter2TrueEndMom")) {
+        tree->SetBranchAddress("ED_k0_daughter2TrueEndMom", _k0_daughter2TrueEndMom);
     }
     if (tree->GetBranch("ED_k0_signalCode")) {
         tree->SetBranchAddress("ED_k0_signalCode", _k0_signalCode);
@@ -2336,6 +2474,12 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     if (tree->GetBranch("ED_k0_annDegParticleTruePDG")) {
         tree->SetBranchAddress("ED_k0_annDegParticleTruePDG", _k0_annDegParticleTruePDG);
     }
+    if (tree->GetBranch("ED_k0_annDegParticleTrueStartMom")) {
+        tree->SetBranchAddress("ED_k0_annDegParticleTrueStartMom", _k0_annDegParticleTrueStartMom);
+    }
+    if (tree->GetBranch("ED_k0_annDegParticleTrueEndMom")) {
+        tree->SetBranchAddress("ED_k0_annDegParticleTrueEndMom", _k0_annDegParticleTrueEndMom);
+    }
     if (tree->GetBranch("ED_k0_annDegFitAnchor")) {
         tree->SetBranchAddress("ED_k0_annDegFitAnchor", _k0_annDegFitAnchor);
     }
@@ -2365,6 +2509,12 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     }
     if (tree->GetBranch("ED_k0_creationDegParticleTruePDG")) {
         tree->SetBranchAddress("ED_k0_creationDegParticleTruePDG", _k0_creationDegParticleTruePDG);
+    }
+    if (tree->GetBranch("ED_k0_creationDegParticleTrueStartMom")) {
+        tree->SetBranchAddress("ED_k0_creationDegParticleTrueStartMom", _k0_creationDegParticleTrueStartMom);
+    }
+    if (tree->GetBranch("ED_k0_creationDegParticleTrueEndMom")) {
+        tree->SetBranchAddress("ED_k0_creationDegParticleTrueEndMom", _k0_creationDegParticleTrueEndMom);
     }
     if (tree->GetBranch("ED_k0_creationDegFitAnchor")) {
         tree->SetBranchAddress("ED_k0_creationDegFitAnchor", _k0_creationDegFitAnchor);
@@ -2445,7 +2595,11 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_k0_creationVtx_closestPtBeam", "ED_k0_creationVtx_closestPtSecond",
             "ED_k0_fitLineLength", "ED_k0_hasTrueObject",
             "ED_k0_trueStartPos", "ED_k0_trueEndPos", "ED_k0_truePDG",
-            "ED_k0_secondParticleTruePDG", "ED_k0_daughter1TruePDG", "ED_k0_daughter2TruePDG",
+            "ED_k0_secondParticleTruePDG", "ED_k0_parentTrueStartMom", "ED_k0_parentTrueEndMom",
+            "ED_k0_secondTrueStartMom", "ED_k0_secondTrueEndMom",
+            "ED_k0_daughter1TruePDG", "ED_k0_daughter2TruePDG",
+            "ED_k0_daughter1TrueStartMom", "ED_k0_daughter1TrueEndMom",
+            "ED_k0_daughter2TrueStartMom", "ED_k0_daughter2TrueEndMom",
             "ED_k0_signalCode", "ED_k0_trueProcessEnd",
             "ED_k0_trueParentPDG", "ED_k0_trueParentStartPos", "ED_k0_trueParentEndPos",
             "ED_k0_trueParentNDaughters", "ED_k0_trueParentDaughterStartPos",
@@ -2457,11 +2611,13 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_k0_annDegHitsRaw", "ED_k0_annDegHitsProjected",
             "ED_k0_annDegHitsRawN", "ED_k0_annDegHitsProjectedN",
             "ED_k0_annDegParticleRawCount", "ED_k0_annDegParticleProjectedCount", "ED_k0_annDegParticleTruePDG",
+            "ED_k0_annDegParticleTrueStartMom", "ED_k0_annDegParticleTrueEndMom",
             "ED_k0_annDegFitAnchor", "ED_k0_annDegFitDir", "ED_k0_annDegFitLineN",
             "ED_k0_creationDegHitsRaw", "ED_k0_creationDegHitsProjected",
             "ED_k0_creationDegHitsRawN", "ED_k0_creationDegHitsProjectedN",
             "ED_k0_creationDegParticleRawCount", "ED_k0_creationDegParticleProjectedCount",
             "ED_k0_creationDegParticleTruePDG",
+            "ED_k0_creationDegParticleTrueStartMom", "ED_k0_creationDegParticleTrueEndMom",
             "ED_k0_creationDegFitAnchor", "ED_k0_creationDegFitDir", "ED_k0_creationDegFitLineN",
             "ED_k0_parentTrajDir", "ED_k0_parentTrajDirHist", "ED_k0_parentTrajDirNPts",
             "ED_k0_secondTrajDir", "ED_k0_secondTrajDirNPts",
@@ -2587,18 +2743,26 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             makeSubgroup(neutralParticleGroup, Form("Creation Vertex [deg=%d]", _k0_creationVtxDeg[i]));
         TEveElementList* creationVertexInfoGroup = makeSubgroup(creationVertexGroup, "Vertex");
         TEveElementList* creationParentParticleGroup =
-            makeSubgroup(creationVertexGroup, FormatParticleGroupLabel("Parent Particle", _k0_trueParentPDG[i]).c_str());
+            makeSubgroup(creationVertexGroup,
+                         FormatParticleGroupLabel("Parent Particle", _k0_trueParentPDG[i],
+                                                  _k0_parentTrueStartMom[i], _k0_parentTrueEndMom[i]).c_str());
         TEveElementList* creationSecondParticleGroup =
-            makeSubgroup(creationVertexGroup, FormatParticleGroupLabel("Second Particle", _k0_secondParticleTruePDG[i]).c_str());
+            makeSubgroup(creationVertexGroup,
+                         FormatParticleGroupLabel("Second Particle", _k0_secondParticleTruePDG[i],
+                                                  _k0_secondTrueStartMom[i], _k0_secondTrueEndMom[i]).c_str());
         TEveElementList* creationSelectionCylinderGroup = makeSubgroup(creationVertexGroup, "Selection Cylinder");
         TEveElementList* creationDegeneracyGroup = makeSubgroup(creationVertexGroup, "Degeneracy Particles");
         TEveElementList* annihilationVertexGroup =
             makeSubgroup(neutralParticleGroup, Form("Annihilation Vertex [deg=%d]", _k0_annihilationVtxDeg[i]));
         TEveElementList* annihilationVertexInfoGroup = makeSubgroup(annihilationVertexGroup, "Vertex");
         TEveElementList* annihilationDaughter1Group =
-            makeSubgroup(annihilationVertexGroup, FormatParticleGroupLabel("Daughter 1", _k0_daughter1TruePDG[i]).c_str());
+            makeSubgroup(annihilationVertexGroup,
+                         FormatParticleGroupLabel("Daughter 1", _k0_daughter1TruePDG[i],
+                                                  _k0_daughter1TrueStartMom[i], _k0_daughter1TrueEndMom[i]).c_str());
         TEveElementList* annihilationDaughter2Group =
-            makeSubgroup(annihilationVertexGroup, FormatParticleGroupLabel("Daughter 2", _k0_daughter2TruePDG[i]).c_str());
+            makeSubgroup(annihilationVertexGroup,
+                         FormatParticleGroupLabel("Daughter 2", _k0_daughter2TruePDG[i],
+                                                  _k0_daughter2TrueStartMom[i], _k0_daughter2TrueEndMom[i]).c_str());
         TEveElementList* annihilationDegeneracyGroup = makeSubgroup(annihilationVertexGroup, "Degeneracy Particles");
         TEveElementList* annihilationFitGroup = makeSubgroup(annihilationVertexGroup, "Fit Geometry");
         TEveElementList* momentumArrowGroup = makeSubgroup(neutralParticleGroup, "Momentum And Directions");
@@ -2885,7 +3049,9 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         for (Int_t l = 0; l < creationDegLineN; ++l) {
             TEveElementList* creationDegParticleGroup =
                 makeSubgroup(creationDegeneracyGroup,
-                             FormatParticleGroupLabel(Form("Particle %d", l + 1), _k0_creationDegParticleTruePDG[i][l]).c_str());
+                             FormatParticleGroupLabel(Form("Particle %d", l + 1), _k0_creationDegParticleTruePDG[i][l],
+                                                      _k0_creationDegParticleTrueStartMom[i][l],
+                                                      _k0_creationDegParticleTrueEndMom[i][l]).c_str());
             const Int_t rawCount =
                 std::max(0, std::min(_k0_creationDegParticleRawCount[i][l], kMaxAnnDegeneracyPoints - creationDegRawOffset));
             const Int_t projectedCount =
@@ -3009,7 +3175,9 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         for (Int_t l = 0; l < annDegLineN; ++l) {
             TEveElementList* annDegParticleGroup =
                 makeSubgroup(annihilationDegeneracyGroup,
-                             FormatParticleGroupLabel(Form("Particle %d", l + 1), _k0_annDegParticleTruePDG[i][l]).c_str());
+                             FormatParticleGroupLabel(Form("Particle %d", l + 1), _k0_annDegParticleTruePDG[i][l],
+                                                      _k0_annDegParticleTrueStartMom[i][l],
+                                                      _k0_annDegParticleTrueEndMom[i][l]).c_str());
             const Int_t rawCount =
                 std::max(0, std::min(_k0_annDegParticleRawCount[i][l], kMaxAnnDegeneracyPoints - annDegRawOffset));
             const Int_t projectedCount =
