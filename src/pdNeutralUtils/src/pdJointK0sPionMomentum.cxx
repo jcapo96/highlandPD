@@ -1,8 +1,13 @@
 #include "pdJointK0sPionMomentum.hxx"
+#include <TFile.h>
+#include <TSpline.h>
+#include <TSystem.h>
 #include <TH2F.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
+#include <map>
 
 namespace pdJointK0sPionMomentum {
 namespace {
@@ -12,8 +17,63 @@ constexpr double kCollinearInflate = 2.0;
 constexpr double kPionMassMeV = 139.57;
 constexpr double kHighlandConstantMeV = 13.6;
 
+bool HasValidXYZ(const TVector3& p) {
+  return std::isfinite(p.X()) && std::isfinite(p.Y()) && std::isfinite(p.Z()) && p.X() > -900.0 && p.Y() > -900.0 &&
+         p.Z() > -900.0;
+}
+
 double ClampCosine(double c) {
   return std::max(-1.0, std::min(1.0, c));
+}
+
+TSpline3* GetDetectorSigmaSpline(const std::string& calibFile, const std::string& splineName) {
+  if (calibFile.empty() || splineName.empty()) return nullptr;
+  static std::map<std::string, std::pair<TFile*, TSpline3*> > cache;
+  std::vector<std::string> pathsToTry;
+  auto pushUnique = [&pathsToTry](const std::string& p) {
+    if (p.empty()) return;
+    if (std::find(pathsToTry.begin(), pathsToTry.end(), p) == pathsToTry.end()) pathsToTry.push_back(p);
+  };
+  pushUnique(calibFile);
+  if (!calibFile.empty() && calibFile[0] != '/') {
+    const char* hp = std::getenv("HIGHLANDPDPATH");
+    const std::string hpStr = (hp ? std::string(hp) : std::string());
+    if (!hpStr.empty()) {
+      const std::string prefix = "highlandPD/";
+      if (calibFile.rfind(prefix, 0) == 0) {
+        // Avoid duplicated ".../highlandPD/highlandPD/..."
+        pushUnique(hpStr + "/" + calibFile.substr(prefix.size()));
+      } else {
+        pushUnique(hpStr + "/" + calibFile);
+      }
+    }
+
+    const char* h = std::getenv("HIGHLANDPATH");
+    if (h && std::string(h).size()) pushUnique(std::string(h) + "/" + calibFile);
+  }
+
+  for (const std::string& path : pathsToTry) {
+    // Avoid ROOT error spam on missing probe paths.
+    if (gSystem && gSystem->AccessPathName(path.c_str(), kReadPermission)) continue;
+
+    const std::string key = path + "::" + splineName;
+    auto it = cache.find(key);
+    if (it != cache.end()) return it->second.second;
+
+    TFile* f = TFile::Open(path.c_str(), "READ");
+    if (!f || f->IsZombie()) {
+      if (f) f->Close();
+      continue;
+    }
+    TSpline3* sp = dynamic_cast<TSpline3*>(f->Get(splineName.c_str()));
+    if (!sp) {
+      f->Close();
+      continue;
+    }
+    cache[key] = std::make_pair(f, sp);
+    return sp;
+  }
+  return nullptr;
 }
 
 double NLLFromLogLikelihoodCurve(const std::vector<double>& pAxis, const std::vector<double>& logL, double p) {
@@ -129,8 +189,8 @@ bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikeliho
     for (int ipl = 0; ipl < 3; ++ipl) {
       size_t nValid = 0u;
       for (const auto& h : track.Hits[ipl]) {
-        if (!std::isfinite(h.Position.X()) || !std::isfinite(h.Position.Y()) || !std::isfinite(h.Position.Z())) continue;
-        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < -900.f) continue;
+        if (!HasValidXYZ(h.Position)) continue;
+        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < 0.f) continue;
         ++nValid;
       }
       if (nValid > bestCount) {
@@ -141,8 +201,8 @@ bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikeliho
     if (bestPlane >= 0 && bestCount >= 3u) {
       hitPoints.reserve(bestCount);
       for (const auto& h : track.Hits[bestPlane]) {
-        if (!std::isfinite(h.Position.X()) || !std::isfinite(h.Position.Y()) || !std::isfinite(h.Position.Z())) continue;
-        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < -900.f) continue;
+        if (!HasValidXYZ(h.Position)) continue;
+        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < 0.f) continue;
         HitPoint hp;
         hp.rr = static_cast<double>(h.ResidualRange);
         hp.pos = h.Position;
@@ -164,7 +224,7 @@ bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikeliho
     orderedRR.clear();
     orderedPoints.reserve(track.TrjPoints.size());
     for (const auto& tp : track.TrjPoints) {
-      if (!std::isfinite(tp.Position.X()) || !std::isfinite(tp.Position.Y()) || !std::isfinite(tp.Position.Z())) continue;
+      if (!HasValidXYZ(tp.Position)) continue;
       orderedPoints.push_back(tp.Position);
     }
     if (orderedPoints.size() >= 2u) {
@@ -205,6 +265,51 @@ bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikeliho
     xOverX0.push_back(xov);
     if (rrMidCm) rrMidCm->push_back(rr);
   }
+
+  // If hit-based ordering produced no usable triplets, retry with trajectory points.
+  // This handles inputs where hit positions are present but too degenerate for scattering segments.
+  if (deltaTheta.empty()) {
+    orderedPoints.clear();
+    orderedRR.clear();
+    orderedPoints.reserve(track.TrjPoints.size());
+    for (const auto& tp : track.TrjPoints) {
+      if (!HasValidXYZ(tp.Position)) continue;
+      orderedPoints.push_back(tp.Position);
+    }
+    if (orderedPoints.size() >= 2u) {
+      std::vector<double> s(orderedPoints.size(), 0.0);
+      for (size_t i = 1; i < orderedPoints.size(); ++i) {
+        const double dl = (orderedPoints[i] - orderedPoints[i - 1]).Mag();
+        s[i] = s[i - 1] + ((std::isfinite(dl) && dl > 0.0) ? dl : 0.0);
+      }
+      const double totalLen = s.back();
+      orderedRR.resize(orderedPoints.size(), 0.0);
+      for (size_t i = 0; i < orderedPoints.size(); ++i) orderedRR[i] = std::max(0.0, totalLen - s[i]);
+    }
+    if (orderedPoints.size() >= 3u && orderedRR.size() == orderedPoints.size()) {
+      for (size_t i = 0; i + 2 < orderedPoints.size(); ++i) {
+        const TVector3 d1 = orderedPoints[i + 1] - orderedPoints[i];
+        const TVector3 d2 = orderedPoints[i + 2] - orderedPoints[i + 1];
+        const double l1 = d1.Mag();
+        const double l2 = d2.Mag();
+        if (!std::isfinite(l1) || !std::isfinite(l2) || l1 <= 1e-9 || l2 <= 1e-9) continue;
+        const double seg = 0.5 * (l1 + l2);
+        if (!std::isfinite(seg) || seg < minSeg) continue;
+        const double c = ClampCosine(d1.Unit().Dot(d2.Unit()));
+        double dTh = std::acos(c);
+        if (!std::isfinite(dTh)) continue;
+        if (maxAbsTheta > 0.0 && dTh > maxAbsTheta) dTh = maxAbsTheta;
+        const double xov = seg / x0;
+        if (!std::isfinite(xov) || xov <= 0.0) continue;
+        const double rr = orderedRR[i + 1];
+        if (!std::isfinite(rr) || rr < 0.0) continue;
+        deltaTheta.push_back(dTh);
+        xOverX0.push_back(xov);
+        if (rrMidCm) rrMidCm->push_back(rr);
+      }
+    }
+  }
+
   if (deltaTheta.empty() || deltaTheta.size() != xOverX0.size()) return false;
   if (rrMidCm && rrMidCm->size() != deltaTheta.size()) return false;
   return true;
@@ -212,6 +317,20 @@ bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikeliho
 
 MCSLikelihood::MCSLikelihood(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg) {
   theta0_floor_rad_ = (std::isfinite(cfg.theta0FloorRad) && cfg.theta0FloorRad > 0.) ? cfg.theta0FloorRad : 1e-6;
+  radiation_length_cm_ =
+      (std::isfinite(cfg.radiationLengthCm) && cfg.radiationLengthCm > 1e-9) ? cfg.radiationLengthCm : 14.0;
+  use_detector_sigma_ = cfg.useDetectorSigma;
+  detector_sigma_floor_rad_ =
+      (std::isfinite(cfg.detectorSigmaFloorRad) && cfg.detectorSigmaFloorRad > 0.) ? cfg.detectorSigmaFloorRad : 1e-6;
+  if (use_detector_sigma_) {
+    detector_sigma_spline_ = GetDetectorSigmaSpline(cfg.detectorSigmaCalibFile, cfg.detectorSigmaSplineName);
+    if (!detector_sigma_spline_) {
+      use_detector_sigma_ = false;
+    } else {
+      detector_sigma_xmin_cm_ = detector_sigma_spline_->GetXmin();
+      detector_sigma_xmax_cm_ = detector_sigma_spline_->GetXmax();
+    }
+  }
   BuildPionMcsScatteringSamples(track, cfg, delta_theta_, x_over_x0_, nullptr);
 }
 
@@ -236,9 +355,22 @@ double MCSLikelihood::ComputeNLL(double momentumGeV) const {
     if (!std::isfinite(theta0) || theta0 <= 0.) theta0 = theta0_floor_rad_;
     theta0 = std::max(theta0, theta0_floor_rad_);
 
+    double sigma = theta0;
+    if (use_detector_sigma_ && detector_sigma_spline_) {
+      const double segCm = xOverX0 * radiation_length_cm_;
+      double segEval = segCm;
+      if (std::isfinite(detector_sigma_xmin_cm_) && segEval < detector_sigma_xmin_cm_) segEval = detector_sigma_xmin_cm_;
+      if (std::isfinite(detector_sigma_xmax_cm_) && segEval > detector_sigma_xmax_cm_) segEval = detector_sigma_xmax_cm_;
+      double sigmaDet = detector_sigma_spline_->Eval(segEval);
+      if (!std::isfinite(sigmaDet) || sigmaDet <= 0.) sigmaDet = detector_sigma_floor_rad_;
+      sigmaDet = std::max(sigmaDet, detector_sigma_floor_rad_);
+      sigma = std::sqrt(theta0 * theta0 + sigmaDet * sigmaDet);
+    }
+    sigma = std::max(sigma, theta0_floor_rad_);
+
     const double dt = delta_theta_[i];
-    const double pull = dt / theta0;
-    nll += 0.5 * pull * pull + std::log(theta0);
+    const double pull = dt / sigma;
+    nll += 0.5 * pull * pull + std::log(sigma);
   }
   return (std::isfinite(nll)) ? nll : std::numeric_limits<double>::infinity();
 }

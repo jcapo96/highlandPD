@@ -11,6 +11,9 @@ pionMomentumSelection::pionMomentumSelection(bool forceBreak)
 //********************************************************************
 void pionMomentumSelection::DefineSteps() {
 //********************************************************************
+  AddStep(StepBase::kAction, "FIND PANDORA TRACK", new FindBeamTrackAction(), true);
+  AddStep(StepBase::kCut, "beam track in TPC", new BeamTrackExistsCut(), true);
+  AddStep(StepBase::kCut, "BEAM quality cut", new BeamQualityCut(), true);
   AddStep(StepBase::kCut, "pass all events", new pionMomentumPassAllCut());
   SetBranchAlias(0, "trunk");
 }

@@ -5,9 +5,7 @@
 #include "standardPDTree.hxx"
 #include "ToyBoxPD.hxx"
 
-/// MicroTree + optional truth tree. When input is `mlskim` (skim ROOT), truth tree can record
-/// e.g. the true PDG of the particle parenting secondaries (skim seed; expect 211 for pi+ skim).
-/// For minitree input, truth-tree filling stays off unless you extend CheckFillTruthTreePD.
+/// MicroTree analysis for standard MiniTree inputs.
 class pionMomentumAnalysis : public pdBaseAnalysis {
  public:
   explicit pionMomentumAnalysis(AnalysisAlgorithm* ana = NULL);
@@ -39,9 +37,20 @@ class pionMomentumAnalysis : public pdBaseAnalysis {
   virtual AnaVertexB* GetVertex() const { return box().Vertex; }
   virtual AnaTrueVertexB* GetTrueVertex() const { return box().TrueVertex; }
 
-  enum enumPionMomentumTruthTreeExtra {
-    pion_true_parent_of_secondaries_pdg = standardPDTree::enumStandardMicroTreesLast_standardPDTree + 1,
+ private:
+  bool _ApplySCECorrection;
+  bool _ApplySCESystematic;
+  double _MCSRadiationLengthCm;
+  double _MCSMinSegmentLengthCm;
+  double _MCStheta0FloorRad;
+  double _MCSMaxAbsDeltaThetaRad;
+
+ public:
+  enum enumSyst_pionMomentumAnalysis {
+    kSCEGeometric = 0,
+    enumSystLast_pionMomentumAnalysis
   };
+
 };
 
 #endif

@@ -1,8 +1,27 @@
---- Pion momentum analysis (microTree; truth tree when input is mlskim skim file) --------
-# Input: either ProtoDUNE minitree (MiniTree) or skim ROOT from pionMomentumSkim.exe (tree mlskim).
-# Auto-detect picks mlskim if that tree exists in the file.
+--- Pion momentum analysis (microTree; MiniTree input) --------
+# Input: ProtoDUNE minitree (MiniTree).
 
  < pionMomentumAnalysis.MinAccumLevelToSave = 0 >
+
+--- Corrections -----------
+ < pionMomentumAnalysis.ApplySCECorrection = 1 >
+
+--- Systematics ------------
+ < pionMomentumAnalysis.ApplySCESystematic = 0 >
+
+--- Main-track MCS sampling ------------
+ < pionMomentumAnalysis.MCSRadiationLengthCm = 14.0 >
+ < pionMomentumAnalysis.MCSMinSegmentLengthCm = 0.0001 >
+ < pionMomentumAnalysis.MCStheta0FloorRad = 1e-6 >
+ < pionMomentumAnalysis.MCSMaxAbsDeltaThetaRad = -1.0 >
+ < pionMomentumAnalysis.MCSUseDetectorSigma = 0 >
+ < pionMomentumAnalysis.MCSDetectorSigmaCalibFile = highlandPD/src/pdUtils/data/pion_mcs_sigma_det_calibration.root >
+ < pionMomentumAnalysis.MCSDetectorSigmaSplineName = sp_sigma_det_vs_segment >
+ < pionMomentumAnalysis.MCSDetectorSigmaFloorRad = 1.0e-6 >
+
+--- Event Skim File ------------
+ < baseAnalysis.StoreSurvivingEvents = 0 >
+ < baseAnalysis.TruthPDGForSkim = -1 >
 
 ###############################################################################
   baseAnalysis parameters (subset)
@@ -10,13 +29,19 @@
 
  < baseAnalysis.InitializeTrees = 1 >
 
+ --- Corrections ------------
  < baseAnalysis.Corrections.DisableAllCorrections  = 0 >
  < baseAnalysis.Corrections.ForceApplyCorrections  = 0 >
 
+--- Event Weights ------------
+# No weights yet.
+
+--- Systematics ------------
  < baseAnalysis.Systematics.NumberOfToys = 100 >
  < baseAnalysis.Systematics.RandomSeed = 1 >
  < baseAnalysis.Systematics.IndividualRandomGenerator = 0 >
 
+--- Configurations ------------
  < baseAnalysis.Configurations.EnableSingleVariationSystConfigurations = 0 >
  < baseAnalysis.Configurations.EnableSingleWeightSystConfigurations    = 0 >
  < baseAnalysis.Configurations.EnableAllSystematics = 0 >

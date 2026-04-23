@@ -4,9 +4,11 @@
 #include "pdDataClasses.hxx"
 #include "TVector3.h"
 #include <limits>
+#include <string>
 #include <vector>
 
 class TH2F;
+class TSpline3;
 
 struct JointK0sPionMomentumGridResult {
   bool ok = false;
@@ -36,6 +38,10 @@ struct MCSLikelihoodConfig {
   double minSegmentLengthCm = 0.5;
   double theta0FloorRad = 1e-6;
   double maxAbsDeltaThetaRad = -1.0;
+  bool useDetectorSigma = false;
+  double detectorSigmaFloorRad = 1e-6;
+  std::string detectorSigmaCalibFile = "";
+  std::string detectorSigmaSplineName = "sp_sigma_det_vs_segment";
 };
 
 class MCSLikelihood {
@@ -50,6 +56,12 @@ private:
   std::vector<double> delta_theta_;
   std::vector<double> x_over_x0_;
   double theta0_floor_rad_ = 1e-6;
+  double radiation_length_cm_ = 14.0;
+  bool use_detector_sigma_ = false;
+  double detector_sigma_floor_rad_ = 1e-6;
+  TSpline3* detector_sigma_spline_ = nullptr;
+  double detector_sigma_xmin_cm_ = 0.0;
+  double detector_sigma_xmax_cm_ = 0.0;
 };
 
 /// Prefer hit triplets (view with most valid hits, RR-ordered); else trajectory points with synthetic RR.

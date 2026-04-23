@@ -1220,6 +1220,21 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
             ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
                 ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
                 : -1.0;
+        mcsCfg.useDetectorSigma =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") &&
+            ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") != 0;
+        mcsCfg.detectorSigmaCalibFile =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaCalibFile")
+                ? ND::params().GetParameterS("neutralKaonAnalysis.JointK0sMCSDetectorSigmaCalibFile")
+                : "";
+        mcsCfg.detectorSigmaSplineName =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaSplineName")
+                ? ND::params().GetParameterS("neutralKaonAnalysis.JointK0sMCSDetectorSigmaSplineName")
+                : "sp_sigma_det_vs_segment";
+        mcsCfg.detectorSigmaFloorRad =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
+                : 1e-6;
         constexpr double kK0sMassGeV = 0.497611;
         const double sigmaMassGeV = sigmaMassMeV * 1e-3;
         const double sigmaMassMinGeV = sigmaMassMinMeV * 1e-3;
