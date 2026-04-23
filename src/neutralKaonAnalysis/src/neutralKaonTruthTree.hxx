@@ -6,7 +6,7 @@
 
 namespace neutralKaonTruthTree{
 
-  // Minimal truth-tree content for true K0s -> pi+ pi-.
+  // Minimal truth-tree content for true K0s in selected two-pion channels.
   void AddNeutralKaonTruthVariables(OutputManager& output, UInt_t nmax);
   void FillNeutralKaonTruthVariables(OutputManager& output,
                                      bool parentHasRecoObject,
@@ -39,6 +39,21 @@ namespace neutralKaonTruthTree{
                                      Float_t daughter1TrueEndMomentum,
                                      Float_t daughter2TrueStartMomentum,
                                      Float_t daughter2TrueEndMomentum,
+                                     Float_t k0TrueEnergy,
+                                     Float_t daughter1TrueEnergy,
+                                     Float_t daughter2TrueEnergy,
+                                     Float_t daughter1TrueSubRecoEnergySum,
+                                     Float_t daughter2TrueSubRecoEnergySum,
+                                     Int_t isK0Decay,
+                                     Int_t k0NTrueDaughters,
+                                     Int_t isK0Charged,
+                                     Int_t isK0Neutral,
+                                     Int_t k0Pi01TwoGamma,
+                                     Int_t k0Pi02TwoGamma,
+                                     Int_t k0Dau1Gamma1HasRecoObject,
+                                     Int_t k0Dau1Gamma2HasRecoObject,
+                                     Int_t k0Dau2Gamma1HasRecoObject,
+                                     Int_t k0Dau2Gamma2HasRecoObject,
                                      Int_t k0TruePdg,
                                      Int_t parentTruePdg,
                                      Int_t daughter1TruePdg,
@@ -50,6 +65,10 @@ namespace neutralKaonTruthTree{
                                      Float_t k0TrueLength,
                                      Int_t daughter1RecoNHits,
                                      Int_t daughter2RecoNHits,
+                                     Int_t daughter1TrueSubRecoQualCount,
+                                     Int_t daughter1TrueSubRecoQualHitsTot,
+                                     Int_t daughter2TrueSubRecoQualCount,
+                                     Int_t daughter2TrueSubRecoQualHitsTot,
                                      Int_t parentRecoNHits,
                                      Float_t parentTrueLength,
                                      Float_t parentRecoLength,
@@ -58,11 +77,22 @@ namespace neutralKaonTruthTree{
                                      Int_t parentRecoZStartGreaterThanEnd,
                                      Int_t daughter1RecoZStartGreaterThanEnd,
                                      Int_t daughter2RecoZStartGreaterThanEnd,
-                                     Int_t parentIsPandoraBeam);
+                                     Int_t parentIsPandoraBeam,
+                                     Int_t parentExactlyOneRecoProtonNearK0Creation);
 
-  // enum with unique indexes for output tree variables (true K0s -> pi+ pi- only; see FillTruthTree)
+  // enum with unique indexes for output tree variables (selected true K0 two-pion channels; see FillTruthTree)
   enum enumNeutralKaonTruthMicroTrees{
     ntruek0 = baseAnalysis::enumStandardMicroTreesLast_baseAnalysis+1, // Counter: truth-tree rows for this channel (incremented per filled K0)
+    isk0decay, // 1 if true K0 ends by decay process
+    k0ntruedaughters, // Number of direct true daughters of the K0
+    isk0charged, // 1 if true K0 decays exactly to pi+ pi-
+    isk0neutral, // 1 if true K0 decays exactly to pi0 pi0
+    k0pi01twogamma, // 1 if K0 daughter1 is pi0 and decays exactly to 2 gammas
+    k0pi02twogamma, // 1 if K0 daughter2 is pi0 and decays exactly to 2 gammas
+    k0dau1gamma1hasrecoobject, // 1 if daughter1(pi0)->gamma1 has valid Pandora reco object
+    k0dau1gamma2hasrecoobject, // 1 if daughter1(pi0)->gamma2 has valid Pandora reco object
+    k0dau2gamma1hasrecoobject, // 1 if daughter2(pi0)->gamma1 has valid Pandora reco object
+    k0dau2gamma2hasrecoobject, // 1 if daughter2(pi0)->gamma2 has valid Pandora reco object
     k0parhasrecoobject, // 1 if true K0 parent has a reco track with valid start/end positions and hits; else 0
     k0dau1hasrecoobject, // Same for true daughter 1 (Daughters[0] order); else 0
     k0dau2hasrecoobject, // Same for true daughter 2 (Daughters[1] order); else 0
@@ -80,32 +110,41 @@ namespace neutralKaonTruthTree{
     k0dau1otherpairfitmindist, // Minimum of those line-separation distances for daughter1 vs any other reco (not the other K0 daughter), within vertex radius (-999 if none)
     k0dau2otherpairfitmindist, // Same for daughter2 vs other reco tracks (-999 if none)
     k0otherpairsfitmindistglobal, // Minimum of k0dau1otherpairfitmindist and k0dau2otherpairfitmindist when both valid (-999 if neither valid)
-    k0dau1recoprotonchi2ndf, // Reco chi2/ndf under proton hypothesis for daughter1 track (collection plane / Chi2Proton; -999 if invalid)
-    k0dau1recokaonchi2ndf, // Reco chi2/ndf under kaon hypothesis for daughter1 (-999 if invalid)
-    k0dau1recopionchi2ndf, // Reco chi2/ndf under pion hypothesis for daughter1 (-999 if invalid)
-    k0dau2recoprotonchi2ndf, // Reco chi2/ndf under proton hypothesis for daughter2 (-999 if invalid)
-    k0dau2recokaonchi2ndf, // Reco chi2/ndf under kaon hypothesis for daughter2 (-999 if invalid)
-    k0dau2recopionchi2ndf, // Reco chi2/ndf under pion hypothesis for daughter2 (-999 if invalid)
+    k0dau1recoprotonchi2ndf, // Chi2PID(2212)/npts collection plane (-999 if invalid)
+    k0dau1recokaonchi2ndf, // Chi2PID(321)/npts collection plane (-999 if invalid)
+    k0dau1recopionchi2ndf, // Chi2PID(211)/npts collection plane, same as annihilation vertex logic (-999 if invalid)
+    k0dau2recoprotonchi2ndf, // Chi2PID(2212)/npts collection plane (-999 if invalid)
+    k0dau2recokaonchi2ndf, // Chi2PID(321)/npts collection plane (-999 if invalid)
+    k0dau2recopionchi2ndf, // Chi2PID(211)/npts collection plane, same as annihilation vertex logic (-999 if invalid)
     k0truemomentum, // True |p| at K0 trajectory start (MC Momentum; -999 if unavailable)
+    k0trueenergy, // True total energy sqrt(p^2+m^2) at K0 trajectory start (GeV; -999 if unavailable)
     k0partruestartmom, // True |p| at start for true K0 parent (-999 if no parent)
     k0partrueendmom, // True |p| at end for true K0 parent (-999 if no parent)
     k0dau1truestartmom, // True |p| at start for true daughter 1 (Daughters[0])
     k0dau1trueendmom, // True |p| at end for true daughter 1
     k0dau2truestartmom, // True |p| at start for true daughter 2 (Daughters[1])
     k0dau2trueendmom, // True |p| at end for true daughter 2
+    k0dau1trueenergy, // True total energy at start for daughter 1 (GeV; -999 if unavailable)
+    k0dau2trueenergy, // True total energy at start for daughter 2 (GeV; -999 if unavailable)
     k0truepdg, // True PDG of the K0 (this row)
     k0partruepdg, // True PDG of K0 parent (-999 if parent not found in spill)
     k0dau1truepdg, // True PDG of daughter 1 (Daughters[0])
     k0dau2truepdg, // True PDG of daughter 2 (Daughters[1])
-    k0dau1truelength, // True trajectory Length for daughter 1 (cm; -999 if invalid)
+    k0dau1truelength, // |PositionEnd-Position| for daughter 1 (cm; same as ana tree; -999 if invalid)
     k0dau1recolength, // Reco Length for daughter 1 (cm; -999 if no reco)
-    k0dau2truelength, // True Length for daughter 2 (cm; -999 if invalid)
+    k0dau2truelength, // |PositionEnd-Position| for daughter 2 (cm; -999 if invalid)
     k0dau2recolength, // Reco Length for daughter 2 (cm; -999 if no reco)
-    k0truelength, // True Length for K0 (cm; -999 if invalid)
+    k0truelength, // |PositionEnd-Position| for K0 (cm; -999 if invalid)
     k0dau1recohits, // Reco NHits for daughter 1 (-999 if no reco)
     k0dau2recohits, // Reco NHits for daughter 2 (-999 if no reco)
+    k0dau1truensubreco, // Number of true sub-daughters of daughter 1 with reco valid start/end + hits
+    k0dau1truensubrecohitstot, // Sum of reco NHits over those sub-daughters (0 if none)
+    k0dau2truensubreco, // Same for true daughter 2
+    k0dau2truensubrecohitstot,
+    k0dau1truesubrecoenergy, // Sum true E at start (GeV) over direct true daughters of daughter 1 with valid reco (0 if none)
+    k0dau2truesubrecoenergy, // Same for daughter 2
     k0parrecohits, // Reco NHits for true K0 parent (-999 if no reco)
-    k0partruelength, // True Length for K0 parent (cm; -999 if no parent)
+    k0partruelength, // |PositionEnd-Position| for K0 parent (cm; -999 if no parent / invalid verts)
     k0parrecolength, // Reco Length for K0 parent (cm; -999 if no reco)
     k0dau1otherminpairtruepdg, // True PDG of reco particle attaining k0dau1otherpairfitmindist (-999 if none)
     k0vertexminisdaupair, // 1 if min of {dau-dau, dau1-other, dau2-other} fit-line distances equals dau-dau (and dau-dau valid); else 0
@@ -113,6 +152,7 @@ namespace neutralKaonTruthTree{
     k0dau1recozstartgtzend, // same for daughter1 reco
     k0dau2recozstartgtzend, // same for daughter2 reco
     k0parispandorabeam, // 1 if reco matched to true K0 parent has isPandora (Pandora beam); else 0
+    k0pardonerecoprotonatcreation, // 1 iff among true K0 parent's direct true daughters exactly one has valid reco and its PDG is proton (2212); else 0
 
     enumNeutralKaonTruthMicroTreesLast_neutralKaonTruthTree
   };

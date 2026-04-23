@@ -86,6 +86,23 @@ AnaAnnihilationVertexPD::AnaAnnihilationVertexPD(){
 	Daughter2ExtensionDedxSigma = kFloatUnassigned;
 	Daughter1ExtensionDedxFitOk = -1;
 	Daughter2ExtensionDedxFitOk = -1;
+	JointK0sMomentumUsed = 0;
+	Daughter1MomentumTLE = kFloatUnassigned;
+	Daughter2MomentumTLE = kFloatUnassigned;
+	Daughter1MomentumMCS = kFloatUnassigned;
+	Daughter2MomentumMCS = kFloatUnassigned;
+	Daughter1MomentumJoint = kFloatUnassigned;
+	Daughter2MomentumJoint = kFloatUnassigned;
+	JointK0sBestScore = kFloatUnassigned;
+	JointK0sInvMassAtBest = kFloatUnassigned;
+	JointK0sSigmaP1GeV = kFloatUnassigned;
+	JointK0sSigmaP2GeV = kFloatUnassigned;
+	JointK0sSigmaMEventGeV = kFloatUnassigned;
+	JointK0sDmDp1 = kFloatUnassigned;
+	JointK0sDmDp2 = kFloatUnassigned;
+	JointK0sMomentumConstraintRatioR = kFloatUnassigned;
+	JointK0sMomentumDedxChi2Degradation = kFloatUnassigned;
+	JointK0sDebugClass = 0;
 }
 
 //********************************************************************

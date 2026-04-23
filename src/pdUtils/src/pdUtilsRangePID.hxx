@@ -13,6 +13,9 @@ namespace pdAnaUtils {
   std::pair<double, int> Chi2PID(const AnaParticlePD& part, const int pdg);
   std::pair<double, int> Chi2PID_UpToRR(const AnaParticlePD& part, const int pdg, const double RR);
 
+  /// Chi2PID first / second (mean χ² per contributing hit); -999 if null or Chi2PID invalid. Same as neutral-kaon truth tree Reco*Chi2Ndf.
+  Float_t Chi2PIDChi2PerHit(const AnaParticlePD* part, int pdg);
+
 }
 
 #endif

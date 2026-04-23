@@ -199,6 +199,16 @@ std::pair<double, int> pdAnaUtils::Chi2PID(const AnaParticlePD& part, const int 
 }
 
 //*****************************************************************************
+Float_t pdAnaUtils::Chi2PIDChi2PerHit(const AnaParticlePD* part, const int pdg){
+//*****************************************************************************
+
+  if(!part) return -999.f;
+  const std::pair<double, int> r = Chi2PID(*part, pdg);
+  if(r.first < 0.0 || r.second <= 0) return -999.f;
+  return static_cast<Float_t>(r.first / static_cast<double>(r.second));
+}
+
+//*****************************************************************************
 std::pair<double, int> pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, const int pdg, const double RR){
 //*****************************************************************************
 

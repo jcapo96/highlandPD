@@ -13,7 +13,6 @@
 #include <limits>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 extern TProfile* PionTemplate;
@@ -186,6 +185,9 @@ double pdAnaUtils::dEdxPDF(double *x, double *par){
   return this_vav;
 }
 
+static TF1* FreeRangeLikelihoodPdf();
+static bool BuildDedxPdfParams(double ke, Float_t mass, double width, double* par);
+
 namespace {
 
 bool PdgToMassAndKeName(Int_t PDG, Float_t& mass, std::string& ssparticle) {
@@ -212,57 +214,41 @@ bool PdgToMassAndKeName(Int_t PDG, Float_t& mass, std::string& ssparticle) {
   return false;
 }
 
-void DropLargestDedxFractionAmongHighRRHits(std::vector<double>& dedx, std::vector<double>& rr, double truncMinRRCm,
-                                            double dropFrac) {
-  if (dedx.size() != rr.size() || dedx.empty()) return;
-  if (dropFrac <= 0. || truncMinRRCm <= 0.) return;
-
-  std::vector<int> eligible;
-  eligible.reserve(dedx.size());
-  for (size_t i = 0; i < dedx.size(); ++i) {
-    if (rr[i] >= truncMinRRCm) eligible.push_back(static_cast<int>(i));
-  }
-  if (eligible.size() < 2u) return;
-
-  std::sort(eligible.begin(), eligible.end(), [&](int a, int b) {
-    return dedx[static_cast<size_t>(a)] > dedx[static_cast<size_t>(b)];
-  });
-  const int nDrop = static_cast<int>(
-      std::floor(dropFrac * static_cast<double>(eligible.size())));
-  if (nDrop <= 0) return;
-
-  std::unordered_set<int> dropIdx;
-  for (int k = 0; k < nDrop && k < static_cast<int>(eligible.size()); ++k)
-    dropIdx.insert(eligible[static_cast<size_t>(k)]);
-
-  std::vector<double> nd, nr;
-  nd.reserve(dedx.size());
-  nr.reserve(rr.size());
-  for (size_t i = 0; i < dedx.size(); ++i) {
-    if (dropIdx.count(static_cast<int>(i))) continue;
-    nd.push_back(dedx[i]);
-    nr.push_back(rr[i]);
-  }
-  dedx.swap(nd);
-  rr.swap(nr);
-}
-
 bool InteriorDedxRrSample(AnaParticlePD* part, double maxRR, int minPoints, std::vector<double>& dedx,
-                          std::vector<double>& rr, double landauTruncMinRRCm, double landauTailHitDropFraction) {
+                          std::vector<double>& rr, int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+                          double dedxMaxMeVcm) {
   dedx.clear();
   rr.clear();
-  if (!part || part->Hits[2].size() < 3u) return false;
-  const int n = (int)part->Hits[2].size();
+  if (!part || part->Hits[2].empty()) return false;
+  if (skipHitsFirst < 0) skipHitsFirst = 0;
+  if (skipHitsLast < 0) skipHitsLast = 0;
+  const int n = static_cast<int>(part->Hits[2].size());
+  if (n < skipHitsFirst + skipHitsLast + 1) return false;
+
   const double kRRNoCap = 0.5 * std::numeric_limits<double>::max();
   const bool capRR = maxRR < kRRNoCap;
-  for (int ihit = 1; ihit < n - 1; ++ihit) {
+  for (int ihit = skipHitsFirst; ihit < n - skipHitsLast; ++ihit) {
     const AnaHitPD& h = part->Hits[2][ihit];
     if (capRR && h.ResidualRange > maxRR) continue;
     dedx.push_back(static_cast<double>(h.dEdx));
     rr.push_back(static_cast<double>(h.ResidualRange));
   }
-  DropLargestDedxFractionAmongHighRRHits(dedx, rr, landauTruncMinRRCm, landauTailHitDropFraction);
-  return (int)dedx.size() >= minPoints;
+
+  const bool dedxWindow = (dedxMinMeVcm > 0. && dedxMaxMeVcm > dedxMinMeVcm);
+  if (dedxWindow) {
+    std::vector<double> nd, nr;
+    nd.reserve(dedx.size());
+    nr.reserve(rr.size());
+    for (size_t i = 0; i < dedx.size(); ++i) {
+      if (dedx[i] >= dedxMinMeVcm && dedx[i] <= dedxMaxMeVcm) {
+        nd.push_back(dedx[i]);
+        nr.push_back(rr[i]);
+      }
+    }
+    dedx.swap(nd);
+    rr.swap(nr);
+  }
+  return static_cast<int>(dedx.size()) >= minPoints;
 }
 
 double MeasuredTrackLengthCm(const AnaParticlePD* part, const std::vector<double>& rrInterior) {
@@ -272,6 +258,17 @@ double MeasuredTrackLengthCm(const AnaParticlePD* part, const std::vector<double
     if (r > mx) mx = r;
   }
   return mx;
+}
+
+double ComputeScanL0FromInteriorRR(const std::vector<double>& rrInterior) {
+  if (rrInterior.empty()) return 0.;
+  double rrMin = std::numeric_limits<double>::infinity();
+  for (double r : rrInterior) {
+    if (!std::isfinite(r)) continue;
+    rrMin = std::min(rrMin, r);
+  }
+  if (!std::isfinite(rrMin) || rrMin <= 0.) return 0.;
+  return -rrMin;
 }
 
 bool CollectionPlaneResidualRangeLooksUnset(const AnaParticlePD* part) {
@@ -309,8 +306,10 @@ TGraph* KeVsRangeGraphCached(const std::string& ssparticle) {
 
 pdAnaUtils::DEdxFreeRangeFitResult ParticleFreeRangeFit(AnaParticlePD* part, Int_t PDG, double Lmax, double step,
                                                        double maxRRForHits, int minInteriorPoints,
-                                                       bool computeMomentum, double landauTruncMinRRCm,
-                                                       double landauTailHitDropFraction) {
+                                                       bool computeMomentum, int skipHitsFirst, int skipHitsLast,
+                                                       double dedxMinMeVcm, double dedxMaxMeVcm, double pdfPathCm,
+                                                       bool computeDedxBiasDiagnostics = true,
+                                                       double scanStepFineCm = 0., double lowPMomentumRefineGeV = 0.2) {
   pdAnaUtils::DEdxFreeRangeFitResult bad;
   if (!part || part->Hits[2].empty()) return bad;
   std::string ssparticle;
@@ -320,8 +319,8 @@ pdAnaUtils::DEdxFreeRangeFitResult ParticleFreeRangeFit(AnaParticlePD* part, Int
   if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
 
   std::vector<double> dedx, rr;
-  if (!InteriorDedxRrSample(part, maxRRForHits, minInteriorPoints, dedx, rr, landauTruncMinRRCm,
-                             landauTailHitDropFraction))
+  if (!InteriorDedxRrSample(part, maxRRForHits, minInteriorPoints, dedx, rr, skipHitsFirst, skipHitsLast,
+                             dedxMinMeVcm, dedxMaxMeVcm))
     return bad;
 
   TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
@@ -330,14 +329,137 @@ pdAnaUtils::DEdxFreeRangeFitResult ParticleFreeRangeFit(AnaParticlePD* part, Int
   TGraph* tg = new TGraph((int)dedx.size(), &rr[0], &dedx[0]);
 
   const double lenCm = MeasuredTrackLengthCm(part, rr);
+  const double L0 = ComputeScanL0FromInteriorRR(rr);
   pdAnaUtils::DEdxFreeRangeFitResult result =
-      pdAnaUtils::dEdxLikelihoodFreeRangeFit(tg, tg_ke, mass, 0., Lmax, step, lenCm, computeMomentum);
+      pdAnaUtils::dEdxLikelihoodFreeRangeFit(tg, tg_ke, mass, L0, Lmax, step, lenCm, computeMomentum, pdfPathCm,
+                                             computeDedxBiasDiagnostics, scanStepFineCm, lowPMomentumRefineGeV);
 
   delete tg;
   return result;
 }
 
+bool BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(AnaParticlePD* part, double Lmax, double step,
+                                                            int minInteriorPoints, int skipHitsFirst, int skipHitsLast,
+                                                            double dedxMinMeVcm, double dedxMaxMeVcm, double pdfPathCm,
+                                                            std::vector<double>& pGeV, std::vector<double>& logL,
+                                                            double scanStepFineCm, double lowPMomentumRefineGeV) {
+  pGeV.clear();
+  logL.clear();
+  if (!part || part->Hits[2].empty()) return false;
+  constexpr Int_t kPdg = 211;
+  std::string ssparticle;
+  Float_t mass = 0.f;
+  if (!PdgToMassAndKeName(kPdg, mass, ssparticle)) return false;
+
+  if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
+
+  std::vector<double> dedx, rr;
+  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), minInteriorPoints, dedx, rr, skipHitsFirst,
+                           skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm))
+    return false;
+
+  TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
+  if (!tg_ke) return false;
+
+  TGraph* tg = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
+  const double lenCm = MeasuredTrackLengthCm(part, rr);
+
+  if (!tg || tg->GetN() < 1 || step <= 0.) {
+    delete tg;
+    return false;
+  }
+  if (!std::isfinite(pdfPathCm) || pdfPathCm <= 0.) {
+    delete tg;
+    return false;
+  }
+
+  const double L0 = ComputeScanL0FromInteriorRR(rr);
+  if (!(Lmax >= L0)) {
+    delete tg;
+    return false;
+  }
+
+  const double width = pdfPathCm;
+  TF1* pdf = FreeRangeLikelihoodPdf();
+
+  const auto scanAtStep = [&](double stepUse, std::vector<std::pair<double, double>>& pairOut) -> bool {
+    pairOut.clear();
+    pairOut.reserve(static_cast<size_t>(std::max(1.0, (Lmax - L0) / stepUse) + 2.));
+    for (double L = L0; L <= Lmax + 1e-9; L += stepUse) {
+      double ll = 0.;
+      for (int i = 0; i < tg->GetN(); i++) {
+        const double range = tg->GetPointX(i) + L;
+        const double dEdx = tg->GetPointY(i);
+        if (!(range > 0.) || !std::isfinite(range)) continue;
+        const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, range);
+        if (ke < 0. || !std::isfinite(ke)) continue;
+        double par[5] = {0., 0., 0., 0., 0.};
+        if (!BuildDedxPdfParams(ke, mass, width, par)) continue;
+        pdf->SetParameters(par);
+        const double pval = pdf->Eval(dEdx);
+        if (pval == 0.) continue;
+        ll += std::log(pval);
+      }
+      if (!std::isfinite(ll)) continue;
+      const double R_eff = lenCm + L;
+      if (!(R_eff > 0.) || !std::isfinite(R_eff)) continue;
+      const double p = pdMomShared::RangeCmToMomentumGeV(R_eff, kPdg, tg_ke, mass);
+      if (!std::isfinite(p) || p <= 0.) continue;
+      pairOut.push_back({p, ll});
+    }
+    return pairOut.size() >= 2u;
+  };
+
+  std::vector<std::pair<double, double>> pairs;
+  if (!scanAtStep(step, pairs)) {
+    delete tg;
+    return false;
+  }
+  bool needFine = false;
+  if (lowPMomentumRefineGeV > 0.) {
+    for (const auto& pr : pairs) {
+      if (pr.first < lowPMomentumRefineGeV) {
+        needFine = true;
+        break;
+      }
+    }
+  }
+  if (needFine && scanStepFineCm > 0. && scanStepFineCm + 1e-12 < step) {
+    std::vector<std::pair<double, double>> fine;
+    if (scanAtStep(scanStepFineCm, fine)) pairs.swap(fine);
+  }
+  delete tg;
+
+  if (pairs.size() < 2u) return false;
+
+  std::sort(pairs.begin(), pairs.end(),
+            [](const std::pair<double, double>& a, const std::pair<double, double>& b) { return a.first < b.first; });
+
+  for (const auto& pr : pairs) {
+    if (!pGeV.empty() && std::abs(pr.first - pGeV.back()) <= 1e-12 * std::max(1.0, std::abs(pr.first))) {
+      if (pr.second > logL.back()) logL.back() = pr.second;
+    } else {
+      pGeV.push_back(pr.first);
+      logL.push_back(pr.second);
+    }
+  }
+  return pGeV.size() >= 2u;
+}
+
 } // namespace
+
+//***************************************************************
+bool pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(AnaParticlePD* part, double Lmax, double step,
+                                                                int minInteriorPoints, int skipHitsFirst,
+                                                                int skipHitsLast, double dedxMinMeVcm,
+                                                                double dedxMaxMeVcm, double pdfPathCm,
+                                                                std::vector<double>& pGeV, std::vector<double>& logL,
+                                                                double scanStepFineCm, double lowPMomentumRefineGeV) {
+//***************************************************************
+  return BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(part, Lmax, step, minInteriorPoints, skipHitsFirst,
+                                                                skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm, pdfPathCm,
+                                                                pGeV, logL, scanStepFineCm, lowPMomentumRefineGeV);
+}
 
 static TF1* FreeRangeLikelihoodPdf() {
   static TF1* pdf =
@@ -415,32 +537,58 @@ static double ExpectedDedxFromLikelihoodPdfMode(double ke, Float_t mass, double 
 }
 
 static pdAnaUtils::DEdxFreeRangeFitResult RunFreeRangeScan(TGraph* tg, TGraph* tg_ke, Float_t mass, double L0, double Lmax,
-                                                         double step, double measuredTrackLengthCm, bool computeMomentum) {
+                                                         double step, double measuredTrackLengthCm, bool computeMomentum,
+                                                         double pdfPathCm, bool computeDedxBiasDiagnostics,
+                                                         double scanStepFineCm, double lowPMomentumRefineGeV) {
   pdAnaUtils::DEdxFreeRangeFitResult out;
   if (!tg || !tg_ke || tg->GetN() < 1 || step <= 0 || Lmax < L0) return out;
+  if (!std::isfinite(pdfPathCm) || pdfPathCm <= 0.) return out;
 
-  const double width = 0.65;
+  const double width = pdfPathCm;
   TF1* pdf = FreeRangeLikelihoodPdf();
   std::vector<double> L_v;
   std::vector<double> Likelihood_v;
 
-  for (double L = L0; L <= Lmax + 1e-9; L += step) {
-    double likelihood = 0.;
-    for (int i = 0; i < tg->GetN(); i++) {
-      const double range = tg->GetPointX(i) + L;
-      const double dEdx = tg->GetPointY(i);
-      if (!(range > 0.) || !std::isfinite(range)) continue;
-      const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, range);
-      if (ke < 0. || !std::isfinite(ke)) continue;
-      double par[5] = {0., 0., 0., 0., 0.};
-      if (!BuildDedxPdfParams(ke, mass, width, par)) continue;
-      pdf->SetParameters(par);
-      const double pval = pdf->Eval(dEdx);
-      if (pval == 0.) continue;
-      likelihood += std::log(pval);
+  const auto fillGrid = [&](double stepUse, std::vector<double>& Lout, std::vector<double>& LLout, bool* sawLowP) {
+    Lout.clear();
+    LLout.clear();
+    if (sawLowP) *sawLowP = false;
+    for (double L = L0; L <= Lmax + 1e-9; L += stepUse) {
+      double likelihood = 0.;
+      for (int i = 0; i < tg->GetN(); i++) {
+        const double range = tg->GetPointX(i) + L;
+        const double dEdx = tg->GetPointY(i);
+        if (!(range > 0.) || !std::isfinite(range)) continue;
+        const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, range);
+        if (ke < 0. || !std::isfinite(ke)) continue;
+        double par[5] = {0., 0., 0., 0., 0.};
+        if (!BuildDedxPdfParams(ke, mass, width, par)) continue;
+        pdf->SetParameters(par);
+        const double pval = pdf->Eval(dEdx);
+        if (pval == 0.) continue;
+        likelihood += std::log(pval);
+      }
+      Lout.push_back(L);
+      LLout.push_back(likelihood);
+      if (sawLowP && computeMomentum && measuredTrackLengthCm > 0. && std::isfinite(measuredTrackLengthCm) &&
+          lowPMomentumRefineGeV > 0.) {
+        const double R_eff = measuredTrackLengthCm + L;
+        const double pTry = pdMomShared::RangeCmToMomentumGeV(R_eff, 211, tg_ke, mass);
+        if (std::isfinite(pTry) && pTry > 0. && pTry < lowPMomentumRefineGeV) *sawLowP = true;
+      }
     }
-    L_v.push_back(L);
-    Likelihood_v.push_back(likelihood);
+  };
+
+  bool probeLowP = false;
+  fillGrid(step, L_v, Likelihood_v, &probeLowP);
+  if (scanStepFineCm > 0. && scanStepFineCm + 1e-12 < step && probeLowP && lowPMomentumRefineGeV > 0.) {
+    std::vector<double> Lfine, LLfine;
+    bool dummy = false;
+    fillGrid(scanStepFineCm, Lfine, LLfine, &dummy);
+    if (!LLfine.empty()) {
+      L_v.swap(Lfine);
+      Likelihood_v.swap(LLfine);
+    }
   }
 
   if (Likelihood_v.empty()) return out;
@@ -450,52 +598,54 @@ static pdAnaUtils::DEdxFreeRangeFitResult RunFreeRangeScan(TGraph* tg, TGraph* t
   out.logLikelihood = static_cast<Float_t>(Likelihood_v[index]);
   out.bestOffsetCm = static_cast<Float_t>(L_v[index]);
 
-  // Compute dEdx bias distribution and fit Gaussian at best offset
-  std::vector<double> dedx_bias_values;
-  const double L_best = L_v[index];
-  for (int i = 0; i < tg->GetN(); i++) {
-    const double range = tg->GetPointX(i) + L_best;
-    const double dEdx = tg->GetPointY(i);
-    if (!(range > 0.) || !std::isfinite(range)) continue;
-    const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, range);
-    if (ke < 0. || !std::isfinite(ke)) continue;
-    const double dEdx_expected = ExpectedDedxFromLikelihoodPdfMode(ke, mass, width);
-    if (!std::isfinite(dEdx_expected) || dEdx_expected <= 0.) continue;
-    dedx_bias_values.push_back(dEdx - dEdx_expected);
-  }
-
-  // Fit Gaussian to dEdx bias distribution in a robust central window
-  if (dedx_bias_values.size() >= 3) {
-    // 0.1 bin width in [-1, 1]
-    TH1F hist_bias("h_dedx_bias", "dEdx bias distribution", 20, -1., 1.);
-    for (double bias : dedx_bias_values) {
-      hist_bias.Fill(bias);
+  if (computeDedxBiasDiagnostics) {
+    // Compute dEdx bias distribution and fit Gaussian at best offset
+    std::vector<double> dedx_bias_values;
+    const double L_best = L_v[index];
+    for (int i = 0; i < tg->GetN(); i++) {
+      const double range = tg->GetPointX(i) + L_best;
+      const double dEdx = tg->GetPointY(i);
+      if (!(range > 0.) || !std::isfinite(range)) continue;
+      const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, range);
+      if (ke < 0. || !std::isfinite(ke)) continue;
+      const double dEdx_expected = ExpectedDedxFromLikelihoodPdfMode(ke, mass, width);
+      if (!std::isfinite(dEdx_expected) || dEdx_expected <= 0.) continue;
+      dedx_bias_values.push_back(dEdx - dEdx_expected);
     }
 
-    if (hist_bias.GetEntries() >= 3 && std::isfinite(hist_bias.GetRMS()) && hist_bias.GetRMS() > 0.) {
-      TF1* gaus = new TF1("gaus_fit", "gaus", -1., 1.);
-      gaus->SetParameter(0, std::max(1.0, static_cast<double>(hist_bias.GetMaximum())));
-      gaus->SetParameter(1, hist_bias.GetMean());
-      gaus->SetParameter(2, std::max(0.05, static_cast<double>(hist_bias.GetRMS())));
-      gaus->SetParLimits(1, -1., 1.);
-      gaus->SetParLimits(2, 0.02, 1.0);
+    // Fit Gaussian to dEdx bias distribution in a robust central window
+    if (dedx_bias_values.size() >= 3) {
+      // 0.1 bin width in [-1, 1]
+      TH1F hist_bias("h_dedx_bias", "dEdx bias distribution", 20, -1., 1.);
+      for (double bias : dedx_bias_values) {
+        hist_bias.Fill(bias);
+      }
 
-      const int fitStatus = hist_bias.Fit(gaus, "RQ0", "", -1., 1.);
-      if (fitStatus == 0 && std::isfinite(gaus->GetParameter(1)) && std::isfinite(gaus->GetParameter(2)) &&
-          gaus->GetParameter(2) > 0.) {
-        out.meanDedxBias = static_cast<Float_t>(gaus->GetParameter(1));
-        out.sigmaDedxBias = static_cast<Float_t>(gaus->GetParameter(2));
-        out.dedxFitOk = 1;
+      if (hist_bias.GetEntries() >= 3 && std::isfinite(hist_bias.GetRMS()) && hist_bias.GetRMS() > 0.) {
+        TF1* gaus = new TF1("gaus_fit", "gaus", -1., 1.);
+        gaus->SetParameter(0, std::max(1.0, static_cast<double>(hist_bias.GetMaximum())));
+        gaus->SetParameter(1, hist_bias.GetMean());
+        gaus->SetParameter(2, std::max(0.05, static_cast<double>(hist_bias.GetRMS())));
+        gaus->SetParLimits(1, -1., 1.);
+        gaus->SetParLimits(2, 0.02, 1.0);
+
+        const int fitStatus = hist_bias.Fit(gaus, "RQ0", "", -1., 1.);
+        if (fitStatus == 0 && std::isfinite(gaus->GetParameter(1)) && std::isfinite(gaus->GetParameter(2)) &&
+            gaus->GetParameter(2) > 0.) {
+          out.meanDedxBias = static_cast<Float_t>(gaus->GetParameter(1));
+          out.sigmaDedxBias = static_cast<Float_t>(gaus->GetParameter(2));
+          out.dedxFitOk = 1;
+        } else {
+          out.meanDedxBias = static_cast<Float_t>(hist_bias.GetMean());
+          out.sigmaDedxBias = static_cast<Float_t>(hist_bias.GetRMS());
+          out.dedxFitOk = 0;
+        }
+        delete gaus;
       } else {
         out.meanDedxBias = static_cast<Float_t>(hist_bias.GetMean());
         out.sigmaDedxBias = static_cast<Float_t>(hist_bias.GetRMS());
         out.dedxFitOk = 0;
       }
-      delete gaus;
-    } else {
-      out.meanDedxBias = static_cast<Float_t>(hist_bias.GetMean());
-      out.sigmaDedxBias = static_cast<Float_t>(hist_bias.GetRMS());
-      out.dedxFitOk = 0;
     }
   }
 
@@ -536,8 +686,8 @@ Float_t pdAnaUtils::dEdxLikelihood(TGraph* tg, TGraph* tg_ke,
 }
 
 //***************************************************************
-Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG, double landauTruncMinRRCm,
-                                      double landauTailHitDropFraction){
+Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG, int skipHitsFirst, int skipHitsLast,
+                                      double dedxMinMeVcm, double dedxMaxMeVcm) {
 //***************************************************************
 
   if(part->Hits[2].empty())return -999.;
@@ -551,8 +701,8 @@ Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG, double lan
 
   if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
   std::vector<double> dedx, rr;
-  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), 2, dedx, rr, landauTruncMinRRCm,
-                             landauTailHitDropFraction)) {
+  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), 2, dedx, rr, skipHitsFirst, skipHitsLast,
+                             dedxMinMeVcm, dedxMaxMeVcm)) {
     return -999.;
   }
   TGraph* tg = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
@@ -565,8 +715,8 @@ Float_t pdAnaUtils::GetdEdxLikelihood(AnaParticlePD* part, Int_t PDG, double lan
 }
 
 //***************************************************************
-Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, const double maxRR,
-                                            double landauTruncMinRRCm, double landauTailHitDropFraction){
+Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, const double maxRR, int skipHitsFirst,
+                                             int skipHitsLast, double dedxMinMeVcm, double dedxMaxMeVcm) {
 //***************************************************************
 
   if(part->Hits[2].empty())return -999.;
@@ -580,7 +730,7 @@ Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, con
 
   if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
   std::vector<double> dedx, rr;
-  if (!InteriorDedxRrSample(part, maxRR, 2, dedx, rr, landauTruncMinRRCm, landauTailHitDropFraction)) {
+  if (!InteriorDedxRrSample(part, maxRR, 2, dedx, rr, skipHitsFirst, skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm)) {
     return -999.;
   }
   TGraph* tg = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
@@ -595,9 +745,12 @@ Float_t pdAnaUtils::GetdEdxLikelihood_UpToRR(AnaParticlePD* part, Int_t PDG, con
 //***************************************************************
 pdAnaUtils::DEdxFreeRangeFitResult pdAnaUtils::dEdxLikelihoodFreeRangeFit(TGraph* tg, TGraph* tg_ke, Float_t mass, double L0,
                                                             double Lmax, double step, double measuredTrackLengthCm,
-                                                            bool computeMomentum){
+                                                            bool computeMomentum, double pdfPathCm,
+                                                            bool computeDedxBiasDiagnostics, double scanStepFineCm,
+                                                            double lowPMomentumRefineGeV) {
 //***************************************************************
-  return RunFreeRangeScan(tg, tg_ke, mass, L0, Lmax, step, measuredTrackLengthCm, computeMomentum);
+  return RunFreeRangeScan(tg, tg_ke, mass, L0, Lmax, step, measuredTrackLengthCm, computeMomentum, pdfPathCm,
+                          computeDedxBiasDiagnostics, scanStepFineCm, lowPMomentumRefineGeV);
 }
 
 //***************************************************************
@@ -605,70 +758,88 @@ std::pair<Float_t,Float_t> pdAnaUtils::dEdxLikelihoodFreeRange(TGraph* tg, TGrap
                                                                 Float_t mass){
 //***************************************************************
   const pdAnaUtils::DEdxFreeRangeFitResult r =
-      dEdxLikelihoodFreeRangeFit(tg, tg_ke, mass, 0., 10., 0.1, -1., false);
+      dEdxLikelihoodFreeRangeFit(tg, tg_ke, mass, 0., 10., 0.1, -1., false, 0.65);
   return std::make_pair(r.logLikelihood, r.bestOffsetCm);
 }
 
 //***************************************************************
-std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange(AnaParticlePD* part, Int_t PDG,
-                                                                  double landauTruncMinRRCm,
-                                                                  double landauTailHitDropFraction){
+std::pair<Float_t, Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange(AnaParticlePD* part, Int_t PDG, int skipHitsFirst,
+                                                                   int skipHitsLast, double dedxMinMeVcm,
+                                                                   double dedxMaxMeVcm, double pdfPathCm) {
 //***************************************************************
 
-  const pdAnaUtils::DEdxFreeRangeFitResult r =
-      ParticleFreeRangeFit(part, PDG, 10., 0.1, std::numeric_limits<double>::max(), 1, false,
-                           landauTruncMinRRCm, landauTailHitDropFraction);
+  const pdAnaUtils::DEdxFreeRangeFitResult r = ParticleFreeRangeFit(
+      part, PDG, 10., 0.1, std::numeric_limits<double>::max(), 1, false, skipHitsFirst, skipHitsLast, dedxMinMeVcm,
+      dedxMaxMeVcm, pdfPathCm, false);
   return std::make_pair(r.logLikelihood, r.bestOffsetCm);
 }
 
 //***************************************************************
 pdAnaUtils::DEdxFreeRangeFitResult pdAnaUtils::GetdEdxLikelihoodFreeRangeFit(AnaParticlePD* part, Int_t PDG, double Lmax,
-                                                               double step, double landauTruncMinRRCm,
-                                                               double landauTailHitDropFraction){
+                                                                             double step, int minInteriorPoints,
+                                                                             int skipHitsFirst, int skipHitsLast,
+                                                                             double dedxMinMeVcm, double dedxMaxMeVcm,
+                                                                             double pdfPathCm,
+                                                                             bool computeDedxBiasDiagnostics,
+                                                                             double scanStepFineCm,
+                                                                             double lowPMomentumRefineGeV) {
 //***************************************************************
-  return ParticleFreeRangeFit(part, PDG, Lmax, step, std::numeric_limits<double>::max(), 2, true,
-                              landauTruncMinRRCm, landauTailHitDropFraction);
+  return ParticleFreeRangeFit(part, PDG, Lmax, step, std::numeric_limits<double>::max(), minInteriorPoints, true,
+                              skipHitsFirst, skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm, pdfPathCm,
+                              computeDedxBiasDiagnostics, scanStepFineCm, lowPMomentumRefineGeV);
 }
 
 //***************************************************************
-std::pair<Float_t,Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaParticlePD* part, Int_t PDG, const double maxRR,
-                                                                        double landauTruncMinRRCm,
-                                                                        double landauTailHitDropFraction){
+std::pair<Float_t, Float_t> pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR(AnaParticlePD* part, Int_t PDG,
+                                                                          const double maxRR, int skipHitsFirst,
+                                                                          int skipHitsLast, double dedxMinMeVcm,
+                                                                          double dedxMaxMeVcm, double pdfPathCm) {
 //***************************************************************
 
   const pdAnaUtils::DEdxFreeRangeFitResult r =
-      ParticleFreeRangeFit(part, PDG, 10., 0.1, maxRR, 1, false, landauTruncMinRRCm, landauTailHitDropFraction);
+      ParticleFreeRangeFit(part, PDG, 10., 0.1, maxRR, 1, false, skipHitsFirst, skipHitsLast, dedxMinMeVcm,
+                           dedxMaxMeVcm, pdfPathCm, false);
   return std::make_pair(r.logLikelihood, r.bestOffsetCm);
 }
 
 //***************************************************************
 pdAnaUtils::DEdxFreeRangeFitResult pdAnaUtils::GetdEdxLikelihoodFreeRange_UpToRR_Fit(AnaParticlePD* part, Int_t PDG,
-                                                                      const double maxRR, double Lmax, double step,
-                                                                      double landauTruncMinRRCm,
-                                                                      double landauTailHitDropFraction){
+                                                                                     const double maxRR, double Lmax,
+                                                                                     double step, int minInteriorPoints,
+                                                                                     int skipHitsFirst, int skipHitsLast,
+                                                                                     double dedxMinMeVcm,
+                                                                                     double dedxMaxMeVcm,
+                                                                                     double pdfPathCm,
+                                                                                     bool computeDedxBiasDiagnostics,
+                                                                                     double scanStepFineCm,
+                                                                                     double lowPMomentumRefineGeV) {
 //***************************************************************
-  return ParticleFreeRangeFit(part, PDG, Lmax, step, maxRR, 2, true, landauTruncMinRRCm, landauTailHitDropFraction);
+  return ParticleFreeRangeFit(part, PDG, Lmax, step, maxRR, minInteriorPoints, true, skipHitsFirst, skipHitsLast,
+                              dedxMinMeVcm, dedxMaxMeVcm, pdfPathCm, computeDedxBiasDiagnostics, scanStepFineCm,
+                              lowPMomentumRefineGeV);
 }
 
 //***************************************************************
 TMultiGraph* pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(AnaParticlePD* part, double Lmax, double step,
-                                                             double landauTruncMinRRCm, double landauTailHitDropFraction,
-                                                             const char* xAxisTitle){
+                                                             int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+                                                             double dedxMaxMeVcm, int minInteriorPoints,
+                                                             double pdfPathCm, const char* xAxisTitle) {
 //***************************************************************
-  if (!part || part->Hits[2].size() < 3u) return nullptr;
+  if (!part || part->Hits[2].empty()) return nullptr;
   if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
 
   std::vector<double> dedx, rr;
-  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), 2, dedx, rr, landauTruncMinRRCm,
-                             landauTailHitDropFraction))
+  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), minInteriorPoints, dedx, rr, skipHitsFirst,
+                            skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm))
     return nullptr;
 
   TGraph* tg_ke = KeVsRangeGraphCached("pion");
   if (!tg_ke) return nullptr;
   TGraph* tgFit = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
   const double lenCm = MeasuredTrackLengthCm(part, rr);
+  const double L0 = ComputeScanL0FromInteriorRR(rr);
   const DEdxFreeRangeFitResult fit = pdAnaUtils::dEdxLikelihoodFreeRangeFit(
-      tgFit, tg_ke, 139.57f, 0., Lmax, step, lenCm, true);
+      tgFit, tg_ke, 139.57f, L0, Lmax, step, lenCm, true, pdfPathCm);
   delete tgFit;
   if (!std::isfinite(static_cast<double>(fit.bestOffsetCm)) || fit.bestOffsetCm <= -998.f) return nullptr;
 
@@ -692,17 +863,27 @@ TMultiGraph* pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(AnaParticlePD* part
   gShift->SetMarkerStyle(21);
   gShift->SetMarkerSize(0.8f);
 
-  constexpr double kRefCurveRrMaxCm = 500.;
   constexpr double kRefCurveStepCm = 1.0;
   constexpr double kLowRStartCm = 0.02;
   constexpr double kPionMassMeV = 139.57;
-  constexpr double kPdfWidth = 0.65;
+  const double kPdfWidth = pdfPathCm;
   TGraph* tg_ke_pion = KeVsRangeGraphCached("pion");
   if (!tg_ke_pion) {
     delete gMeas;
     delete gShift;
     return nullptr;
   }
+
+  double rrMaxMeasured = 0.;
+  for (double r : rr) {
+    if (std::isfinite(r)) rrMaxMeasured = std::max(rrMaxMeasured, r);
+  }
+  double rrMaxShifted = 0.;
+  for (double r : rrShift) {
+    if (std::isfinite(r)) rrMaxShifted = std::max(rrMaxShifted, r);
+  }
+  const double rrMaxFromScan = rrMaxMeasured + std::max(0.0, Lmax);
+  const double kRefCurveRrMaxCm = std::max({kLowRStartCm, rrMaxMeasured, rrMaxShifted, rrMaxFromScan});
 
   std::vector<double> tplX, tplY;
   for (double rrRef = kLowRStartCm; rrRef <= kRefCurveRrMaxCm + 1e-9; rrRef += kRefCurveStepCm) {
@@ -741,16 +922,16 @@ TMultiGraph* pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(AnaParticlePD* part
 }
 
 //***************************************************************
-TH1F* pdAnaUtils::MakePionFreeRangeDedxBiasHistogram(AnaParticlePD* part, double Lmax, double step,
-                                                     double landauTruncMinRRCm, double landauTailHitDropFraction,
-                                                     const char* histTitle){
+TH1F* pdAnaUtils::MakePionFreeRangeDedxBiasHistogram(AnaParticlePD* part, double Lmax, double step, int skipHitsFirst,
+                                                     int skipHitsLast, double dedxMinMeVcm, double dedxMaxMeVcm,
+                                                     int minInteriorPoints, double pdfPathCm, const char* histTitle) {
 //***************************************************************
-  if (!part || part->Hits[2].size() < 3u) return nullptr;
+  if (!part || part->Hits[2].empty()) return nullptr;
   if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
 
   std::vector<double> dedx, rr;
-  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), 2, dedx, rr, landauTruncMinRRCm,
-                            landauTailHitDropFraction))
+  if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), minInteriorPoints, dedx, rr, skipHitsFirst,
+                             skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm))
     return nullptr;
 
   TGraph* tg_ke = KeVsRangeGraphCached("pion");
@@ -758,8 +939,9 @@ TH1F* pdAnaUtils::MakePionFreeRangeDedxBiasHistogram(AnaParticlePD* part, double
 
   TGraph* tgFit = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
   const double lenCm = MeasuredTrackLengthCm(part, rr);
+  const double L0 = ComputeScanL0FromInteriorRR(rr);
   const DEdxFreeRangeFitResult fit = pdAnaUtils::dEdxLikelihoodFreeRangeFit(
-      tgFit, tg_ke, 139.57f, 0., Lmax, step, lenCm, true);
+      tgFit, tg_ke, 139.57f, L0, Lmax, step, lenCm, true, pdfPathCm);
   delete tgFit;
   if (!std::isfinite(static_cast<double>(fit.bestOffsetCm)) || fit.bestOffsetCm <= -998.f) return nullptr;
 
@@ -771,7 +953,7 @@ TH1F* pdAnaUtils::MakePionFreeRangeDedxBiasHistogram(AnaParticlePD* part, double
     if (!(rrShifted > 0.) || !std::isfinite(rrShifted)) continue;
     const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, rrShifted);
     if (ke < 0. || !std::isfinite(ke)) continue;
-    const double dedxExpected = ExpectedDedxFromLikelihoodPdfMode(ke, 139.57f, 0.65);
+    const double dedxExpected = ExpectedDedxFromLikelihoodPdfMode(ke, 139.57f, static_cast<Float_t>(pdfPathCm));
     if (!std::isfinite(dedxExpected) || dedxExpected <= 0.) continue;
     bias.push_back(dedx[i] - dedxExpected);
   }

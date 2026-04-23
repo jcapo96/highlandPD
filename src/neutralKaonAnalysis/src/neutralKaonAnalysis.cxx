@@ -9,6 +9,7 @@
 #include "ToyBoxNeutralKaon.hxx"
 
 #include "pdAnalysisUtils.hxx"
+#include "pdUtilsRangePID.hxx"
 #include "standardPDTree.hxx"
 #include <sstream>
 
@@ -27,6 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <utility>
 #include "TVector3.h"
 
 namespace {
@@ -66,11 +68,59 @@ namespace {
     return m;
   }
 
-  Float_t TrueLengthOrSentinel(const AnaTrueParticlePD* truePart){
+  // Rest mass (MeV) for common MC secondaries; unknown PDG -> 0 (E ~ |p| for highly relativistic).
+  double TrueRestMassMeV(Int_t pdg){
+    const int ap = std::abs(static_cast<int>(pdg));
+    switch(ap){
+      case 211:
+        return 139.57;
+      case 111:
+        return 134.98;
+      case 2212:
+        return 938.27;
+      case 2112:
+        return 939.57;
+      case 11:
+        return 0.511;
+      case 13:
+        return 105.66;
+      case 321:
+        return 493.68;
+      case 310:
+      case 130:
+        return 497.61;
+      case 22:
+        return 0.0;
+      case 12:
+      case 14:
+      case 16:
+        return 0.0;
+      default:
+        return 0.0;
+    }
+  }
+
+  Float_t TrueTotalEnergyGeV(const AnaTrueParticlePD* truePart, bool atEnd){
     if(!truePart) return static_cast<Float_t>(-999.0);
-    const Float_t L = truePart->Length;
-    if(!std::isfinite(L) || L < 0.f) return static_cast<Float_t>(-999.0);
-    return L;
+    const double p = static_cast<double>(atEnd ? truePart->MomentumEnd : truePart->Momentum);
+    if(!std::isfinite(p) || p < 0.0) return static_cast<Float_t>(-999.0);
+    const double mGeV = TrueRestMassMeV(truePart->PDG) / 1000.0;
+    return static_cast<Float_t>(std::sqrt(p * p + mGeV * mGeV));
+  }
+
+  // Same as neutralKaonTree: |PositionEnd - Position| when both vertices are valid (not AnaTrueParticle::Length).
+  bool IsValidTruePos3(Float_t x, Float_t y, Float_t z){
+    return std::isfinite(x) && std::isfinite(y) && std::isfinite(z) && x > -900.f && y > -900.f && z > -900.f;
+  }
+
+  Float_t TrueLengthVertexSeparationCm(const AnaTrueParticlePD* truePart){
+    if(!truePart) return static_cast<Float_t>(-999.0);
+    const TVector3 trueStart(truePart->Position[0], truePart->Position[1], truePart->Position[2]);
+    const TVector3 trueEnd(truePart->PositionEnd[0], truePart->PositionEnd[1], truePart->PositionEnd[2]);
+    if(!IsValidTruePos3(trueStart.X(), trueStart.Y(), trueStart.Z()) ||
+       !IsValidTruePos3(trueEnd.X(), trueEnd.Y(), trueEnd.Z()))
+      return static_cast<Float_t>(-999.0);
+    return static_cast<Float_t>((trueEnd - trueStart).Mag());
   }
 
   Float_t RecoLengthOrSentinel(const AnaParticlePD* recoPart){
@@ -152,37 +202,16 @@ namespace {
     return static_cast<Float_t>(minDistance);
   }
 
-  Float_t RecoChi2NdfFromPidPlane(const AnaParticlePD* recoPart, int plane, int pidIndex){
-    if(!recoPart || plane < 0 || plane > 2) return static_cast<Float_t>(-999.0);
-    const Float_t ndf = recoPart->PID[plane][0];
-    const Float_t chi2 = recoPart->PID[plane][pidIndex];
-    if(ndf <= 0.f || !std::isfinite(ndf) || !std::isfinite(chi2) || chi2 < 0.f) return static_cast<Float_t>(-999.0);
-    return chi2 / ndf;
-  }
-
-  Float_t RecoChi2NdfFromPidBestPlane(const AnaParticlePD* recoPart, int pidIndex){
-    if(!recoPart) return static_cast<Float_t>(-999.0);
-    for(int plane = 2; plane >= 0; --plane){
-      const Float_t v = RecoChi2NdfFromPidPlane(recoPart, plane, pidIndex);
-      if(std::isfinite(v) && v > -900.f) return v;
-    }
-    return static_cast<Float_t>(-999.0);
-  }
-
   Float_t RecoProtonChi2Ndf(const AnaParticlePD* recoPart){
-    if(!recoPart) return static_cast<Float_t>(-999.0);
-    if(recoPart->Chi2ndf > 0.f && recoPart->Chi2Proton > 0.f &&
-       std::isfinite(recoPart->Chi2ndf) && std::isfinite(recoPart->Chi2Proton))
-      return recoPart->Chi2Proton / recoPart->Chi2ndf;
-    return RecoChi2NdfFromPidBestPlane(recoPart, 3);
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 2212);
   }
 
   Float_t RecoKaonChi2Ndf(const AnaParticlePD* recoPart){
-    return RecoChi2NdfFromPidBestPlane(recoPart, 4);
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 321);
   }
 
   Float_t RecoPionChi2Ndf(const AnaParticlePD* recoPart){
-    return RecoChi2NdfFromPidBestPlane(recoPart, 5);
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 211);
   }
 
   Int_t RecoDaughterParentUidMinusTrueParentRecoUid(const AnaBunchB& bunch,
@@ -459,26 +488,7 @@ bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
   if (!part) return false;
   if(part->PDG != 310) return false;
-  if(part->ProcessEnd != AnaTrueParticleB::Decay) return false;
-  if(part->Daughters.size() != 2) return false;
-
-  AnaTrueParticlePD* daughter1 = nullptr;
-  AnaTrueParticlePD* daughter2 = nullptr;
-
-  for(int i = 0; i < GetSpill().TrueParticles.size(); ++i){
-    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[i]);
-    if(!truePart) continue;
-    if(truePart->ID == part->Daughters[0]) daughter1 = truePart;
-    if(truePart->ID == part->Daughters[1]) daughter2 = truePart;
-  }
-
-  if(!daughter1 || !daughter2) return false;
-
-  const bool isPiPlusPiMinus =
-    ((daughter1->PDG == 211 && daughter2->PDG == -211) ||
-     (daughter1->PDG == -211 && daughter2->PDG == 211));
-
-  return isPiPlusPiMinus;
+  return true;
 }
 
 //********************************************************************
@@ -521,6 +531,53 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 
   AnaParticlePD* daughter1Reco = findRecoFromTrue(daughter1True, false);
   AnaParticlePD* daughter2Reco = findRecoFromTrue(daughter2True, false);
+
+  auto trueSubDaughterRecoStats = [&](const AnaTrueParticlePD* mother) -> std::pair<Int_t, Int_t> {
+    if (!mother) return {-999, -999};
+    Int_t nQual = 0;
+    Int_t hitsTot = 0;
+    for (Int_t childId : mother->Daughters) {
+      AnaTrueParticlePD* childTrue = nullptr;
+      for (int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti) {
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if (tp && tp->ID == childId) {
+          childTrue = tp;
+          break;
+        }
+      }
+      if (!childTrue) continue;
+      AnaParticlePD* childReco = findRecoFromTrue(childTrue, false);
+      if (!HasRecoObjectForTruthFlags(childReco)) continue;
+      ++nQual;
+      const Int_t nh = RecoNHitsOrSentinel(childReco);
+      if (nh >= 0) hitsTot += nh;
+    }
+    return {nQual, hitsTot};
+  };
+
+  auto trueSubDaughterRecoTrueEnergySum = [&](const AnaTrueParticlePD* mother) -> Float_t {
+    if(!mother) return static_cast<Float_t>(-999.0);
+    double sumGeV = 0.0;
+    for(Int_t childId : mother->Daughters){
+      AnaTrueParticlePD* childTrue = nullptr;
+      for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if(tp && tp->ID == childId){
+          childTrue = tp;
+          break;
+        }
+      }
+      if(!childTrue) continue;
+      AnaParticlePD* childReco = findRecoFromTrue(childTrue, false);
+      if(!HasRecoObjectForTruthFlags(childReco)) continue;
+      const Float_t eGeV = TrueTotalEnergyGeV(childTrue, false);
+      if(std::isfinite(eGeV) && eGeV >= 0.f && eGeV < 1.e4f) sumGeV += static_cast<double>(eGeV);
+    }
+    return static_cast<Float_t>(sumGeV);
+  };
+
+  const std::pair<Int_t, Int_t> daughter1TrueSubReco = trueSubDaughterRecoStats(daughter1True);
+  const std::pair<Int_t, Int_t> daughter2TrueSubReco = trueSubDaughterRecoStats(daughter2True);
 
   AnaParticlePD* parentReco = findRecoFromTrue(parentTrue, true);
 
@@ -615,20 +672,73 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
   const Float_t daughter2TrueStartMomentum = TrueScalarMomentum(daughter2True, false);
   const Float_t daughter2TrueEndMomentum = TrueScalarMomentum(daughter2True, true);
 
+  const Float_t k0TrueEnergy = TrueTotalEnergyGeV(&part, false);
+  const Float_t daughter1TrueEnergy = TrueTotalEnergyGeV(daughter1True, false);
+  const Float_t daughter2TrueEnergy = TrueTotalEnergyGeV(daughter2True, false);
+  const Float_t daughter1TrueSubRecoEnergySum = trueSubDaughterRecoTrueEnergySum(daughter1True);
+  const Float_t daughter2TrueSubRecoEnergySum = trueSubDaughterRecoTrueEnergySum(daughter2True);
+  const Int_t isK0Decay = (part.ProcessEnd == AnaTrueParticleB::Decay) ? 1 : 0;
+  const Int_t k0NTrueDaughters = static_cast<Int_t>(part.Daughters.size());
+
   const Int_t k0TruePdg = part.PDG;
   const Int_t parentTruePdg = parentTrue ? parentTrue->PDG : -999;
   const Int_t daughter1TruePdg = daughter1True ? daughter1True->PDG : -999;
   const Int_t daughter2TruePdg = daughter2True ? daughter2True->PDG : -999;
+  const Int_t isK0Charged =
+    ((daughter1TruePdg == 211 && daughter2TruePdg == -211) ||
+     (daughter1TruePdg == -211 && daughter2TruePdg == 211)) ? 1 : 0;
+  const Int_t isK0Neutral =
+    ((daughter1TruePdg == 111 && daughter2TruePdg == 111)) ? 1 : 0;
+  auto isPi0ExactlyToTwoGamma = [&](const AnaTrueParticlePD* pi0) -> Int_t {
+    if(!pi0 || pi0->PDG != 111) return 0;
+    if(pi0->Daughters.size() != 2) return 0;
 
-  const Float_t daughter1TrueLength = TrueLengthOrSentinel(daughter1True);
+    AnaTrueParticlePD* gamma1 = nullptr;
+    AnaTrueParticlePD* gamma2 = nullptr;
+    for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+      AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+      if(!tp) continue;
+      if(tp->ID == pi0->Daughters[0]) gamma1 = tp;
+      if(tp->ID == pi0->Daughters[1]) gamma2 = tp;
+    }
+
+    if(!gamma1 || !gamma2) return 0;
+    return (gamma1->PDG == 22 && gamma2->PDG == 22) ? 1 : 0;
+  };
+  const Int_t k0Pi01TwoGamma = isPi0ExactlyToTwoGamma(daughter1True);
+  const Int_t k0Pi02TwoGamma = isPi0ExactlyToTwoGamma(daughter2True);
+  auto gammaHasValidPandoraRecoObject = [&](const AnaTrueParticlePD* pi0, Int_t gammaDaughterIndex) -> Int_t {
+    if(!pi0 || pi0->PDG != 111) return 0;
+    if(gammaDaughterIndex < 0 || gammaDaughterIndex >= static_cast<Int_t>(pi0->Daughters.size())) return 0;
+    const Int_t gammaId = pi0->Daughters[gammaDaughterIndex];
+
+    AnaTrueParticlePD* gammaTrue = nullptr;
+    for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+      AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+      if(tp && tp->ID == gammaId){
+        gammaTrue = tp;
+        break;
+      }
+    }
+    if(!gammaTrue || gammaTrue->PDG != 22) return 0;
+
+    AnaParticlePD* gammaReco = findRecoFromTrue(gammaTrue, false);
+    return (gammaReco && gammaReco->isPandora && HasRecoObjectForTruthFlags(gammaReco)) ? 1 : 0;
+  };
+  const Int_t k0Dau1Gamma1HasRecoObject = gammaHasValidPandoraRecoObject(daughter1True, 0);
+  const Int_t k0Dau1Gamma2HasRecoObject = gammaHasValidPandoraRecoObject(daughter1True, 1);
+  const Int_t k0Dau2Gamma1HasRecoObject = gammaHasValidPandoraRecoObject(daughter2True, 0);
+  const Int_t k0Dau2Gamma2HasRecoObject = gammaHasValidPandoraRecoObject(daughter2True, 1);
+
+  const Float_t daughter1TrueLength = TrueLengthVertexSeparationCm(daughter1True);
   const Float_t daughter1RecoLength = RecoLengthOrSentinel(daughter1Reco);
-  const Float_t daughter2TrueLength = TrueLengthOrSentinel(daughter2True);
+  const Float_t daughter2TrueLength = TrueLengthVertexSeparationCm(daughter2True);
   const Float_t daughter2RecoLength = RecoLengthOrSentinel(daughter2Reco);
-  const Float_t k0TrueLength = TrueLengthOrSentinel(&part);
+  const Float_t k0TrueLength = TrueLengthVertexSeparationCm(&part);
   const Int_t daughter1RecoNHits = RecoNHitsOrSentinel(daughter1Reco);
   const Int_t daughter2RecoNHits = RecoNHitsOrSentinel(daughter2Reco);
   const Int_t parentRecoNHits = RecoNHitsOrSentinel(parentReco);
-  const Float_t parentTrueLength = TrueLengthOrSentinel(parentTrue);
+  const Float_t parentTrueLength = TrueLengthVertexSeparationCm(parentTrue);
   const Float_t parentRecoLength = RecoLengthOrSentinel(parentReco);
 
   const Int_t parentRecoZStartGreaterThanEnd = RecoZStartGreaterThanEndFlag(parentReco);
@@ -637,6 +747,30 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 
   const Int_t parentIsPandoraBeam =
     (parentReco && parentReco->isPandora) ? 1 : 0;
+
+  // Among true K0 parent's direct true daughters: exactly one has valid reco, and that particle is a proton (2212).
+  Int_t parentExactlyOneRecoProtonNearK0Creation = 0;
+  if(parentTrue){
+    int nSiblingsWithReco = 0;
+    AnaTrueParticlePD* soleSiblingTrueWithReco = nullptr;
+    for(Int_t childId : parentTrue->Daughters){
+      AnaTrueParticlePD* childTrue = nullptr;
+      for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if(tp && tp->ID == childId){
+          childTrue = tp;
+          break;
+        }
+      }
+      if(!childTrue) continue;
+      AnaParticlePD* siblingReco = findRecoFromTrue(childTrue, false);
+      if(!HasRecoObjectForTruthFlags(siblingReco)) continue;
+      ++nSiblingsWithReco;
+      soleSiblingTrueWithReco = childTrue;
+    }
+    if(nSiblingsWithReco == 1 && soleSiblingTrueWithReco && soleSiblingTrueWithReco->PDG == 2212)
+      parentExactlyOneRecoProtonNearK0Creation = 1;
+  }
 
   neutralKaonTruthTree::FillNeutralKaonTruthVariables(output(),
                                                       parentHasReco,
@@ -669,6 +803,21 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       daughter1TrueEndMomentum,
                                                       daughter2TrueStartMomentum,
                                                       daughter2TrueEndMomentum,
+                                                      k0TrueEnergy,
+                                                      daughter1TrueEnergy,
+                                                      daughter2TrueEnergy,
+                                                      daughter1TrueSubRecoEnergySum,
+                                                      daughter2TrueSubRecoEnergySum,
+                                                      isK0Decay,
+                                                      k0NTrueDaughters,
+                                                      isK0Charged,
+                                                      isK0Neutral,
+                                                      k0Pi01TwoGamma,
+                                                      k0Pi02TwoGamma,
+                                                      k0Dau1Gamma1HasRecoObject,
+                                                      k0Dau1Gamma2HasRecoObject,
+                                                      k0Dau2Gamma1HasRecoObject,
+                                                      k0Dau2Gamma2HasRecoObject,
                                                       k0TruePdg,
                                                       parentTruePdg,
                                                       daughter1TruePdg,
@@ -680,6 +829,10 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       k0TrueLength,
                                                       daughter1RecoNHits,
                                                       daughter2RecoNHits,
+                                                      daughter1TrueSubReco.first,
+                                                      daughter1TrueSubReco.second,
+                                                      daughter2TrueSubReco.first,
+                                                      daughter2TrueSubReco.second,
                                                       parentRecoNHits,
                                                       parentTrueLength,
                                                       parentRecoLength,
@@ -688,7 +841,8 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       parentRecoZStartGreaterThanEnd,
                                                       daughter1RecoZStartGreaterThanEnd,
                                                       daughter2RecoZStartGreaterThanEnd,
-                                                      parentIsPandoraBeam);
+                                                      parentIsPandoraBeam,
+                                                      parentExactlyOneRecoProtonNearK0Creation);
   output().IncrementCounter(neutralKaonTruthTree::ntruek0);
 }
 

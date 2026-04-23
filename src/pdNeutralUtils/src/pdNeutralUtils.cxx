@@ -46,7 +46,22 @@ AnaTrueParticlePD* GetIntermediateTrueParticle(AnaEventB& event,
     return nullptr;
   }
 
-  AnaTrueParticlePD* intermediateParticle = pdAnaUtils::GetTrueParticle(&event, trueDaughter1->ParentID);
+  // Resolve duplicate true IDs by preferring entries with valid PDG information.
+  AnaTrueParticlePD* intermediateParticle = nullptr;
+  AnaTrueParticlePD* fallbackDuplicate = nullptr;
+  for (Int_t it = 0; it < event.nTrueParticles; ++it) {
+    AnaTrueParticlePD* candidate = static_cast<AnaTrueParticlePD*>(event.TrueParticles[it]);
+    if (!candidate) continue;
+    if (candidate->ID != trueDaughter1->ParentID) continue;
+    if (!fallbackDuplicate) fallbackDuplicate = candidate;
+    if (candidate->PDG != -999) {
+      intermediateParticle = candidate;
+      break;
+    }
+  }
+  if (!intermediateParticle) {
+    intermediateParticle = fallbackDuplicate;
+  }
   if (!intermediateParticle || intermediateParticle->ID != trueDaughter1->ParentID) {
     return nullptr;
   }
@@ -91,6 +106,37 @@ bool HasValidRecoPoint3(const Float_t* point) {
   if (!point) return false;
   return std::isfinite(point[0]) && std::isfinite(point[1]) && std::isfinite(point[2]) &&
          point[0] > -900.f && point[1] > -900.f && point[2] > -900.f;
+}
+
+AnaParticlePD* FindCommonRecoParentForAnnihilationVertex(AnaEventB& event,
+                                                          const AnaAnnihilationVertexPD* annihilationVtx,
+                                                          const TVector3& annihilationPos,
+                                                          const AnaParticlePD* vertexDaughter1,
+                                                          const AnaParticlePD* vertexDaughter2) {
+  if (!annihilationVtx || annihilationVtx->Particles.size() < 2) return nullptr;
+  if (!vertexDaughter1 || !vertexDaughter2) return nullptr;
+  if (vertexDaughter1->ParentID <= 0 || vertexDaughter1->ParentID != vertexDaughter2->ParentID) return nullptr;
+
+  const Int_t commonParentID = vertexDaughter1->ParentID;
+  const bool hasValidAnnihilationPos = annihilationPos.X() > -900.0 && annihilationPos.Y() > -900.0 &&
+                                       annihilationPos.Z() > -900.0;
+
+  for (Int_t i = 0; i < event.nParticles; ++i) {
+    AnaParticlePD* candidateParent = static_cast<AnaParticlePD*>(event.Particles[i]);
+    if (!candidateParent) continue;
+    if (candidateParent == vertexDaughter1 || candidateParent == vertexDaughter2) continue;
+    if (candidateParent->UniqueID != commonParentID) continue;
+
+    const bool hasValidEnd = candidateParent->PositionEnd[0] > -900.f &&
+                             candidateParent->PositionEnd[1] > -900.f &&
+                             candidateParent->PositionEnd[2] > -900.f;
+    if (!hasValidEnd) continue;
+
+    if (hasValidAnnihilationPos && candidateParent->PositionEnd[2] >= annihilationPos.Z()) continue;
+    return candidateParent;
+  }
+
+  return nullptr;
 }
 
 bool BuildRecoFitLine(const AnaParticlePD* particle,
@@ -272,6 +318,10 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
   const bool selectSingleNeutralPerAnnihilationVertex =
       !ND::params().HasParameter("neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex") ||
       ND::params().GetParameterD("neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex") != 0.0;
+  const int creationVertexBeamParticleMode =
+      ND::params().HasParameter("neutralKaonAnalysis.CreationVertexBeamParticleMode")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.CreationVertexBeamParticleMode")
+          : 0;
 
   for (AnaAnnihilationVertexPD* annihilationVtx : annihilationVertices) {
     if (!annihilationVtx) continue;
@@ -295,7 +345,11 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
       annihilationPos.SetXYZ(annihilationVtx->PositionPandora[0], annihilationVtx->PositionPandora[1], annihilationVtx->PositionPandora[2]);
     }
 
-    if (annihilationPos.X() > -900.0 && annihilationPos.Y() > -900.0 && annihilationPos.Z() > -900.0) {
+    if (creationVertexBeamParticleMode == 1) {
+      AnaParticlePD* commonParent = FindCommonRecoParentForAnnihilationVertex(
+          event, annihilationVtx, annihilationPos, vertexDaughter1, vertexDaughter2);
+      if (commonParent) parentParticles.push_back(commonParent);
+    } else if (annihilationPos.X() > -900.0 && annihilationPos.Y() > -900.0 && annihilationPos.Z() > -900.0) {
       for (Int_t i = 0; i < event.nParticles; ++i) {
         AnaParticlePD* candidateParent = static_cast<AnaParticlePD*>(event.Particles[i]);
         if (!candidateParent) continue;
@@ -395,9 +449,9 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
             if (!candidateSecond) continue;
             if (candidateSecond == parentParticle || candidateSecond == vertexDaughter1 || candidateSecond == vertexDaughter2) continue;
             if (!HasValidRecoPoint3(candidateSecond->PositionStart)) continue;
-            if (candidateSecond->Chi2ndf <= 0.f || candidateSecond->Chi2Proton <= 0.f) continue;
 
-            const Float_t protonScore = candidateSecond->Chi2Proton / candidateSecond->Chi2ndf;
+            const Float_t protonScore = pdAnaUtils::Chi2PIDChi2PerHit(candidateSecond, 2212);
+            if (!(protonScore > -900.f)) continue;
             if (!(std::isfinite(protonScore) && protonScore <= creationVertexSecondParticleMaxProtonChi2Ndf)) continue;
 
             const TVector3 candidateStart(candidateSecond->PositionStart[0],
