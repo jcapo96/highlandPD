@@ -9,10 +9,9 @@
 #include "ToyBoxNeutralKaon.hxx"
 
 #include "pdAnalysisUtils.hxx"
+#include "pdUtilsRangePID.hxx"
 #include "standardPDTree.hxx"
 #include <sstream>
-#include <iostream>
-#include <unordered_map>
 
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
@@ -23,6 +22,241 @@
 #include "SCEGeometricVariation.hxx"
 
 #include "baseToyMaker.hxx"
+
+#include "AnalysisUtils.hxx"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <utility>
+#include "TVector3.h"
+
+namespace {
+  bool HasValidRecoStart(const AnaParticlePD* recoPart){
+    if(!recoPart) return false;
+    return recoPart->PositionStart[0] > -900.f &&
+           recoPart->PositionStart[1] > -900.f &&
+           recoPart->PositionStart[2] > -900.f;
+  }
+
+  Float_t RecoDaughtersStartDistance(const AnaParticlePD* r1, const AnaParticlePD* r2){
+    if(!HasValidRecoStart(r1) || !HasValidRecoStart(r2)) return static_cast<Float_t>(-999.0);
+    const double dx = static_cast<double>(r1->PositionStart[0] - r2->PositionStart[0]);
+    const double dy = static_cast<double>(r1->PositionStart[1] - r2->PositionStart[1]);
+    const double dz = static_cast<double>(r1->PositionStart[2] - r2->PositionStart[2]);
+    return static_cast<Float_t>(std::sqrt(dx * dx + dy * dy + dz * dz));
+  }
+
+  bool HasValidTrueStart(const AnaTrueParticlePD* truePart){
+    if(!truePart) return false;
+    return truePart->Position[0] > -900.f &&
+           truePart->Position[1] > -900.f &&
+           truePart->Position[2] > -900.f;
+  }
+
+  bool HasValidTrueEnd(const AnaTrueParticlePD* truePart){
+    if(!truePart) return false;
+    return truePart->PositionEnd[0] > -900.f &&
+           truePart->PositionEnd[1] > -900.f &&
+           truePart->PositionEnd[2] > -900.f;
+  }
+
+  Float_t TrueScalarMomentum(const AnaTrueParticlePD* truePart, bool atEnd){
+    if(!truePart) return static_cast<Float_t>(-999.0);
+    const Float_t m = atEnd ? truePart->MomentumEnd : truePart->Momentum;
+    if(!std::isfinite(m)) return static_cast<Float_t>(-999.0);
+    return m;
+  }
+
+  // Rest mass (MeV) for common MC secondaries; unknown PDG -> 0 (E ~ |p| for highly relativistic).
+  double TrueRestMassMeV(Int_t pdg){
+    const int ap = std::abs(static_cast<int>(pdg));
+    switch(ap){
+      case 211:
+        return 139.57;
+      case 111:
+        return 134.98;
+      case 2212:
+        return 938.27;
+      case 2112:
+        return 939.57;
+      case 11:
+        return 0.511;
+      case 13:
+        return 105.66;
+      case 321:
+        return 493.68;
+      case 310:
+      case 130:
+        return 497.61;
+      case 22:
+        return 0.0;
+      case 12:
+      case 14:
+      case 16:
+        return 0.0;
+      default:
+        return 0.0;
+    }
+  }
+
+  Float_t TrueTotalEnergyGeV(const AnaTrueParticlePD* truePart, bool atEnd){
+    if(!truePart) return static_cast<Float_t>(-999.0);
+    const double p = static_cast<double>(atEnd ? truePart->MomentumEnd : truePart->Momentum);
+    if(!std::isfinite(p) || p < 0.0) return static_cast<Float_t>(-999.0);
+    const double mGeV = TrueRestMassMeV(truePart->PDG) / 1000.0;
+    return static_cast<Float_t>(std::sqrt(p * p + mGeV * mGeV));
+  }
+
+  // Same as neutralKaonTree: |PositionEnd - Position| when both vertices are valid (not AnaTrueParticle::Length).
+  bool IsValidTruePos3(Float_t x, Float_t y, Float_t z){
+    return std::isfinite(x) && std::isfinite(y) && std::isfinite(z) && x > -900.f && y > -900.f && z > -900.f;
+  }
+
+  Float_t TrueLengthVertexSeparationCm(const AnaTrueParticlePD* truePart){
+    if(!truePart) return static_cast<Float_t>(-999.0);
+    const TVector3 trueStart(truePart->Position[0], truePart->Position[1], truePart->Position[2]);
+    const TVector3 trueEnd(truePart->PositionEnd[0], truePart->PositionEnd[1], truePart->PositionEnd[2]);
+    if(!IsValidTruePos3(trueStart.X(), trueStart.Y(), trueStart.Z()) ||
+       !IsValidTruePos3(trueEnd.X(), trueEnd.Y(), trueEnd.Z()))
+      return static_cast<Float_t>(-999.0);
+    return static_cast<Float_t>((trueEnd - trueStart).Mag());
+  }
+
+  Float_t RecoLengthOrSentinel(const AnaParticlePD* recoPart){
+    if(!recoPart) return static_cast<Float_t>(-999.0);
+    const Float_t L = recoPart->Length;
+    if(!std::isfinite(L) || L < 0.f) return static_cast<Float_t>(-999.0);
+    return L;
+  }
+
+  Int_t RecoNHitsOrSentinel(const AnaParticlePD* recoPart){
+    if(!recoPart) return -999;
+    if(recoPart->NHits < 0) return -999;
+    return recoPart->NHits;
+  }
+
+  Int_t TruePdgOfReco(const AnaParticlePD* recoPart){
+    if(!recoPart || !recoPart->TrueObject) return -999;
+    auto* t = static_cast<AnaTrueParticlePD*>(recoPart->TrueObject);
+    return t ? t->PDG : -999;
+  }
+
+  Float_t RecoVsTrueStartDistance(const AnaParticlePD* recoPart, const AnaTrueParticlePD* truePart){
+    if(!HasValidRecoStart(recoPart) || !HasValidTrueStart(truePart)) return static_cast<Float_t>(-999.0);
+    const double dx = static_cast<double>(recoPart->PositionStart[0] - truePart->Position[0]);
+    const double dy = static_cast<double>(recoPart->PositionStart[1] - truePart->Position[1]);
+    const double dz = static_cast<double>(recoPart->PositionStart[2] - truePart->Position[2]);
+    return static_cast<Float_t>(std::sqrt(dx * dx + dy * dy + dz * dz));
+  }
+
+  Float_t RecoVsTrueEndDistance(const AnaParticlePD* recoPart, const AnaTrueParticlePD* truePart){
+    if(!recoPart || !truePart) return static_cast<Float_t>(-999.0);
+    const bool validRecoEnd = (recoPart->PositionEnd[0] > -900.f &&
+                               recoPart->PositionEnd[1] > -900.f &&
+                               recoPart->PositionEnd[2] > -900.f);
+    if(!validRecoEnd || !HasValidTrueEnd(truePart)) return static_cast<Float_t>(-999.0);
+    const double dx = static_cast<double>(recoPart->PositionEnd[0] - truePart->PositionEnd[0]);
+    const double dy = static_cast<double>(recoPart->PositionEnd[1] - truePart->PositionEnd[1]);
+    const double dz = static_cast<double>(recoPart->PositionEnd[2] - truePart->PositionEnd[2]);
+    return static_cast<Float_t>(std::sqrt(dx * dx + dy * dy + dz * dz));
+  }
+
+  bool IsValidDistanceValue(Float_t value){
+    return std::isfinite(value) && value > -900.f;
+  }
+
+  Int_t VertexGlobalMinIsDauPairTag(Float_t dauPair, Float_t d1Other, Float_t d2Other){
+    if(!IsValidDistanceValue(dauPair)) return 0;
+    Float_t globalMin = dauPair;
+    if(IsValidDistanceValue(d1Other)) globalMin = std::min(globalMin, d1Other);
+    if(IsValidDistanceValue(d2Other)) globalMin = std::min(globalMin, d2Other);
+    return (std::abs(dauPair - globalMin) <= 1e-5f) ? 1 : 0;
+  }
+
+  Float_t RecoPairFitMinimumDistance(AnaParticlePD* p1, AnaParticlePD* p2,
+                                     double trackFitLength, double trackFitDistanceFromStart){
+    if(!HasValidRecoStart(p1) || !HasValidRecoStart(p2)) return static_cast<Float_t>(-999.0);
+
+    std::vector<double> fit1;
+    std::vector<double> fit2;
+    pdAnaUtils::ExtrapolateTrack(p1, fit1, trackFitLength, true, trackFitDistanceFromStart);
+    pdAnaUtils::ExtrapolateTrack(p2, fit2, trackFitLength, true, trackFitDistanceFromStart);
+
+    const bool fit1Valid =
+      (fit1.size() >= 6 &&
+       std::isfinite(fit1[0]) && std::isfinite(fit1[1]) && std::isfinite(fit1[2]) &&
+       std::isfinite(fit1[3]) && std::isfinite(fit1[4]) && std::isfinite(fit1[5]) &&
+       fit1[0] > -900.0);
+    const bool fit2Valid =
+      (fit2.size() >= 6 &&
+       std::isfinite(fit2[0]) && std::isfinite(fit2[1]) && std::isfinite(fit2[2]) &&
+       std::isfinite(fit2[3]) && std::isfinite(fit2[4]) && std::isfinite(fit2[5]) &&
+       fit2[0] > -900.0);
+    if(!fit1Valid || !fit2Valid) return static_cast<Float_t>(-999.0);
+
+    TVector3 closest1;
+    TVector3 closest2;
+    const double minDistance = pdAnaUtils::FindClosestPointsBetweenLines(fit1, fit2, closest1, closest2);
+    if(!std::isfinite(minDistance)) return static_cast<Float_t>(-999.0);
+    return static_cast<Float_t>(minDistance);
+  }
+
+  Float_t RecoProtonChi2Ndf(const AnaParticlePD* recoPart){
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 2212);
+  }
+
+  Float_t RecoKaonChi2Ndf(const AnaParticlePD* recoPart){
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 321);
+  }
+
+  Float_t RecoPionChi2Ndf(const AnaParticlePD* recoPart){
+    return pdAnaUtils::Chi2PIDChi2PerHit(recoPart, 211);
+  }
+
+  Int_t RecoDaughterParentUidMinusTrueParentRecoUid(const AnaBunchB& bunch,
+                                                    const AnaParticlePD* daughterReco,
+                                                    const AnaParticlePD* trueParentReco){
+    if(!daughterReco || !trueParentReco) return -999;
+    if(daughterReco->ParentID < 0) return -999;
+    AnaParticleB* parentReco = anaUtils::GetParticleByID(bunch, daughterReco->ParentID);
+    if(!parentReco) return -999;
+    return parentReco->UniqueID - trueParentReco->UniqueID;
+  }
+
+  bool HasValidRecoPositions(const AnaParticlePD* recoPart){
+    if(!recoPart) return false;
+
+    const bool validStart = (recoPart->PositionStart[0] > -900.f &&
+                             recoPart->PositionStart[1] > -900.f &&
+                             recoPart->PositionStart[2] > -900.f);
+    const bool validEnd = (recoPart->PositionEnd[0] > -900.f &&
+                           recoPart->PositionEnd[1] > -900.f &&
+                           recoPart->PositionEnd[2] > -900.f);
+    return validStart && validEnd;
+  }
+
+  Int_t RecoZStartGreaterThanEndFlag(const AnaParticlePD* recoPart){
+    if(!recoPart) return 0;
+    const Float_t zs = recoPart->PositionStart[2];
+    const Float_t ze = recoPart->PositionEnd[2];
+    if(zs <= -900.f || ze <= -900.f) return 0;
+    return (zs > ze) ? 1 : 0;
+  }
+
+  bool HasValidRecoHits(const AnaParticlePD* recoPart){
+    if(!recoPart) return false;
+
+    const int nHitsTotal = recoPart->NHitsPerPlane[0] + recoPart->NHitsPerPlane[1] + recoPart->NHitsPerPlane[2];
+    if(nHitsTotal > 0) return true;
+
+    return (!recoPart->Hits[0].empty() || !recoPart->Hits[1].empty() || !recoPart->Hits[2].empty());
+  }
+
+  bool HasRecoObjectForTruthFlags(const AnaParticlePD* recoPart){
+    return HasValidRecoPositions(recoPart) && HasValidRecoHits(recoPart);
+  }
+}
 
 //********************************************************************
 neutralKaonAnalysis::neutralKaonAnalysis(AnalysisAlgorithm* ana) : pdBaseAnalysis(ana) {
@@ -179,11 +413,6 @@ void neutralKaonAnalysis::DefineTruthTree(){
   // Variables from pdBaseAnalysis (run, event, ...)
   pdBaseAnalysis::DefineTruthTree();
   neutralKaonTruthTree::AddNeutralKaonTruthVariables(output(), 10);
-  neutralKaonTruthTree::AddNeutralKaonParentTruthVariables(output(), 10);
-  neutralKaonTruthTree::AddNeutralKaonDaughter1TruthVariables(output(), 10);
-  neutralKaonTruthTree::AddNeutralKaonDaughter2TruthVariables(output(), 10);
-  // Function in standardPDTree.cxx where the truth tree variables are defined: momentum, pdg, etc.
-  // Function in standardPDTree.cxx -> beamParticleTruthDaughters()
 }
 
 //********************************************************************
@@ -257,251 +486,364 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 //********************************************************************
 bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
-  // Fill truth tree for all particles to include vertex information
   if (!part) return false;
-
-  if(part->PDG == 310){
-    // std::cout << "DEBUG: Filling truth tree for K0" << std::endl;
-    return true;
-  }
-  else{
-    return false;
-  }
+  if(part->PDG != 310) return false;
+  return true;
 }
 
 //********************************************************************
 void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
 //********************************************************************
-    // Fill the common variables
-    pdBaseAnalysis::FillTruthTree(part);
+  pdBaseAnalysis::FillTruthTree(part);
 
-    // If this is a true K0S/K0L/K0 decaying into 2 pi0, print run/subrun/event
-    const int absPdg = std::abs(part.PDG);
-    const bool isK0S = (absPdg == 310);
-    const bool isK0L = (absPdg == 130);
-    const bool isK0  = (absPdg == 311);
+  AnaTrueParticlePD* daughter1True = nullptr;
+  AnaTrueParticlePD* daughter2True = nullptr;
+  AnaTrueParticlePD* parentTrue = nullptr;
 
-    if ((isK0S || isK0L || isK0) &&
-        part.ProcessEnd == AnaTrueParticleB::Decay &&
-        part.Daughters.size() == 2) {
+  for(int i = 0; i < GetSpill().TrueParticles.size(); ++i){
+    AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[i]);
+    if(!truePart) continue;
+    if(part.Daughters.size() > 0 && truePart->ID == part.Daughters[0]) daughter1True = truePart;
+    if(part.Daughters.size() > 1 && truePart->ID == part.Daughters[1]) daughter2True = truePart;
+    if(truePart->ID == part.ParentID) parentTrue = truePart;
+  }
 
-      AnaTrueParticlePD* dau1 = nullptr;
-      AnaTrueParticlePD* dau2 = nullptr;
+  auto findRecoFromTrue = [&](const AnaTrueParticlePD* truePart, bool includeBeam) -> AnaParticlePD* {
+    if(!truePart) return nullptr;
 
-      for (int i = 0; i < GetSpill().TrueParticles.size(); ++i) {
-        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[i]);
-        if (!truePart) continue;
-        if (truePart->ID == part.Daughters[0]) dau1 = truePart;
-        if (truePart->ID == part.Daughters[1]) dau2 = truePart;
-      }
-
-      if (dau1 && dau2 && dau1->PDG == 111 && dau2->PDG == 111) {
-        const char* k0Type = isK0S ? "K0S" : (isK0L ? "K0L" : "K0");
-        const AnaEventInfoPD* evtInfo = static_cast<const AnaEventInfoPD*>(GetEvent().EventInfo);
-        if (evtInfo) {
-          std::cout << "[neutralKaonAnalysis] True " << k0Type << " -> pi0 pi0 decay in event: "
-                    << "Run " << evtInfo->Run
-                    << " SubRun " << evtInfo->SubRun
-                    << " Event " << evtInfo->Event
-                    << std::endl;
-        } else {
-          std::cout << "[neutralKaonAnalysis] True " << k0Type << " -> pi0 pi0 decay in current event" << std::endl;
-        }
-      }
-    }
-
-    // The truth tree is meant for individual particle information, not analysis results
-    // Vertex candidates are analysis results and belong in the ana tree only
-
-    // OPTIMIZATION: Build hash maps once for O(1) lookups
-    std::unordered_map<Int_t, AnaTrueParticlePD*> trueParticleByID;
-    std::unordered_map<Int_t, AnaParticlePD*> recoParticleByTrueID;
-
-    // Build true particle map
-    for(int i = 0; i < GetSpill().TrueParticles.size(); i++){
-      AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[i]);
-      if(truePart){
-        trueParticleByID[truePart->ID] = truePart;
-      }
-    }
-
-    // Build reco particle map (by associated true ID)
-    for(size_t i = 0; i < GetBunch().Particles.size(); i++){
+    for(size_t i = 0; i < GetBunch().Particles.size(); ++i){
       AnaParticlePD* recoPart = static_cast<AnaParticlePD*>(GetBunch().Particles[i]);
-      if(recoPart && recoPart->TrueObject){
-        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(recoPart->TrueObject);
-        if(truePart){
-          recoParticleByTrueID[truePart->ID] = recoPart;
-        }
+      if(!recoPart || !recoPart->TrueObject) continue;
+      AnaTrueParticlePD* recoTruePart = static_cast<AnaTrueParticlePD*>(recoPart->TrueObject);
+      if(recoTruePart && recoTruePart->ID == truePart->ID) return recoPart;
+    }
+
+    if(includeBeam){
+      AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
+      if(beamParticle && beamParticle->TrueObject){
+        AnaTrueParticlePD* trueBeam = static_cast<AnaTrueParticlePD*>(beamParticle->TrueObject);
+        if(trueBeam && trueBeam->ID == truePart->ID) return beamParticle;
       }
     }
 
-    // Check if K0 has a reconstructed object - O(1) hash map lookup
-    AnaParticlePD* k0RecoObject = nullptr;
-    auto it_k0 = recoParticleByTrueID.find(part.ID);
-    if(it_k0 != recoParticleByTrueID.end()){
-      k0RecoObject = it_k0->second;
+    return nullptr;
+  };
+
+  AnaParticlePD* daughter1Reco = findRecoFromTrue(daughter1True, false);
+  AnaParticlePD* daughter2Reco = findRecoFromTrue(daughter2True, false);
+
+  auto trueSubDaughterRecoStats = [&](const AnaTrueParticlePD* mother) -> std::pair<Int_t, Int_t> {
+    if (!mother) return {-999, -999};
+    Int_t nQual = 0;
+    Int_t hitsTot = 0;
+    for (Int_t childId : mother->Daughters) {
+      AnaTrueParticlePD* childTrue = nullptr;
+      for (int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti) {
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if (tp && tp->ID == childId) {
+          childTrue = tp;
+          break;
+        }
+      }
+      if (!childTrue) continue;
+      AnaParticlePD* childReco = findRecoFromTrue(childTrue, false);
+      if (!HasRecoObjectForTruthFlags(childReco)) continue;
+      ++nQual;
+      const Int_t nh = RecoNHitsOrSentinel(childReco);
+      if (nh >= 0) hitsTot += nh;
     }
-    neutralKaonTruthTree::FillNeutralKaonTruthVariables(output(), part, k0RecoObject != nullptr);
+    return {nQual, hitsTot};
+  };
 
-    // Fill vertex reconstruction debugging variables
-    // Get reco particles for K0 daughters (if they exist) - O(1) hash map lookups
-    AnaParticlePD* daughter1Reco = nullptr;
-    AnaParticlePD* daughter2Reco = nullptr;
-    AnaParticlePD* parentReco = nullptr;
+  auto trueSubDaughterRecoTrueEnergySum = [&](const AnaTrueParticlePD* mother) -> Float_t {
+    if(!mother) return static_cast<Float_t>(-999.0);
+    double sumGeV = 0.0;
+    for(Int_t childId : mother->Daughters){
+      AnaTrueParticlePD* childTrue = nullptr;
+      for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if(tp && tp->ID == childId){
+          childTrue = tp;
+          break;
+        }
+      }
+      if(!childTrue) continue;
+      AnaParticlePD* childReco = findRecoFromTrue(childTrue, false);
+      if(!HasRecoObjectForTruthFlags(childReco)) continue;
+      const Float_t eGeV = TrueTotalEnergyGeV(childTrue, false);
+      if(std::isfinite(eGeV) && eGeV >= 0.f && eGeV < 1.e4f) sumGeV += static_cast<double>(eGeV);
+    }
+    return static_cast<Float_t>(sumGeV);
+  };
 
-    if(part.Daughters.size() > 0){
-      // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
-      auto it_d1 = trueParticleByID.find(part.Daughters[0]);
-      if(it_d1 != trueParticleByID.end()){
-        AnaTrueParticlePD* daughter1True = it_d1->second;
-        if(daughter1True){
-          auto it_d1r = recoParticleByTrueID.find(daughter1True->ID);
-          if(it_d1r != recoParticleByTrueID.end()){
-            daughter1Reco = it_d1r->second;
+  const std::pair<Int_t, Int_t> daughter1TrueSubReco = trueSubDaughterRecoStats(daughter1True);
+  const std::pair<Int_t, Int_t> daughter2TrueSubReco = trueSubDaughterRecoStats(daughter2True);
+
+  AnaParticlePD* parentReco = findRecoFromTrue(parentTrue, true);
+
+  const bool parentHasReco = HasRecoObjectForTruthFlags(parentReco);
+  const bool daughter1HasReco = HasRecoObjectForTruthFlags(daughter1Reco);
+  const bool daughter2HasReco = HasRecoObjectForTruthFlags(daughter2Reco);
+  const Float_t daughterStartDistReco = RecoDaughtersStartDistance(daughter1Reco, daughter2Reco);
+  const Int_t daughterRecoParentIdDifference =
+    (daughter1Reco && daughter2Reco) ? (daughter1Reco->ParentID - daughter2Reco->ParentID) : -999;
+  const Int_t daughter1RecoParentVsTrueParentRecoIdDiff =
+    RecoDaughterParentUidMinusTrueParentRecoUid(GetBunch(), daughter1Reco, parentReco);
+  const Int_t daughter2RecoParentVsTrueParentRecoIdDiff =
+    RecoDaughterParentUidMinusTrueParentRecoUid(GetBunch(), daughter2Reco, parentReco);
+  const Float_t parentRecoTrueStartDistance = RecoVsTrueStartDistance(parentReco, parentTrue);
+  const Float_t parentRecoTrueEndDistance = RecoVsTrueEndDistance(parentReco, parentTrue);
+  const Float_t daughter1RecoTrueStartDistance = RecoVsTrueStartDistance(daughter1Reco, daughter1True);
+  const Float_t daughter1RecoTrueEndDistance = RecoVsTrueEndDistance(daughter1Reco, daughter1True);
+  const Float_t daughter2RecoTrueStartDistance = RecoVsTrueStartDistance(daughter2Reco, daughter2True);
+  const Float_t daughter2RecoTrueEndDistance = RecoVsTrueEndDistance(daughter2Reco, daughter2True);
+
+  const double annihilationVertexRadius = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
+  const double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+  const double trackFitDistanceFromStart = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart");
+
+  Float_t daughterPairFitMinDistance = static_cast<Float_t>(-999.0);
+  if(daughter1Reco && daughter2Reco){
+    const Float_t dStart = RecoDaughtersStartDistance(daughter1Reco, daughter2Reco);
+    if(IsValidDistanceValue(dStart) && dStart <= static_cast<Float_t>(annihilationVertexRadius)){
+      daughterPairFitMinDistance = RecoPairFitMinimumDistance(daughter1Reco, daughter2Reco,
+                                                              trackFitLength, trackFitDistanceFromStart);
+    }
+  }
+
+  Float_t daughter1OtherPairFitMinDistance = static_cast<Float_t>(-999.0);
+  Float_t daughter2OtherPairFitMinDistance = static_cast<Float_t>(-999.0);
+  Float_t otherPairsFitMinDistanceGlobal = static_cast<Float_t>(-999.0);
+  AnaParticlePD* daughter1OtherArgminPartner = nullptr;
+
+  auto updateMin = [](Float_t& currentMin, Float_t candidate){
+    if(!IsValidDistanceValue(candidate)) return;
+    if(!IsValidDistanceValue(currentMin) || candidate < currentMin) currentMin = candidate;
+  };
+
+  for(size_t i = 0; i < GetBunch().Particles.size(); ++i){
+    AnaParticlePD* other = static_cast<AnaParticlePD*>(GetBunch().Particles[i]);
+    if(!other) continue;
+
+    if(daughter1Reco && other != daughter1Reco && other != daughter2Reco){
+      const Float_t dStart = RecoDaughtersStartDistance(daughter1Reco, other);
+      if(IsValidDistanceValue(dStart) && dStart <= static_cast<Float_t>(annihilationVertexRadius)){
+        const Float_t dMin = RecoPairFitMinimumDistance(daughter1Reco, other,
+                                                        trackFitLength, trackFitDistanceFromStart);
+        if(IsValidDistanceValue(dMin)){
+          if(!IsValidDistanceValue(daughter1OtherPairFitMinDistance) || dMin < daughter1OtherPairFitMinDistance){
+            daughter1OtherPairFitMinDistance = dMin;
+            daughter1OtherArgminPartner = other;
           }
         }
       }
-
-      if(part.Daughters.size() > 1){
-        // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
-        auto it_d2 = trueParticleByID.find(part.Daughters[1]);
-        if(it_d2 != trueParticleByID.end()){
-          AnaTrueParticlePD* daughter2True = it_d2->second;
-          if(daughter2True){
-            auto it_d2r = recoParticleByTrueID.find(daughter2True->ID);
-            if(it_d2r != recoParticleByTrueID.end()){
-              daughter2Reco = it_d2r->second;
-            }
-          }
-        }
-      }
     }
 
-    // Get parent reco particle if it exists - O(1) hash map lookup
-    auto it_par = trueParticleByID.find(part.ParentID);
-    if(it_par != trueParticleByID.end()){
-      AnaTrueParticlePD* parentTrue = it_par->second;
-      if(parentTrue){
-        auto it_parr = recoParticleByTrueID.find(parentTrue->ID);
-        if(it_parr != recoParticleByTrueID.end()){
-          parentReco = it_parr->second;
-        }
-
-        // If not found in regular particles, check if it's the beam particle
-        if(!parentReco){
-          AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
-          if(beamParticle && beamParticle->TrueObject){
-            AnaTrueParticlePD* trueBeam = static_cast<AnaTrueParticlePD*>(beamParticle->TrueObject);
-            if(trueBeam && trueBeam->ID == parentTrue->ID){
-              parentReco = beamParticle;
-            }
-          }
-        }
+    if(daughter2Reco && other != daughter2Reco && other != daughter1Reco){
+      const Float_t dStart = RecoDaughtersStartDistance(daughter2Reco, other);
+      if(IsValidDistanceValue(dStart) && dStart <= static_cast<Float_t>(annihilationVertexRadius)){
+        const Float_t dMin = RecoPairFitMinimumDistance(daughter2Reco, other,
+                                                        trackFitLength, trackFitDistanceFromStart);
+        updateMin(daughter2OtherPairFitMinDistance, dMin);
       }
     }
+  }
 
-    // Get parameters for vertex reconstruction
-    double maxDaughterDistance = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
-    double trackFitLength = ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength");
+  updateMin(otherPairsFitMinDistanceGlobal, daughter1OtherPairFitMinDistance);
+  updateMin(otherPairsFitMinDistanceGlobal, daughter2OtherPairFitMinDistance);
 
-    // Fill the debugging variables
-    neutralKaonTruthTree::FillVertexReconstructionDebugVariables(output(), part, daughter1Reco, daughter2Reco,
-                                                                 parentReco, maxDaughterDistance, trackFitLength, maxDaughterDistance);
+  const Int_t daughter1OtherMinSepTruePdg = TruePdgOfReco(daughter1OtherArgminPartner);
+  const Int_t vertexMinIsK0DaughterPair =
+    VertexGlobalMinIsDauPairTag(daughterPairFitMinDistance, daughter1OtherPairFitMinDistance,
+                                daughter2OtherPairFitMinDistance);
 
-    // Fill parent information if it exists - O(1) hash map lookup
-    auto it_parent = trueParticleByID.find(part.ParentID);
-    if(it_parent != trueParticleByID.end()){
-      AnaTrueParticlePD* parent = it_parent->second;
-      if(parent){
-        // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
-        AnaParticlePD* parentRecoObject = nullptr;
-        auto it_parentr = recoParticleByTrueID.find(parent->ID);
-        if(it_parentr != recoParticleByTrueID.end()){
-          parentRecoObject = it_parentr->second;
-        }
+  const Float_t daughter1RecoProtonChi2Ndf = RecoProtonChi2Ndf(daughter1Reco);
+  const Float_t daughter1RecoKaonChi2Ndf = RecoKaonChi2Ndf(daughter1Reco);
+  const Float_t daughter1RecoPionChi2Ndf = RecoPionChi2Ndf(daughter1Reco);
+  const Float_t daughter2RecoProtonChi2Ndf = RecoProtonChi2Ndf(daughter2Reco);
+  const Float_t daughter2RecoKaonChi2Ndf = RecoKaonChi2Ndf(daughter2Reco);
+  const Float_t daughter2RecoPionChi2Ndf = RecoPionChi2Ndf(daughter2Reco);
 
-        // If not found in regular particles, check if it's the beam particle
-        if(!parentRecoObject){
-          AnaParticlePD* beamParticle = static_cast<AnaParticlePD*>(static_cast<AnaBeamPD*>(GetSpill().Beam)->BeamParticle);
-          if(beamParticle && beamParticle->TrueObject){
-            AnaTrueParticlePD* trueBeam = static_cast<AnaTrueParticlePD*>(beamParticle->TrueObject);
-            if(trueBeam && trueBeam->ID == parent->ID){
-              parentRecoObject = beamParticle;
-            }
-          }
-        }
-        neutralKaonTruthTree::FillNeutralKaonParentTruthVariables(output(), *parent, parentRecoObject != nullptr);
-      }
-      else{
-        // Parent not found - fill hasrecoobject with 0
-        output().FillVectorVar(neutralKaonTruthTree::k0parhasrecoobject, 0);
-      }
-    }
-    else{
-      // Parent not found - fill hasrecoobject with 0
-      output().FillVectorVar(neutralKaonTruthTree::k0parhasrecoobject, 0);
-    }
+  const Float_t k0TrueMomentum = TrueScalarMomentum(&part, false);
+  const Float_t parentTrueStartMomentum = TrueScalarMomentum(parentTrue, false);
+  const Float_t parentTrueEndMomentum = TrueScalarMomentum(parentTrue, true);
+  const Float_t daughter1TrueStartMomentum = TrueScalarMomentum(daughter1True, false);
+  const Float_t daughter1TrueEndMomentum = TrueScalarMomentum(daughter1True, true);
+  const Float_t daughter2TrueStartMomentum = TrueScalarMomentum(daughter2True, false);
+  const Float_t daughter2TrueEndMomentum = TrueScalarMomentum(daughter2True, true);
 
-    // Fill daughter information if daughters exist - O(1) hash map lookups
-    if(part.Daughters.size() > 0){
-      // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
-      auto it_dau1 = trueParticleByID.find(part.Daughters[0]);
-      if(it_dau1 != trueParticleByID.end()){
-        AnaTrueParticlePD* daughter1 = it_dau1->second;
-        if(daughter1){
-          AnaParticlePD* daughter1RecoObject = nullptr;
-          auto it_dau1r = recoParticleByTrueID.find(daughter1->ID);
-          if(it_dau1r != recoParticleByTrueID.end()){
-            daughter1RecoObject = it_dau1r->second;
-          }
-          neutralKaonTruthTree::FillNeutralKaonDaughter1TruthVariables(output(), *daughter1, daughter1RecoObject != nullptr);
-        }
-        else{
-          // Daughter1 not found - fill hasrecoobject with 0
-          output().FillVectorVar(neutralKaonTruthTree::k0dau1hasrecoobject, 0);
-        }
-      }
-      else{
-        // Daughter1 not found - fill hasrecoobject with 0
-        output().FillVectorVar(neutralKaonTruthTree::k0dau1hasrecoobject, 0);
-      }
+  const Float_t k0TrueEnergy = TrueTotalEnergyGeV(&part, false);
+  const Float_t daughter1TrueEnergy = TrueTotalEnergyGeV(daughter1True, false);
+  const Float_t daughter2TrueEnergy = TrueTotalEnergyGeV(daughter2True, false);
+  const Float_t daughter1TrueSubRecoEnergySum = trueSubDaughterRecoTrueEnergySum(daughter1True);
+  const Float_t daughter2TrueSubRecoEnergySum = trueSubDaughterRecoTrueEnergySum(daughter2True);
+  const Int_t isK0Decay = (part.ProcessEnd == AnaTrueParticleB::Decay) ? 1 : 0;
+  const Int_t k0NTrueDaughters = static_cast<Int_t>(part.Daughters.size());
 
-      if(part.Daughters.size() > 1){
-        // OPTIMIZATION: O(1) hash map lookup instead of O(n) linear search
-        auto it_dau2 = trueParticleByID.find(part.Daughters[1]);
-        if(it_dau2 != trueParticleByID.end()){
-          AnaTrueParticlePD* daughter2 = it_dau2->second;
-          if(daughter2){
-            AnaParticlePD* daughter2RecoObject = nullptr;
-            auto it_dau2r = recoParticleByTrueID.find(daughter2->ID);
-            if(it_dau2r != recoParticleByTrueID.end()){
-              daughter2RecoObject = it_dau2r->second;
-            }
-            neutralKaonTruthTree::FillNeutralKaonDaughter2TruthVariables(output(), *daughter2, daughter2RecoObject != nullptr);
-          }
-          else{
-            // Daughter2 not found - fill hasrecoobject with 0
-            output().FillVectorVar(neutralKaonTruthTree::k0dau2hasrecoobject, 0);
-          }
-        }
-        else{
-          // Daughter2 not found - fill hasrecoobject with 0
-          output().FillVectorVar(neutralKaonTruthTree::k0dau2hasrecoobject, 0);
-        }
-      }
-      else{
-        // No daughter2 - fill hasrecoobject with 0
-        output().FillVectorVar(neutralKaonTruthTree::k0dau2hasrecoobject, 0);
-      }
-    }
-    else{
-      // No daughters at all - fill both hasrecoobject with 0
-      output().FillVectorVar(neutralKaonTruthTree::k0dau1hasrecoobject, 0);
-      output().FillVectorVar(neutralKaonTruthTree::k0dau2hasrecoobject, 0);
+  const Int_t k0TruePdg = part.PDG;
+  const Int_t parentTruePdg = parentTrue ? parentTrue->PDG : -999;
+  const Int_t daughter1TruePdg = daughter1True ? daughter1True->PDG : -999;
+  const Int_t daughter2TruePdg = daughter2True ? daughter2True->PDG : -999;
+  const Int_t isK0Charged =
+    ((daughter1TruePdg == 211 && daughter2TruePdg == -211) ||
+     (daughter1TruePdg == -211 && daughter2TruePdg == 211)) ? 1 : 0;
+  const Int_t isK0Neutral =
+    ((daughter1TruePdg == 111 && daughter2TruePdg == 111)) ? 1 : 0;
+  auto isPi0ExactlyToTwoGamma = [&](const AnaTrueParticlePD* pi0) -> Int_t {
+    if(!pi0 || pi0->PDG != 111) return 0;
+    if(pi0->Daughters.size() != 2) return 0;
+
+    AnaTrueParticlePD* gamma1 = nullptr;
+    AnaTrueParticlePD* gamma2 = nullptr;
+    for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+      AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+      if(!tp) continue;
+      if(tp->ID == pi0->Daughters[0]) gamma1 = tp;
+      if(tp->ID == pi0->Daughters[1]) gamma2 = tp;
     }
 
-    output().IncrementCounter(neutralKaonTruthTree::ntruek0);
+    if(!gamma1 || !gamma2) return 0;
+    return (gamma1->PDG == 22 && gamma2->PDG == 22) ? 1 : 0;
+  };
+  const Int_t k0Pi01TwoGamma = isPi0ExactlyToTwoGamma(daughter1True);
+  const Int_t k0Pi02TwoGamma = isPi0ExactlyToTwoGamma(daughter2True);
+  auto gammaHasValidPandoraRecoObject = [&](const AnaTrueParticlePD* pi0, Int_t gammaDaughterIndex) -> Int_t {
+    if(!pi0 || pi0->PDG != 111) return 0;
+    if(gammaDaughterIndex < 0 || gammaDaughterIndex >= static_cast<Int_t>(pi0->Daughters.size())) return 0;
+    const Int_t gammaId = pi0->Daughters[gammaDaughterIndex];
+
+    AnaTrueParticlePD* gammaTrue = nullptr;
+    for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+      AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+      if(tp && tp->ID == gammaId){
+        gammaTrue = tp;
+        break;
+      }
+    }
+    if(!gammaTrue || gammaTrue->PDG != 22) return 0;
+
+    AnaParticlePD* gammaReco = findRecoFromTrue(gammaTrue, false);
+    return (gammaReco && gammaReco->isPandora && HasRecoObjectForTruthFlags(gammaReco)) ? 1 : 0;
+  };
+  const Int_t k0Dau1Gamma1HasRecoObject = gammaHasValidPandoraRecoObject(daughter1True, 0);
+  const Int_t k0Dau1Gamma2HasRecoObject = gammaHasValidPandoraRecoObject(daughter1True, 1);
+  const Int_t k0Dau2Gamma1HasRecoObject = gammaHasValidPandoraRecoObject(daughter2True, 0);
+  const Int_t k0Dau2Gamma2HasRecoObject = gammaHasValidPandoraRecoObject(daughter2True, 1);
+
+  const Float_t daughter1TrueLength = TrueLengthVertexSeparationCm(daughter1True);
+  const Float_t daughter1RecoLength = RecoLengthOrSentinel(daughter1Reco);
+  const Float_t daughter2TrueLength = TrueLengthVertexSeparationCm(daughter2True);
+  const Float_t daughter2RecoLength = RecoLengthOrSentinel(daughter2Reco);
+  const Float_t k0TrueLength = TrueLengthVertexSeparationCm(&part);
+  const Int_t daughter1RecoNHits = RecoNHitsOrSentinel(daughter1Reco);
+  const Int_t daughter2RecoNHits = RecoNHitsOrSentinel(daughter2Reco);
+  const Int_t parentRecoNHits = RecoNHitsOrSentinel(parentReco);
+  const Float_t parentTrueLength = TrueLengthVertexSeparationCm(parentTrue);
+  const Float_t parentRecoLength = RecoLengthOrSentinel(parentReco);
+
+  const Int_t parentRecoZStartGreaterThanEnd = RecoZStartGreaterThanEndFlag(parentReco);
+  const Int_t daughter1RecoZStartGreaterThanEnd = RecoZStartGreaterThanEndFlag(daughter1Reco);
+  const Int_t daughter2RecoZStartGreaterThanEnd = RecoZStartGreaterThanEndFlag(daughter2Reco);
+
+  const Int_t parentIsPandoraBeam =
+    (parentReco && parentReco->isPandora) ? 1 : 0;
+
+  // Among true K0 parent's direct true daughters: exactly one has valid reco, and that particle is a proton (2212).
+  Int_t parentExactlyOneRecoProtonNearK0Creation = 0;
+  if(parentTrue){
+    int nSiblingsWithReco = 0;
+    AnaTrueParticlePD* soleSiblingTrueWithReco = nullptr;
+    for(Int_t childId : parentTrue->Daughters){
+      AnaTrueParticlePD* childTrue = nullptr;
+      for(int ti = 0; ti < GetSpill().TrueParticles.size(); ++ti){
+        AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(GetSpill().TrueParticles[ti]);
+        if(tp && tp->ID == childId){
+          childTrue = tp;
+          break;
+        }
+      }
+      if(!childTrue) continue;
+      AnaParticlePD* siblingReco = findRecoFromTrue(childTrue, false);
+      if(!HasRecoObjectForTruthFlags(siblingReco)) continue;
+      ++nSiblingsWithReco;
+      soleSiblingTrueWithReco = childTrue;
+    }
+    if(nSiblingsWithReco == 1 && soleSiblingTrueWithReco && soleSiblingTrueWithReco->PDG == 2212)
+      parentExactlyOneRecoProtonNearK0Creation = 1;
+  }
+
+  neutralKaonTruthTree::FillNeutralKaonTruthVariables(output(),
+                                                      parentHasReco,
+                                                      daughter1HasReco,
+                                                      daughter2HasReco,
+                                                      daughterStartDistReco,
+                                                      daughterRecoParentIdDifference,
+                                                      daughter1RecoParentVsTrueParentRecoIdDiff,
+                                                      daughter2RecoParentVsTrueParentRecoIdDiff,
+                                                      parentRecoTrueStartDistance,
+                                                      parentRecoTrueEndDistance,
+                                                      daughter1RecoTrueStartDistance,
+                                                      daughter1RecoTrueEndDistance,
+                                                      daughter2RecoTrueStartDistance,
+                                                      daughter2RecoTrueEndDistance,
+                                                      daughterPairFitMinDistance,
+                                                      daughter1OtherPairFitMinDistance,
+                                                      daughter2OtherPairFitMinDistance,
+                                                      otherPairsFitMinDistanceGlobal,
+                                                      daughter1RecoProtonChi2Ndf,
+                                                      daughter1RecoKaonChi2Ndf,
+                                                      daughter1RecoPionChi2Ndf,
+                                                      daughter2RecoProtonChi2Ndf,
+                                                      daughter2RecoKaonChi2Ndf,
+                                                      daughter2RecoPionChi2Ndf,
+                                                      k0TrueMomentum,
+                                                      parentTrueStartMomentum,
+                                                      parentTrueEndMomentum,
+                                                      daughter1TrueStartMomentum,
+                                                      daughter1TrueEndMomentum,
+                                                      daughter2TrueStartMomentum,
+                                                      daughter2TrueEndMomentum,
+                                                      k0TrueEnergy,
+                                                      daughter1TrueEnergy,
+                                                      daughter2TrueEnergy,
+                                                      daughter1TrueSubRecoEnergySum,
+                                                      daughter2TrueSubRecoEnergySum,
+                                                      isK0Decay,
+                                                      k0NTrueDaughters,
+                                                      isK0Charged,
+                                                      isK0Neutral,
+                                                      k0Pi01TwoGamma,
+                                                      k0Pi02TwoGamma,
+                                                      k0Dau1Gamma1HasRecoObject,
+                                                      k0Dau1Gamma2HasRecoObject,
+                                                      k0Dau2Gamma1HasRecoObject,
+                                                      k0Dau2Gamma2HasRecoObject,
+                                                      k0TruePdg,
+                                                      parentTruePdg,
+                                                      daughter1TruePdg,
+                                                      daughter2TruePdg,
+                                                      daughter1TrueLength,
+                                                      daughter1RecoLength,
+                                                      daughter2TrueLength,
+                                                      daughter2RecoLength,
+                                                      k0TrueLength,
+                                                      daughter1RecoNHits,
+                                                      daughter2RecoNHits,
+                                                      daughter1TrueSubReco.first,
+                                                      daughter1TrueSubReco.second,
+                                                      daughter2TrueSubReco.first,
+                                                      daughter2TrueSubReco.second,
+                                                      parentRecoNHits,
+                                                      parentTrueLength,
+                                                      parentRecoLength,
+                                                      daughter1OtherMinSepTruePdg,
+                                                      vertexMinIsK0DaughterPair,
+                                                      parentRecoZStartGreaterThanEnd,
+                                                      daughter1RecoZStartGreaterThanEnd,
+                                                      daughter2RecoZStartGreaterThanEnd,
+                                                      parentIsPandoraBeam,
+                                                      parentExactlyOneRecoProtonNearK0Creation);
+  output().IncrementCounter(neutralKaonTruthTree::ntruek0);
 }
 
 //********************************************************************
@@ -538,6 +880,7 @@ void neutralKaonAnalysis::FillCategories(){
   if(neutralKaonBox.neutralParticleCandidates.size() > 0){
     for(size_t i = 0; i < neutralKaonBox.neutralParticleCandidates.size(); i++){
       neutralKaonAnaUtils::FillSignalCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
+      neutralKaonAnaUtils::FillVertexCandidateCategory(neutralKaonBox.neutralParticleCandidates[i], GetEvent());
     }
   }
 

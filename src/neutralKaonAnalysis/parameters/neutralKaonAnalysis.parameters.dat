@@ -19,11 +19,34 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.CreateEventDisplay = 1 >
 
 --- Annihilation Vertex Finder ------------
-# Pairing threshold on daughter start-position distance (cm)
-< neutralKaonAnalysis.AnnihilationVertexRadius = 5.0 >
+# Pairing threshold on daughter endpoint distance (cm); see AnnihilationVertexUseEndpointCombinatorics.
+# When combinatorics is on, distance is the minimum over valid start/end pairs; when off, start–start only.
+< neutralKaonAnalysis.AnnihilationVertexRadius = 10.0 >
+
+# 1 = minimize distance over start/end combinations (SS/SE/ES/EE), then optionally reverse daughters for SE/ES/EE.
+# 0 = plain start–start distance only; PairingEndpointCombo stays SS and no track reversal is applied.
+< neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics = 0 >
+
+# Radius used only for annihilation-vertex degeneracy counting (cm).
+# It is only a loose preselection on raw PositionStart / early hits near the vertex.
+# It does not affect vertex pairing or overlap filtering.
+< neutralKaonAnalysis.AnnihilationVertexDegeneracyRadius = 10.0 >
+
+# Maximum distance between the annihilation-vertex fit position and the candidate particle fitted line (cm).
+< neutralKaonAnalysis.AnnihilationVertexDegeneracyLineToVertexDistance = 2.0 >
+# Maximum distance between the closest point on the fitted line to the vertex and at least one projected PositionStart
+# or projected early hit used as origin support for degeneracy counting (cm).
+< neutralKaonAnalysis.AnnihilationVertexDegeneracyOriginSupportDistance = 5.0 >
+
 # Minimum number of collection-plane hits required per daughter to create a vertex.
 # Vertex is created only if both daughters satisfy NHitsPerPlane[2] > this value.
-< neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 5 >
+< neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 21 >
+
+# Daughter PID veto when building annihilation vertex candidates (both daughters must pass).
+# Reject if Chi2PID(2212) chi2/npts is strictly below this (proton template; same machinery as truth tree).
+< neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow = 50.0 >
+# If not rejected above: reject if pion Chi2PID(211) chi2/npts is strictly above this (not pion-like enough).
+< neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove = 25.0 >
 
 --- Annihilation Line-Fit Parameters -----------
  < neutralKaonAnalysis.TrackFitLength = 25.0 > //length of track used for line fitting (cm)
@@ -31,20 +54,92 @@ need to be enabled in baseAnalysis parameter file
  < neutralKaonAnalysis.VertexXBiasCorrectionCm = 1.0 > //x_corrected = x_reco - value (cm)
 
 --- Creation Parent Tail Projection -----------
- < neutralKaonAnalysis.TrackFitCreationLength = 25.0 > //fit length used to build beam creation line (cm)
- < neutralKaonAnalysis.TrackFitDistanceCreationFromEnd = 10.0 > //fit starts this many cm backward from beam end
+ < neutralKaonAnalysis.TrackFitCreationLength = 50.0 > //fit length used to build beam creation line (cm)
+ < neutralKaonAnalysis.TrackFitDistanceCreationFromEnd = 15.0 > //fit starts this many cm backward from beam end
  # The tail segment used for projection is derived from TrackFitDistanceCreationFromEnd.
 
+# Radius (cm) of the creation-candidate cylinder around the parent fitted line, from creation to annihilation position.
+< neutralKaonAnalysis.CreationVertexRadius = 7.5 >
+# Maximum distance between the creation-vertex reference position and a candidate particle fitted line (cm).
+# Set to CreationVertexRadius default-equivalent to match current fallback behavior.
+< neutralKaonAnalysis.CreationVertexLineToVertexDistance = 2.0 >
+# Maximum distance between the closest point on the fitted line to the creation vertex and at least one projected
+# PositionStart or projected early hit used as origin support for creation-degeneracy counting (cm).
+# Set to 0.5 * CreationVertexLineToVertexDistance default-equivalent to match current fallback behavior.
+< neutralKaonAnalysis.CreationVertexOriginSupportDistance = 5.0 >
+
+# Keep second-particle candidates only if Chi2PID(2212) chi2/npts is <= this threshold (same as k0protonchi2ndfproton).
+< neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 50.0 >
+
+# Neutral candidates from annihilation vertices: when 1, keep at most one neutral per vertex (winner among parents).
+# When 0, keep every neutral built for each qualifying parent (no per-vertex elimination).
+< neutralKaonAnalysis.SelectSingleNeutralPerAnnihilationVertex = 1 >
+# Creation-vertex beam-particle assignment mode:
+# 0 = build all creation-vertex parent hypotheses, then compete.
+# 1 = use the common reco parent of the two annihilation daughters as BeamParticle.
+< neutralKaonAnalysis.CreationVertexBeamParticleMode = 1 >
+
 --- ML residual-range dE/dx (annihilation pions) -----------
-# Among interior collection hits, only hits with residual range >= MinRRCm may be discarded as Landau-tail outliers;
-# low-RR hits are never removed. Fraction is the fraction of those high-RR hits (largest dE/dx first) to drop. Set to 0 to disable.
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncMinRRCm = 5.0 >
-< neutralKaonAnalysis.FreeRangeDedxLandauTruncFraction = 0.05 >
+# Likelihood free-range scan tuned like arXiv:2409.18288 Table 1 (TLEFit, charged pions). Collection plane only.
+# Minimum interior hits after skipping ends (before dE/dx window).
+< neutralKaonAnalysis.FreeRangeDedxMinInteriorHits = 15 >
+# Drop this many collection hits at track start and at track end before the fit.
+< neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst = 3 >
+< neutralKaonAnalysis.FreeRangeDedxSkipHitsLast = 3 >
+# Keep hits with measured dE/dx in [Min, Max] MeV/cm (π hypothesis only; disabled for other PDG in code).
+< neutralKaonAnalysis.FreeRangeDedxMinMeVcm = 0.5 >
+< neutralKaonAnalysis.FreeRangeDedxMaxMeVcm = 5.0 >
+# Scan additional track-length offset L in [0, Lmax] cm with this step (cm).
+< neutralKaonAnalysis.FreeRangeScanLmaxCm = 450.0 >
+< neutralKaonAnalysis.FreeRangeScanStepCm = 1.0 >
+# If positive and smaller than coarse step (FreeRangeScanStepCm), redo the L scan with this step when any trial maps to p below FreeRangeLowPMomentumRefineGeV (low-p / small-RR).
+< neutralKaonAnalysis.FreeRangeScanStepFineCm = 0.25 >
+< neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV = 0.4 >
+# Path length δx (cm) for Landau ξ in the hit PDF (paper uses ~0.65 cm typical 3D hit spacing in ProtoDUNE-SP).
+< neutralKaonAnalysis.FreeRangeDedxPdfPathCm = 0.65 >
+
+# Add per-track MCS log-likelihood term to each daughter curve before joint fit (1=enabled, 0=disabled).
+< neutralKaonAnalysis.JointK0sMCSEnable = 1 >
+# Relative weight of logL_MCS added to logL_TLE (effective track logL = logL_TLE + weight*logL_MCS).
+< neutralKaonAnalysis.JointK0sMCSWeight = 1.0 >
+# MCS Highland model settings (LAr default X0 ~14 cm).
+< neutralKaonAnalysis.JointK0sMCSRadiationLengthCm = 14.0 >
+< neutralKaonAnalysis.JointK0sMCSMinSegmentCm = 0.1 >
+< neutralKaonAnalysis.JointK0sMCSTheta0FloorRad = 1.0e-6 >
+# Set <=0 to disable capping of observed scattering deflections.
+< neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad = -1.0 >
+# Diagnostics-only lower momentum bound for TLE/MCS likelihood-vs-momentum plots (does not affect joint fit scan).
+< neutralKaonAnalysis.JointK0sDiagMomentumPMinGeV = 0.01 >
+
+# Joint K0s-constrained ππ momenta (2D grid on |p1|,|p2| with soft m(K0s) penalty on interpolated free-range log L).
+# 0 = disabled (each daughter: independent free-range ML as today). 1 = try joint; on failure falls back to independent.
+< neutralKaonAnalysis.JointK0sMomentumEnable = 1 >
+< neutralKaonAnalysis.JointK0sMomentumPMinGeV = 0.05 >
+< neutralKaonAnalysis.JointK0sMomentumPMaxGeV = 7.0 >
+< neutralKaonAnalysis.JointK0sMomentumPStepGeV = 0.05 >
+# Gaussian mass prior width σ_M in MeV (converted to GeV internally).
+< neutralKaonAnalysis.JointK0sMassSigmaMeV = 50.0 >
+# Bounds for event-propagated sigma_m used by joint fit (MeV). If min > max, code swaps them.
+< neutralKaonAnalysis.JointK0sMassSigmaMinMeV = 0.0 >
+< neutralKaonAnalysis.JointK0sMassSigmaMaxMeV = 100.0 >
+# Multiplier on 0.5*((M-m_K0s)/σ)^2; m_K0s fixed at 0.497611 GeV in code.
+< neutralKaonAnalysis.JointK0sMassPenaltyScale = 1.0 >
+# 1 = σ_m per event from (∂m/∂p_i σ_pi)^2 using TLE log L curvature at marginal maxima; 0 = fixed JointK0sMassSigmaMeV only.
+< neutralKaonAnalysis.JointK0sMassSigmaEventPropagation = 1 >
+# Second pass: step coarse / factor on a local box around the best cell; set 0 or 1 to disable refinement.
+< neutralKaonAnalysis.JointK0sMomentumRefineFactor = 2 >
 
 --- Momentum Assurance Parameters -----------
 # Enable momentum assurance for signal codes only (1=only codes 1,5,6 / 0=all codes)
 # Signal codes: 1=two_stopping, 5=one_stopping, 6=interacting
-< neutralKaonAnalysis.EnsureMomentumSignalOnly = 0 >
+< neutralKaonAnalysis.EnsureMomentumSignalOnly = 1 >
+# Enable writing momentum diagnostics: sigdedx, siglogl, joint 2D TH2s h_sigjoint2d, h_sigjointpen, h_sigjointlogl
+# (S, mass penalty, logL1+logL2 TLE), marker TGraphs g_sigjoint2d_mrk_{tle,true,joint}_*, canvases c_sigjoint2d_*, c_sigjointpen_*, c_sigjointlogl_*.
+# 1 = enabled, 0 = disabled.
+< neutralKaonAnalysis.EnableMomentumDiagnosticMultigraphs = 1 >
+# Fill extra free-range diagnostics (mean/sigma dE/dx bias Gaussian fit) for the per-daughter TLEFit path.
+# 1 = enabled, 0 = disabled (faster, keeps these fields at sentinel values).
+< neutralKaonAnalysis.FreeRangeComputeDedxBiasDiagnostics = 0 >
 
 --- Other Parameters -----------
 

@@ -9,13 +9,10 @@ namespace neutralKaonAnaUtils{
   void AddCustomCategories();
 
   void AddSignalCandidateCategory();
+  void AddVertexCandidateCategory();
 
   // Legit annihilation vertex: both reco daughters share the same true parent.
   bool IsLegitVertexCandidate(AnaNeutralParticlePD* neutralParticle);
-
-  // Legit-vertex subtype tags by true-parent daughter multiplicity.
-  bool IsLegitVertexFromTwoBodyDecay(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
-  bool IsLegitVertexFromMultiBodyDecay(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
 
   // Signal definition used for categories and event-display filtering.
   bool IsSignalCandidate(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
@@ -25,6 +22,7 @@ namespace neutralKaonAnaUtils{
 
   // Fill Custom categories
   void FillSignalCandidateCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
+  void FillVertexCandidateCategory(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event);
 
   /// Same integer codes as category "signal" in FillSignalCandidateCategory, using only the annihilation vertex and
   /// event (truth-matched evaluation). For vertex creation before AnaNeutralParticlePD exists.

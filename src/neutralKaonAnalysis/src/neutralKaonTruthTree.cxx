@@ -1,343 +1,268 @@
 #include "neutralKaonTruthTree.hxx"
-#include "pdDataClasses.hxx"
-#include "pdAnalysisUtils.hxx"
-#include "BasicUtils.hxx"
-#include "TVector3.h"
-#include <cmath>
 
 //********************************************************************
 void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, UInt_t nmax){
-    AddVarMaxSizeVI(output, k0truepdg, "K0 true PDG", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0truendau, "K0 true number of daughters", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0trueproc, "K0 true process", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0trueendproc, "K0 true end process", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0truestartpos, "K0 true start position", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0trueendpos, "K0 true end position", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0truestartdir, "K0 true start direction", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0trueenddir, "K0 true end direction", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0truestartmom, "K0 true start momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0trueendmom, "K0 true end momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0truelength, "K0 true length", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0truestartenddir, "K0 true start-end direction scalar product", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0truegeneration, "K0 true generation", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0hasrecoobject, "K0 true has reco object", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0trueparticleid, "K0 true particle ID (matches ana k0trueid)", ntruek0, nmax);
-
-    // Vertex reconstruction debugging variables
-    AddVarMaxSizeVI(output, k0dau1hasreco, "K0 daughter1 has reco particle", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2hasreco, "K0 daughter2 has reco particle", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0parenthasreco, "K0 parent has reco particle", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1validstartpos, "K0 daughter1 reco has valid start position", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1validendpos, "K0 daughter1 reco has valid end position", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2validstartpos, "K0 daughter2 reco has valid start position", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2validendpos, "K0 daughter2 reco has valid end position", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0daucloseenough, "K0 reco daughters are close enough", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0daudistance, "K0 reco daughters distance", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1fitok, "K0 daughter1 track fit succeeded", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2fitok, "K0 daughter2 track fit succeeded", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0vtxpositionfound, "K0 vertex position was found", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0vtxmindistance, "K0 vertex minimum distance between fitted lines", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0parentrecodist, "K0 distance from parent reco end to vertex", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0parentwithinradius, "K0 parent within vertex radius", ntruek0, nmax);
+    AddVarMaxSizeVI(output, isk0decay, "1 if true K0 ends by decay process", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0ntruedaughters, "Number of direct true daughters of the K0", ntruek0, nmax);
+    AddVarMaxSizeVI(output, isk0charged, "1 if true K0 decays exactly to pi+ pi-", ntruek0, nmax);
+    AddVarMaxSizeVI(output, isk0neutral, "1 if true K0 decays exactly to pi0 pi0", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0pi01twogamma, "1 if K0 daughter1 pi0 decays exactly to 2 gammas", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0pi02twogamma, "1 if K0 daughter2 pi0 decays exactly to 2 gammas", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1gamma1hasrecoobject,
+                    "1 if daughter1(pi0)->gamma1 has valid Pandora reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1gamma2hasrecoobject,
+                    "1 if daughter1(pi0)->gamma2 has valid Pandora reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2gamma1hasrecoobject,
+                    "1 if daughter2(pi0)->gamma1 has valid Pandora reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2gamma2hasrecoobject,
+                    "1 if daughter2(pi0)->gamma2 has valid Pandora reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0parhasrecoobject, "K0 true parent has valid reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1hasrecoobject, "K0 true daughter1 has valid reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2hasrecoobject, "K0 true daughter2 has valid reco object", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0daurecostartdistance,
+                     "Reco distance between K0 daughter PositionStart (cm)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0daurecoparentiddiff,
+                    "Reco ParentID difference between K0 daughters (dau1 - dau2)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1recoparentvstrueparentrecoiddiff,
+                    "Daughter1 reco parent UniqueID minus UniqueID of reco matched to true parent of K0", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2recoparentvstrueparentrecoiddiff,
+                    "Daughter2 reco parent UniqueID minus UniqueID of reco matched to true parent of K0", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0parrecotruestartdist,
+                    "Distance reco vs true PositionStart for K0 true parent (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0parrecotrueenddist,
+                    "Distance reco vs true PositionEnd for K0 true parent (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1recotruestartdist,
+                    "Distance reco vs true PositionStart for K0 daughter1 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1recotrueenddist,
+                    "Distance reco vs true PositionEnd for K0 daughter1 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2recotruestartdist,
+                    "Distance reco vs true PositionStart for K0 daughter2 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2recotrueenddist,
+                    "Distance reco vs true PositionEnd for K0 daughter2 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0daupairfitmindist,
+                    "Minimum distance between fitted lines for K0 daughter pair (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1otherpairfitmindist,
+                    "Minimum fit-line distance for daughter1 with other nearby particles (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2otherpairfitmindist,
+                    "Minimum fit-line distance for daughter2 with other nearby particles (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0otherpairsfitmindistglobal,
+                    "Global minimum over daughter-other pair fit distances (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1recoprotonchi2ndf,
+                    "Chi2PID(2212)/npts K0 daughter1 (dE/dx template)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1recokaonchi2ndf,
+                    "Chi2PID(321)/npts K0 daughter1 (dE/dx template)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1recopionchi2ndf,
+                    "Chi2PID(211)/npts K0 daughter1 (annihilation-style)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2recoprotonchi2ndf,
+                    "Chi2PID(2212)/npts K0 daughter2 (dE/dx template)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2recokaonchi2ndf,
+                    "Chi2PID(321)/npts K0 daughter2 (dE/dx template)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2recopionchi2ndf,
+                    "Chi2PID(211)/npts K0 daughter2 (annihilation-style)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0truemomentum, "True momentum magnitude for K0 (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0trueenergy, "True total energy at K0 trajectory start sqrt(p^2+m^2) (GeV)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0partruestartmom,
+                    "True start momentum magnitude for K0 parent (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0partrueendmom,
+                    "True end momentum magnitude for K0 parent (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1truestartmom,
+                    "True start momentum magnitude for K0 daughter1 (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1trueendmom,
+                    "True end momentum magnitude for K0 daughter1 (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2truestartmom,
+                    "True start momentum magnitude for K0 daughter2 (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2trueendmom,
+                    "True end momentum magnitude for K0 daughter2 (GeV/c)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1trueenergy,
+                    "True total energy at start for K0 daughter1 sqrt(p^2+m^2) (GeV)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2trueenergy,
+                    "True total energy at start for K0 daughter2 sqrt(p^2+m^2) (GeV)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0truepdg, "True PDG of K0", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0partruepdg, "True PDG of K0 parent", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1truepdg, "True PDG of K0 daughter1", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2truepdg, "True PDG of K0 daughter2", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1truelength, "True |end-start| K0 daughter1 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau1recolength, "Reco length K0 daughter1 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2truelength, "True |end-start| K0 daughter2 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0dau2recolength, "Reco length K0 daughter2 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0truelength, "True |end-start| K0 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1recohits, "Reco NHits K0 daughter1", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2recohits, "Reco NHits K0 daughter2", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1truensubreco,
+                    "True sub-daughters of K0 daughter1 with valid reco (start/end + hits)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1truensubrecohitstot, "Sum reco NHits over those sub-daughters (daughter1)", ntruek0,
+                    nmax);
+    AddVarMaxSizeVI(output, k0dau2truensubreco,
+                    "True sub-daughters of K0 daughter2 with valid reco (start/end + hits)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2truensubrecohitstot, "Sum reco NHits over those sub-daughters (daughter2)", ntruek0,
+                    nmax);
+    AddVarMaxSizeVF(output, k0dau1truesubrecoenergy,
+                    "Sum true E at start (GeV) over direct true daughters of K0 daughter1 with valid reco", ntruek0,
+                    nmax);
+    AddVarMaxSizeVF(output, k0dau2truesubrecoenergy,
+                    "Sum true E at start (GeV) over direct true daughters of K0 daughter2 with valid reco", ntruek0,
+                    nmax);
+    AddVarMaxSizeVI(output, k0parrecohits, "Reco NHits true parent of K0", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0partruelength, "True |end-start| K0 parent (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0parrecolength, "Reco length K0 parent (cm)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1otherminpairtruepdg,
+                    "True PDG of partner for k0dau1otherpairfitmindist", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0vertexminisdaupair,
+                    "1 if global min fit-line sep equals dau-dau pair", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0parrecozstartgtzend,
+                    "1 if K0 parent reco startZ > endZ (Pandora direction in Z)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1recozstartgtzend,
+                    "1 if K0 daughter1 reco startZ > endZ", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2recozstartgtzend,
+                    "1 if K0 daughter2 reco startZ > endZ", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0parispandorabeam,
+                    "1 if K0 parent reco is Pandora beam (isPandora)", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0pardonerecoprotonatcreation,
+                    "1 iff among K0 true parent's direct true daughters exactly one has valid reco and it is proton "
+                    "(2212)",
+                    ntruek0, nmax);
 }
 
 //********************************************************************
-void neutralKaonTruthTree::AddNeutralKaonParentTruthVariables(OutputManager& output, UInt_t nmax){
-    AddVarMaxSizeVI(output, k0partruepdg, "K0 parent true PDG", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0partruendau, "K0 parent true number of daughters", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0partrueproc, "K0 parent true process", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0partrueendproc, "K0 parent true end process", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0partruestartpos, "K0 parent true start position", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0partrueendpos, "K0 parent true end position", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0partruestartdir, "K0 parent true start direction", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0partrueenddir, "K0 parent true end direction", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0partruestartmom, "K0 parent true start momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0partrueendmom, "K0 parent true end momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0partruelength, "K0 parent true length", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0partruestartenddir, "K0 parent true start-end direction scalar product", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0partruegeneration, "K0 parent true generation", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0parhasrecoobject, "K0 parent true has reco object", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0parisbeam, "K0 parent true is beam", ntruek0, nmax);
-}
-
-//********************************************************************
-void neutralKaonTruthTree::AddNeutralKaonDaughter1TruthVariables(OutputManager& output, UInt_t nmax){
-    AddVarMaxSizeVI(output, k0dau1truepdg, "K0 daughter1 true PDG", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1truendau, "K0 daughter1 true number of daughters", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1trueproc, "K0 daughter1 true process", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1trueendproc, "K0 daughter1 true end process", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0dau1truestartpos, "K0 daughter1 true start position", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0dau1trueendpos, "K0 daughter1 true end position", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0dau1truestartdir, "K0 daughter1 true start direction", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0dau1trueenddir, "K0 daughter1 true end direction", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau1truestartmom, "K0 daughter1 true start momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau1trueendmom, "K0 daughter1 true end momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau1truelength, "K0 daughter1 true length", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau1truestartenddir, "K0 daughter1 true start-end direction scalar product", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1truegeneration, "K0 daughter1 true generation", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau1hasrecoobject, "K0 daughter1 true has reco object", ntruek0, nmax);
-}
-
-//********************************************************************
-void neutralKaonTruthTree::AddNeutralKaonDaughter2TruthVariables(OutputManager& output, UInt_t nmax){
-    AddVarMaxSizeVI(output, k0dau2truepdg, "K0 daughter2 true PDG", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2truendau, "K0 daughter2 true number of daughters", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2trueproc, "K0 daughter2 true process", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2trueendproc, "K0 daughter2 true end process", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0dau2truestartpos, "K0 daughter2 true start position", ntruek0, nmax);
-    AddVarMaxSize4MF(output, k0dau2trueendpos, "K0 daughter2 true end position", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0dau2truestartdir, "K0 daughter2 true start direction", ntruek0, nmax);
-    AddVarMaxSize3MF(output, k0dau2trueenddir, "K0 daughter2 true end direction", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau2truestartmom, "K0 daughter2 true start momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau2trueendmom, "K0 daughter2 true end momentum", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau2truelength, "K0 daughter2 true length", ntruek0, nmax);
-    AddVarMaxSizeVF(output, k0dau2truestartenddir, "K0 daughter2 true start-end direction scalar product", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2truegeneration, "K0 daughter2 true generation", ntruek0, nmax);
-    AddVarMaxSizeVI(output, k0dau2hasrecoobject, "K0 daughter2 true has reco object", ntruek0, nmax);
-}
-
-//********************************************************************
-void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output, const AnaTrueParticlePD& part, bool hasRecoObject){
-    output.FillVectorVar(k0truepdg, part.PDG);
-    output.FillVectorVar(k0trueparticleid, part.ID);
-    output.FillVectorVar(k0truendau, static_cast<Int_t>(part.Daughters.size()));
-    output.FillVectorVar(k0trueproc, part.ProcessStart);
-    output.FillVectorVar(k0trueendproc, part.ProcessEnd);
-    output.FillMatrixVarFromArray(k0truestartpos, part.Position, 4);
-    output.FillMatrixVarFromArray(k0trueendpos, part.PositionEnd, 4);
-    output.FillMatrixVarFromArray(k0truestartdir, part.Direction, 3);
-    output.FillMatrixVarFromArray(k0trueenddir, part.DirectionEnd, 3);
-    output.FillVectorVar(k0truestartmom, part.Momentum);
-    output.FillVectorVar(k0trueendmom, part.MomentumEnd);
-
-    //check if the reco object exists
-    output.FillVectorVar(k0hasrecoobject, hasRecoObject ? 1 : 0);
-
-    // Calculate length from positions
-    Float_t length = sqrt(pow(part.PositionEnd[0] - part.Position[0], 2) +
-                         pow(part.PositionEnd[1] - part.Position[1], 2) +
-                         pow(part.PositionEnd[2] - part.Position[2], 2));
-    output.FillVectorVar(k0truelength, length);
-
-    // Calculate dot product of start and end directions
-    Float_t dotProduct = part.Direction[0] * part.DirectionEnd[0] +
-                        part.Direction[1] * part.DirectionEnd[1] +
-                        part.Direction[2] * part.DirectionEnd[2];
-    output.FillVectorVar(k0truestartenddir, dotProduct);
-    output.FillVectorVar(k0truegeneration, part.Generation);
-}
-
-//********************************************************************
-void neutralKaonTruthTree::FillVertexReconstructionDebugVariables(OutputManager& output, const AnaTrueParticlePD& part,
-                                                                  AnaParticlePD* daughter1Reco, AnaParticlePD* daughter2Reco,
-                                                                  AnaParticlePD* parentReco,
-                                                                  double maxDaughterDistance, double trackFitLength, double vertexRadius){
-
-    // Initialize all debug variables to 0 or -999
-    output.FillVectorVar(k0dau1hasreco, daughter1Reco != nullptr ? 1 : 0);
-    output.FillVectorVar(k0dau2hasreco, daughter2Reco != nullptr ? 1 : 0);
-    output.FillVectorVar(k0parenthasreco, parentReco != nullptr ? 1 : 0);
-
-    if(!daughter1Reco || !daughter2Reco){
-        // If either daughter doesn't have a reco particle, fill remaining variables with defaults
-        output.FillVectorVar(k0dau1validstartpos, 0);
-        output.FillVectorVar(k0dau1validendpos, 0);
-        output.FillVectorVar(k0dau2validstartpos, 0);
-        output.FillVectorVar(k0dau2validendpos, 0);
-        output.FillVectorVar(k0daucloseenough, 0);
-        output.FillVectorVar(k0daudistance, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0dau1fitok, 0);
-        output.FillVectorVar(k0dau2fitok, 0);
-        output.FillVectorVar(k0vtxpositionfound, 0);
-        output.FillVectorVar(k0vtxmindistance, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentrecodist, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentwithinradius, 0);
-        return;
-    }
-
-    // Check if daughter1 has valid start position
-    bool dau1ValidStart = (daughter1Reco->PositionStart[0] > -900 &&
-                          daughter1Reco->PositionStart[1] > -900 &&
-                          daughter1Reco->PositionStart[2] > -900);
-    output.FillVectorVar(k0dau1validstartpos, dau1ValidStart ? 1 : 0);
-
-    // Check if daughter1 has valid end position
-    bool dau1ValidEnd = (daughter1Reco->PositionEnd[0] > -900 &&
-                        daughter1Reco->PositionEnd[1] > -900 &&
-                        daughter1Reco->PositionEnd[2] > -900);
-    output.FillVectorVar(k0dau1validendpos, dau1ValidEnd ? 1 : 0);
-
-    // Check if daughter2 has valid start position
-    bool dau2ValidStart = (daughter2Reco->PositionStart[0] > -900 &&
-                          daughter2Reco->PositionStart[1] > -900 &&
-                          daughter2Reco->PositionStart[2] > -900);
-    output.FillVectorVar(k0dau2validstartpos, dau2ValidStart ? 1 : 0);
-
-    // Check if daughter2 has valid end position
-    bool dau2ValidEnd = (daughter2Reco->PositionEnd[0] > -900 &&
-                        daughter2Reco->PositionEnd[1] > -900 &&
-                        daughter2Reco->PositionEnd[2] > -900);
-    output.FillVectorVar(k0dau2validendpos, dau2ValidEnd ? 1 : 0);
-
-    if(!dau1ValidStart || !dau1ValidEnd || !dau2ValidStart || !dau2ValidEnd){
-        output.FillVectorVar(k0daucloseenough, 0);
-        output.FillVectorVar(k0daudistance, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0dau1fitok, 0);
-        output.FillVectorVar(k0dau2fitok, 0);
-        output.FillVectorVar(k0vtxpositionfound, 0);
-        output.FillVectorVar(k0vtxmindistance, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentrecodist, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentwithinradius, 0);
-        return;
-    }
-
-    // Check if daughters are close enough
-    TVector3 pos1 = pdAnaUtils::DefinePosition(daughter1Reco);
-    TVector3 pos2 = pdAnaUtils::DefinePosition(daughter2Reco);
-
-    Float_t distance = static_cast<Float_t>((pos1 - pos2).Mag());
-
-    output.FillVectorVar(k0daudistance, static_cast<Float_t>(distance));
-    bool closeEnough = (distance <= static_cast<Float_t>(maxDaughterDistance));
-    output.FillVectorVar(k0daucloseenough, closeEnough ? 1 : 0);
-
-    if(!closeEnough){
-        output.FillVectorVar(k0dau1fitok, 0);
-        output.FillVectorVar(k0dau2fitok, 0);
-        output.FillVectorVar(k0vtxpositionfound, 0);
-        output.FillVectorVar(k0vtxmindistance, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentrecodist, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentwithinradius, 0);
-        return;
-    }
-
-    // Try to fit tracks
-    std::vector<double> line1Params, line2Params;
-    pdAnaUtils::ExtrapolateTrack(daughter1Reco, line1Params, trackFitLength, true);
-    pdAnaUtils::ExtrapolateTrack(daughter2Reco, line2Params, trackFitLength, true);
-
-    bool dau1FitOk = (line1Params[0] != -999.0);
-    bool dau2FitOk = (line2Params[0] != -999.0);
-    output.FillVectorVar(k0dau1fitok, dau1FitOk ? 1 : 0);
-    output.FillVectorVar(k0dau2fitok, dau2FitOk ? 1 : 0);
-
-    if(!dau1FitOk || !dau2FitOk){
-        output.FillVectorVar(k0vtxpositionfound, 0);
-        output.FillVectorVar(k0vtxmindistance, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentrecodist, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentwithinradius, 0);
-        return;
-    }
-
-    // Find closest points between fitted lines
-    TVector3 closestPoint1, closestPoint2;
-    double minDistance = pdAnaUtils::FindClosestPointsBetweenLines(line1Params, line2Params,
-                                                                   closestPoint1, closestPoint2);
-    output.FillVectorVar(k0vtxmindistance, static_cast<Float_t>(minDistance));
-
-    // Calculate vertex position
-    TVector3 vertexPosition = 0.5 * (closestPoint1 + closestPoint2);
-    bool vtxFound = (vertexPosition.X() > -900 && vertexPosition.Y() > -900 && vertexPosition.Z() > -900);
-    output.FillVectorVar(k0vtxpositionfound, vtxFound ? 1 : 0);
-
-    // Check distance from parent end position to vertex
-    if(parentReco && vtxFound){
-        TVector3 parentEnd(parentReco->PositionEnd[0], parentReco->PositionEnd[1], parentReco->PositionEnd[2]);
-        Float_t parentDist = static_cast<Float_t>((vertexPosition - parentEnd).Mag());
-        output.FillVectorVar(k0parentrecodist, parentDist);
-
-        bool withinRadius = (parentDist <= static_cast<Float_t>(vertexRadius));
-        output.FillVectorVar(k0parentwithinradius, withinRadius ? 1 : 0);
-    }
-    else{
-        output.FillVectorVar(k0parentrecodist, static_cast<Float_t>(-999.0));
-        output.FillVectorVar(k0parentwithinradius, 0);
-    }
-}
-
-//********************************************************************
-void neutralKaonTruthTree::FillNeutralKaonParentTruthVariables(OutputManager& output, const AnaTrueParticlePD& part, bool hasRecoObject){
-    output.FillVectorVar(k0partruepdg, part.PDG);
-    output.FillVectorVar(k0partruendau, static_cast<Int_t>(part.Daughters.size()));
-    output.FillVectorVar(k0partrueproc, part.ProcessStart);
-    output.FillVectorVar(k0partrueendproc, part.ProcessEnd);
-    output.FillMatrixVarFromArray(k0partruestartpos, part.Position, 4);
-    output.FillMatrixVarFromArray(k0partrueendpos, part.PositionEnd, 4);
-    output.FillMatrixVarFromArray(k0partruestartdir, part.Direction, 3);
-    output.FillMatrixVarFromArray(k0partrueenddir, part.DirectionEnd, 3);
-    output.FillVectorVar(k0partruestartmom, part.Momentum);
-    output.FillVectorVar(k0partrueendmom, part.MomentumEnd);
-    // output.FillVectorVar(k0parisbeam, part.IsBeamPart ? 1 : 0);
-
-    // Calculate length from positions
-    Float_t length = sqrt(pow(part.PositionEnd[0] - part.Position[0], 2) +
-                         pow(part.PositionEnd[1] - part.Position[1], 2) +
-                         pow(part.PositionEnd[2] - part.Position[2], 2));
-    output.FillVectorVar(k0partruelength, length);
-
-    // Calculate dot product of start and end directions
-    Float_t dotProduct = part.Direction[0] * part.DirectionEnd[0] +
-                        part.Direction[1] * part.DirectionEnd[1] +
-                        part.Direction[2] * part.DirectionEnd[2];
-    output.FillVectorVar(k0partruestartenddir, dotProduct);
-    output.FillVectorVar(k0partruegeneration, part.Generation);
-
-    // Check if the reco object exists
-    output.FillVectorVar(k0parhasrecoobject, hasRecoObject ? 1 : 0);
-}
-
-//********************************************************************
-void neutralKaonTruthTree::FillNeutralKaonDaughter1TruthVariables(OutputManager& output, const AnaTrueParticlePD& part, bool hasRecoObject){
-    output.FillVectorVar(k0dau1hasrecoobject, hasRecoObject ? 1 : 0);
-    output.FillVectorVar(k0dau1truepdg, part.PDG);
-    output.FillVectorVar(k0dau1truendau, static_cast<Int_t>(part.Daughters.size()));
-    output.FillVectorVar(k0dau1trueproc, part.ProcessStart);
-    output.FillVectorVar(k0dau1trueendproc, part.ProcessEnd);
-    output.FillMatrixVarFromArray(k0dau1truestartpos, part.Position, 4);
-    output.FillMatrixVarFromArray(k0dau1trueendpos, part.PositionEnd, 4);
-    output.FillMatrixVarFromArray(k0dau1truestartdir, part.Direction, 3);
-    output.FillMatrixVarFromArray(k0dau1trueenddir, part.DirectionEnd, 3);
-    output.FillVectorVar(k0dau1truestartmom, part.Momentum);
-    output.FillVectorVar(k0dau1trueendmom, part.MomentumEnd);
-
-    // Calculate length from positions
-    Float_t length = sqrt(pow(part.PositionEnd[0] - part.Position[0], 2) +
-                         pow(part.PositionEnd[1] - part.Position[1], 2) +
-                         pow(part.PositionEnd[2] - part.Position[2], 2));
-    output.FillVectorVar(k0dau1truelength, length);
-
-    // Calculate dot product of start and end directions
-    Float_t dotProduct = part.Direction[0] * part.DirectionEnd[0] +
-                        part.Direction[1] * part.DirectionEnd[1] +
-                        part.Direction[2] * part.DirectionEnd[2];
-    output.FillVectorVar(k0dau1truestartenddir, dotProduct);
-    output.FillVectorVar(k0dau1truegeneration, part.Generation);
-}
-
-//********************************************************************
-void neutralKaonTruthTree::FillNeutralKaonDaughter2TruthVariables(OutputManager& output, const AnaTrueParticlePD& part, bool hasRecoObject){
-    output.FillVectorVar(k0dau2hasrecoobject, hasRecoObject ? 1 : 0);
-    output.FillVectorVar(k0dau2truepdg, part.PDG);
-    output.FillVectorVar(k0dau2truendau, static_cast<Int_t>(part.Daughters.size()));
-    output.FillVectorVar(k0dau2trueproc, part.ProcessStart);
-    output.FillVectorVar(k0dau2trueendproc, part.ProcessEnd);
-    output.FillMatrixVarFromArray(k0dau2truestartpos, part.Position, 4);
-    output.FillMatrixVarFromArray(k0dau2trueendpos, part.PositionEnd, 4);
-    output.FillMatrixVarFromArray(k0dau2truestartdir, part.Direction, 3);
-    output.FillMatrixVarFromArray(k0dau2trueenddir, part.DirectionEnd, 3);
-    output.FillVectorVar(k0dau2truestartmom, part.Momentum);
-    output.FillVectorVar(k0dau2trueendmom, part.MomentumEnd);
-
-    // Calculate length from positions
-    Float_t length = sqrt(pow(part.PositionEnd[0] - part.Position[0], 2) +
-                         pow(part.PositionEnd[1] - part.Position[1], 2) +
-                         pow(part.PositionEnd[2] - part.Position[2], 2));
-    output.FillVectorVar(k0dau2truelength, length);
-
-    // Calculate dot product of start and end directions
-    Float_t dotProduct = part.Direction[0] * part.DirectionEnd[0] +
-                        part.Direction[1] * part.DirectionEnd[1] +
-                        part.Direction[2] * part.DirectionEnd[2];
-    output.FillVectorVar(k0dau2truestartenddir, dotProduct);
-    output.FillVectorVar(k0dau2truegeneration, part.Generation);
+void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
+                                                         bool parentHasRecoObject,
+                                                         bool daughter1HasRecoObject,
+                                                         bool daughter2HasRecoObject,
+                                                         Float_t daughterRecoStartDistance,
+                                                         Int_t daughterRecoParentIdDifference,
+                                                         Int_t daughter1RecoParentVsTrueParentRecoIdDiff,
+                                                         Int_t daughter2RecoParentVsTrueParentRecoIdDiff,
+                                                         Float_t parentRecoTrueStartDistance,
+                                                         Float_t parentRecoTrueEndDistance,
+                                                         Float_t daughter1RecoTrueStartDistance,
+                                                         Float_t daughter1RecoTrueEndDistance,
+                                                         Float_t daughter2RecoTrueStartDistance,
+                                                         Float_t daughter2RecoTrueEndDistance,
+                                                         Float_t daughterPairFitMinDistance,
+                                                         Float_t daughter1OtherPairFitMinDistance,
+                                                         Float_t daughter2OtherPairFitMinDistance,
+                                                         Float_t otherPairsFitMinDistanceGlobal,
+                                                         Float_t daughter1RecoProtonChi2Ndf,
+                                                         Float_t daughter1RecoKaonChi2Ndf,
+                                                         Float_t daughter1RecoPionChi2Ndf,
+                                                         Float_t daughter2RecoProtonChi2Ndf,
+                                                         Float_t daughter2RecoKaonChi2Ndf,
+                                                         Float_t daughter2RecoPionChi2Ndf,
+                                                         Float_t k0TrueMomentum,
+                                                         Float_t parentTrueStartMomentum,
+                                                         Float_t parentTrueEndMomentum,
+                                                         Float_t daughter1TrueStartMomentum,
+                                                         Float_t daughter1TrueEndMomentum,
+                                                         Float_t daughter2TrueStartMomentum,
+                                                         Float_t daughter2TrueEndMomentum,
+                                                         Float_t k0TrueEnergy,
+                                                         Float_t daughter1TrueEnergy,
+                                                         Float_t daughter2TrueEnergy,
+                                                         Float_t daughter1TrueSubRecoEnergySum,
+                                                         Float_t daughter2TrueSubRecoEnergySum,
+                                                         Int_t isK0Decay,
+                                                         Int_t k0NTrueDaughters,
+                                                         Int_t isK0Charged,
+                                                         Int_t isK0Neutral,
+                                                         Int_t k0Pi01TwoGamma,
+                                                         Int_t k0Pi02TwoGamma,
+                                                         Int_t k0Dau1Gamma1HasRecoObject,
+                                                         Int_t k0Dau1Gamma2HasRecoObject,
+                                                         Int_t k0Dau2Gamma1HasRecoObject,
+                                                         Int_t k0Dau2Gamma2HasRecoObject,
+                                                         Int_t k0TruePdg,
+                                                         Int_t parentTruePdg,
+                                                         Int_t daughter1TruePdg,
+                                                         Int_t daughter2TruePdg,
+                                                         Float_t daughter1TrueLength,
+                                                         Float_t daughter1RecoLength,
+                                                         Float_t daughter2TrueLength,
+                                                         Float_t daughter2RecoLength,
+                                                         Float_t k0TrueLength,
+                                                         Int_t daughter1RecoNHits,
+                                                         Int_t daughter2RecoNHits,
+                                                         Int_t daughter1TrueSubRecoQualCount,
+                                                         Int_t daughter1TrueSubRecoQualHitsTot,
+                                                         Int_t daughter2TrueSubRecoQualCount,
+                                                         Int_t daughter2TrueSubRecoQualHitsTot,
+                                                         Int_t parentRecoNHits,
+                                                         Float_t parentTrueLength,
+                                                         Float_t parentRecoLength,
+                                                         Int_t daughter1OtherMinSepTruePdg,
+                                                         Int_t vertexMinIsK0DaughterPair,
+                                                         Int_t parentRecoZStartGreaterThanEnd,
+                                                         Int_t daughter1RecoZStartGreaterThanEnd,
+                                                         Int_t daughter2RecoZStartGreaterThanEnd,
+                                                         Int_t parentIsPandoraBeam,
+                                                         Int_t parentExactlyOneRecoProtonNearK0Creation){
+    output.FillVectorVar(isk0decay, isK0Decay);
+    output.FillVectorVar(k0ntruedaughters, k0NTrueDaughters);
+    output.FillVectorVar(isk0charged, isK0Charged);
+    output.FillVectorVar(isk0neutral, isK0Neutral);
+    output.FillVectorVar(k0pi01twogamma, k0Pi01TwoGamma);
+    output.FillVectorVar(k0pi02twogamma, k0Pi02TwoGamma);
+    output.FillVectorVar(k0dau1gamma1hasrecoobject, k0Dau1Gamma1HasRecoObject);
+    output.FillVectorVar(k0dau1gamma2hasrecoobject, k0Dau1Gamma2HasRecoObject);
+    output.FillVectorVar(k0dau2gamma1hasrecoobject, k0Dau2Gamma1HasRecoObject);
+    output.FillVectorVar(k0dau2gamma2hasrecoobject, k0Dau2Gamma2HasRecoObject);
+    output.FillVectorVar(k0parhasrecoobject, parentHasRecoObject ? 1 : 0);
+    output.FillVectorVar(k0dau1hasrecoobject, daughter1HasRecoObject ? 1 : 0);
+    output.FillVectorVar(k0dau2hasrecoobject, daughter2HasRecoObject ? 1 : 0);
+    output.FillVectorVar(k0daurecostartdistance, daughterRecoStartDistance);
+    output.FillVectorVar(k0daurecoparentiddiff, daughterRecoParentIdDifference);
+    output.FillVectorVar(k0dau1recoparentvstrueparentrecoiddiff, daughter1RecoParentVsTrueParentRecoIdDiff);
+    output.FillVectorVar(k0dau2recoparentvstrueparentrecoiddiff, daughter2RecoParentVsTrueParentRecoIdDiff);
+    output.FillVectorVar(k0parrecotruestartdist, parentRecoTrueStartDistance);
+    output.FillVectorVar(k0parrecotrueenddist, parentRecoTrueEndDistance);
+    output.FillVectorVar(k0dau1recotruestartdist, daughter1RecoTrueStartDistance);
+    output.FillVectorVar(k0dau1recotrueenddist, daughter1RecoTrueEndDistance);
+    output.FillVectorVar(k0dau2recotruestartdist, daughter2RecoTrueStartDistance);
+    output.FillVectorVar(k0dau2recotrueenddist, daughter2RecoTrueEndDistance);
+    output.FillVectorVar(k0daupairfitmindist, daughterPairFitMinDistance);
+    output.FillVectorVar(k0dau1otherpairfitmindist, daughter1OtherPairFitMinDistance);
+    output.FillVectorVar(k0dau2otherpairfitmindist, daughter2OtherPairFitMinDistance);
+    output.FillVectorVar(k0otherpairsfitmindistglobal, otherPairsFitMinDistanceGlobal);
+    output.FillVectorVar(k0dau1recoprotonchi2ndf, daughter1RecoProtonChi2Ndf);
+    output.FillVectorVar(k0dau1recokaonchi2ndf, daughter1RecoKaonChi2Ndf);
+    output.FillVectorVar(k0dau1recopionchi2ndf, daughter1RecoPionChi2Ndf);
+    output.FillVectorVar(k0dau2recoprotonchi2ndf, daughter2RecoProtonChi2Ndf);
+    output.FillVectorVar(k0dau2recokaonchi2ndf, daughter2RecoKaonChi2Ndf);
+    output.FillVectorVar(k0dau2recopionchi2ndf, daughter2RecoPionChi2Ndf);
+    output.FillVectorVar(k0truemomentum, k0TrueMomentum);
+    output.FillVectorVar(k0trueenergy, k0TrueEnergy);
+    output.FillVectorVar(k0partruestartmom, parentTrueStartMomentum);
+    output.FillVectorVar(k0partrueendmom, parentTrueEndMomentum);
+    output.FillVectorVar(k0dau1truestartmom, daughter1TrueStartMomentum);
+    output.FillVectorVar(k0dau1trueendmom, daughter1TrueEndMomentum);
+    output.FillVectorVar(k0dau2truestartmom, daughter2TrueStartMomentum);
+    output.FillVectorVar(k0dau2trueendmom, daughter2TrueEndMomentum);
+    output.FillVectorVar(k0dau1trueenergy, daughter1TrueEnergy);
+    output.FillVectorVar(k0dau2trueenergy, daughter2TrueEnergy);
+    output.FillVectorVar(k0truepdg, k0TruePdg);
+    output.FillVectorVar(k0partruepdg, parentTruePdg);
+    output.FillVectorVar(k0dau1truepdg, daughter1TruePdg);
+    output.FillVectorVar(k0dau2truepdg, daughter2TruePdg);
+    output.FillVectorVar(k0dau1truelength, daughter1TrueLength);
+    output.FillVectorVar(k0dau1recolength, daughter1RecoLength);
+    output.FillVectorVar(k0dau2truelength, daughter2TrueLength);
+    output.FillVectorVar(k0dau2recolength, daughter2RecoLength);
+    output.FillVectorVar(k0truelength, k0TrueLength);
+    output.FillVectorVar(k0dau1recohits, daughter1RecoNHits);
+    output.FillVectorVar(k0dau2recohits, daughter2RecoNHits);
+    output.FillVectorVar(k0dau1truensubreco, daughter1TrueSubRecoQualCount);
+    output.FillVectorVar(k0dau1truensubrecohitstot, daughter1TrueSubRecoQualHitsTot);
+    output.FillVectorVar(k0dau2truensubreco, daughter2TrueSubRecoQualCount);
+    output.FillVectorVar(k0dau2truensubrecohitstot, daughter2TrueSubRecoQualHitsTot);
+    output.FillVectorVar(k0dau1truesubrecoenergy, daughter1TrueSubRecoEnergySum);
+    output.FillVectorVar(k0dau2truesubrecoenergy, daughter2TrueSubRecoEnergySum);
+    output.FillVectorVar(k0parrecohits, parentRecoNHits);
+    output.FillVectorVar(k0partruelength, parentTrueLength);
+    output.FillVectorVar(k0parrecolength, parentRecoLength);
+    output.FillVectorVar(k0dau1otherminpairtruepdg, daughter1OtherMinSepTruePdg);
+    output.FillVectorVar(k0vertexminisdaupair, vertexMinIsK0DaughterPair);
+    output.FillVectorVar(k0parrecozstartgtzend, parentRecoZStartGreaterThanEnd);
+    output.FillVectorVar(k0dau1recozstartgtzend, daughter1RecoZStartGreaterThanEnd);
+    output.FillVectorVar(k0dau2recozstartgtzend, daughter2RecoZStartGreaterThanEnd);
+    output.FillVectorVar(k0parispandorabeam, parentIsPandoraBeam);
+    output.FillVectorVar(k0pardonerecoprotonatcreation, parentExactlyOneRecoProtonNearK0Creation);
 }
