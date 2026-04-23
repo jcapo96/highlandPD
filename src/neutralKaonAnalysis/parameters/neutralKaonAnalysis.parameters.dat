@@ -92,8 +92,24 @@ need to be enabled in baseAnalysis parameter file
 # Scan additional track-length offset L in [0, Lmax] cm with this step (cm).
 < neutralKaonAnalysis.FreeRangeScanLmaxCm = 450.0 >
 < neutralKaonAnalysis.FreeRangeScanStepCm = 1.0 >
+# If positive and smaller than coarse step (FreeRangeScanStepCm), redo the L scan with this step when any trial maps to p below FreeRangeLowPMomentumRefineGeV (low-p / small-RR).
+< neutralKaonAnalysis.FreeRangeScanStepFineCm = 0.25 >
+< neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV = 0.4 >
 # Path length δx (cm) for Landau ξ in the hit PDF (paper uses ~0.65 cm typical 3D hit spacing in ProtoDUNE-SP).
 < neutralKaonAnalysis.FreeRangeDedxPdfPathCm = 0.65 >
+
+# Add per-track MCS log-likelihood term to each daughter curve before joint fit (1=enabled, 0=disabled).
+< neutralKaonAnalysis.JointK0sMCSEnable = 1 >
+# Relative weight of logL_MCS added to logL_TLE (effective track logL = logL_TLE + weight*logL_MCS).
+< neutralKaonAnalysis.JointK0sMCSWeight = 1.0 >
+# MCS Highland model settings (LAr default X0 ~14 cm).
+< neutralKaonAnalysis.JointK0sMCSRadiationLengthCm = 14.0 >
+< neutralKaonAnalysis.JointK0sMCSMinSegmentCm = 0.1 >
+< neutralKaonAnalysis.JointK0sMCSTheta0FloorRad = 1.0e-6 >
+# Set <=0 to disable capping of observed scattering deflections.
+< neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad = -1.0 >
+# Diagnostics-only lower momentum bound for TLE/MCS likelihood-vs-momentum plots (does not affect joint fit scan).
+< neutralKaonAnalysis.JointK0sDiagMomentumPMinGeV = 0.01 >
 
 # Joint K0s-constrained ππ momenta (2D grid on |p1|,|p2| with soft m(K0s) penalty on interpolated free-range log L).
 # 0 = disabled (each daughter: independent free-range ML as today). 1 = try joint; on failure falls back to independent.

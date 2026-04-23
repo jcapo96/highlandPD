@@ -6,7 +6,7 @@
 
 namespace neutralKaonTruthTree{
 
-  // Minimal truth-tree content for true K0s -> pi+ pi-.
+  // Minimal truth-tree content for true K0s in selected two-pion channels.
   void AddNeutralKaonTruthVariables(OutputManager& output, UInt_t nmax);
   void FillNeutralKaonTruthVariables(OutputManager& output,
                                      bool parentHasRecoObject,
@@ -44,6 +44,16 @@ namespace neutralKaonTruthTree{
                                      Float_t daughter2TrueEnergy,
                                      Float_t daughter1TrueSubRecoEnergySum,
                                      Float_t daughter2TrueSubRecoEnergySum,
+                                     Int_t isK0Decay,
+                                     Int_t k0NTrueDaughters,
+                                     Int_t isK0Charged,
+                                     Int_t isK0Neutral,
+                                     Int_t k0Pi01TwoGamma,
+                                     Int_t k0Pi02TwoGamma,
+                                     Int_t k0Dau1Gamma1HasRecoObject,
+                                     Int_t k0Dau1Gamma2HasRecoObject,
+                                     Int_t k0Dau2Gamma1HasRecoObject,
+                                     Int_t k0Dau2Gamma2HasRecoObject,
                                      Int_t k0TruePdg,
                                      Int_t parentTruePdg,
                                      Int_t daughter1TruePdg,
@@ -70,9 +80,19 @@ namespace neutralKaonTruthTree{
                                      Int_t parentIsPandoraBeam,
                                      Int_t parentExactlyOneRecoProtonNearK0Creation);
 
-  // enum with unique indexes for output tree variables (true K0s -> pi+ pi- only; see FillTruthTree)
+  // enum with unique indexes for output tree variables (selected true K0 two-pion channels; see FillTruthTree)
   enum enumNeutralKaonTruthMicroTrees{
     ntruek0 = baseAnalysis::enumStandardMicroTreesLast_baseAnalysis+1, // Counter: truth-tree rows for this channel (incremented per filled K0)
+    isk0decay, // 1 if true K0 ends by decay process
+    k0ntruedaughters, // Number of direct true daughters of the K0
+    isk0charged, // 1 if true K0 decays exactly to pi+ pi-
+    isk0neutral, // 1 if true K0 decays exactly to pi0 pi0
+    k0pi01twogamma, // 1 if K0 daughter1 is pi0 and decays exactly to 2 gammas
+    k0pi02twogamma, // 1 if K0 daughter2 is pi0 and decays exactly to 2 gammas
+    k0dau1gamma1hasrecoobject, // 1 if daughter1(pi0)->gamma1 has valid Pandora reco object
+    k0dau1gamma2hasrecoobject, // 1 if daughter1(pi0)->gamma2 has valid Pandora reco object
+    k0dau2gamma1hasrecoobject, // 1 if daughter2(pi0)->gamma1 has valid Pandora reco object
+    k0dau2gamma2hasrecoobject, // 1 if daughter2(pi0)->gamma2 has valid Pandora reco object
     k0parhasrecoobject, // 1 if true K0 parent has a reco track with valid start/end positions and hits; else 0
     k0dau1hasrecoobject, // Same for true daughter 1 (Daughters[0] order); else 0
     k0dau2hasrecoobject, // Same for true daughter 2 (Daughters[1] order); else 0

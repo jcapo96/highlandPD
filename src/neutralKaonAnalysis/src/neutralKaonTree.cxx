@@ -86,6 +86,29 @@ namespace {
     return std::isfinite(vector.X()) && std::isfinite(vector.Y()) && std::isfinite(vector.Z()) && vector.Mag2() > 0.;
   }
 
+  bool ComputeResultantAndInvariant(TVector3 dir1, TVector3 dir2, Float_t p1Mag, Float_t p2Mag, Float_t& resultantOut,
+                                    Float_t& invariantMassOut, TVector3* totalMomentumOut = nullptr) {
+    static constexpr double kPionMassGeV = 0.13957;
+    if (dir1.Mag2() <= 0. || dir2.Mag2() <= 0.) return false;
+    dir1 = dir1.Unit();
+    dir2 = dir2.Unit();
+
+    TVector3 p1(0., 0., 0.);
+    TVector3 p2(0., 0., 0.);
+    if (!BuildMomentumVector(p1Mag, dir1, p1) || !BuildMomentumVector(p2Mag, dir2, p2)) return false;
+
+    const TVector3 pTot = p1 + p2;
+    const double e1 = std::sqrt(static_cast<double>(p1Mag) * p1Mag + kPionMassGeV * kPionMassGeV);
+    const double e2 = std::sqrt(static_cast<double>(p2Mag) * p2Mag + kPionMassGeV * kPionMassGeV);
+    const double m2 = (e1 + e2) * (e1 + e2) - pTot.Mag2();
+    if (!std::isfinite(m2)) return false;
+
+    resultantOut = static_cast<Float_t>(pTot.Mag());
+    invariantMassOut = (m2 > 0.) ? static_cast<Float_t>(std::sqrt(m2)) : 0.0f;
+    if (totalMomentumOut) *totalMomentumOut = pTot;
+    return std::isfinite(resultantOut) && std::isfinite(invariantMassOut);
+  }
+
   double SumCollectionPlaneVisibleEnergyMeV(const AnaParticlePD* part, int plane) {
     if (!part || plane < 0 || plane > 2) return 0.;
     double s = 0.;
@@ -298,6 +321,7 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Particle(OutputManager& output, 
   AddVarMaxSizeVF(output, k0lengthfit, "Neutral length using annihilation Fit position", nk0, nmax);
   AddVarMaxSizeVF(output, k0truelength, "True K0 length using true creation and decay vertices", nk0, nmax);
   AddVarMaxSizeVI(output, k0truepdg, "True PDG of reconstructed neutral candidate", nk0, nmax);
+  AddVarMaxSizeVI(output, k0truegeneration, "True generation of reconstructed neutral candidate", nk0, nmax);
   AddVarMaxSizeVF(output, k0alignmentpandora,
                    "K0 alignment (Pandora): angle (rad) between creation→annihilation(Pandora) and vertex Σp (Pandora dirs)", nk0,
                    nmax);
@@ -402,6 +426,23 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_
   AddVarMaxSizeVF(output, k0vtxresultantmomentumtrue, "True resultant momentum magnitude from true daughters", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxresultantmomentumcos,
                   "Cosine of angle between reco and true resultant daughter momentum vectors", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxresultantmomentumtle, "Resultant momentum magnitude from TLE-only daughter momenta", nk0,
+                  nmax);
+  AddVarMaxSizeVF(output, k0vtxresultantmomentummcs, "Resultant momentum magnitude from MCS-only daughter momenta", nk0,
+                  nmax);
+  AddVarMaxSizeVF(output, k0vtxresultantmomentumjoint, "Resultant momentum magnitude from joint-fit daughter momenta", nk0,
+                  nmax);
+  AddVarMaxSizeVF(output, k0vtxresultantmomentumcostle, "Cosine between TLE-only resultant and true resultant momentum",
+                  nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxresultantmomentumcosmcs, "Cosine between MCS-only resultant and true resultant momentum",
+                  nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxresultantmomentumcosjoint,
+                  "Cosine between joint-fit resultant and true resultant momentum", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxinvariantmasstle, "Invariant mass from TLE-only daughter momenta", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxinvariantmassmcs, "Invariant mass from MCS-only daughter momenta", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxinvariantmassjoint, "Invariant mass from joint-fit daughter momenta", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxinvariantmasstrue, "Invariant mass from true daughter directions and momenta (pion hypothesis)",
+                  nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxjointk0smomused, "1 if joint K0s momentum was applied for this vertex", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxjointsigmap1, "Joint-fit sigma(p1) from TLE curvature at marginal best [GeV/c]", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxjointsigmap2, "Joint-fit sigma(p2) from TLE curvature at marginal best [GeV/c]", nk0, nmax);
@@ -419,8 +460,16 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Vtx(OutputManager& output, UInt_
 //********************************************************************
 void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& output, UInt_t nmax){
 //********************************************************************
-  AddVarMaxSizeVF(output, k0vtxdau1momentumreco, "Reco momentum magnitude of daughter 1", nk0, nmax);
-  AddVarMaxSizeVF(output, k0vtxdau2momentumreco, "Reco momentum magnitude of daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1momentumreco,
+                  "Reco momentum magnitude of daughter 1 (joint-fit result when joint fit is applied)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2momentumreco,
+                  "Reco momentum magnitude of daughter 2 (joint-fit result when joint fit is applied)", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1momentumtle, "Daughter 1 momentum from TLE-only likelihood argmax", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2momentumtle, "Daughter 2 momentum from TLE-only likelihood argmax", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1momentummcs, "Daughter 1 momentum from MCS-only likelihood argmax", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2momentummcs, "Daughter 2 momentum from MCS-only likelihood argmax", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1momentumjoint, "Daughter 1 momentum from joint-fit objective", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2momentumjoint, "Daughter 2 momentum from joint-fit objective", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1mommethod, "Momentum assignment method enum for daughter 1", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2mommethod, "Momentum assignment method enum for daughter 2", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdau1extchi2ndf, "Momentum-assignment free-range fit log-likelihood for daughter 1", nk0, nmax);
@@ -607,6 +656,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Particle(OutputManager& output,
   Float_t lengthFit = -999.0f;
   Float_t trueLength = -999.0f;
   Int_t truePdg = -999;
+  Int_t trueGeneration = -999;
   Float_t alignmentPandora = -999.0f;
   Float_t alignmentFit = -999.0f;
 
@@ -616,6 +666,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Particle(OutputManager& output,
     AnaTrueParticlePD* trueK0 = candidate->TrueObject ? static_cast<AnaTrueParticlePD*>(candidate->TrueObject) : nullptr;
     if (trueK0) {
       truePdg = trueK0->PDG;
+      trueGeneration = trueK0->Generation;
       const TVector3 trueStart(trueK0->Position[0], trueK0->Position[1], trueK0->Position[2]);
       const TVector3 trueEnd(trueK0->PositionEnd[0], trueK0->PositionEnd[1], trueK0->PositionEnd[2]);
       if (IsValidPos(trueStart) && IsValidPos(trueEnd)) {
@@ -630,6 +681,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0Particle(OutputManager& output,
   output.FillVectorVar(k0lengthfit, lengthFit);
   output.FillVectorVar(k0truelength, trueLength);
   output.FillVectorVar(k0truepdg, truePdg);
+  output.FillVectorVar(k0truegeneration, trueGeneration);
   output.FillVectorVar(k0alignmentpandora, alignmentPandora);
   output.FillVectorVar(k0alignmentfit, alignmentFit);
 }
@@ -1396,6 +1448,16 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
   Float_t k0vtxresultantmomentumreco_val = -999.0f;
   Float_t k0vtxresultantmomentumtrue_val = -999.0f;
   Float_t k0vtxresultantmomentumcos_val = -999.0f;
+  Float_t k0vtxresultantmomentumtle_val = -999.0f;
+  Float_t k0vtxresultantmomentummcs_val = -999.0f;
+  Float_t k0vtxresultantmomentumjoint_val = -999.0f;
+  Float_t k0vtxresultantmomentumcostle_val = -999.0f;
+  Float_t k0vtxresultantmomentumcosmcs_val = -999.0f;
+  Float_t k0vtxresultantmomentumcosjoint_val = -999.0f;
+  Float_t k0vtxinvariantmasstle_val = -999.0f;
+  Float_t k0vtxinvariantmassmcs_val = -999.0f;
+  Float_t k0vtxinvariantmassjoint_val = -999.0f;
+  Float_t k0vtxinvariantmasstrue_val = -999.0f;
   Int_t k0vtxjointk0smomused_val = -1;
   Float_t k0vtxjointsigmap1_val = -999.0f;
   Float_t k0vtxjointsigmap2_val = -999.0f;
@@ -1445,6 +1507,14 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
       AnaTrueParticlePD* trueParticle2 = recoParticle2 ? static_cast<AnaTrueParticlePD*>(recoParticle2->TrueObject) : nullptr;
       TVector3 pRecoTot(0., 0., 0.);
       bool hasRecoResultantVector = false;
+      TVector3 pTotTLE(0., 0., 0.);
+      TVector3 pTotMCS(0., 0., 0.);
+      TVector3 pTotJoint(0., 0., 0.);
+      bool hasTLEVector = false;
+      bool hasMCSVector = false;
+      bool hasJointVector = false;
+      TVector3 pTrueTot(0., 0., 0.);
+      bool hasTrueResultantVector = false;
 
       if (recoParticle1 && recoParticle2) {
         const TVector3 dirPandora1(recoParticle1->DirectionStart[0], recoParticle1->DirectionStart[1], recoParticle1->DirectionStart[2]);
@@ -1474,6 +1544,16 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
           pRecoTot = recoParticle1->Momentum * dirFit1.Unit() + recoParticle2->Momentum * dirFit2.Unit();
           hasRecoResultantVector = (pRecoTot.Mag2() > 0.0);
         }
+
+        hasTLEVector = ComputeResultantAndInvariant(dirFit1, dirFit2, vertex->Daughter1MomentumTLE,
+                                                    vertex->Daughter2MomentumTLE, k0vtxresultantmomentumtle_val,
+                                                    k0vtxinvariantmasstle_val, &pTotTLE);
+        hasMCSVector = ComputeResultantAndInvariant(dirFit1, dirFit2, vertex->Daughter1MomentumMCS,
+                                                    vertex->Daughter2MomentumMCS, k0vtxresultantmomentummcs_val,
+                                                    k0vtxinvariantmassmcs_val, &pTotMCS);
+        hasJointVector = ComputeResultantAndInvariant(dirFit1, dirFit2, vertex->Daughter1MomentumJoint,
+                                                      vertex->Daughter2MomentumJoint, k0vtxresultantmomentumjoint_val,
+                                                      k0vtxinvariantmassjoint_val, &pTotJoint);
       }
 
       if(trueParticle1 && trueParticle2) {
@@ -1484,7 +1564,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
         TVector3 dirTrue1(trueParticle1->Direction[0], trueParticle1->Direction[1], trueParticle1->Direction[2]);
         TVector3 dirTrue2(trueParticle2->Direction[0], trueParticle2->Direction[1], trueParticle2->Direction[2]);
         if (dirTrue1.Mag2() > 0.0 && dirTrue2.Mag2() > 0.0 && trueParticle1->Momentum > 0.0f && trueParticle2->Momentum > 0.0f) {
-          const TVector3 pTrueTot = trueParticle1->Momentum * dirTrue1.Unit() + trueParticle2->Momentum * dirTrue2.Unit();
+          Float_t pTrueResDummy = -999.0f;
+          ComputeResultantAndInvariant(dirTrue1, dirTrue2, trueParticle1->Momentum, trueParticle2->Momentum,
+                                       pTrueResDummy, k0vtxinvariantmasstrue_val, nullptr);
+          pTrueTot = trueParticle1->Momentum * dirTrue1.Unit() + trueParticle2->Momentum * dirTrue2.Unit();
+          hasTrueResultantVector = (pTrueTot.Mag2() > 0.0);
           k0vtxresultantmomentumtrue_val = static_cast<Float_t>(pTrueTot.Mag());
           if (hasRecoResultantVector && pTrueTot.Mag2() > 0.0) {
             const double cosAng = pRecoTot.Dot(pTrueTot) / (pRecoTot.Mag() * pTrueTot.Mag());
@@ -1499,6 +1583,16 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
           k0vtxtruepos_val[1] = 0.5f * static_cast<Float_t>(trueParticle1->Position[1] + trueParticle2->Position[1]);
           k0vtxtruepos_val[2] = 0.5f * static_cast<Float_t>(trueParticle1->Position[2] + trueParticle2->Position[2]);
         }
+      }
+      if (hasTrueResultantVector) {
+        auto cosWithTrue = [&](const TVector3& vReco, bool validReco) -> Float_t {
+          if (!validReco || vReco.Mag2() <= 0.0 || pTrueTot.Mag2() <= 0.0) return -999.0f;
+          const double c = vReco.Dot(pTrueTot) / (vReco.Mag() * pTrueTot.Mag());
+          return static_cast<Float_t>(std::max(-1.0, std::min(1.0, c)));
+        };
+        k0vtxresultantmomentumcostle_val = cosWithTrue(pTotTLE, hasTLEVector);
+        k0vtxresultantmomentumcosmcs_val = cosWithTrue(pTotMCS, hasMCSVector);
+        k0vtxresultantmomentumcosjoint_val = cosWithTrue(pTotJoint, hasJointVector);
       }
     }
 
@@ -1559,6 +1653,16 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtx(OutputManager& output, AnaA
   output.FillVectorVar(k0vtxresultantmomentumreco, k0vtxresultantmomentumreco_val);
   output.FillVectorVar(k0vtxresultantmomentumtrue, k0vtxresultantmomentumtrue_val);
   output.FillVectorVar(k0vtxresultantmomentumcos, k0vtxresultantmomentumcos_val);
+  output.FillVectorVar(k0vtxresultantmomentumtle, k0vtxresultantmomentumtle_val);
+  output.FillVectorVar(k0vtxresultantmomentummcs, k0vtxresultantmomentummcs_val);
+  output.FillVectorVar(k0vtxresultantmomentumjoint, k0vtxresultantmomentumjoint_val);
+  output.FillVectorVar(k0vtxresultantmomentumcostle, k0vtxresultantmomentumcostle_val);
+  output.FillVectorVar(k0vtxresultantmomentumcosmcs, k0vtxresultantmomentumcosmcs_val);
+  output.FillVectorVar(k0vtxresultantmomentumcosjoint, k0vtxresultantmomentumcosjoint_val);
+  output.FillVectorVar(k0vtxinvariantmasstle, k0vtxinvariantmasstle_val);
+  output.FillVectorVar(k0vtxinvariantmassmcs, k0vtxinvariantmassmcs_val);
+  output.FillVectorVar(k0vtxinvariantmassjoint, k0vtxinvariantmassjoint_val);
+  output.FillVectorVar(k0vtxinvariantmasstrue, k0vtxinvariantmasstrue_val);
   output.FillVectorVar(k0vtxjointk0smomused, k0vtxjointk0smomused_val);
   output.FillVectorVar(k0vtxjointsigmap1, k0vtxjointsigmap1_val);
   output.FillVectorVar(k0vtxjointsigmap2, k0vtxjointsigmap2_val);
@@ -1576,6 +1680,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
 //********************************************************************
   Float_t k0vtxdau1momentumreco_val = -999.0f;
   Float_t k0vtxdau2momentumreco_val = -999.0f;
+  Float_t k0vtxdau1momentumtle_val = -999.0f;
+  Float_t k0vtxdau2momentumtle_val = -999.0f;
+  Float_t k0vtxdau1momentummcs_val = -999.0f;
+  Float_t k0vtxdau2momentummcs_val = -999.0f;
+  Float_t k0vtxdau1momentumjoint_val = -999.0f;
+  Float_t k0vtxdau2momentumjoint_val = -999.0f;
   Int_t k0vtxdau1mommethod_val = -1;
   Int_t k0vtxdau2mommethod_val = -1;
   Float_t k0vtxdau1extchi2ndf_val = -999.0f;
@@ -1631,6 +1741,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   Float_t k0vtxdaughtersrecovisiblee_val = -999.0f;
 
   if (vertex) {
+    k0vtxdau1momentumtle_val = vertex->Daughter1MomentumTLE;
+    k0vtxdau2momentumtle_val = vertex->Daughter2MomentumTLE;
+    k0vtxdau1momentummcs_val = vertex->Daughter1MomentumMCS;
+    k0vtxdau2momentummcs_val = vertex->Daughter2MomentumMCS;
+    k0vtxdau1momentumjoint_val = vertex->Daughter1MomentumJoint;
+    k0vtxdau2momentumjoint_val = vertex->Daughter2MomentumJoint;
     k0vtxdau1mommethod_val = vertex->Daughter1MomentumMethod;
     k0vtxdau2mommethod_val = vertex->Daughter2MomentumMethod;
     k0vtxdau1extchi2ndf_val = vertex->Daughter1ExtensionChi2Ndf;
@@ -1732,6 +1848,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
 
   output.FillVectorVar(k0vtxdau1momentumreco, k0vtxdau1momentumreco_val);
   output.FillVectorVar(k0vtxdau2momentumreco, k0vtxdau2momentumreco_val);
+  output.FillVectorVar(k0vtxdau1momentumtle, k0vtxdau1momentumtle_val);
+  output.FillVectorVar(k0vtxdau2momentumtle, k0vtxdau2momentumtle_val);
+  output.FillVectorVar(k0vtxdau1momentummcs, k0vtxdau1momentummcs_val);
+  output.FillVectorVar(k0vtxdau2momentummcs, k0vtxdau2momentummcs_val);
+  output.FillVectorVar(k0vtxdau1momentumjoint, k0vtxdau1momentumjoint_val);
+  output.FillVectorVar(k0vtxdau2momentumjoint, k0vtxdau2momentumjoint_val);
   output.FillVectorVar(k0vtxdau1mommethod, k0vtxdau1mommethod_val);
   output.FillVectorVar(k0vtxdau2mommethod, k0vtxdau2mommethod_val);
   output.FillVectorVar(k0vtxdau1extchi2ndf, k0vtxdau1extchi2ndf_val);

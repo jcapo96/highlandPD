@@ -31,6 +31,37 @@ struct JointK0sSigmaMEventDiagnostics {
 
 namespace pdJointK0sPionMomentum {
 
+struct MCSLikelihoodConfig {
+  double radiationLengthCm = 14.0;
+  double minSegmentLengthCm = 0.5;
+  double theta0FloorRad = 1e-6;
+  double maxAbsDeltaThetaRad = -1.0;
+};
+
+class MCSLikelihood {
+public:
+  explicit MCSLikelihood(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg = MCSLikelihoodConfig());
+
+  double ComputeNLL(double momentumGeV) const;
+  bool HasSamples() const { return !delta_theta_.empty(); }
+  size_t SampleCount() const { return delta_theta_.size(); }
+
+private:
+  std::vector<double> delta_theta_;
+  std::vector<double> x_over_x0_;
+  double theta0_floor_rad_ = 1e-6;
+};
+
+/// Prefer hit triplets (view with most valid hits, RR-ordered); else trajectory points with synthetic RR.
+/// Optional rrMidCm: RR at the middle vertex of each triplet (for plots); pass null for likelihood-only use.
+bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg,
+                                  std::vector<double>& deltaTheta, std::vector<double>& xOverX0,
+                                  std::vector<double>* rrMidCm = nullptr);
+
+/// Build log L_MCS(p) = -NLL_MCS(p) on a provided momentum axis.
+bool BuildPionMCSLogLikelihoodVsMomentumCurve(const AnaParticlePD& track, const std::vector<double>& pAxisGeV,
+                                              const MCSLikelihoodConfig& cfg, std::vector<double>& logL);
+
 /// Piecewise-linear log L(p) with clamp to endpoints (same scan as free-range ML).
 double InterpolateLogLikelihoodClamped(const std::vector<double>& pAxis, const std::vector<double>& logL, double p);
 
@@ -54,6 +85,7 @@ bool ComputeSigmaMEventGeV(const std::vector<double>& p1Axis, const std::vector<
                            JointK0sSigmaMEventDiagnostics& out, double sigmaMinGeV, double sigmaMaxGeV);
 
 /// Maximize logL1(p1)+logL2(p2) - 0.5*penaltyScale*((M-mK0s)/sigmaMassGeV)^2 on a coarse grid, optional refinement.
+/// logL1/logL2 are generic track terms (for example TLE-only or TLE+MCS combined).
 JointK0sPionMomentumGridResult FitJointMomentaOnGrid(const std::vector<double>& p1Axis, const std::vector<double>& logL1,
                                                      const std::vector<double>& p2Axis, const std::vector<double>& logL2,
                                                      const TVector3& dir1, const TVector3& dir2, double pMinGeV,

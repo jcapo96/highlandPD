@@ -9,6 +9,12 @@ namespace {
 
 constexpr double kCollinearCosCut = 0.95;
 constexpr double kCollinearInflate = 2.0;
+constexpr double kPionMassMeV = 139.57;
+constexpr double kHighlandConstantMeV = 13.6;
+
+double ClampCosine(double c) {
+  return std::max(-1.0, std::min(1.0, c));
+}
 
 double NLLFromLogLikelihoodCurve(const std::vector<double>& pAxis, const std::vector<double>& logL, double p) {
   const double ll = InterpolateLogLikelihoodClamped(pAxis, logL, p);
@@ -102,6 +108,155 @@ void ScanRectangle(const std::vector<double>& p1Axis, const std::vector<double>&
 }
 
 } // namespace
+
+bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg,
+                                  std::vector<double>& deltaTheta, std::vector<double>& xOverX0,
+                                  std::vector<double>* rrMidCm) {
+  deltaTheta.clear();
+  xOverX0.clear();
+  if (rrMidCm) rrMidCm->clear();
+
+  std::vector<TVector3> orderedPoints;
+  std::vector<double> orderedRR;
+  {
+    struct HitPoint {
+      double rr = 0.0;
+      TVector3 pos;
+    };
+    std::vector<HitPoint> hitPoints;
+    int bestPlane = -1;
+    size_t bestCount = 0u;
+    for (int ipl = 0; ipl < 3; ++ipl) {
+      size_t nValid = 0u;
+      for (const auto& h : track.Hits[ipl]) {
+        if (!std::isfinite(h.Position.X()) || !std::isfinite(h.Position.Y()) || !std::isfinite(h.Position.Z())) continue;
+        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < -900.f) continue;
+        ++nValid;
+      }
+      if (nValid > bestCount) {
+        bestCount = nValid;
+        bestPlane = ipl;
+      }
+    }
+    if (bestPlane >= 0 && bestCount >= 3u) {
+      hitPoints.reserve(bestCount);
+      for (const auto& h : track.Hits[bestPlane]) {
+        if (!std::isfinite(h.Position.X()) || !std::isfinite(h.Position.Y()) || !std::isfinite(h.Position.Z())) continue;
+        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < -900.f) continue;
+        HitPoint hp;
+        hp.rr = static_cast<double>(h.ResidualRange);
+        hp.pos = h.Position;
+        hitPoints.push_back(hp);
+      }
+      std::stable_sort(hitPoints.begin(), hitPoints.end(),
+                       [](const HitPoint& a, const HitPoint& b) { return a.rr > b.rr; });
+      orderedPoints.reserve(hitPoints.size());
+      orderedRR.reserve(hitPoints.size());
+      for (const auto& hp : hitPoints) {
+        orderedPoints.push_back(hp.pos);
+        orderedRR.push_back(hp.rr);
+      }
+    }
+  }
+
+  if (orderedPoints.size() < 3u) {
+    orderedPoints.clear();
+    orderedRR.clear();
+    orderedPoints.reserve(track.TrjPoints.size());
+    for (const auto& tp : track.TrjPoints) {
+      if (!std::isfinite(tp.Position.X()) || !std::isfinite(tp.Position.Y()) || !std::isfinite(tp.Position.Z())) continue;
+      orderedPoints.push_back(tp.Position);
+    }
+    if (orderedPoints.size() >= 2u) {
+      std::vector<double> s(orderedPoints.size(), 0.0);
+      for (size_t i = 1; i < orderedPoints.size(); ++i) {
+        const double dl = (orderedPoints[i] - orderedPoints[i - 1]).Mag();
+        s[i] = s[i - 1] + ((std::isfinite(dl) && dl > 0.0) ? dl : 0.0);
+      }
+      const double totalLen = s.back();
+      orderedRR.resize(orderedPoints.size(), 0.0);
+      for (size_t i = 0; i < orderedPoints.size(); ++i) orderedRR[i] = std::max(0.0, totalLen - s[i]);
+    }
+  }
+  if (orderedPoints.size() < 3u || orderedRR.size() != orderedPoints.size()) return false;
+
+  const double x0 = (std::isfinite(cfg.radiationLengthCm) && cfg.radiationLengthCm > 1e-9) ? cfg.radiationLengthCm : 14.0;
+  const double minSeg = (std::isfinite(cfg.minSegmentLengthCm) && cfg.minSegmentLengthCm > 0.0) ? cfg.minSegmentLengthCm : 0.5;
+  const double maxAbsTheta =
+      (std::isfinite(cfg.maxAbsDeltaThetaRad) && cfg.maxAbsDeltaThetaRad > 0.0) ? cfg.maxAbsDeltaThetaRad : -1.0;
+
+  for (size_t i = 0; i + 2 < orderedPoints.size(); ++i) {
+    const TVector3 d1 = orderedPoints[i + 1] - orderedPoints[i];
+    const TVector3 d2 = orderedPoints[i + 2] - orderedPoints[i + 1];
+    const double l1 = d1.Mag();
+    const double l2 = d2.Mag();
+    if (!std::isfinite(l1) || !std::isfinite(l2) || l1 <= 1e-9 || l2 <= 1e-9) continue;
+    const double seg = 0.5 * (l1 + l2);
+    if (!std::isfinite(seg) || seg < minSeg) continue;
+    const double c = ClampCosine(d1.Unit().Dot(d2.Unit()));
+    double dTh = std::acos(c);
+    if (!std::isfinite(dTh)) continue;
+    if (maxAbsTheta > 0.0 && dTh > maxAbsTheta) dTh = maxAbsTheta;
+    const double xov = seg / x0;
+    if (!std::isfinite(xov) || xov <= 0.0) continue;
+    const double rr = orderedRR[i + 1];
+    if (!std::isfinite(rr) || rr < 0.0) continue;
+    deltaTheta.push_back(dTh);
+    xOverX0.push_back(xov);
+    if (rrMidCm) rrMidCm->push_back(rr);
+  }
+  if (deltaTheta.empty() || deltaTheta.size() != xOverX0.size()) return false;
+  if (rrMidCm && rrMidCm->size() != deltaTheta.size()) return false;
+  return true;
+}
+
+MCSLikelihood::MCSLikelihood(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg) {
+  theta0_floor_rad_ = (std::isfinite(cfg.theta0FloorRad) && cfg.theta0FloorRad > 0.) ? cfg.theta0FloorRad : 1e-6;
+  BuildPionMcsScatteringSamples(track, cfg, delta_theta_, x_over_x0_, nullptr);
+}
+
+double MCSLikelihood::ComputeNLL(double momentumGeV) const {
+  if (delta_theta_.empty() || x_over_x0_.size() != delta_theta_.size()) return std::numeric_limits<double>::infinity();
+  if (!std::isfinite(momentumGeV) || momentumGeV <= 0.) return std::numeric_limits<double>::infinity();
+
+  const double pMeV = momentumGeV * 1000.0;
+  const double eMeV = std::sqrt(pMeV * pMeV + kPionMassMeV * kPionMassMeV);
+  if (!std::isfinite(eMeV) || eMeV <= 0.) return std::numeric_limits<double>::infinity();
+  const double beta = pMeV / eMeV;
+  if (!std::isfinite(beta) || beta <= 0.) return std::numeric_limits<double>::infinity();
+
+  double nll = 0.;
+  for (size_t i = 0; i < delta_theta_.size(); ++i) {
+    const double xOverX0 = x_over_x0_[i];
+    const double logArg = std::max(xOverX0, 1e-12);
+    double corr = 1.0 + 0.038 * std::log(logArg);
+    if (!std::isfinite(corr) || corr < 0.1) corr = 0.1;
+
+    double theta0 = (kHighlandConstantMeV / (beta * pMeV)) * std::sqrt(xOverX0) * corr;
+    if (!std::isfinite(theta0) || theta0 <= 0.) theta0 = theta0_floor_rad_;
+    theta0 = std::max(theta0, theta0_floor_rad_);
+
+    const double dt = delta_theta_[i];
+    const double pull = dt / theta0;
+    nll += 0.5 * pull * pull + std::log(theta0);
+  }
+  return (std::isfinite(nll)) ? nll : std::numeric_limits<double>::infinity();
+}
+
+bool BuildPionMCSLogLikelihoodVsMomentumCurve(const AnaParticlePD& track, const std::vector<double>& pAxisGeV,
+                                              const MCSLikelihoodConfig& cfg, std::vector<double>& logL) {
+  logL.clear();
+  if (pAxisGeV.empty()) return false;
+  const MCSLikelihood mcs(track, cfg);
+  if (!mcs.HasSamples()) return false;
+  logL.reserve(pAxisGeV.size());
+  for (size_t i = 0; i < pAxisGeV.size(); ++i) {
+    const double nll = mcs.ComputeNLL(pAxisGeV[i]);
+    if (!std::isfinite(nll)) return false;
+    logL.push_back(-nll);
+  }
+  return logL.size() == pAxisGeV.size();
+}
 
 double InterpolateLogLikelihoodClamped(const std::vector<double>& pAxis, const std::vector<double>& logL, double p) {
   if (pAxis.size() < 2u || pAxis.size() != logL.size()) return std::numeric_limits<double>::quiet_NaN();

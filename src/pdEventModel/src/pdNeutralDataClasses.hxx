@@ -83,6 +83,13 @@ public:
 	Int_t Daughter2ExtensionDedxFitOk;
 	/// 0: independent free-range (or joint disabled / joint failed); 1: joint K0s grid+momentum applied.
 	Int_t JointK0sMomentumUsed;
+	/// Per-daughter momentum summaries [GeV/c] for diagnostics/tree export.
+	Float_t Daughter1MomentumTLE;
+	Float_t Daughter2MomentumTLE;
+	Float_t Daughter1MomentumMCS;
+	Float_t Daughter2MomentumMCS;
+	Float_t Daughter1MomentumJoint;
+	Float_t Daughter2MomentumJoint;
 	Float_t JointK0sBestScore;
 	Float_t JointK0sInvMassAtBest;
 	/// Joint mass-penalty diagnostics (GeV for sigmas; -999 unset). Filled when joint fit is attempted with event σ_m.

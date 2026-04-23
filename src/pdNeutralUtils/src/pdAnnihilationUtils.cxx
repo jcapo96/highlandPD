@@ -408,6 +408,14 @@ Int_t AssignMomentumFromResidualRange(AnaParticlePD* particle, Int_t pdgHypothes
   const double pdfPathCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
                                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
                                : 0.65;
+  const double scanStepFineCm =
+      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepFineCm")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepFineCm")
+          : 0.;
+  const double lowPMomentumRefineGeV =
+      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
+          : 0.2;
   const bool computeDedxBiasDiagnostics =
       !ND::params().HasParameter("neutralKaonAnalysis.FreeRangeComputeDedxBiasDiagnostics") ||
       ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeComputeDedxBiasDiagnostics") != 0;
@@ -428,7 +436,7 @@ Int_t AssignMomentumFromResidualRange(AnaParticlePD* particle, Int_t pdgHypothes
 
   const pdAnaUtils::DEdxFreeRangeFitResult fit = pdAnaUtils::GetdEdxLikelihoodFreeRangeFit(
       particle, pdgHypothesis, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
-      pdfPathCm, computeDedxBiasDiagnostics);
+      pdfPathCm, computeDedxBiasDiagnostics, scanStepFineCm, lowPMomentumRefineGeV);
 
   if (debugInfo && std::isfinite(static_cast<double>(fit.logLikelihood))) {
     debugInfo->extensionChi2Ndf = static_cast<Float_t>(fit.logLikelihood);
@@ -1117,6 +1125,12 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       const bool jointEnable = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumEnable") &&
                                ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMomentumEnable") == 1;
 
+      vertex->Daughter1MomentumTLE = -999.0f;
+      vertex->Daughter2MomentumTLE = -999.0f;
+      vertex->Daughter1MomentumMCS = -999.0f;
+      vertex->Daughter2MomentumMCS = -999.0f;
+      vertex->Daughter1MomentumJoint = -999.0f;
+      vertex->Daughter2MomentumJoint = -999.0f;
       bool jointApplied = false;
       if (jointEnable) {
         const double scanLmaxCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanLmaxCm")
@@ -1148,6 +1162,14 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
         const double pdfPathCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
                                      ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
                                      : 0.65;
+        const double scanStepFineCm =
+            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepFineCm")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepFineCm")
+                : 0.;
+        const double lowPMomentumRefineGeV =
+            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
+                : 0.2;
 
         const double pMinGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
                                    ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
@@ -1174,6 +1196,30 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
             ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumRefineFactor")
                 ? ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMomentumRefineFactor")
                 : 2;
+        const bool useMCS =
+            !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSEnable") ||
+            ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSEnable") != 0;
+        const double mcsWeight =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSWeight")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSWeight")
+                : 1.0;
+        pdJointK0sPionMomentum::MCSLikelihoodConfig mcsCfg;
+        mcsCfg.radiationLengthCm =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
+                : 14.0;
+        mcsCfg.minSegmentLengthCm =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
+                : 0.5;
+        mcsCfg.theta0FloorRad =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
+                : 1e-6;
+        mcsCfg.maxAbsDeltaThetaRad =
+            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
+                : -1.0;
         constexpr double kK0sMassGeV = 0.497611;
         const double sigmaMassGeV = sigmaMassMeV * 1e-3;
         const double sigmaMassMinGeV = sigmaMassMinMeV * 1e-3;
@@ -1188,10 +1234,45 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
         std::vector<double> p1v, logL1, p2v, logL2;
         if (pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
                 daughter1, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
-                pdfPathCm, p1v, logL1) &&
+                pdfPathCm, p1v, logL1, scanStepFineCm, lowPMomentumRefineGeV) &&
             pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
                 daughter2, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
-                pdfPathCm, p2v, logL2)) {
+                pdfPathCm, p2v, logL2, scanStepFineCm, lowPMomentumRefineGeV)) {
+          auto argmaxMomentumFromCurve = [](const std::vector<double>& pAxis, const std::vector<double>& logL) -> double {
+            if (pAxis.empty() || pAxis.size() != logL.size()) return std::numeric_limits<double>::quiet_NaN();
+            size_t im = 0;
+            for (size_t i = 1; i < logL.size(); ++i) {
+              if (logL[i] > logL[im]) im = i;
+            }
+            return pAxis[im];
+          };
+
+          const double p1_tle = argmaxMomentumFromCurve(p1v, logL1);
+          const double p2_tle = argmaxMomentumFromCurve(p2v, logL2);
+          if (std::isfinite(p1_tle) && p1_tle > 0.) vertex->Daughter1MomentumTLE = static_cast<Float_t>(p1_tle);
+          if (std::isfinite(p2_tle) && p2_tle > 0.) vertex->Daughter2MomentumTLE = static_cast<Float_t>(p2_tle);
+
+          std::vector<double> logL1Joint = logL1;
+          std::vector<double> logL2Joint = logL2;
+          if (useMCS) {
+            std::vector<double> logLMcs1;
+            std::vector<double> logLMcs2;
+            const bool okMcs1 =
+                pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*daughter1, p1v, mcsCfg, logLMcs1);
+            const bool okMcs2 =
+                pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*daughter2, p2v, mcsCfg, logLMcs2);
+            if (okMcs1 && okMcs2 && logLMcs1.size() == logL1Joint.size() && logLMcs2.size() == logL2Joint.size()) {
+              const double p1_mcs = argmaxMomentumFromCurve(p1v, logLMcs1);
+              const double p2_mcs = argmaxMomentumFromCurve(p2v, logLMcs2);
+              if (std::isfinite(p1_mcs) && p1_mcs > 0.) vertex->Daughter1MomentumMCS = static_cast<Float_t>(p1_mcs);
+              if (std::isfinite(p2_mcs) && p2_mcs > 0.) vertex->Daughter2MomentumMCS = static_cast<Float_t>(p2_mcs);
+              if (std::isfinite(mcsWeight) && mcsWeight > 0.) {
+                for (size_t i = 0; i < logL1Joint.size(); ++i) logL1Joint[i] += mcsWeight * logLMcs1[i];
+                for (size_t i = 0; i < logL2Joint.size(); ++i) logL2Joint[i] += mcsWeight * logLMcs2[i];
+              }
+            }
+          }
+
           TVector3 dirP1, dirP2, dirFit1, dirFit2;
           DaughterPandoraAndFitDirs(vertex, trackFitLength, trackFitDistanceFromStart, dirP1, dirP2, dirFit1, dirFit2);
 
@@ -1214,12 +1295,14 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
           vertex->JointK0sSigmaMEventGeV = static_cast<Float_t>(sigma_m_for_grid);
 
           const JointK0sPionMomentumGridResult jr = pdJointK0sPionMomentum::FitJointMomentaOnGrid(
-              p1v, logL1, p2v, logL2, dirFit1, dirFit2, pMinGeV, pMaxGeV, pStepGeV, kK0sMassGeV, sigma_m_for_grid,
+              p1v, logL1Joint, p2v, logL2Joint, dirFit1, dirFit2, pMinGeV, pMaxGeV, pStepGeV, kK0sMassGeV, sigma_m_for_grid,
               penaltyScale, refineFactor);
           if (jr.ok && std::isfinite(static_cast<double>(jr.p1)) && std::isfinite(static_cast<double>(jr.p2)) &&
               jr.p1 > 0.f && jr.p2 > 0.f) {
             daughter1->Momentum = jr.p1;
             daughter2->Momentum = jr.p2;
+            vertex->Daughter1MomentumJoint = jr.p1;
+            vertex->Daughter2MomentumJoint = jr.p2;
             jointApplied = true;
             vertex->JointK0sMomentumUsed = 1;
             vertex->JointK0sBestScore = jr.bestScore;

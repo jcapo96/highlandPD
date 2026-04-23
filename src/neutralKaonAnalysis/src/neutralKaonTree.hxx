@@ -33,16 +33,27 @@ namespace neutralKaonTree {
   // Enum with unique indexes for output tree variables
   enum enumNeutralKaonMicroTrees{
 
-    // Candidate info
+    // ------------------------------------------------------------------
+    // [Global candidate counters]
+    // ------------------------------------------------------------------
     nk0 = standardPDTree::enumStandardMicroTreesLast_standardPDTree+1,
     k0nvtxbeforefiltering, // Number of annihilation vertices before overlap filtering
     k0nvtxafterfiltering,  // Number of annihilation vertices after overlap filtering
+
+    // ------------------------------------------------------------------
+    // [Neutral K0 candidate: geometry and alignment]
+    // ------------------------------------------------------------------
     k0lengthpandora, // Neutral length from creation to annihilation Pandora position [cm]
     k0lengthfit, // Neutral length from creation to annihilation Fit position [cm]
     k0truelength, // True K0 length from true creation to true decay vertex [cm]
     k0truepdg, // True PDG of reconstructed neutral candidate
+    k0truegeneration, // True generation of reconstructed neutral candidate
     k0alignmentpandora, // Angle (rad): neutral axis vs vertex momentum (Pandora dirs)
     k0alignmentfit, // Angle (rad): neutral axis vs vertex momentum (fit dirs)
+
+    // ------------------------------------------------------------------
+    // [Neutral K0 candidate: alignment decomposition variants]
+    // ------------------------------------------------------------------
     k0al_alltrue, // Alignment with all true quantities
     k0al_allreco, // Alignment with all reco quantities (fit reco geometry/directions)
     k0al_cvreco, // Alignment with reco creation only (all else true)
@@ -61,7 +72,10 @@ namespace neutralKaonTree {
     k0al_allreco_avtrue, // Alignment with all reco except annihilation vertex true
     k0al_allreco_d1true, // Alignment with all reco except daughter1 momentum true
     k0al_allreco_d2true, // Alignment with all reco except daughter2 momentum true
-    // K0 kinematics: true K0 positions, momentum, direction
+
+    // ------------------------------------------------------------------
+    // [Neutral K0 true kinematics]
+    // ------------------------------------------------------------------
     k0truecreationx, // True K0 start position x [cm]
     k0truecreationy, // True K0 start position y [cm]
     k0truecreationz, // True K0 start position z [cm]
@@ -73,6 +87,10 @@ namespace neutralKaonTree {
     k0truedirectionx, // True K0 direction (normalized) x component
     k0truedirectiony, // True K0 direction (normalized) y component
     k0truedirectionz, // True K0 direction (normalized) z component
+
+    // ------------------------------------------------------------------
+    // [Neutral K0 reco creation geometry]
+    // ------------------------------------------------------------------
     // Reco K0 creation position: Pandora variant (raw parent end)
     k0creationpandorax, // Reco K0 creation Pandora x from raw parent end [cm]
     k0creationpandoray, // Reco K0 creation Pandora y from raw parent end [cm]
@@ -82,6 +100,10 @@ namespace neutralKaonTree {
     k0creationfity, // Reco K0 creation Fit y from projected parent end [cm]
     k0creationfitz, // Reco K0 creation Fit z from projected parent end [cm]
     k0creationdegeneracy, // K0 creation-vertex degeneracy count from geometric support algorithm
+
+    // ------------------------------------------------------------------
+    // [Neutral K0 reco directions and truth-matching]
+    // ------------------------------------------------------------------
     // Reco K0 direction: Pandora variant
     k0directionpandorax, // Reco K0 direction Pandora (normalized) x component
     k0directionpandoray, // Reco K0 direction Pandora (normalized) y component
@@ -115,13 +137,20 @@ namespace neutralKaonTree {
     k0vtxdau2directionfitz, // Reco daughter 2 Fit direction z component
     k0vtxdau1directionfittruecos, // Cos(angle) between reco Fit and true direction for daughter 1
     k0vtxdau2directionfittruecos, // Cos(angle) between reco Fit and true direction for daughter 2
-    // Parent-level variables (parent of reconstructed neutral candidate)
+
+    // ------------------------------------------------------------------
+    // [Parent particle of reconstructed neutral candidate]
+    // ------------------------------------------------------------------
     k0partruepdg, // True PDG of neutral parent
     k0partrueendmom, // True end momentum of neutral parent [GeV/c]
     k0partruelength, // True track length of neutral parent [cm]
     k0parrecolength, // Reco track length of neutral parent [cm]
     k0parndau, // Reco number of daughters of neutral parent
     k0parisbeam, // 1 if reco parent has isPandora==true (beam), 0 otherwise
+
+    // ------------------------------------------------------------------
+    // [Creation-vertex second-particle and residual diagnostics]
+    // ------------------------------------------------------------------
     // Creation-vertex residuals: reco - true (true creation from true K0 start when available)
     k0cvtxpandoraresidual, // |creation Pandora(raw parent end) - true creation| [cm]
     k0cvtxfitresidual, // |creation Fit(projected parent end) - true creation| [cm]
@@ -138,7 +167,10 @@ namespace neutralKaonTree {
     k0protontruelength, // True track length of creation-vertex second particle [cm]
     k0protonrecolength, // Reco track length of creation-vertex second particle [cm]
     k0hasproton, // 1 if a valid creation-vertex second particle is assigned, 0 otherwise
-    // Active microtree variables (vertex-only set)
+
+    // ------------------------------------------------------------------
+    // [Annihilation vertex: geometry and residuals]
+    // ------------------------------------------------------------------
     k0vtxtruepos, //K0 vertex true position
     k0vtxoriginaldistance, //K0 vertex original distance
     k0vtxtrueoriginaldistance, //K0 vertex true original distance
@@ -159,6 +191,10 @@ namespace neutralKaonTree {
     k0vtxfitresidualx, //Fit x_reco - x_true [cm]
     k0vtxfitresidualy, //Fit y_reco - y_true [cm]
     k0vtxfitresidualz, //Fit z_reco - z_true [cm]
+
+    // ------------------------------------------------------------------
+    // [Annihilation vertex: aggregate kinematics and opening angles]
+    // ------------------------------------------------------------------
     k0vtxmomentum, //|p1 + p2| using daughter pion momenta [GeV/c]
     k0vtxinvariantmass, //Invariant mass from daughter pion hypothesis [GeV/c^2]
     k0vtxmomentumpandora, //|p1 + p2| using Pandora daughter directions [GeV/c]
@@ -167,9 +203,26 @@ namespace neutralKaonTree {
     k0vtxmomentumfit, //|p1 + p2| using fit daughter directions [GeV/c]
     k0vtxinvariantmassfit, //Invariant mass with fit directions [GeV/c^2]
     k0vtxopeninganglefit, // Opening angle between daughter directions using fit dirs [rad]
+
+    // ------------------------------------------------------------------
+    // [Annihilation vertex: method-split resultant momentum and invariant mass]
+    // ------------------------------------------------------------------
     k0vtxresultantmomentumreco, // Reco resultant momentum magnitude at vertex [GeV/c]
     k0vtxresultantmomentumtrue, // True resultant momentum magnitude at vertex [GeV/c]
     k0vtxresultantmomentumcos, // Cosine of angle between reco and true resultant daughter momentum vectors
+    k0vtxresultantmomentumtle, // Resultant daughter momentum magnitude from TLE-only momenta [GeV/c]
+    k0vtxresultantmomentummcs, // Resultant daughter momentum magnitude from MCS-only momenta [GeV/c]
+    k0vtxresultantmomentumjoint, // Resultant daughter momentum magnitude from joint-fit momenta [GeV/c]
+    k0vtxresultantmomentumcostle, // Cosine between TLE-only resultant momentum and true resultant momentum
+    k0vtxresultantmomentumcosmcs, // Cosine between MCS-only resultant momentum and true resultant momentum
+    k0vtxresultantmomentumcosjoint, // Cosine between joint-fit resultant momentum and true resultant momentum
+    k0vtxinvariantmasstle, // Invariant mass from TLE-only daughter momenta [GeV/c^2]
+    k0vtxinvariantmassmcs, // Invariant mass from MCS-only daughter momenta [GeV/c^2]
+    k0vtxinvariantmassjoint, // Invariant mass from joint-fit daughter momenta [GeV/c^2]
+
+    // ------------------------------------------------------------------
+    // [Annihilation vertex: joint-fit control and diagnostics]
+    // ------------------------------------------------------------------
     k0vtxjointk0smomused, // 1 if joint K0s grid momentum was applied for this vertex (else 0)
     k0vtxjointsigmap1, // Event σ(p1) from TLE log L curvature at marginal best p1 [GeV/c] (-999 if unset)
     k0vtxjointsigmap2, // Event σ(p2) [GeV/c]
@@ -179,9 +232,19 @@ namespace neutralKaonTree {
     k0vtxjointrconstraint, // Post-fit mass-vs-TLE dominance ratio R (−999 unset)
     k0vtxjointdeltachidedx, // Post-fit TLE template χ²(joint)−χ²(marginal); else χ²(joint) if baseline missing
     k0vtxjointdebugclass, // Post-fit debug: 0 unset; 1 data-driven; 2 constraint-dominated; 3 calorimetric tension
+
+    // ------------------------------------------------------------------
+    // [Vertex daughter tracks: reco method outputs and fit-quality diagnostics]
+    // ------------------------------------------------------------------
     // Daughter-level variables (filled in FillNeutralKaonVariables_K0vtxDaughters)
-    k0vtxdau1momentumreco, // Reco momentum magnitude of daughter 1 [GeV/c]
-    k0vtxdau2momentumreco, // Reco momentum magnitude of daughter 2 [GeV/c]
+    k0vtxdau1momentumreco, // Reco momentum magnitude of daughter 1 [GeV/c] (joint-fit result when joint fit is applied)
+    k0vtxdau2momentumreco, // Reco momentum magnitude of daughter 2 [GeV/c] (joint-fit result when joint fit is applied)
+    k0vtxdau1momentumtle, // Daughter 1 momentum from TLE-only likelihood argmax [GeV/c]
+    k0vtxdau2momentumtle, // Daughter 2 momentum from TLE-only likelihood argmax [GeV/c]
+    k0vtxdau1momentummcs, // Daughter 1 momentum from MCS-only likelihood argmax [GeV/c]
+    k0vtxdau2momentummcs, // Daughter 2 momentum from MCS-only likelihood argmax [GeV/c]
+    k0vtxdau1momentumjoint, // Daughter 1 momentum from joint fit objective [GeV/c]
+    k0vtxdau2momentumjoint, // Daughter 2 momentum from joint fit objective [GeV/c]
     k0vtxdau1mommethod, // Momentum assignment method enum for daughter 1
     k0vtxdau2mommethod, // Momentum assignment method enum for daughter 2
     k0vtxdau1extchi2ndf, // Free-range fit log-likelihood used by momentum assignment for daughter 1
@@ -192,6 +255,10 @@ namespace neutralKaonTree {
     k0vtxdau2dedxsigma, // Sigma of dEdx bias Gaussian fit for daughter 2 [MeV/cm]
     k0vtxdau1dedxfitok, // 1 if Gaussian dEdx bias fit succeeded for daughter 1, 0 otherwise
     k0vtxdau2dedxfitok, // 1 if Gaussian dEdx bias fit succeeded for daughter 2, 0 otherwise
+
+    // ------------------------------------------------------------------
+    // [Vertex daughter tracks: true and reco geometry / ancestry / PID]
+    // ------------------------------------------------------------------
     k0vtxdau1momentumtrue, // True momentum magnitude of daughter 1 [GeV/c]
     k0vtxdau2momentumtrue, // True momentum magnitude of daughter 2 [GeV/c]
     k0vtxdau1trueendproc, // True end process enum for daughter 1
@@ -235,6 +302,7 @@ namespace neutralKaonTree {
     k0vtxdau1recovisiblee, // Visible calo energy [GeV] in reco daughter subtree of vertex pion 1 (coll. plane)
     k0vtxdau2recovisiblee, // Visible calo energy [GeV] in reco daughter subtree of vertex pion 2 (coll. plane)
     k0vtxdaughtersrecovisiblee, // Sum visible calo energy [GeV] in reco daughter subtrees of both vertex pions (coll. plane)
+    k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };
 }

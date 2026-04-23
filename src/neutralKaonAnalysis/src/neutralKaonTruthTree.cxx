@@ -2,6 +2,20 @@
 
 //********************************************************************
 void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, UInt_t nmax){
+    AddVarMaxSizeVI(output, isk0decay, "1 if true K0 ends by decay process", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0ntruedaughters, "Number of direct true daughters of the K0", ntruek0, nmax);
+    AddVarMaxSizeVI(output, isk0charged, "1 if true K0 decays exactly to pi+ pi-", ntruek0, nmax);
+    AddVarMaxSizeVI(output, isk0neutral, "1 if true K0 decays exactly to pi0 pi0", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0pi01twogamma, "1 if K0 daughter1 pi0 decays exactly to 2 gammas", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0pi02twogamma, "1 if K0 daughter2 pi0 decays exactly to 2 gammas", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1gamma1hasrecoobject,
+                    "1 if daughter1(pi0)->gamma1 has valid Pandora reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau1gamma2hasrecoobject,
+                    "1 if daughter1(pi0)->gamma2 has valid Pandora reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2gamma1hasrecoobject,
+                    "1 if daughter2(pi0)->gamma1 has valid Pandora reco object", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0dau2gamma2hasrecoobject,
+                    "1 if daughter2(pi0)->gamma2 has valid Pandora reco object", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0parhasrecoobject, "K0 true parent has valid reco object", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau1hasrecoobject, "K0 true daughter1 has valid reco object", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau2hasrecoobject, "K0 true daughter2 has valid reco object", ntruek0, nmax);
@@ -146,6 +160,16 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
                                                          Float_t daughter2TrueEnergy,
                                                          Float_t daughter1TrueSubRecoEnergySum,
                                                          Float_t daughter2TrueSubRecoEnergySum,
+                                                         Int_t isK0Decay,
+                                                         Int_t k0NTrueDaughters,
+                                                         Int_t isK0Charged,
+                                                         Int_t isK0Neutral,
+                                                         Int_t k0Pi01TwoGamma,
+                                                         Int_t k0Pi02TwoGamma,
+                                                         Int_t k0Dau1Gamma1HasRecoObject,
+                                                         Int_t k0Dau1Gamma2HasRecoObject,
+                                                         Int_t k0Dau2Gamma1HasRecoObject,
+                                                         Int_t k0Dau2Gamma2HasRecoObject,
                                                          Int_t k0TruePdg,
                                                          Int_t parentTruePdg,
                                                          Int_t daughter1TruePdg,
@@ -171,6 +195,16 @@ void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
                                                          Int_t daughter2RecoZStartGreaterThanEnd,
                                                          Int_t parentIsPandoraBeam,
                                                          Int_t parentExactlyOneRecoProtonNearK0Creation){
+    output.FillVectorVar(isk0decay, isK0Decay);
+    output.FillVectorVar(k0ntruedaughters, k0NTrueDaughters);
+    output.FillVectorVar(isk0charged, isK0Charged);
+    output.FillVectorVar(isk0neutral, isK0Neutral);
+    output.FillVectorVar(k0pi01twogamma, k0Pi01TwoGamma);
+    output.FillVectorVar(k0pi02twogamma, k0Pi02TwoGamma);
+    output.FillVectorVar(k0dau1gamma1hasrecoobject, k0Dau1Gamma1HasRecoObject);
+    output.FillVectorVar(k0dau1gamma2hasrecoobject, k0Dau1Gamma2HasRecoObject);
+    output.FillVectorVar(k0dau2gamma1hasrecoobject, k0Dau2Gamma1HasRecoObject);
+    output.FillVectorVar(k0dau2gamma2hasrecoobject, k0Dau2Gamma2HasRecoObject);
     output.FillVectorVar(k0parhasrecoobject, parentHasRecoObject ? 1 : 0);
     output.FillVectorVar(k0dau1hasrecoobject, daughter1HasRecoObject ? 1 : 0);
     output.FillVectorVar(k0dau2hasrecoobject, daughter2HasRecoObject ? 1 : 0);
