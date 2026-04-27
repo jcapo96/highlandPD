@@ -411,17 +411,18 @@ bool pdEventDisplay::ReadEventData(TTree* tree, Int_t run, Int_t subrun, Int_t e
     tree->SetBranchAddress("ED_k0_creationVtxRadius", _k0_creationVtxRadius);
     tree->SetBranchAddress("ED_k0_annihilationVtxRadius", _k0_annihilationVtxRadius);
 
-    // Read the current entry
-    tree->GetEntry(tree->GetReadEntry());
-
-    std::cout << "Read event data: " << _nParticles << " particles, "
-              << _totalHits << " hits, " << _nK0Candidates << " K0 candidates" << std::endl;
-
     // Read analysis-specific data
     if (!ReadAnalysisData(tree)) {
         std::cerr << "Failed to read analysis-specific data" << std::endl;
         return false;
     }
+
+    // Reload the current entry after analysis-specific branch addresses are set.
+    // Otherwise, derived-class arrays (e.g., trajectory points) keep default values.
+    tree->GetEntry(tree->GetReadEntry());
+
+    std::cout << "Read event data: " << _nParticles << " particles, "
+              << _totalHits << " hits, " << _nK0Candidates << " K0 candidates" << std::endl;
 
     return true;
 }

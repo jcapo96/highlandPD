@@ -129,12 +129,12 @@ protected:
   Double_t        reco_beam_calo_endX;
   Double_t        reco_beam_calo_endY;
   Double_t        reco_beam_calo_endZ;
-  Double_t        reco_beam_calo_startDirX;
-  Double_t        reco_beam_calo_startDirY;
-  Double_t        reco_beam_calo_startDirZ;
-  Double_t        reco_beam_calo_endDirX;
-  Double_t        reco_beam_calo_endDirY;
-  Double_t        reco_beam_calo_endDirZ;
+  vector<double>  *reco_beam_calo_startDirX;
+  vector<double>  *reco_beam_calo_startDirY;
+  vector<double>  *reco_beam_calo_startDirZ;
+  vector<double>  *reco_beam_calo_endDirX;
+  vector<double>  *reco_beam_calo_endDirY;
+  vector<double>  *reco_beam_calo_endDirZ;
   Double_t        reco_beam_vertex_michel_score;
   Int_t           reco_beam_vertex_nHits;
   vector<double>  *reco_beam_dQdX_SCE;
@@ -151,6 +151,9 @@ protected:
   vector<double>  *reco_beam_calo_wire;
   vector<double>  *reco_beam_calo_wire_z;
   vector<double>  *reco_beam_calo_tick;
+  vector<double>  *reco_beam_calo_X;
+  vector<double>  *reco_beam_calo_Y;
+  vector<double>  *reco_beam_calo_Z;
   vector<int>     *reco_beam_calo_TPC;
   Bool_t          reco_beam_passes_beam_cuts;
   Double_t        reco_beam_Chi2_proton;
@@ -285,6 +288,9 @@ protected:
   vector<double>          *reco_daughter_allTrack_endX;
   vector<double>          *reco_daughter_allTrack_endY;
   vector<double>          *reco_daughter_allTrack_endZ;
+  vector<vector<double> > *reco_daughter_allTrack_calo_X;
+  vector<vector<double> > *reco_daughter_allTrack_calo_Y;
+  vector<vector<double> > *reco_daughter_allTrack_calo_Z;
   vector<double>          *reco_daughter_allTrack_vertex_michel_score;
   vector<int>             *reco_daughter_allTrack_vertex_nHits;
   vector<vector<double> > *reco_daughter_allTrack_dQdX_SCE;
@@ -353,7 +359,7 @@ protected:
   Int_t           beam_inst_nFibersP3;
   Int_t           beam_inst_nMomenta;
   Int_t           beam_inst_nTracks;
-  Int_t           beam_inst_valid;
+  Bool_t          beam_inst_valid;
  
   // List of branches
   TBranch *b_run; //!
@@ -456,6 +462,9 @@ protected:
   TBranch *b_reco_beam_calo_wire; //!
   TBranch *b_reco_beam_calo_wire_z; //!
   TBranch *b_reco_beam_calo_tick; //!
+  TBranch *b_reco_beam_calo_X; //!
+  TBranch *b_reco_beam_calo_Y; //!
+  TBranch *b_reco_beam_calo_Z; //!
   TBranch *b_reco_beam_calo_TPC; //!
   TBranch *b_reco_beam_passes_beam_cuts; //!
   TBranch *b_reco_beam_Chi2_proton; //!
@@ -587,6 +596,9 @@ protected:
   TBranch *b_reco_daughter_allTrack_endX; //!
   TBranch *b_reco_daughter_allTrack_endY; //!
   TBranch *b_reco_daughter_allTrack_endZ; //!
+  TBranch *b_reco_daughter_allTrack_calo_X; //!
+  TBranch *b_reco_daughter_allTrack_calo_Y; //!
+  TBranch *b_reco_daughter_allTrack_calo_Z; //!
   TBranch *b_reco_daughter_allTrack_vertex_michel_score; //!
   TBranch *b_reco_daughter_allTrack_vertex_nHits; //!
   TBranch *b_reco_daughter_allTrack_dQdX_SCE; //!

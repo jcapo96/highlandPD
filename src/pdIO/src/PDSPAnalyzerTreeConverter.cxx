@@ -3,6 +3,11 @@
 #include "Parameters.hxx"
 #include "pdAnalysisUtils.hxx"
 
+namespace {
+  inline bool IsFiniteRecoPoint(double x, double y, double z) {
+    return (x > -900. && y > -900. && z > -900.);
+  }
+}
 
 
 //********************************************************************
@@ -239,10 +244,24 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
   part->DirectionEnd[0] = reco_beam_trackDirX;
   part->DirectionEnd[1] = reco_beam_trackDirY;
   part->DirectionEnd[2] = reco_beam_trackDirZ;
-  
-  part->DirectionStart[0] = reco_beam_trackDirX; 
+
+  part->DirectionStart[0] = reco_beam_trackDirX;
   part->DirectionStart[1] = reco_beam_trackDirY;
   part->DirectionStart[2] = reco_beam_trackDirZ;
+  if (reco_beam_calo_startDirX && !reco_beam_calo_startDirX->empty() &&
+      reco_beam_calo_startDirY && !reco_beam_calo_startDirY->empty() &&
+      reco_beam_calo_startDirZ && !reco_beam_calo_startDirZ->empty()) {
+    part->DirectionStart[0] = reco_beam_calo_startDirX->front();
+    part->DirectionStart[1] = reco_beam_calo_startDirY->front();
+    part->DirectionStart[2] = reco_beam_calo_startDirZ->front();
+  }
+  if (reco_beam_calo_endDirX && !reco_beam_calo_endDirX->empty() &&
+      reco_beam_calo_endDirY && !reco_beam_calo_endDirY->empty() &&
+      reco_beam_calo_endDirZ && !reco_beam_calo_endDirZ->empty()) {
+    part->DirectionEnd[0] = reco_beam_calo_endDirX->back();
+    part->DirectionEnd[1] = reco_beam_calo_endDirY->back();
+    part->DirectionEnd[2] = reco_beam_calo_endDirZ->back();
+  }
     
   part->Length     = reco_beam_len;
   part->Length_alt = reco_beam_alt_len;
@@ -274,6 +293,21 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
       part->Hits[plane].push_back(hit);
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_beam_calibrated_dEdX_SCE));
+  }
+
+  if (reco_beam_calo_X && reco_beam_calo_Y && reco_beam_calo_Z) {
+    const size_t nTrj = std::min(reco_beam_calo_X->size(),
+                         std::min(reco_beam_calo_Y->size(), reco_beam_calo_Z->size()));
+    for (size_t i = 0; i < nTrj; ++i) {
+      const double x = (*reco_beam_calo_X)[i];
+      const double y = (*reco_beam_calo_Y)[i];
+      const double z = (*reco_beam_calo_Z)[i];
+      if (!IsFiniteRecoPoint(x, y, z)) continue;
+      AnaTrajectoryPointPD trj;
+      trj.Position.SetXYZ(x, y, z);
+      trj.Position_NoSCE.SetXYZ(x, y, z);
+      part->TrjPoints.push_back(trj);
+    }
   }
 
   // --------- reco_beam_PFP ------------------------
@@ -437,6 +471,23 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
       part->Hits[plane].push_back(hit);
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk]);
+  }
+
+  if (reco_daughter_allTrack_calo_X && reco_daughter_allTrack_calo_Y && reco_daughter_allTrack_calo_Z &&
+      itrk < (Int_t)reco_daughter_allTrack_calo_X->size() &&
+      itrk < (Int_t)reco_daughter_allTrack_calo_Y->size() &&
+      itrk < (Int_t)reco_daughter_allTrack_calo_Z->size()) {
+    const std::vector<double>& trjX = (*reco_daughter_allTrack_calo_X)[itrk];
+    const std::vector<double>& trjY = (*reco_daughter_allTrack_calo_Y)[itrk];
+    const std::vector<double>& trjZ = (*reco_daughter_allTrack_calo_Z)[itrk];
+    const size_t nTrj = std::min(trjX.size(), std::min(trjY.size(), trjZ.size()));
+    for (size_t i = 0; i < nTrj; ++i) {
+      if (!IsFiniteRecoPoint(trjX[i], trjY[i], trjZ[i])) continue;
+      AnaTrajectoryPointPD trj;
+      trj.Position.SetXYZ(trjX[i], trjY[i], trjZ[i]);
+      trj.Position_NoSCE.SetXYZ(trjX[i], trjY[i], trjZ[i]);
+      part->TrjPoints.push_back(trj);
+    }
   }
 
   std::pair<double,int> result = pdAnaUtils::Chi2PID(*part,13);
@@ -642,6 +693,9 @@ void PDSPAnalyzerTreeConverter::InitializeVariables(){
   reco_beam_calo_wire = 0;
   reco_beam_calo_wire_z = 0;
   reco_beam_calo_tick = 0;
+  reco_beam_calo_X = 0;
+  reco_beam_calo_Y = 0;
+  reco_beam_calo_Z = 0;
   reco_beam_calo_TPC = 0;
   reco_beam_passes_beam_cuts = 0;
   reco_beam_Chi2_proton = 0;
@@ -773,6 +827,9 @@ void PDSPAnalyzerTreeConverter::InitializeVariables(){
   reco_daughter_allTrack_endX = 0;
   reco_daughter_allTrack_endY = 0;
   reco_daughter_allTrack_endZ = 0;
+  reco_daughter_allTrack_calo_X = 0;
+  reco_daughter_allTrack_calo_Y = 0;
+  reco_daughter_allTrack_calo_Z = 0;
   reco_daughter_allTrack_vertex_michel_score = 0;
   reco_daughter_allTrack_vertex_nHits = 0;
   reco_daughter_allTrack_dQdX_SCE = 0;
@@ -839,7 +896,7 @@ void PDSPAnalyzerTreeConverter::InitializeVariables(){
   beam_inst_nFibersP2 = 0;
   beam_inst_nFibersP3 = 0;
   beam_inst_nMomenta = 0;
-  beam_inst_valid = 0;                                                                
+  beam_inst_valid = false;
 }
 
 //*****************************************************************************
@@ -946,6 +1003,9 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("reco_beam_calo_wire",&reco_beam_calo_wire,&b_reco_beam_calo_wire);
   fChain->SetBranchAddress("reco_beam_calo_wire_z",&reco_beam_calo_wire_z,&b_reco_beam_calo_wire_z);
   fChain->SetBranchAddress("reco_beam_calo_tick",&reco_beam_calo_tick,&b_reco_beam_calo_tick);
+  fChain->SetBranchAddress("reco_beam_calo_X",&reco_beam_calo_X,&b_reco_beam_calo_X);
+  fChain->SetBranchAddress("reco_beam_calo_Y",&reco_beam_calo_Y,&b_reco_beam_calo_Y);
+  fChain->SetBranchAddress("reco_beam_calo_Z",&reco_beam_calo_Z,&b_reco_beam_calo_Z);
   fChain->SetBranchAddress("reco_beam_calo_TPC",&reco_beam_calo_TPC,&b_reco_beam_calo_TPC);
   fChain->SetBranchAddress("reco_beam_passes_beam_cuts",&reco_beam_passes_beam_cuts,&b_reco_beam_passes_beam_cuts);
   fChain->SetBranchAddress("reco_beam_Chi2_proton",&reco_beam_Chi2_proton,&b_reco_beam_Chi2_proton);
@@ -1077,6 +1137,9 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("reco_daughter_allTrack_endX",&reco_daughter_allTrack_endX,&b_reco_daughter_allTrack_endX);
   fChain->SetBranchAddress("reco_daughter_allTrack_endY",&reco_daughter_allTrack_endY,&b_reco_daughter_allTrack_endY);
   fChain->SetBranchAddress("reco_daughter_allTrack_endZ",&reco_daughter_allTrack_endZ,&b_reco_daughter_allTrack_endZ);
+  fChain->SetBranchAddress("reco_daughter_allTrack_calo_X",&reco_daughter_allTrack_calo_X,&b_reco_daughter_allTrack_calo_X);
+  fChain->SetBranchAddress("reco_daughter_allTrack_calo_Y",&reco_daughter_allTrack_calo_Y,&b_reco_daughter_allTrack_calo_Y);
+  fChain->SetBranchAddress("reco_daughter_allTrack_calo_Z",&reco_daughter_allTrack_calo_Z,&b_reco_daughter_allTrack_calo_Z);
   fChain->SetBranchAddress("reco_daughter_allTrack_vertex_michel_score",&reco_daughter_allTrack_vertex_michel_score,&b_reco_daughter_allTrack_vertex_michel_score);
   fChain->SetBranchAddress("reco_daughter_allTrack_vertex_nHits",&reco_daughter_allTrack_vertex_nHits,&b_reco_daughter_allTrack_vertex_nHits);
   fChain->SetBranchAddress("reco_daughter_allTrack_dQdX_SCE",&reco_daughter_allTrack_dQdX_SCE,&b_reco_daughter_allTrack_dQdX_SCE);

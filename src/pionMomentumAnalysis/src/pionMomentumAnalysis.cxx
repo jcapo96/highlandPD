@@ -48,7 +48,7 @@ bool pionMomentumAnalysis::Initialize() {
   _CreateEventDisplay = ND::params().GetParameterI("pionMomentumAnalysis.CreateEventDisplay");
 
   if (_CreateEventDisplay && !_EventDisplay) {
-    _EventDisplay = new pdEventDisplay();
+    _EventDisplay = new pionMomentumEventDisplay();
   }
 
   return true;
