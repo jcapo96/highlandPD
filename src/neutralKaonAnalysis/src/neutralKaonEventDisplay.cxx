@@ -767,14 +767,6 @@ neutralKaonEventDisplay::neutralKaonEventDisplay() : pdEventDisplay() {
         }
     }
 
-    for (Int_t i = 0; i < kMaxAllTrueParticles; ++i) {
-        _allTrueParticle_PDG[i] = 0;
-        _allTrueParticle_processEnd[i] = -1;
-        for (Int_t j = 0; j < 3; ++j) {
-            _allTrueParticle_startPos[i][j] = -999;
-            _allTrueParticle_endPos[i][j] = -999;
-        }
-    }
 }
 
 void neutralKaonEventDisplay::EnsureSelectionHooks() {
@@ -1126,12 +1118,6 @@ void neutralKaonEventDisplay::AddAnalysisVariables(OutputManager& output, Int_t 
     output.AddMatrixVar(tree_index, edtrueK0_siblingEndPos, "ED_trueK0_siblingEndPos", "F", "Standalone true K0 siblings end positions", ednTrueK0, "ED_nTrueK0", -kMaxTrueK0, kMaxTrueSiblings*3);
     output.AddMatrixVar(tree_index, edtrueK0_siblingPDG, "ED_trueK0_siblingPDG", "I", "Standalone true K0 siblings PDG codes", ednTrueK0, "ED_nTrueK0", -kMaxTrueK0, kMaxTrueSiblings);
 
-    output.AddVar(tree_index, ednAllTrueParticles, "ED_nAllTrueParticles", "I", "Number of all true particles");
-    output.AddMatrixVar(tree_index, edallTrueParticle_startPos, "ED_allTrueParticle_startPos", "F", "All true particle start positions", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles, 3);
-    output.AddMatrixVar(tree_index, edallTrueParticle_endPos, "ED_allTrueParticle_endPos", "F", "All true particle end positions", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles, 3);
-    output.AddVectorVar(tree_index, edallTrueParticle_PDG, "ED_allTrueParticle_PDG", "I", "All true particle PDG codes", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles);
-    output.AddVectorVar(tree_index, edallTrueParticle_processEnd, "ED_allTrueParticle_processEnd", "I", "All true particle end process enums", ednAllTrueParticles, "ED_nAllTrueParticles", -kMaxAllTrueParticles);
-
     std::cout << "neutralKaonEventDisplay::AddAnalysisVariables() - K0 variables added" << std::endl;
 }
 
@@ -1147,37 +1133,6 @@ void neutralKaonEventDisplay::FillAnalysisData(OutputManager& output, const AnaE
         AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
         if (!truePart) continue;
         trueParticleByID[truePart->ID] = truePart;
-    }
-
-    Int_t allTrueParticlesStored = 0;
-    for (Int_t i = 0; i < event.nTrueParticles && allTrueParticlesStored < kMaxAllTrueParticles; ++i) {
-        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
-        if (!truePart) continue;
-
-        Float_t startPos[3] = {
-            static_cast<Float_t>(truePart->Position[0]),
-            static_cast<Float_t>(truePart->Position[1]),
-            static_cast<Float_t>(truePart->Position[2])
-        };
-        Float_t endPos[3] = {
-            static_cast<Float_t>(truePart->PositionEnd[0]),
-            static_cast<Float_t>(truePart->PositionEnd[1]),
-            static_cast<Float_t>(truePart->PositionEnd[2])
-        };
-
-        output.FillMatrixVarFromArray(edallTrueParticle_startPos, startPos, 3);
-        output.FillMatrixVarFromArray(edallTrueParticle_endPos, endPos, 3);
-        output.FillVectorVar(edallTrueParticle_PDG, truePart->PDG);
-        output.FillVectorVar(edallTrueParticle_processEnd, static_cast<Int_t>(truePart->ProcessEnd));
-        output.IncrementCounter(ednAllTrueParticles);
-
-        _allTrueParticle_PDG[allTrueParticlesStored] = truePart->PDG;
-        _allTrueParticle_processEnd[allTrueParticlesStored] = static_cast<Int_t>(truePart->ProcessEnd);
-        for (Int_t c = 0; c < 3; ++c) {
-            _allTrueParticle_startPos[allTrueParticlesStored][c] = startPos[c];
-            _allTrueParticle_endPos[allTrueParticlesStored][c] = endPos[c];
-        }
-        ++allTrueParticlesStored;
     }
 
     auto fillTrueRelations = [&](const AnaTrueParticlePD* trueK0,
@@ -2565,12 +2520,6 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
     tree->SetBranchAddress("ED_trueK0_siblingEndPos", _trueK0_siblingEndPos);
     tree->SetBranchAddress("ED_trueK0_siblingPDG", _trueK0_siblingPDG);
 
-    tree->SetBranchAddress("ED_nAllTrueParticles", &_nAllTrueParticles);
-    tree->SetBranchAddress("ED_allTrueParticle_startPos", _allTrueParticle_startPos);
-    tree->SetBranchAddress("ED_allTrueParticle_endPos", _allTrueParticle_endPos);
-    tree->SetBranchAddress("ED_allTrueParticle_PDG", _allTrueParticle_PDG);
-    tree->SetBranchAddress("ED_allTrueParticle_processEnd", _allTrueParticle_processEnd);
-
     // Load only analysis branches for the already-selected entry.
     // This avoids a full second TTree::GetEntry() pass while still refreshing
     // K0 display payload after branch addresses are bound.
@@ -2633,9 +2582,7 @@ bool neutralKaonEventDisplay::ReadAnalysisData(TTree* tree) {
             "ED_trueK0_nDaughters", "ED_trueK0_daughterStartPos",
             "ED_trueK0_daughterEndPos", "ED_trueK0_daughterPDG",
             "ED_trueK0_nSiblings", "ED_trueK0_siblingStartPos",
-            "ED_trueK0_siblingEndPos", "ED_trueK0_siblingPDG",
-            "ED_nAllTrueParticles", "ED_allTrueParticle_startPos", "ED_allTrueParticle_endPos",
-            "ED_allTrueParticle_PDG", "ED_allTrueParticle_processEnd"
+            "ED_trueK0_siblingEndPos", "ED_trueK0_siblingPDG"
         };
         for (const char* bname : analysisBranches) {
             if (TBranch* br = tree->GetBranch(bname)) {
@@ -2657,7 +2604,6 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
 
     // Draw K0 candidates
     TEveElementList* neutralParticlesGroup = PrepareGroup(scene, "Neutral Particles");
-    TEveElementList* trueParticlesGroup = PrepareGroup(scene, "True Particles");
 
     auto addElement = [&](TEveElementList* group, TEveElement* element) {
         AppendElementToGroup(scene, group, element);
@@ -2734,10 +2680,6 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
             new TEveElementList(Form("Neutral UID=%d TruePDG=%d Signal=%d", i, _k0_truePDG[i], _k0_signalCode[i]));
         addElement(neutralParticlesGroup, neutralParticleGroup);
 
-        TEveElementList* trueParticleGroup =
-            new TEveElementList(Form("True UID=%d PDG=%d", i, _k0_truePDG[i]));
-        addElement(trueParticlesGroup, trueParticleGroup);
-
         TEveElementList* recoTrajectoryGroup = makeSubgroup(neutralParticleGroup, "Neutral Trajectory");
         TEveElementList* creationVertexGroup =
             makeSubgroup(neutralParticleGroup, Form("Creation Vertex [deg=%d]", _k0_creationVtxDeg[i]));
@@ -2768,11 +2710,11 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         TEveElementList* momentumArrowGroup = makeSubgroup(neutralParticleGroup, "Momentum And Directions");
         TEveElementList* creationFitGroup = creationParentParticleGroup;
 
-        TEveElementList* truthGroup = trueParticleGroup;
-        TEveElementList* truthParentGroup = trueParticleGroup;
-        TEveElementList* truthDaughterGroup = trueParticleGroup;
-        TEveElementList* truthSiblingGroup = trueParticleGroup;
-        TEveElementList* annotationGroup = trueParticleGroup;
+        TEveElementList* truthGroup = makeSubgroup(neutralParticleGroup, "Truth");
+        TEveElementList* truthParentGroup = truthGroup;
+        TEveElementList* truthDaughterGroup = truthGroup;
+        TEveElementList* truthSiblingGroup = truthGroup;
+        TEveElementList* annotationGroup = truthGroup;
 
         if (_k0_creationVtxPos[i][0] > -900 && _k0_annihilationVtxFitPos[i][0] > -900) {
             Int_t recoColor = kGray + 1;
@@ -4115,55 +4057,6 @@ void neutralKaonEventDisplay::DrawAnalysisContent3D(TEveScene* scene) {
         std::cout << "Drew " << _nK0Candidates << " K0 candidates in 3D" << std::endl;
     }
 
-    // Draw all true particle trajectories
-    for (Int_t i = 0; i < _nAllTrueParticles && i < kMaxAllTrueParticles; ++i) {
-        if (_allTrueParticle_startPos[i][0] <= -900 || _allTrueParticle_endPos[i][0] <= -900) continue;
-
-        TEveElementList* trueParticleGroup =
-            new TEveElementList(Form("True UID=%d PDG=%d", i, _allTrueParticle_PDG[i]));
-        addElement(trueParticlesGroup, trueParticleGroup);
-
-        Int_t trueColor = GetParticleColor(_allTrueParticle_PDG[i]);
-        if (trueColor == kBlack) trueColor = kGray + 1;
-
-        TEveLine* trueLine = new TEveLine(Form("True Particle #%d", i));
-        trueLine->SetPoint(0, _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
-        trueLine->SetPoint(1, _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
-        trueLine->SetMainColor(trueColor);
-        trueLine->SetLineWidth(2);
-        trueLine->SetLineStyle(1);
-        addElement(trueParticleGroup, trueLine);
-
-        TEvePointSet* trueStart = new TEvePointSet(Form("True Particle #%d Start", i));
-        trueStart->SetNextPoint(_allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
-        trueStart->SetMarkerStyle(29);
-        trueStart->SetMarkerSize(1.8);
-        trueStart->SetMainColor(trueColor);
-        addElement(trueParticleGroup, trueStart);
-
-        TEvePointSet* trueEnd = new TEvePointSet(Form("True Particle #%d End", i));
-        trueEnd->SetNextPoint(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
-        trueEnd->SetMarkerStyle(29);
-        trueEnd->SetMarkerSize(1.8);
-        trueEnd->SetMainColor(trueColor);
-        addElement(trueParticleGroup, trueEnd);
-
-        std::string procLabel = ProcessEnumToString(_allTrueParticle_processEnd[i]);
-        std::string labelText;
-        if (!procLabel.empty()) {
-            labelText = Form("%s, PDG=%d", procLabel.c_str(), _allTrueParticle_PDG[i]);
-        } else {
-            labelText = Form("PDG=%d", _allTrueParticle_PDG[i]);
-        }
-        if (!labelText.empty()) {
-            TEveText* procText = new TEveText(labelText.c_str());
-            procText->SetMainColor(trueColor);
-            procText->SetFontSize(14);
-            TEveTrans& procTrans = procText->RefMainTrans();
-            procTrans.SetPos(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
-            addElement(trueParticleGroup, procText);
-        }
-    }
 }
 
 //********************************************************************
@@ -4183,7 +4076,6 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
 
     const Bool_t showCreationVertices = kFALSE;
     const Bool_t showAnnihilationVertices = IsGroupVisible("Neutral Particles");
-    const Bool_t showStandaloneTruth = IsGroupVisible("True Particles");
     const Bool_t showMomentumArrows = IsGroupVisible("Neutral Particles");
 
     for (Int_t i = 0; i < _nK0Candidates && i < kMaxK0 && false; i++) {
@@ -5223,59 +5115,5 @@ void neutralKaonEventDisplay::DrawAnalysisContentCanvas2D(TCanvas* canvas, const
         std::cout << "Drew " << _nK0Candidates << " K0 candidates on " << projection_type << " canvas" << std::endl;
     }
 
-    // Draw all true particle trajectories on 2D canvas
-    for (Int_t i = 0; i < _nAllTrueParticles && i < kMaxAllTrueParticles; ++i) {
-        if (_allTrueParticle_startPos[i][0] <= -900 || _allTrueParticle_endPos[i][0] <= -900) continue;
-
-        Float_t x1 = 0.f, y1 = 0.f, x2 = 0.f, y2 = 0.f;
-
-        if (projection_type == "XY") {
-            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][1];
-            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][1];
-        } else if (projection_type == "XZ") {
-            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][2];
-            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][2];
-        } else if (projection_type == "YZ") {
-            x1 = _allTrueParticle_startPos[i][1]; y1 = _allTrueParticle_startPos[i][2];
-            x2 = _allTrueParticle_endPos[i][1];   y2 = _allTrueParticle_endPos[i][2];
-        } else {
-            continue;
-        }
-
-        Int_t trueColor = GetParticleColor(_allTrueParticle_PDG[i]);
-        if (trueColor == kBlack) trueColor = kGray + 1;
-
-        if (showStandaloneTruth) {
-            TLine* trueLine = new TLine(x1, y1, x2, y2);
-            trueLine->SetLineColor(trueColor);
-            trueLine->SetLineStyle(1);
-            trueLine->SetLineWidth(3);
-            trueLine->Draw("SAME");
-
-            TMarker* trueStartMarker = new TMarker(x1, y1, 29);
-            trueStartMarker->SetMarkerColor(trueColor);
-            trueStartMarker->SetMarkerSize(2.0);
-            trueStartMarker->Draw("SAME");
-
-            TMarker* trueEndMarker = new TMarker(x2, y2, 29);
-            trueEndMarker->SetMarkerColor(trueColor);
-            trueEndMarker->SetMarkerSize(2.0);
-            trueEndMarker->Draw("SAME");
-
-            std::string procLabel = ProcessEnumToString(_allTrueParticle_processEnd[i]);
-            std::string standaloneLabel;
-            if (!procLabel.empty()) {
-                standaloneLabel = Form("%s (PDG=%d)", procLabel.c_str(), _allTrueParticle_PDG[i]);
-            } else {
-                standaloneLabel = Form("PDG=%d", _allTrueParticle_PDG[i]);
-            }
-            if (!standaloneLabel.empty()) {
-                TLatex* procLatex = new TLatex(x2, y2, Form("#scale[0.6]{%s}", standaloneLabel.c_str()));
-                procLatex->SetTextColor(trueColor);
-                procLatex->SetTextSize(0.03);
-                procLatex->Draw("SAME");
-            }
-        }
-    }
 }
 

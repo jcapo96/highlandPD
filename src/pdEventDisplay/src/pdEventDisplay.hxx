@@ -113,6 +113,7 @@ protected:
     Int_t _totalHits;
     Int_t _nK0Candidates;
     Int_t _hasTrueK0;
+    Int_t _nAllTrueParticles;
 
     // Particle data arrays
     static const Int_t kMaxParticles = 200;
@@ -144,6 +145,13 @@ protected:
     Float_t _k0_creationVtxRadius[kMaxK0];
     Float_t _k0_annihilationVtxRadius[kMaxK0];
 
+    // All true particles in the event
+    static const Int_t kMaxAllTrueParticles = 256;
+    Float_t _allTrueParticle_startPos[kMaxAllTrueParticles][3];
+    Float_t _allTrueParticle_endPos[kMaxAllTrueParticles][3];
+    Int_t _allTrueParticle_PDG[kMaxAllTrueParticles];
+    Int_t _allTrueParticle_processEnd[kMaxAllTrueParticles];
+
     // Variable indices for EventDisplayData tree
     // Start after EventDisplayBase variables
     enum enumEventDisplayVar {
@@ -151,6 +159,11 @@ protected:
         edsubrun,
         edevent,
         edhasTrueK0,
+        ednAllTrueParticles,
+        edallTrueParticle_startPos,
+        edallTrueParticle_endPos,
+        edallTrueParticle_PDG,
+        edallTrueParticle_processEnd,
 
         // Particle data
         ednParticles,

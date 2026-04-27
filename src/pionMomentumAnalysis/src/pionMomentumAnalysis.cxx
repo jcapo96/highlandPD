@@ -5,6 +5,7 @@
 #include "BasicUtils.hxx"
 
 #include "HighlandMiniTreeConverter.hxx"
+#include "PDSPAnalyzerTreeConverter.hxx"
 #include "ParticlePositionSCECorrection.hxx"
 #include "SCEGeometricVariation.hxx"
 #include "pdJointK0sPionMomentum.hxx"
@@ -19,11 +20,17 @@ pionMomentumAnalysis::pionMomentumAnalysis(AnalysisAlgorithm* ana) : pdBaseAnaly
   _MCSMinSegmentLengthCm = 0.5;
   _MCStheta0FloorRad = 1e-6;
   _MCSMaxAbsDeltaThetaRad = -1.0;
+  _CreateEventDisplay = false;
+  _EventDisplay = nullptr;
 }
 
 //********************************************************************
 pionMomentumAnalysis::~pionMomentumAnalysis() {
 //********************************************************************
+  if (_EventDisplay) {
+    delete _EventDisplay;
+    _EventDisplay = nullptr;
+  }
 }
 
 //********************************************************************
@@ -38,6 +45,11 @@ bool pionMomentumAnalysis::Initialize() {
   _MCSMinSegmentLengthCm = ND::params().GetParameterD("pionMomentumAnalysis.MCSMinSegmentLengthCm");
   _MCStheta0FloorRad = ND::params().GetParameterD("pionMomentumAnalysis.MCStheta0FloorRad");
   _MCSMaxAbsDeltaThetaRad = ND::params().GetParameterD("pionMomentumAnalysis.MCSMaxAbsDeltaThetaRad");
+  _CreateEventDisplay = ND::params().GetParameterI("pionMomentumAnalysis.CreateEventDisplay");
+
+  if (_CreateEventDisplay && !_EventDisplay) {
+    _EventDisplay = new pdEventDisplay();
+  }
 
   return true;
 }
@@ -51,6 +63,7 @@ void pionMomentumAnalysis::Finalize() {
 void pionMomentumAnalysis::DefineInputConverters() {
 //********************************************************************
   input().AddConverter("minitreefiltered", new HighlandMiniTreeConverter("MiniTree"));
+  input().AddConverter("PDSPAnalyzerTree", new PDSPAnalyzerTreeConverter());
 }
 
 //********************************************************************
@@ -86,6 +99,10 @@ void pionMomentumAnalysis::DefineMicroTrees(bool addBase) {
 //********************************************************************
   if (addBase) baseAnalysis::DefineMicroTrees(addBase);
   pionMomentumTree::AddPionMomentumVariables_BeamParticleReco(output());
+
+  if (_CreateEventDisplay && _EventDisplay) {
+    _EventDisplay->InitializeTree(output());
+  }
 }
 
 //********************************************************************
@@ -136,6 +153,10 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
   if (beam && beam->BeamParticle) beampart = static_cast<AnaParticlePD*>(beam->BeamParticle);
   pionMomentumTree::FillPionMomentumVariables_BeamParticleReco(output(), box().MainTrack, beampart,
                                                                mainthetascatter, mainsegmentlength);
+
+  if (_CreateEventDisplay && _EventDisplay) {
+    _EventDisplay->FillTree(output(), GetEvent(), nullptr);
+  }
 }
 
 //********************************************************************

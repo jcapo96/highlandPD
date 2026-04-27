@@ -8,6 +8,7 @@
 #include <TEveScene.h>
 #include <TEveGeoShape.h>
 #include <TEveElement.h>
+#include <TEveText.h>
 #include <TEveTrans.h>
 #include <TGeoManager.h>
 #include <TGeoVolume.h>
@@ -50,6 +51,12 @@ Float_t HitSizeForBin(Int_t bin) {
         default: return 2.15f;
     }
 }
+
+std::string ProcessEnumToString(Int_t process) {
+    if (process < 0) return "";
+    static AnaTrueParticlePD dummy;
+    return dummy.ConvertProcess(static_cast<AnaTrueParticleB::ProcessEnum>(process));
+}
 }
 
 //********************************************************************
@@ -71,6 +78,7 @@ pdEventDisplay::pdEventDisplay() : EventDisplayBase() {
     _totalHits = 0;
     _nK0Candidates = 0;
     _hasTrueK0 = false;
+    _nAllTrueParticles = 0;
 }
 
 //********************************************************************
@@ -163,6 +171,21 @@ void pdEventDisplay::AddExperimentVariables(OutputManager& output) {
     output.AddVectorVar(tree_index, edhit_Z, "ED_hit_Z", "F", "Hit Z positions", edtotalHits, "ED_totalHits", -kMaxHits);
     output.AddVectorVar(tree_index, edhit_dEdx, "ED_hit_dEdx", "F", "Hit dEdx values", edtotalHits, "ED_totalHits", -kMaxHits);
 
+    // All true particles in the event
+    output.AddVar(tree_index, ednAllTrueParticles, "ED_nAllTrueParticles", "I", "Number of all true particles");
+    output.AddMatrixVar(tree_index, edallTrueParticle_startPos, "ED_allTrueParticle_startPos", "F",
+                        "All true particle start positions", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles, 3);
+    output.AddMatrixVar(tree_index, edallTrueParticle_endPos, "ED_allTrueParticle_endPos", "F",
+                        "All true particle end positions", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles, 3);
+    output.AddVectorVar(tree_index, edallTrueParticle_PDG, "ED_allTrueParticle_PDG", "I",
+                        "All true particle PDG codes", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles);
+    output.AddVectorVar(tree_index, edallTrueParticle_processEnd, "ED_allTrueParticle_processEnd", "I",
+                        "All true particle end process enums", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles);
+
     // Call analysis-specific variable addition (e.g., K0 variables in neutralKaonEventDisplay)
     AddAnalysisVariables(output, tree_index);
 
@@ -192,6 +215,28 @@ void pdEventDisplay::FillExperimentData(OutputManager& output, const AnaEventB& 
 
     // Fill particle data
     Int_t hitIndex = 0;
+
+    for (Int_t i = 0; i < event.nTrueParticles && i < kMaxAllTrueParticles; ++i) {
+        AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
+        if (!truePart) continue;
+
+        Float_t startPos[3] = {
+            static_cast<Float_t>(truePart->Position[0]),
+            static_cast<Float_t>(truePart->Position[1]),
+            static_cast<Float_t>(truePart->Position[2])
+        };
+        Float_t endPos[3] = {
+            static_cast<Float_t>(truePart->PositionEnd[0]),
+            static_cast<Float_t>(truePart->PositionEnd[1]),
+            static_cast<Float_t>(truePart->PositionEnd[2])
+        };
+
+        output.FillMatrixVarFromArray(edallTrueParticle_startPos, startPos, 3);
+        output.FillMatrixVarFromArray(edallTrueParticle_endPos, endPos, 3);
+        output.FillVectorVar(edallTrueParticle_PDG, truePart->PDG);
+        output.FillVectorVar(edallTrueParticle_processEnd, static_cast<Int_t>(truePart->ProcessEnd));
+        output.IncrementCounter(ednAllTrueParticles);
+    }
 
     for (int i = 0; i < event.nParticles && i < kMaxParticles; i++) {
         AnaParticlePD* particle = static_cast<AnaParticlePD*>(event.Particles[i]);
@@ -336,6 +381,7 @@ bool pdEventDisplay::ReadEventData(TTree* tree, Int_t run, Int_t subrun, Int_t e
     tree->SetBranchAddress("ED_nParticles", &_nParticles);
     tree->SetBranchAddress("ED_totalHits", &_totalHits);
     tree->SetBranchAddress("ED_nK0Candidates", &_nK0Candidates);
+    tree->SetBranchAddress("ED_nAllTrueParticles", &_nAllTrueParticles);
 
     tree->SetBranchAddress("ED_particle_uniqueID", _particle_uniqueID);
     tree->SetBranchAddress("ED_particle_PDG", _particle_PDG);
@@ -350,6 +396,10 @@ bool pdEventDisplay::ReadEventData(TTree* tree, Int_t run, Int_t subrun, Int_t e
     tree->SetBranchAddress("ED_hit_Y", _hit_Y);
     tree->SetBranchAddress("ED_hit_Z", _hit_Z);
     tree->SetBranchAddress("ED_hit_dEdx", _hit_dEdx);
+    tree->SetBranchAddress("ED_allTrueParticle_startPos", _allTrueParticle_startPos);
+    tree->SetBranchAddress("ED_allTrueParticle_endPos", _allTrueParticle_endPos);
+    tree->SetBranchAddress("ED_allTrueParticle_PDG", _allTrueParticle_PDG);
+    tree->SetBranchAddress("ED_allTrueParticle_processEnd", _allTrueParticle_processEnd);
 
     tree->SetBranchAddress("ED_k0_creationVtxPos", _k0_creationVtxPos);
     tree->SetBranchAddress("ED_k0_annihilationVtxPos", _k0_annihilationVtxPos);
@@ -538,6 +588,61 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
         }
     }
 
+    TEveElementList* trueParticlesGroup = new TEveElementList("True Particles");
+    scene->AddElement(trueParticlesGroup);
+    for (Int_t i = 0; i < _nAllTrueParticles && i < kMaxAllTrueParticles; ++i) {
+        if (_allTrueParticle_startPos[i][0] <= -900 || _allTrueParticle_endPos[i][0] <= -900) continue;
+
+        TEveElementList* trueParticleGroup =
+            new TEveElementList(Form("True UID=%d PDG=%d", i, _allTrueParticle_PDG[i]));
+        trueParticlesGroup->AddElement(trueParticleGroup);
+
+        Int_t trueColor = GetParticleColor(_allTrueParticle_PDG[i]);
+        if (trueColor == kBlack) trueColor = kGray + 1;
+
+        TEveLine* trueLine = new TEveLine(Form("True Particle #%d", i));
+        trueLine->SetPoint(0, _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
+        trueLine->SetPoint(1, _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        trueLine->SetMainColor(trueColor);
+        trueLine->SetLineWidth(2);
+        trueParticleGroup->AddElement(trueLine);
+        RegisterMeasurementAnchor(trueLine,
+                                  _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
+        RegisterMeasurementAnchor(trueLine,
+                                  _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+
+        TEvePointSet* trueStart = new TEvePointSet(Form("True Particle #%d Start", i));
+        trueStart->SetNextPoint(_allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
+        trueStart->SetMarkerStyle(29);
+        trueStart->SetMarkerSize(1.8);
+        trueStart->SetMainColor(trueColor);
+        trueParticleGroup->AddElement(trueStart);
+        RegisterMeasurementAnchor(trueStart,
+                                  _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
+
+        TEvePointSet* trueEnd = new TEvePointSet(Form("True Particle #%d End", i));
+        trueEnd->SetNextPoint(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        trueEnd->SetMarkerStyle(29);
+        trueEnd->SetMarkerSize(1.8);
+        trueEnd->SetMainColor(trueColor);
+        trueParticleGroup->AddElement(trueEnd);
+        RegisterMeasurementAnchor(trueEnd,
+                                  _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+
+        std::string procLabel = ProcessEnumToString(_allTrueParticle_processEnd[i]);
+        std::string labelText;
+        if (!procLabel.empty()) {
+            labelText = Form("%s, PDG=%d", procLabel.c_str(), _allTrueParticle_PDG[i]);
+        } else {
+            labelText = Form("PDG=%d", _allTrueParticle_PDG[i]);
+        }
+        TEveText* procText = new TEveText(labelText.c_str());
+        procText->SetMainColor(trueColor);
+        procText->SetFontSize(14);
+        procText->RefMainTrans().SetPos(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        trueParticleGroup->AddElement(procText);
+    }
+
     std::cout << "3D particles drawn" << std::endl;
 
     // Draw analysis-specific content
@@ -700,6 +805,43 @@ void pdEventDisplay::DrawParticlesCanvas2D(TCanvas* canvas, const std::string& p
                 sm->Draw("SAME");
             }
         }
+    }
+
+    for (Int_t i = 0; i < _nAllTrueParticles && i < kMaxAllTrueParticles; ++i) {
+        if (_allTrueParticle_startPos[i][0] <= -900 || _allTrueParticle_endPos[i][0] <= -900) continue;
+
+        Float_t x1 = 0.f, y1 = 0.f, x2 = 0.f, y2 = 0.f;
+        if (projection_type == "XY") {
+            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][1];
+            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][1];
+        } else if (projection_type == "XZ") {
+            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][2];
+            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][2];
+        } else if (projection_type == "YZ") {
+            x1 = _allTrueParticle_startPos[i][1]; y1 = _allTrueParticle_startPos[i][2];
+            x2 = _allTrueParticle_endPos[i][1];   y2 = _allTrueParticle_endPos[i][2];
+        } else {
+            continue;
+        }
+
+        Int_t trueColor = GetParticleColor(_allTrueParticle_PDG[i]);
+        if (trueColor == kBlack) trueColor = kGray + 1;
+
+        TLine* trueLine = new TLine(x1, y1, x2, y2);
+        trueLine->SetLineColor(trueColor);
+        trueLine->SetLineStyle(1);
+        trueLine->SetLineWidth(3);
+        trueLine->Draw("SAME");
+
+        TMarker* trueStartMarker = new TMarker(x1, y1, 29);
+        trueStartMarker->SetMarkerColor(trueColor);
+        trueStartMarker->SetMarkerSize(2.0);
+        trueStartMarker->Draw("SAME");
+
+        TMarker* trueEndMarker = new TMarker(x2, y2, 29);
+        trueEndMarker->SetMarkerColor(trueColor);
+        trueEndMarker->SetMarkerSize(2.0);
+        trueEndMarker->Draw("SAME");
     }
 
     TLegend* legend = new TLegend(0.85, 0.7, 0.98, 0.95);

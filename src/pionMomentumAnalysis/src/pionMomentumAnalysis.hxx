@@ -2,6 +2,7 @@
 #define pionMomentumAnalysis_h
 
 #include "pdBaseAnalysis.hxx"
+#include "pdEventDisplay.hxx"
 #include "standardPDTree.hxx"
 #include "ToyBoxPD.hxx"
 
@@ -44,6 +45,8 @@ class pionMomentumAnalysis : public pdBaseAnalysis {
   double _MCSMinSegmentLengthCm;
   double _MCStheta0FloorRad;
   double _MCSMaxAbsDeltaThetaRad;
+  bool _CreateEventDisplay;
+  pdEventDisplay* _EventDisplay;
 
  public:
   enum enumSyst_pionMomentumAnalysis {

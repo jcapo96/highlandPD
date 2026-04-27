@@ -9,6 +9,11 @@
 --- Systematics ------------
  < pionMomentumAnalysis.ApplySCESystematic = 0 >
 
+--- Event Display ------------
+# Save EventDisplayData tree using base pdEventDisplay (ProtoDUNE-SP geometry).
+# 1 = enable, 0 = disable.
+ < pionMomentumAnalysis.CreateEventDisplay = 1 >
+
 --- Main-track MCS sampling ------------
  < pionMomentumAnalysis.MCSRadiationLengthCm = 14.0 >
  < pionMomentumAnalysis.MCSMinSegmentLengthCm = 0.0001 >

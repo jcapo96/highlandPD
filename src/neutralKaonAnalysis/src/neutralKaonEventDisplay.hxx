@@ -54,7 +54,6 @@ private:
     // K0 candidate data (read from tree during visualization)
     static constexpr Int_t kMaxK0 = 10;
     static constexpr Int_t kMaxTrueK0 = 20;
-    static constexpr Int_t kMaxAllTrueParticles = 256;
     static constexpr Int_t kMaxTrueDaughters = 8;
     static constexpr Int_t kMaxTrueSiblings = 8;
     Int_t _nK0Candidates;
@@ -194,13 +193,6 @@ private:
     Float_t _trueK0_siblingEndPos[kMaxTrueK0][kMaxTrueSiblings*3];
     Int_t _trueK0_siblingPDG[kMaxTrueK0][kMaxTrueSiblings];
 
-    // All true particles in the event
-    Int_t _nAllTrueParticles;
-    Float_t _allTrueParticle_startPos[kMaxAllTrueParticles][3];
-    Float_t _allTrueParticle_endPos[kMaxAllTrueParticles][3];
-    Int_t _allTrueParticle_PDG[kMaxAllTrueParticles];
-    Int_t _allTrueParticle_processEnd[kMaxAllTrueParticles];
-
     // Variable indices for OutputManager (extend pdEventDisplay enum)
     enum enumNK0EventDisplayVars {
         ednK0Candidates = pdEventDisplay::edmaxvars,
@@ -329,11 +321,6 @@ private:
         edtrueK0_siblingStartPos,
         edtrueK0_siblingEndPos,
         edtrueK0_siblingPDG,
-        ednAllTrueParticles,
-        edallTrueParticle_startPos,
-        edallTrueParticle_endPos,
-        edallTrueParticle_PDG,
-        edallTrueParticle_processEnd,
         nk0maxvars
     };
 
