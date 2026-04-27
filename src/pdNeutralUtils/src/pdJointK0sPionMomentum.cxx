@@ -176,138 +176,81 @@ bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikeliho
   xOverX0.clear();
   if (rrMidCm) rrMidCm->clear();
 
-  std::vector<TVector3> orderedPoints;
-  std::vector<double> orderedRR;
-  {
-    struct HitPoint {
-      double rr = 0.0;
-      TVector3 pos;
-    };
-    std::vector<HitPoint> hitPoints;
-    int bestPlane = -1;
-    size_t bestCount = 0u;
-    for (int ipl = 0; ipl < 3; ++ipl) {
-      size_t nValid = 0u;
-      for (const auto& h : track.Hits[ipl]) {
-        if (!HasValidXYZ(h.Position)) continue;
-        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < 0.f) continue;
-        ++nValid;
-      }
-      if (nValid > bestCount) {
-        bestCount = nValid;
-        bestPlane = ipl;
-      }
-    }
-    if (bestPlane >= 0 && bestCount >= 3u) {
-      hitPoints.reserve(bestCount);
-      for (const auto& h : track.Hits[bestPlane]) {
-        if (!HasValidXYZ(h.Position)) continue;
-        if (!std::isfinite(static_cast<double>(h.ResidualRange)) || h.ResidualRange < 0.f) continue;
-        HitPoint hp;
-        hp.rr = static_cast<double>(h.ResidualRange);
-        hp.pos = h.Position;
-        hitPoints.push_back(hp);
-      }
-      std::stable_sort(hitPoints.begin(), hitPoints.end(),
-                       [](const HitPoint& a, const HitPoint& b) { return a.rr > b.rr; });
-      orderedPoints.reserve(hitPoints.size());
-      orderedRR.reserve(hitPoints.size());
-      for (const auto& hp : hitPoints) {
-        orderedPoints.push_back(hp.pos);
-        orderedRR.push_back(hp.rr);
-      }
-    }
-  }
+  struct Segment {
+    TVector3 start;
+    TVector3 end;
+    TVector3 direction;
+    double arcLengthCm = 0.0;
+    double rrMidCm = 0.0;
+  };
 
-  if (orderedPoints.size() < 3u) {
-    orderedPoints.clear();
-    orderedRR.clear();
-    orderedPoints.reserve(track.TrjPoints.size());
-    for (const auto& tp : track.TrjPoints) {
-      if (!HasValidXYZ(tp.Position)) continue;
-      orderedPoints.push_back(tp.Position);
-    }
-    if (orderedPoints.size() >= 2u) {
-      std::vector<double> s(orderedPoints.size(), 0.0);
-      for (size_t i = 1; i < orderedPoints.size(); ++i) {
-        const double dl = (orderedPoints[i] - orderedPoints[i - 1]).Mag();
-        s[i] = s[i - 1] + ((std::isfinite(dl) && dl > 0.0) ? dl : 0.0);
-      }
-      const double totalLen = s.back();
-      orderedRR.resize(orderedPoints.size(), 0.0);
-      for (size_t i = 0; i < orderedPoints.size(); ++i) orderedRR[i] = std::max(0.0, totalLen - s[i]);
-    }
+  std::vector<TVector3> orderedPoints;
+  orderedPoints.reserve(track.TrjPoints.size());
+  for (const auto& tp : track.TrjPoints) {
+    if (!HasValidXYZ(tp.Position)) continue;
+    orderedPoints.push_back(tp.Position);
   }
-  if (orderedPoints.size() < 3u || orderedRR.size() != orderedPoints.size()) return false;
+  if (orderedPoints.size() < 3u) return false;
+
+  std::vector<double> arcLen(orderedPoints.size(), 0.0);
+  for (size_t i = 1; i < orderedPoints.size(); ++i) {
+    const double dl = (orderedPoints[i] - orderedPoints[i - 1]).Mag();
+    if (!std::isfinite(dl) || dl <= 0.0) continue;
+    arcLen[i] = arcLen[i - 1] + dl;
+  }
+  const double totalLen = arcLen.back();
+  if (!std::isfinite(totalLen) || totalLen <= 0.0) return false;
+
+  std::vector<double> orderedRR(orderedPoints.size(), 0.0);
+  for (size_t i = 0; i < orderedPoints.size(); ++i) orderedRR[i] = std::max(0.0, totalLen - arcLen[i]);
 
   const double x0 = (std::isfinite(cfg.radiationLengthCm) && cfg.radiationLengthCm > 1e-9) ? cfg.radiationLengthCm : 14.0;
   const double minSeg = (std::isfinite(cfg.minSegmentLengthCm) && cfg.minSegmentLengthCm > 0.0) ? cfg.minSegmentLengthCm : 0.5;
+  const double targetSeg =
+      (std::isfinite(cfg.targetSegmentLengthCm) && cfg.targetSegmentLengthCm > 0.0) ? cfg.targetSegmentLengthCm : 10.0;
   const double maxAbsTheta =
       (std::isfinite(cfg.maxAbsDeltaThetaRad) && cfg.maxAbsDeltaThetaRad > 0.0) ? cfg.maxAbsDeltaThetaRad : -1.0;
 
-  for (size_t i = 0; i + 2 < orderedPoints.size(); ++i) {
-    const TVector3 d1 = orderedPoints[i + 1] - orderedPoints[i];
-    const TVector3 d2 = orderedPoints[i + 2] - orderedPoints[i + 1];
-    const double l1 = d1.Mag();
-    const double l2 = d2.Mag();
-    if (!std::isfinite(l1) || !std::isfinite(l2) || l1 <= 1e-9 || l2 <= 1e-9) continue;
-    const double seg = 0.5 * (l1 + l2);
+  std::vector<Segment> segments;
+  segments.reserve(orderedPoints.size() / 2u);
+  size_t segStart = 0u;
+  double accum = 0.0;
+  for (size_t i = 1; i < orderedPoints.size(); ++i) {
+    const double dl = (orderedPoints[i] - orderedPoints[i - 1]).Mag();
+    if (std::isfinite(dl) && dl > 0.0) accum += dl;
+    if (accum < targetSeg && i + 1 < orderedPoints.size()) continue;
+
+    const TVector3 disp = orderedPoints[i] - orderedPoints[segStart];
+    const double chord = disp.Mag();
+    if (std::isfinite(chord) && chord > 1e-9 && std::isfinite(accum) && accum >= minSeg) {
+      Segment seg;
+      seg.start = orderedPoints[segStart];
+      seg.end = orderedPoints[i];
+      seg.direction = disp.Unit();
+      seg.arcLengthCm = accum;
+      seg.rrMidCm = 0.5 * (orderedRR[segStart] + orderedRR[i]);
+      segments.push_back(seg);
+    }
+    segStart = i;
+    accum = 0.0;
+  }
+
+  if (segments.size() < 2u) return false;
+
+  for (size_t i = 0; i + 1 < segments.size(); ++i) {
+    const double seg = 0.5 * (segments[i].arcLengthCm + segments[i + 1].arcLengthCm);
     if (!std::isfinite(seg) || seg < minSeg) continue;
-    const double c = ClampCosine(d1.Unit().Dot(d2.Unit()));
+    const double c = ClampCosine(segments[i].direction.Dot(segments[i + 1].direction));
     double dTh = std::acos(c);
     if (!std::isfinite(dTh)) continue;
     if (maxAbsTheta > 0.0 && dTh > maxAbsTheta) dTh = maxAbsTheta;
     const double xov = seg / x0;
     if (!std::isfinite(xov) || xov <= 0.0) continue;
-    const double rr = orderedRR[i + 1];
+    const double rr = 0.5 * (segments[i].rrMidCm + segments[i + 1].rrMidCm);
     if (!std::isfinite(rr) || rr < 0.0) continue;
     deltaTheta.push_back(dTh);
     xOverX0.push_back(xov);
     if (rrMidCm) rrMidCm->push_back(rr);
-  }
-
-  // If hit-based ordering produced no usable triplets, retry with trajectory points.
-  // This handles inputs where hit positions are present but too degenerate for scattering segments.
-  if (deltaTheta.empty()) {
-    orderedPoints.clear();
-    orderedRR.clear();
-    orderedPoints.reserve(track.TrjPoints.size());
-    for (const auto& tp : track.TrjPoints) {
-      if (!HasValidXYZ(tp.Position)) continue;
-      orderedPoints.push_back(tp.Position);
-    }
-    if (orderedPoints.size() >= 2u) {
-      std::vector<double> s(orderedPoints.size(), 0.0);
-      for (size_t i = 1; i < orderedPoints.size(); ++i) {
-        const double dl = (orderedPoints[i] - orderedPoints[i - 1]).Mag();
-        s[i] = s[i - 1] + ((std::isfinite(dl) && dl > 0.0) ? dl : 0.0);
-      }
-      const double totalLen = s.back();
-      orderedRR.resize(orderedPoints.size(), 0.0);
-      for (size_t i = 0; i < orderedPoints.size(); ++i) orderedRR[i] = std::max(0.0, totalLen - s[i]);
-    }
-    if (orderedPoints.size() >= 3u && orderedRR.size() == orderedPoints.size()) {
-      for (size_t i = 0; i + 2 < orderedPoints.size(); ++i) {
-        const TVector3 d1 = orderedPoints[i + 1] - orderedPoints[i];
-        const TVector3 d2 = orderedPoints[i + 2] - orderedPoints[i + 1];
-        const double l1 = d1.Mag();
-        const double l2 = d2.Mag();
-        if (!std::isfinite(l1) || !std::isfinite(l2) || l1 <= 1e-9 || l2 <= 1e-9) continue;
-        const double seg = 0.5 * (l1 + l2);
-        if (!std::isfinite(seg) || seg < minSeg) continue;
-        const double c = ClampCosine(d1.Unit().Dot(d2.Unit()));
-        double dTh = std::acos(c);
-        if (!std::isfinite(dTh)) continue;
-        if (maxAbsTheta > 0.0 && dTh > maxAbsTheta) dTh = maxAbsTheta;
-        const double xov = seg / x0;
-        if (!std::isfinite(xov) || xov <= 0.0) continue;
-        const double rr = orderedRR[i + 1];
-        if (!std::isfinite(rr) || rr < 0.0) continue;
-        deltaTheta.push_back(dTh);
-        xOverX0.push_back(xov);
-        if (rrMidCm) rrMidCm->push_back(rr);
-      }
-    }
   }
 
   if (deltaTheta.empty() || deltaTheta.size() != xOverX0.size()) return false;

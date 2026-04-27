@@ -63,3 +63,5 @@
 - Centralice CalorimetryCalibration
 
 - Event selections do not work if you add splits before any cut. A first global cut is needed and then applying splits. Is this done on purpose? if not, it should be explained somewhere
+
+- Parameter loading isolation/noise: running `pionMomentumAnalysis` triggers lookups for other analysis namespaces (e.g. `neutralKaonAnalysis.*`) through shared code paths. Investigate and implement a cleaner parameter access strategy to avoid cross-analysis parameter probing and confusing startup logs.

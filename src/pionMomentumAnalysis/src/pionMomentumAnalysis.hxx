@@ -42,9 +42,27 @@ class pionMomentumAnalysis : public pdBaseAnalysis {
   bool _ApplySCECorrection;
   bool _ApplySCESystematic;
   double _MCSRadiationLengthCm;
+  double _MCSTargetSegmentLengthCm;
   double _MCSMinSegmentLengthCm;
   double _MCStheta0FloorRad;
   double _MCSMaxAbsDeltaThetaRad;
+  int _MCSDropFirstNSegments;
+  int _MCSDropLastNSegments;
+  int _TLEMinInteriorHits;
+  int _TLESkipHitsFirst;
+  int _TLESkipHitsLast;
+  double _TLEDedxMinMeVcm;
+  double _TLEDedxMaxMeVcm;
+  double _TLEScanLmaxCm;
+  double _TLEScanStepCm;
+  double _TLEScanStepFineCm;
+  double _TLELowPMomentumRefineGeV;
+  double _TLEDedxPdfPathCm;
+  bool _TLERequireTrueBeamPion;
+  bool _EnsureMomentumSignalOnly;
+  bool _EnableMomentumDiagnosticMultigraphs;
+  bool _FreeRangeComputeDedxBiasDiagnostics;
+  double _StoppingMaxTrueEndMomentumGeV;
   bool _CreateEventDisplay;
   pionMomentumEventDisplay* _EventDisplay;
 

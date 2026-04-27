@@ -11,10 +11,14 @@ void AddPionMomentumVariables_BeamParticleReco(OutputManager& output) {
   AddVarI(output, maintruepdg, "Main track true PDG");
   AddVarF(output, maintruestartmomentum, "Main track true start momentum [GeV/c]");
   AddVarF(output, maintrueendmomentum, "Main track true end momentum [GeV/c]");
+  AddVarF(output, maintruelength, "Main track true length [cm]");
   AddVarI(output, maintrueid, "Main track true ID");
   AddVarI(output, beamtrueid, "Beam particle true ID");
-  AddVarMaxSizeVF(output, mainmcsdeltatheta, "Main track MCS delta theta [rad]", mainmcsntriplets, nmaxmcs);
-  AddVarMaxSizeVF(output, mainmcssegmentlength, "Main track MCS mean segment length [cm]", mainmcsntriplets, nmaxmcs);
+  AddVarF(output, mainlength, "Main track reconstructed length [cm]");
+  AddVarMaxSizeVF(output, mainmcsdeltatheta, "Main track MCS delta theta [rad]", mainmcsnsegments, nmaxmcs);
+  AddVarMaxSizeVF(output, mainmcssegmentlength, "Main track MCS mean segment length [cm]", mainmcsnsegments, nmaxmcs);
+  AddVarF(output, mainmcsmomentum, "Main track MCS momentum estimate [GeV/c]");
+  AddVarF(output, maintlefitmomentum, "Main track TLEFit momentum estimate [GeV/c]");
   AddVarI(output, mainnhitscollection, "Main track number of collection-plane hits");
   AddVarI(output, mainntrjpoints, "Main track number of trajectory points");
   AddVarI(output, mainnvalidrrhits, "Main track number of collection hits with valid residual range");
@@ -25,13 +29,17 @@ void AddPionMomentumVariables_BeamParticleReco(OutputManager& output) {
 //********************************************************************
 void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* beampart,
                                                 const std::vector<double>& mainthetascatter,
-                                                const std::vector<double>& mainsegmentlength) {
+                                                const std::vector<double>& mainsegmentlength,
+                                                double mainmcsmomentumGeV,
+                                                double maintlefitmomentumGeV) {
 //********************************************************************
   const size_t nmaxmcs = 4096;
   Int_t isPandora = -999;
   Int_t truePdg = -999;
   Float_t pStartTrue = -999.f;
   Float_t pEndTrue = -999.f;
+  Float_t trueLength = -999.f;
+  Float_t recoLength = -999.f;
   Int_t trueIdBeamParticle = -999;
   Int_t trueIdMainTrack = -999;
   Int_t nHitsCollection = 0;
@@ -46,10 +54,12 @@ void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaPartic
       truePdg = tpart->PDG;
       pStartTrue = tpart->Momentum;
       pEndTrue = tpart->MomentumEnd;
+      trueLength = tpart->Length;
       trueIdMainTrack = tpart->ID;
     }
   }
   if (part) {
+    recoLength = part->Length;
     nHitsCollection = static_cast<Int_t>(part->Hits[2].size());
     nTrjPoints = static_cast<Int_t>(part->TrjPoints.size());
     for (size_t ihit = 0; ihit < part->Hits[2].size(); ++ihit) {
@@ -77,13 +87,18 @@ void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaPartic
   output.FillVar(maintruepdg, truePdg);
   output.FillVar(maintruestartmomentum, pStartTrue);
   output.FillVar(maintrueendmomentum, pEndTrue);
+  output.FillVar(maintruelength, trueLength);
   output.FillVar(maintrueid, trueIdMainTrack);
   output.FillVar(beamtrueid, trueIdBeamParticle);
+  output.FillVar(mainlength, recoLength);
   output.FillVar(mainnhitscollection, nHitsCollection);
   output.FillVar(mainntrjpoints, nTrjPoints);
   output.FillVar(mainnvalidrrhits, nValidRRHits);
   output.FillVar(mainnvalidxyzhits, nValidXYZHits);
   output.FillVar(mainnvalidxyztrj, nValidXYZTrj);
+  output.FillVar(mainmcsmomentum, std::isfinite(mainmcsmomentumGeV) ? static_cast<Float_t>(mainmcsmomentumGeV) : -999.f);
+  output.FillVar(maintlefitmomentum,
+                 std::isfinite(maintlefitmomentumGeV) ? static_cast<Float_t>(maintlefitmomentumGeV) : -999.f);
 
   const size_t npaired = std::min(mainthetascatter.size(), mainsegmentlength.size());
   const size_t nfill = std::min(npaired, nmaxmcs);

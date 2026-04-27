@@ -11,18 +11,24 @@ namespace pionMomentumTree {
   void AddPionMomentumVariables_BeamParticleReco(OutputManager& output);
   void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* beampart,
                                                   const std::vector<double>& mainthetascatter,
-                                                  const std::vector<double>& mainsegmentlength);
+                                                  const std::vector<double>& mainsegmentlength,
+                                                  double mainmcsmomentumGeV,
+                                                  double maintlefitmomentumGeV);
 
   enum enumPionMomentumMicroTrees {
     mainispandora = standardPDTree::enumStandardMicroTreesLast_standardPDTree + 1,
     maintruepdg,
     maintruestartmomentum,
     maintrueendmomentum,
+    maintruelength,
     maintrueid,
     beamtrueid,
-    mainmcsntriplets,
+    mainlength,
+    mainmcsnsegments,
     mainmcsdeltatheta,
     mainmcssegmentlength,
+    mainmcsmomentum,
+    maintlefitmomentum,
     mainnhitscollection,
     mainntrjpoints,
     mainnvalidrrhits,

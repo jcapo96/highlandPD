@@ -251,6 +251,43 @@ bool InteriorDedxRrSample(AnaParticlePD* part, double maxRR, int minPoints, std:
   return static_cast<int>(dedx.size()) >= minPoints;
 }
 
+bool InteriorDedxRrSampleFromVectors(const std::vector<double>& rrIn, const std::vector<double>& dedxIn, int minPoints,
+                                     std::vector<double>& dedx, std::vector<double>& rr, int skipFirst, int skipLast,
+                                     double dedxMinMeVcm, double dedxMaxMeVcm) {
+  dedx.clear();
+  rr.clear();
+  if (rrIn.size() != dedxIn.size() || rrIn.empty()) return false;
+  if (skipFirst < 0) skipFirst = 0;
+  if (skipLast < 0) skipLast = 0;
+
+  const int n = static_cast<int>(rrIn.size());
+  if (n < skipFirst + skipLast + 1) return false;
+
+  for (int i = skipFirst; i < n - skipLast; ++i) {
+    const double rrVal = rrIn[static_cast<size_t>(i)];
+    const double dedxVal = dedxIn[static_cast<size_t>(i)];
+    if (!std::isfinite(rrVal) || !std::isfinite(dedxVal) || !(rrVal > 0.)) continue;
+    dedx.push_back(dedxVal);
+    rr.push_back(rrVal);
+  }
+
+  const bool dedxWindow = (dedxMinMeVcm > 0. && dedxMaxMeVcm > dedxMinMeVcm);
+  if (dedxWindow) {
+    std::vector<double> nd, nr;
+    nd.reserve(dedx.size());
+    nr.reserve(rr.size());
+    for (size_t i = 0; i < dedx.size(); ++i) {
+      if (dedx[i] >= dedxMinMeVcm && dedx[i] <= dedxMaxMeVcm) {
+        nd.push_back(dedx[i]);
+        nr.push_back(rr[i]);
+      }
+    }
+    dedx.swap(nd);
+    rr.swap(nr);
+  }
+  return static_cast<int>(dedx.size()) >= minPoints;
+}
+
 double MeasuredTrackLengthCm(const AnaParticlePD* part, const std::vector<double>& rrInterior) {
   if (part && part->Length > 0.f && part->Length != -999.f) return static_cast<double>(part->Length);
   double mx = 0.;
@@ -459,6 +496,115 @@ bool pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(AnaParticlePD* p
   return BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(part, Lmax, step, minInteriorPoints, skipHitsFirst,
                                                                 skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm, pdfPathCm,
                                                                 pGeV, logL, scanStepFineCm, lowPMomentumRefineGeV);
+}
+
+//***************************************************************
+bool pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurveFromVectors(
+    const std::vector<double>& rrCm, const std::vector<double>& dedxMeVcm, double measuredTrackLengthCm, double Lmax,
+    double step, int minInteriorPoints, int skipFirst, int skipLast, double dedxMinMeVcm, double dedxMaxMeVcm,
+    double pdfPathCm, std::vector<double>& pGeV, std::vector<double>& logL, double scanStepFineCm,
+    double lowPMomentumRefineGeV) {
+//***************************************************************
+  pGeV.clear();
+  logL.clear();
+  constexpr Int_t kPdg = 211;
+  std::string ssparticle;
+  Float_t mass = 0.f;
+  if (!PdgToMassAndKeName(kPdg, mass, ssparticle)) return false;
+
+  std::vector<double> dedx, rr;
+  if (!InteriorDedxRrSampleFromVectors(rrCm, dedxMeVcm, minInteriorPoints, dedx, rr, skipFirst, skipLast, dedxMinMeVcm,
+                                       dedxMaxMeVcm))
+    return false;
+
+  TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
+  if (!tg_ke) return false;
+
+  TGraph* tg = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
+  const double lenCm = (std::isfinite(measuredTrackLengthCm) && measuredTrackLengthCm > 0.)
+                           ? measuredTrackLengthCm
+                           : MeasuredTrackLengthCm(nullptr, rr);
+
+  if (!tg || tg->GetN() < 1 || step <= 0.) {
+    delete tg;
+    return false;
+  }
+  if (!std::isfinite(pdfPathCm) || pdfPathCm <= 0.) {
+    delete tg;
+    return false;
+  }
+
+  const double L0 = ComputeScanL0FromInteriorRR(rr);
+  if (!(Lmax >= L0)) {
+    delete tg;
+    return false;
+  }
+
+  const double width = pdfPathCm;
+  TF1* pdf = FreeRangeLikelihoodPdf();
+
+  const auto scanAtStep = [&](double stepUse, std::vector<std::pair<double, double>>& pairOut) -> bool {
+    pairOut.clear();
+    pairOut.reserve(static_cast<size_t>(std::max(1.0, (Lmax - L0) / stepUse) + 2.));
+    for (double L = L0; L <= Lmax + 1e-9; L += stepUse) {
+      double ll = 0.;
+      for (int i = 0; i < tg->GetN(); i++) {
+        const double range = tg->GetPointX(i) + L;
+        const double dEdx = tg->GetPointY(i);
+        if (!(range > 0.) || !std::isfinite(range)) continue;
+        const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, range);
+        if (ke < 0. || !std::isfinite(ke)) continue;
+        double par[5] = {0., 0., 0., 0., 0.};
+        if (!BuildDedxPdfParams(ke, mass, width, par)) continue;
+        pdf->SetParameters(par);
+        const double pval = pdf->Eval(dEdx);
+        if (pval == 0.) continue;
+        ll += std::log(pval);
+      }
+      if (!std::isfinite(ll)) continue;
+      const double R_eff = lenCm + L;
+      if (!(R_eff > 0.) || !std::isfinite(R_eff)) continue;
+      const double p = pdMomShared::RangeCmToMomentumGeV(R_eff, kPdg, tg_ke, mass);
+      if (!std::isfinite(p) || p <= 0.) continue;
+      pairOut.push_back({p, ll});
+    }
+    return pairOut.size() >= 2u;
+  };
+
+  std::vector<std::pair<double, double>> pairs;
+  if (!scanAtStep(step, pairs)) {
+    delete tg;
+    return false;
+  }
+  bool needFine = false;
+  if (lowPMomentumRefineGeV > 0.) {
+    for (const auto& pr : pairs) {
+      if (pr.first < lowPMomentumRefineGeV) {
+        needFine = true;
+        break;
+      }
+    }
+  }
+  if (needFine && scanStepFineCm > 0. && scanStepFineCm + 1e-12 < step) {
+    std::vector<std::pair<double, double>> fine;
+    if (scanAtStep(scanStepFineCm, fine)) pairs.swap(fine);
+  }
+  delete tg;
+
+  if (pairs.size() < 2u) return false;
+
+  std::sort(pairs.begin(), pairs.end(),
+            [](const std::pair<double, double>& a, const std::pair<double, double>& b) { return a.first < b.first; });
+
+  for (const auto& pr : pairs) {
+    if (!pGeV.empty() && std::abs(pr.first - pGeV.back()) <= 1e-12 * std::max(1.0, std::abs(pr.first))) {
+      if (pr.second > logL.back()) logL.back() = pr.second;
+    } else {
+      pGeV.push_back(pr.first);
+      logL.push_back(pr.second);
+    }
+  }
+  return pGeV.size() >= 2u;
 }
 
 static TF1* FreeRangeLikelihoodPdf() {

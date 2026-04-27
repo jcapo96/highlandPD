@@ -14,15 +14,70 @@
 # 1 = enable, 0 = disable.
  < pionMomentumAnalysis.CreateEventDisplay = 1 >
 
+--- True Stopping Category ---------------
+# Main-track true stopping tag threshold [GeV/c]:
+# true pion is tagged stopping when true end momentum <= this value.
+< pionMomentumAnalysis.StoppingMaxTrueEndMomentumGeV = 0.03 >
+
 --- Main-track MCS sampling ------------
+ # Effective material radiation length X0 [cm] used to convert segment length to x/X0.
  < pionMomentumAnalysis.MCSRadiationLengthCm = 14.0 >
- < pionMomentumAnalysis.MCSMinSegmentLengthCm = 0.0001 >
+ # Target arc-length [cm] for trajectory segmentation before building scattering pairs.
+< pionMomentumAnalysis.MCSTargetSegmentLengthCm = 14.0 >
+ # Reject scattering pairs whose effective segment length is below this [cm].
+ < pionMomentumAnalysis.MCSMinSegmentLengthCm = 0.5 >
+ # Minimum allowed Highland width theta0 [rad] to avoid zero/unstable likelihood widths.
  < pionMomentumAnalysis.MCStheta0FloorRad = 1e-6 >
+ # Optional cap on |delta_theta| [rad]; negative disables capping.
  < pionMomentumAnalysis.MCSMaxAbsDeltaThetaRad = -1.0 >
- < pionMomentumAnalysis.MCSUseDetectorSigma = 0 >
+# Drop a fixed number of earliest/latest MCS samples before the MCS likelihood fit.
+# "First"/"last" follow trajectory-point order used to build MCS segments.
+# In the current RR convention (RR decreases along that order):
+#   first = high-RR end, last = low-RR end.
+# Example: 2 means remove first 2 and last 2 MCS samples.
+ # Diagnostic delta_theta plot keeps all samples (black) and overlays fit-used samples (green).
+< pionMomentumAnalysis.MCSDropFirstNSegments = 1 >
+< pionMomentumAnalysis.MCSDropLastNSegments = 1 >
+ # Include detector angular resolution term (sigma_det) in quadrature with Highland sigma.
+ < pionMomentumAnalysis.MCSUseDetectorSigma = 1 >
+ # ROOT file containing the sigma_det calibration spline.
  < pionMomentumAnalysis.MCSDetectorSigmaCalibFile = highlandPD/src/pdUtils/data/pion_mcs_sigma_det_calibration.root >
+ # Name of the spline inside the calibration ROOT file.
  < pionMomentumAnalysis.MCSDetectorSigmaSplineName = sp_sigma_det_vs_segment >
+ # Lower bound for sigma_det [rad] when detector-resolution mode is enabled.
  < pionMomentumAnalysis.MCSDetectorSigmaFloorRad = 1.0e-6 >
+
+--- ML residual-range dE/dx (main-track pion TLEFit) -----------
+# Minimum interior hits after skipping ends (before dE/dx window).
+< pionMomentumAnalysis.FreeRangeDedxMinInteriorHits = 15 >
+# Drop this many collection hits at track start and at track end before the fit.
+< pionMomentumAnalysis.FreeRangeDedxSkipHitsFirst = 3 >
+< pionMomentumAnalysis.FreeRangeDedxSkipHitsLast = 3 >
+# Keep hits with measured dE/dx in [Min, Max] MeV/cm.
+< pionMomentumAnalysis.FreeRangeDedxMinMeVcm = 0.5 >
+< pionMomentumAnalysis.FreeRangeDedxMaxMeVcm = 5.0 >
+# Scan additional track-length offset L in [0, Lmax] cm with this step (cm).
+< pionMomentumAnalysis.FreeRangeScanLmaxCm = 450.0 >
+< pionMomentumAnalysis.FreeRangeScanStepCm = 1.0 >
+# If positive and smaller than coarse step, redo the L scan with this step when probing low-p.
+< pionMomentumAnalysis.FreeRangeScanStepFineCm = 0.25 >
+< pionMomentumAnalysis.FreeRangeLowPMomentumRefineGeV = 0.0 >
+# Path length delta x (cm) used in the dE/dx likelihood PDF.
+< pionMomentumAnalysis.FreeRangeDedxPdfPathCm = 0.65 >
+
+--- Momentum Assurance Parameters -----------
+# Enable momentum assurance for stopping-category signal only (1=only stopping/non-stopping true pions / 0=all).
+< pionMomentumAnalysis.EnsureMomentumSignalOnly = 1 >
+# Enable writing momentum diagnostics (dE/dx-vs-RR and MCS multigraph outputs when implemented).
+# 1 = enabled, 0 = disabled.
+< pionMomentumAnalysis.EnableMomentumDiagnosticMultigraphs = 1 >
+# Fill extra free-range diagnostics (mean/sigma dE/dx bias Gaussian fit) for TLEFit.
+# 1 = enabled, 0 = disabled (faster, keeps these fields at sentinel values).
+< pionMomentumAnalysis.FreeRangeComputeDedxBiasDiagnostics = 0 >
+# When enabled, run TLE only for true beam pions:
+# abs(maintruepdg)==211 && maintrueid==beamtrueid.
+< pionMomentumAnalysis.TLERequireTrueBeamPion = 1 >
+
 
 --- Event Skim File ------------
  < baseAnalysis.StoreSurvivingEvents = 0 >

@@ -76,6 +76,11 @@ namespace pdAnaUtils {
                                                        std::vector<double>& pGeV, std::vector<double>& logL,
                                                        double scanStepFineCm = 0.,
                                                        double lowPMomentumRefineGeV = 0.2);
+  bool BuildPionFreeRangeLogLikelihoodVsMomentumCurveFromVectors(
+      const std::vector<double>& rrCm, const std::vector<double>& dedxMeVcm, double measuredTrackLengthCm, double Lmax,
+      double step, int minInteriorPoints, int skipFirst, int skipLast, double dedxMinMeVcm, double dedxMaxMeVcm,
+      double pdfPathCm, std::vector<double>& pGeV, std::vector<double>& logL, double scanStepFineCm = 0.,
+      double lowPMomentumRefineGeV = 0.2);
 
   double GetDensityCorrection(double beta, double gamma);
   double GetdEdxBetheBloch(double KE, double mass);

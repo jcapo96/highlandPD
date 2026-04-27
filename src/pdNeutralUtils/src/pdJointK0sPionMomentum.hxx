@@ -35,6 +35,7 @@ namespace pdJointK0sPionMomentum {
 
 struct MCSLikelihoodConfig {
   double radiationLengthCm = 14.0;
+  double targetSegmentLengthCm = 10.0;
   double minSegmentLengthCm = 0.5;
   double theta0FloorRad = 1e-6;
   double maxAbsDeltaThetaRad = -1.0;
@@ -64,8 +65,8 @@ private:
   double detector_sigma_xmax_cm_ = 0.0;
 };
 
-/// Prefer hit triplets (view with most valid hits, RR-ordered); else trajectory points with synthetic RR.
-/// Optional rrMidCm: RR at the middle vertex of each triplet (for plots); pass null for likelihood-only use.
+/// Build MCS samples from ordered trajectory points using arc-length segments.
+/// Optional rrMidCm: RR at the middle of each scattering sample (for plots); pass null for likelihood-only use.
 bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg,
                                   std::vector<double>& deltaTheta, std::vector<double>& xOverX0,
                                   std::vector<double>* rrMidCm = nullptr);
