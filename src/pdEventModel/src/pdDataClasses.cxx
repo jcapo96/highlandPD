@@ -181,6 +181,7 @@ AnaTrajectoryPointPD::AnaTrajectoryPointPD(){
   Direction_NoSCE = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
   Position        = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
   Direction       = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  IsInTPC         = false;
 }
 
 //********************************************************************
@@ -191,6 +192,7 @@ AnaTrajectoryPointPD::AnaTrajectoryPointPD(const AnaTrajectoryPointPD& trp){
   Direction_NoSCE = trp.Direction_NoSCE;
   Position        = trp.Position;
   Direction       = trp.Direction;
+  IsInTPC         = trp.IsInTPC;
 }
 
 //********************************************************************
@@ -200,6 +202,43 @@ void AnaTrajectoryPointPD::Print() const{
   std::cout << "-------- AnaTrajectoryPointPD --------- " << std::endl;
 
   std::cout << "Position:      " << "( " << Position.X() << ", " << Position.Y() << ", " << Position.Z() << ")" << std::endl;
+  std::cout << "IsInTPC:       " << IsInTPC << std::endl;
+}
+
+//********************************************************************
+AnaTrueTrajectoryPointPD::AnaTrueTrajectoryPointPD(){
+//********************************************************************
+
+  Position_NoSCE  = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Position        = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Direction       = TVector3(kFloatUnassigned,kFloatUnassigned,kFloatUnassigned);
+  Momentum        = kFloatUnassigned;
+  IsScraper       = false;
+  IsInTPC         = false;
+}
+
+//********************************************************************
+AnaTrueTrajectoryPointPD::AnaTrueTrajectoryPointPD(const AnaTrueTrajectoryPointPD& trp){
+//********************************************************************
+
+  Position_NoSCE  = trp.Position_NoSCE;
+  Position        = trp.Position;
+  Direction       = trp.Direction;
+  Momentum        = trp.Momentum;
+  IsScraper       = trp.IsScraper;
+  IsInTPC         = trp.IsInTPC;
+}
+
+//********************************************************************
+void AnaTrueTrajectoryPointPD::Print() const{
+//********************************************************************
+
+  std::cout << "-------- AnaTrueTrajectoryPointPD --------- " << std::endl;
+  std::cout << "Position:      " << "( " << Position.X() << ", " << Position.Y() << ", " << Position.Z() << ")" << std::endl;
+  std::cout << "Direction:     " << "( " << Direction.X() << ", " << Direction.Y() << ", " << Direction.Z() << ")" << std::endl;
+  std::cout << "Momentum:      " << Momentum << std::endl;
+  std::cout << "IsScraper:     " << IsScraper << std::endl;
+  std::cout << "IsInTPC:       " << IsInTPC << std::endl;
 }
 
 //********************************************************************
@@ -420,6 +459,20 @@ AnaTrueParticlePD::AnaTrueParticlePD():AnaTrueParticle(){
   Matched = false;
   LengthInTPC   = kFloatUnassigned;
   MomentumInTPC = kFloatUnassigned;
+  TrjPoints.clear();
+
+  TrueBeamLastStepLen = kDoubleUnassigned;
+  TrueBeamNElasticScatters = kIntUnassigned;
+  TrueBeamElasticCosTheta.clear();
+  TrueBeamElasticX.clear();
+  TrueBeamElasticY.clear();
+  TrueBeamElasticZ.clear();
+  TrueBeamElasticDeltaE.clear();
+  TrueBeamElasticIDEedep.clear();
+  TrueBeamIDEtotalDep = kDoubleUnassigned;
+  TrueBeamNHits = kIntUnassigned;
+  TrueBeamProcesses.clear();
+  TrueBeamIncidentEnergies.clear();
 
 }
 
@@ -441,6 +494,20 @@ AnaTrueParticlePD::AnaTrueParticlePD(const AnaTrueParticlePD& truePart):AnaTrueP
   Matched = truePart.Matched;
   LengthInTPC = truePart.LengthInTPC;
   MomentumInTPC = truePart.MomentumInTPC;
+  TrjPoints = truePart.TrjPoints;
+
+  TrueBeamLastStepLen = truePart.TrueBeamLastStepLen;
+  TrueBeamNElasticScatters = truePart.TrueBeamNElasticScatters;
+  TrueBeamElasticCosTheta = truePart.TrueBeamElasticCosTheta;
+  TrueBeamElasticX = truePart.TrueBeamElasticX;
+  TrueBeamElasticY = truePart.TrueBeamElasticY;
+  TrueBeamElasticZ = truePart.TrueBeamElasticZ;
+  TrueBeamElasticDeltaE = truePart.TrueBeamElasticDeltaE;
+  TrueBeamElasticIDEedep = truePart.TrueBeamElasticIDEedep;
+  TrueBeamIDEtotalDep = truePart.TrueBeamIDEtotalDep;
+  TrueBeamNHits = truePart.TrueBeamNHits;
+  TrueBeamProcesses = truePart.TrueBeamProcesses;
+  TrueBeamIncidentEnergies = truePart.TrueBeamIncidentEnergies;
 }
 
 //********************************************************************
@@ -457,6 +524,13 @@ void AnaTrueParticlePD::Print() const{
   std::cout << "Matched:               " << Matched << std::endl;
   std::cout << "LengthInTPC:           " << LengthInTPC << std::endl;
   std::cout << "MomentumInTPC:         " << MomentumInTPC << std::endl;
+  std::cout << "True trajectory points:" << TrjPoints.size() << std::endl;
+  std::cout << "TrueBeamLastStepLen:   " << TrueBeamLastStepLen << std::endl;
+  std::cout << "TrueBeamNElasticScatters: " << TrueBeamNElasticScatters << std::endl;
+  std::cout << "TrueBeamIDEtotalDep:   " << TrueBeamIDEtotalDep << std::endl;
+  std::cout << "TrueBeamNHits:         " << TrueBeamNHits << std::endl;
+  std::cout << "TrueBeamProcesses:     " << TrueBeamProcesses.size() << std::endl;
+  std::cout << "TrueBeamIncidentEnergies: " << TrueBeamIncidentEnergies.size() << std::endl;
 }
 
 //********************************************************************

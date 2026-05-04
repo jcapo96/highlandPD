@@ -82,6 +82,24 @@ namespace pdAnaUtils {
       double pdfPathCm, std::vector<double>& pGeV, std::vector<double>& logL, double scanStepFineCm = 0.,
       double lowPMomentumRefineGeV = 0.2);
 
+  /// Pion (PDG 211): mean -log PDF per collection hit in the Bragg window (0 < RR <= maxBraggResidualRangeCm), using
+  /// measured RR with no free-range length shift (L = 0). Same Landau/Vavilov PDF as TLE free-range fit.
+  /// Smaller meanNegLogL indicates better agreement with the stopping-pion dE/dx template in that window.
+  /// Returns false if fewer than minBraggHits hits contribute; meanNegLogL is set to -999 on failure.
+  bool ComputePionBraggWindowMeanNegLogLikelihoodVsTemplate(AnaParticlePD* part, double maxBraggResidualRangeCm,
+                                                            int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+                                                            double dedxMaxMeVcm, double pdfPathCm, int minBraggHits,
+                                                            double& meanNegLogL, int& nHitsUsed);
+
+  /// Pion (PDG 211): χ²_π± mean per arXiv:2409.18288 Eq. 6.1 — average over collection hits with 0 < RR < maxResidualRangeCm
+  /// of [(dEdx_meas − ⟨dE/dx⟩_BB from Eq. 2.1 at KE(RR))/σ]²; KE from measured residual range (CSDA pion curve).
+  /// Smaller indicates better agreement with the stopping-pion hypothesis in that window.
+  /// If dedxMinMeVcm > 0 and dedxMaxMeVcm > dedxMinMeVcm, apply the same dE/dx bounds as optional robustness (paper §6.1
+  /// does not require them). skipHitsFirst/Last trim hit indices before the RR window (default 0 = paper-literal).
+  bool ComputePionBraggWindowChi2PiEq61(AnaParticlePD* part, double maxResidualRangeCm, double sigmaDedxMeVcm,
+                                        int minHits, int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+                                        double dedxMaxMeVcm, double& meanChi2, int& nHitsUsed);
+
   double GetDensityCorrection(double beta, double gamma);
   double GetdEdxBetheBloch(double KE, double mass);
   double KineticEnergyMeVFromResidualRangeCm(TGraph* tg_ke, double range_cm);

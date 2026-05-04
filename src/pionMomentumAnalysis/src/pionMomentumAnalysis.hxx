@@ -48,6 +48,11 @@ class pionMomentumAnalysis : public pdBaseAnalysis {
   double _MCSMaxAbsDeltaThetaRad;
   int _MCSDropFirstNSegments;
   int _MCSDropLastNSegments;
+  bool _MCSUseDetectorSigma;
+  double _MCSDetectorSigmaFloorRad;
+  double _MCSDetectorSigmaA;
+  double _MCSDetectorSigmaC;
+  double _MCSMomentumScanMaxGeV;
   int _TLEMinInteriorHits;
   int _TLESkipHitsFirst;
   int _TLESkipHitsLast;
@@ -58,8 +63,18 @@ class pionMomentumAnalysis : public pdBaseAnalysis {
   double _TLEScanStepFineCm;
   double _TLELowPMomentumRefineGeV;
   double _TLEDedxPdfPathCm;
-  bool _TLERequireTrueBeamPion;
-  bool _EnsureMomentumSignalOnly;
+  double _BraggChi2PiMaxResidualRangeCm;
+  double _BraggChi2PiSigmaMeVcm;
+  int _BraggChi2PiMinHits;
+  int _BraggChi2PiSkipHitsFirst;
+  int _BraggChi2PiSkipHitsLast;
+  double _BraggChi2PiDedxMinMeVcm;
+  double _BraggChi2PiDedxMaxMeVcm;
+  /// If true, run TLEFit and MCS momentum estimation only for true beam pions:
+  /// abs(maintruepdg)==211 && maintrueid==beamtrueid.
+  bool _MomentumRequireTrueBeamPion;
+  bool _RunTLEFit;
+  bool _RunMCS;
   bool _EnableMomentumDiagnosticMultigraphs;
   bool _FreeRangeComputeDedxBiasDiagnostics;
   double _StoppingMaxTrueEndMomentumGeV;

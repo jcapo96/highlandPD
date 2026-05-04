@@ -21,6 +21,11 @@ namespace pdAnaUtils {
   int GetHitTPCid(AnaHitPD& hit);
   int GetPosTPCid(TVector3 pos);
 
+  /// Strict-inequality TPC box used by SpaceCharge::IsInsideBoundaries
+  /// (|X|>0 && |X|<360 cm; Y>5.2 && Y<604 cm; Z>-0.5 && Z<695.3 cm).
+  /// Keep in sync with SpaceCharge::IsInsideBoundaries (SpaceCharge.cxx).
+  bool IsInTPCSCEBox(const TVector3& p);
+
   void EstimateHitsDirection(AnaParticlePD* part);
 
   void ComputeResidualRange(AnaParticlePD* part);

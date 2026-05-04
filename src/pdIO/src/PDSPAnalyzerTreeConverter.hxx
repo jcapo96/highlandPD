@@ -25,6 +25,8 @@ class PDSPAnalyzerTreeConverter: public pdBaseConverter{
 
   virtual void FillTrueInfo(AnaSpill* spill);
   virtual void FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* truePart);
+  /// true_beam_* trajectory, IDE, elastic, processes (primary beam MC only).
+  virtual void FillTrueBeamMcExtras(AnaTrueParticlePD* truePart);
   virtual void FillTrueBeamDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart, AnaTrueParticlePD* parentPart);
   virtual void FillTrueBeamGrandDaughterTrueParticleInfo(Int_t ipart, AnaTrueParticlePD* truePart);
 
@@ -86,6 +88,7 @@ protected:
   vector<double>  *true_beam_elastic_deltaE;
   vector<double>  *true_beam_elastic_IDE_edep;
   Double_t        true_beam_IDE_totalDep;
+  Int_t           true_beam_nHits;
   Int_t           true_daughter_nPi0;
   Int_t           true_daughter_nPiPlus;
   Int_t           true_daughter_nProton;
@@ -100,7 +103,14 @@ protected:
   vector<double>  *true_beam_traj_X;
   vector<double>  *true_beam_traj_Y;
   vector<double>  *true_beam_traj_Z;
+  vector<double>  *true_beam_traj_X_SCE;
+  vector<double>  *true_beam_traj_Y_SCE;
+  vector<double>  *true_beam_traj_Z_SCE;
+  vector<double>  *true_beam_traj_PX;
+  vector<double>  *true_beam_traj_PY;
+  vector<double>  *true_beam_traj_PZ;
   vector<double>  *true_beam_traj_KE;
+  vector<int>     *true_beam_traj_is_scraper;
   // Reco beam info
   Int_t           reco_beam_type;
   Int_t           reco_beam_trackID;
@@ -398,6 +408,7 @@ protected:
   TBranch *b_true_beam_elastic_deltaE; //!
   TBranch *b_true_beam_elastic_IDE_edep; //!
   TBranch *b_true_beam_IDE_totalDep; //!
+  TBranch *b_true_beam_nHits; //!
   TBranch *b_true_daughter_nPi0; //!
   TBranch *b_true_daughter_nPiPlus; //!
   TBranch *b_true_daughter_nProton; //!
@@ -412,7 +423,14 @@ protected:
   TBranch *b_true_beam_traj_X; //!
   TBranch *b_true_beam_traj_Y; //!
   TBranch *b_true_beam_traj_Z; //!
+  TBranch *b_true_beam_traj_X_SCE; //!
+  TBranch *b_true_beam_traj_Y_SCE; //!
+  TBranch *b_true_beam_traj_Z_SCE; //!
+  TBranch *b_true_beam_traj_PX; //!
+  TBranch *b_true_beam_traj_PY; //!
+  TBranch *b_true_beam_traj_PZ; //!
   TBranch *b_true_beam_traj_KE; //!
+  TBranch *b_true_beam_traj_is_scraper; //!
   TBranch *b_reco_beam_type; //!
   TBranch *b_reco_beam_trackID; //!
   TBranch *b_reco_beam_startX; //!

@@ -3,6 +3,8 @@
 
 #include "DataClasses.hxx"
 #include "ParticleId.hxx"
+#include <string>
+#include <vector>
 
 const UInt_t NMAXHITSPERPLANE        = 300;
 const UInt_t NMAXHITSPERPLANE_SELTRK = 2500;
@@ -121,6 +123,43 @@ public:
 
   TVector3 Position_NoSCE;
   TVector3 Direction_NoSCE;
+
+  /// True if this trajectory point lies inside the SCE map TPC volume
+  /// (same strict-inequality box as SpaceCharge::IsInsideBoundaries).
+  /// Set once at converter time; downstream consumers (e.g. MCS) should
+  /// filter on this flag to avoid out-of-TPC points.
+  Bool_t IsInTPC;
+
+  bool IsValid() {return (Position_NoSCE.X() != -999 && Position_NoSCE.Y() != -999 && Position_NoSCE.Z() != -999);}
+};
+
+// true trajectory point representation: position and momentum at each point.
+class AnaTrueTrajectoryPointPD{
+public:
+  AnaTrueTrajectoryPointPD();
+  virtual ~AnaTrueTrajectoryPointPD(){}
+
+  /// Dump the object to screen.
+  virtual void Print() const;
+
+  /// Copy constructor
+  AnaTrueTrajectoryPointPD(const AnaTrueTrajectoryPointPD& tjp);
+
+public:
+
+  TVector3 Position;
+  TVector3 Position_NoSCE;
+  TVector3 Direction;
+  Float_t Momentum;
+
+  /// Per trajectory step: beam scrapes through beam plug (pduneana / true_beam_traj_is_scraper).
+  Bool_t IsScraper;
+
+  /// True if this true trajectory point lies inside the SCE map TPC volume
+  /// (same strict-inequality box as SpaceCharge::IsInsideBoundaries) for
+  /// BOTH Position (SCE-distorted G4) and Position_NoSCE (raw G4).
+  /// Set once at converter time.
+  Bool_t IsInTPC;
 
   bool IsValid() {return (Position_NoSCE.X() != -999 && Position_NoSCE.Y() != -999 && Position_NoSCE.Z() != -999);}
 };
@@ -287,6 +326,23 @@ public:
 
   /// The true momentum at the TPC entrance
   Float_t MomentumInTPC;
+
+  /// Vector of true trajectory points
+  std::vector<AnaTrueTrajectoryPointPD> TrjPoints;
+
+  // ---- ProtoDUNE beam MC truth (anatree true_beam_* on primary beam particle) ----
+  Double_t TrueBeamLastStepLen;
+  Int_t TrueBeamNElasticScatters;
+  std::vector<Double_t> TrueBeamElasticCosTheta;
+  std::vector<Double_t> TrueBeamElasticX;
+  std::vector<Double_t> TrueBeamElasticY;
+  std::vector<Double_t> TrueBeamElasticZ;
+  std::vector<Double_t> TrueBeamElasticDeltaE;
+  std::vector<Double_t> TrueBeamElasticIDEedep;
+  Double_t TrueBeamIDEtotalDep;
+  Int_t TrueBeamNHits;
+  std::vector<std::string> TrueBeamProcesses;
+  std::vector<Double_t> TrueBeamIncidentEnergies;
 };
 
 /// Extension of AnaEvent to include specific information of the ProtoDUNE beam line instrumentation

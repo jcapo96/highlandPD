@@ -28,6 +28,7 @@ namespace {
     TMultiGraph* dedx = nullptr;
     TGraph* mcsAngles = nullptr;
     TGraph* mcsAnglesKept = nullptr;
+    TGraph* mcsAnglesTrue = nullptr;
     TGraph* mcsDedxVsRR = nullptr;
     TMultiGraph* tleLogL = nullptr;
     TMultiGraph* mcsLogL = nullptr;
@@ -73,7 +74,7 @@ void AddCustomCategories() {
 //********************************************************************
   if (!anaUtils::_categ || anaUtils::_categ->HasCategory("maintruestopping")) return;
 
-  std::string part_types[] = {"stopping", "non_stopping", "not_true_pion", NAMEOTHER};
+  std::string part_types[] = {"stopping", "non_stopping", "unknown_end_momentum", NAMEOTHER};
   int part_codes[] = {1, 2, 3, CATOTHER};
   int part_colors[] = {2, 46, 7, COLOTHER};
   const int npart = sizeof(part_types) / sizeof(part_types[0]);
@@ -86,23 +87,22 @@ void AddCustomCategories() {
 }
 
 //********************************************************************
+int MainTrueStoppingCode(AnaParticlePD* mainTrack, double stoppingMaxTrueEndMomentumGeV) {
+//********************************************************************
+  if (!mainTrack || !mainTrack->TrueObject) return CATNOTRUTH;
+  const AnaTrueParticlePD* tpart = static_cast<const AnaTrueParticlePD*>(mainTrack->TrueObject);
+  if (!tpart) return CATNOTRUTH;
+  const double pend = static_cast<double>(tpart->MomentumEnd);
+  if (std::isfinite(pend) && pend >= 0.) {
+    return (pend <= stoppingMaxTrueEndMomentumGeV) ? 1 : 2;
+  }
+  return 3;
+}
+
+//********************************************************************
 int FillMainTrueStoppingCategory(AnaParticlePD* mainTrack, double stoppingMaxTrueEndMomentumGeV) {
 //********************************************************************
-  int stopCode = CATNOTRUTH;
-  if (mainTrack && mainTrack->TrueObject) {
-    const AnaTrueParticlePD* tpart = static_cast<const AnaTrueParticlePD*>(mainTrack->TrueObject);
-    if (tpart) {
-      if (std::abs(tpart->PDG) != 211) {
-        stopCode = 3;
-      } else {
-        const double pend = static_cast<double>(tpart->MomentumEnd);
-        if (std::isfinite(pend) && pend >= 0.) {
-          stopCode = (pend <= stoppingMaxTrueEndMomentumGeV) ? 1 : 2;
-        }
-      }
-    }
-  }
-
+  const int stopCode = MainTrueStoppingCode(mainTrack, stoppingMaxTrueEndMomentumGeV);
   if (anaUtils::_categ && anaUtils::_categ->HasCategory("maintruestopping")) {
     anaUtils::_categ->SetCode("maintruestopping", stopCode, CATOTHER);
   }
@@ -111,7 +111,7 @@ int FillMainTrueStoppingCategory(AnaParticlePD* mainTrack, double stoppingMaxTru
 
 //********************************************************************
 void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const AnaEventB& event, int stoppingCode,
-                                                 const MomentumDiagConfig& cfg, double bestTleMomentumGeV,
+                                                 bool runTLE, const MomentumDiagConfig& cfg, double bestTleMomentumGeV,
                                                  double bestMcsMomentumGeV, const std::vector<double>& pAxisTleGeV,
                                                  const std::vector<double>& logLTle,
                                                  const std::vector<double>& pAxisMcsGeV,
@@ -119,11 +119,14 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
                                                  const std::vector<double>& mcsDeltaTheta,
                                                  const std::vector<double>& mcsSegmentLengthCm,
                                                  const std::vector<double>& mcsDeltaThetaKept,
-                                                 const std::vector<double>& mcsResidualRangeKeptCm) {
+                                                 const std::vector<double>& mcsResidualRangeKeptCm,
+                                                 const std::vector<double>* mcsDeltaThetaTrue,
+                                                 const std::vector<double>* mcsSegmentLengthTrueCm) {
 //********************************************************************
   if (!cfg.enableMomentumDiagnosticMultigraphs || !mainTrack) return;
-  if (cfg.ensureMomentumSignalOnly && !(stoppingCode == 1 || stoppingCode == 2)) return;
-  if (pAxisTleGeV.empty() || pAxisTleGeV.size() != logLTle.size()) return;
+  const bool hasTle = !pAxisTleGeV.empty() && pAxisTleGeV.size() == logLTle.size();
+  const bool hasMcs = !pAxisMcsGeV.empty() && pAxisMcsGeV.size() == logLMcs.size();
+  if (!hasTle && !hasMcs) return;
 
   Int_t runId = -1, subRunId = -1, evtId = -1;
   if (event.EventInfo) {
@@ -141,12 +144,16 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
   char dedxXAxis[200];
   std::snprintf(dedxXAxis, sizeof(dedxXAxis), "(run %d, subrun %d, evt %d) Residual range [cm]", static_cast<int>(runId),
                 static_cast<int>(subRunId), static_cast<int>(evtId));
-  bundle.dedx = pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(
-      mainTrack, cfg.freeRangeScanLmaxCm, cfg.freeRangeScanStepCm, cfg.freeRangeDedxSkipHitsFirst,
-      cfg.freeRangeDedxSkipHitsLast, cfg.freeRangeDedxMinMeVcm, cfg.freeRangeDedxMaxMeVcm, cfg.freeRangeDedxMinInteriorHits,
-      cfg.freeRangeDedxPdfPathCm, dedxXAxis);
+  if (runTLE) {
+    bundle.dedx = pdAnaUtils::MakePionFreeRangeDedxVsRRMultiGraph(
+        mainTrack, cfg.freeRangeScanLmaxCm, cfg.freeRangeScanStepCm, cfg.freeRangeDedxSkipHitsFirst,
+        cfg.freeRangeDedxSkipHitsLast, cfg.freeRangeDedxMinMeVcm, cfg.freeRangeDedxMaxMeVcm,
+        cfg.freeRangeDedxMinInteriorHits, cfg.freeRangeDedxPdfPathCm, dedxXAxis);
+  }
 
-  bundle.tleLogL = new TMultiGraph();
+  if (hasTle) {
+    bundle.tleLogL = new TMultiGraph();
+  }
   if (bundle.tleLogL) {
     bundle.tleLogL->SetName(Form("mg_main_siglogl_%d_%d", stoppingCode, bundle.serialInCode));
     bundle.tleLogL->SetTitle(Form("Main-track TLE log-likelihood (category code %d);Momentum [GeV/c];logL_{TLE}",
@@ -177,7 +184,7 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
     }
   }
 
-  if (!pAxisMcsGeV.empty() && pAxisMcsGeV.size() == logLMcs.size()) {
+  if (hasMcs) {
     bundle.mcsLogL = new TMultiGraph();
     if (bundle.mcsLogL) {
       bundle.mcsLogL->SetName(Form("mg_main_sigmcslogl_%d_%d", stoppingCode, bundle.serialInCode));
@@ -225,7 +232,7 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
     if (bundle.mcsAngles) {
       bundle.mcsAngles->SetName(Form("g_main_sigmcsang_%d_%d", stoppingCode, bundle.serialInCode));
       bundle.mcsAngles->SetTitle(
-          Form("Observed MCS #Delta#theta vs residual range (category code %d);Residual range [cm];#Delta#theta [rad]",
+          Form("Observed MCS #theta_{proj}=#sqrt{#theta_{XZ}^{2}+#theta_{YZ}^{2}} vs residual range (category code %d);Residual range [cm];#theta_{proj} [rad]",
                stoppingCode));
       bundle.mcsAngles->SetMarkerStyle(kFullCircle);
       bundle.mcsAngles->SetMarkerSize(0.65);
@@ -306,6 +313,30 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
     }
   }
 
+  if (mcsDeltaThetaTrue && mcsSegmentLengthTrueCm && !mcsDeltaThetaTrue->empty() &&
+      mcsDeltaThetaTrue->size() == mcsSegmentLengthTrueCm->size()) {
+    const std::vector<double>& dthT = *mcsDeltaThetaTrue;
+    const std::vector<double>& segT = *mcsSegmentLengthTrueCm;
+    std::vector<double> rrMcsTrue;
+    rrMcsTrue.reserve(segT.size());
+    double totalLenT = 0.0;
+    for (double seg : segT) totalLenT += seg;
+    double accumT = 0.0;
+    for (double seg : segT) {
+      const double segCenter = accumT + 0.5 * seg;
+      rrMcsTrue.push_back(std::max(0.0, totalLenT - segCenter));
+      accumT += seg;
+    }
+    bundle.mcsAnglesTrue = new TGraph(static_cast<int>(rrMcsTrue.size()), rrMcsTrue.data(), dthT.data());
+    if (bundle.mcsAnglesTrue) {
+      bundle.mcsAnglesTrue->SetName(Form("g_main_sigmcsangtrue_%d_%d", stoppingCode, bundle.serialInCode));
+      bundle.mcsAnglesTrue->SetMarkerStyle(kOpenTriangleUp);
+      bundle.mcsAnglesTrue->SetMarkerSize(0.85);
+      bundle.mcsAnglesTrue->SetLineColor(kMagenta + 1);
+      bundle.mcsAnglesTrue->SetMarkerColor(kMagenta + 1);
+    }
+  }
+
   std::vector<double> rrDedx, dedx;
   if (CollectCollectionPlaneDedxVsRR(*mainTrack, rrDedx, dedx)) {
     bundle.mcsDedxVsRR = new TGraph(static_cast<int>(rrDedx.size()), rrDedx.data(), dedx.data());
@@ -332,7 +363,7 @@ void WriteMomentumDiagnostics(OutputManager& output) {
 
   for (auto& it : sDiagByEvent) {
     DiagBundle& b = it.second;
-    if (!b.dedx && !b.mcsAngles && !b.tleLogL && !b.mcsLogL) continue;
+    if (!b.dedx && !b.mcsAngles && !b.mcsAnglesTrue && !b.tleLogL && !b.mcsLogL) continue;
 
     TCanvas* cv = new TCanvas(Form("c_mainmomdiag_%d_%d", b.signalCode, b.serialInCode),
                               Form("Main momentum diagnostics (category code %d, index %d)", b.signalCode,
@@ -342,12 +373,19 @@ void WriteMomentumDiagnostics(OutputManager& output) {
     cv->cd(1);
     if (b.dedx) b.dedx->Draw("A");
     cv->cd(2);
-    if (b.mcsAngles) {
+    if (b.mcsAngles || (b.mcsAnglesTrue && b.mcsAnglesTrue->GetN() > 0)) {
       TPad* pad2 = static_cast<TPad*>(gPad);
       if (pad2) pad2->SetRightMargin(0.26);
-      b.mcsAngles->Draw("AP");
+      if (b.mcsAngles) {
+        b.mcsAngles->Draw("AP");
+      } else if (b.mcsAnglesTrue && b.mcsAnglesTrue->GetN() > 0) {
+        b.mcsAnglesTrue->Draw("AP");
+      }
       if (b.mcsAnglesKept && b.mcsAnglesKept->GetN() > 0) {
         b.mcsAnglesKept->Draw("P SAME");
+      }
+      if (b.mcsAnglesTrue && b.mcsAnglesTrue->GetN() > 0 && b.mcsAngles) {
+        b.mcsAnglesTrue->Draw("P SAME");
       }
       gPad->Update();
       if (b.mcsDedxVsRR && b.mcsDedxVsRR->GetN() > 0) {
@@ -376,15 +414,24 @@ void WriteMomentumDiagnostics(OutputManager& output) {
         ax->SetTitleOffset(1.15);
         ax->SetTitle("dE/dx [MeV/cm]");
         ax->Draw();
-        TLegend* leg = new TLegend(0.50, 0.58, 0.88, 0.89);
-        if (leg) {
-          leg->SetBorderSize(0);
-          leg->SetFillStyle(0);
-          leg->AddEntry(b.mcsAngles, "Observed #Delta#theta vs RR (all MCS samples)", "p");
-          if (b.mcsAnglesKept && b.mcsAnglesKept->GetN() > 0) {
-            leg->AddEntry(b.mcsAnglesKept, "MCS samples used in fit", "p");
-          }
+      }
+      TLegend* leg = new TLegend(0.50, 0.58, 0.88, 0.89);
+      if (leg) {
+        leg->SetBorderSize(0);
+        leg->SetFillStyle(0);
+        if (b.mcsAngles) {
+          leg->AddEntry(b.mcsAngles, "Observed #theta_{proj} vs RR (reco, all MCS samples)", "p");
+        }
+        if (b.mcsAnglesKept && b.mcsAnglesKept->GetN() > 0) {
+          leg->AddEntry(b.mcsAnglesKept, "MCS samples used in fit (reco)", "p");
+        }
+        if (b.mcsAnglesTrue && b.mcsAnglesTrue->GetN() > 0) {
+          leg->AddEntry(b.mcsAnglesTrue, "Observed #theta_{proj} vs RR (true trajectory, same MCS cfg)", "p");
+        }
+        if (b.mcsDedxVsRR && b.mcsDedxVsRR->GetN() > 0) {
           leg->AddEntry(b.mcsDedxVsRR, "dE/dx vs RR (collection)", "p");
+        }
+        if (b.mcsAngles) {
           if (b.mcsNKept > 0 && b.mcsN > 0 && b.mcsNKept != b.mcsN) {
             leg->AddEntry((TObject*)nullptr, Form("N(all/kept)=%d/%d", b.mcsN, b.mcsNKept), "");
           } else {
@@ -412,11 +459,11 @@ void WriteMomentumDiagnostics(OutputManager& output) {
           } else {
             leg->AddEntry((TObject*)nullptr, "RMS(true @ p_{true})=n/a", "");
           }
-          leg->Draw();
         }
-        gPad->Modified();
-        gPad->Update();
+        leg->Draw();
       }
+      gPad->Modified();
+      gPad->Update();
     }
     cv->cd(3);
     if (b.tleLogL) b.tleLogL->Draw("A");
@@ -431,6 +478,7 @@ void WriteMomentumDiagnostics(OutputManager& output) {
     DeleteMultiGraphAndGraphs(b.mcsLogL);
     if (b.mcsAngles) delete b.mcsAngles;
     if (b.mcsAnglesKept) delete b.mcsAnglesKept;
+    if (b.mcsAnglesTrue) delete b.mcsAnglesTrue;
     if (b.mcsDedxVsRR) delete b.mcsDedxVsRR;
   }
   sDiagByEvent.clear();

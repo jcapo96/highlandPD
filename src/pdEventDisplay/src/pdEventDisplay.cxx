@@ -23,7 +23,11 @@
 #include <TLatex.h>
 #include <TLegend.h>
 #include <iostream>
+#include <sstream>
+#include <cstdlib>
+#include <cstring>
 #include <cmath>
+#include <algorithm>
 #include <set>
 #include <map>
 
@@ -59,6 +63,8 @@ std::string ProcessEnumToString(Int_t process) {
 }
 }
 
+const Int_t pdEventDisplay::kMaxTrueTrjPoints;
+
 //********************************************************************
 pdEventDisplay::pdEventDisplay() : EventDisplayBase() {
 //********************************************************************
@@ -73,12 +79,26 @@ pdEventDisplay::pdEventDisplay() : EventDisplayBase() {
     _hit_Z = new Float_t[kMaxHits];
     _hit_dEdx = new Float_t[kMaxHits];
 
+    _true_trj_X = new Float_t[kMaxTrueTrjPoints];
+    _true_trj_Y = new Float_t[kMaxTrueTrjPoints];
+    _true_trj_Z = new Float_t[kMaxTrueTrjPoints];
+    _true_trj_sce_X = new Float_t[kMaxTrueTrjPoints];
+    _true_trj_sce_Y = new Float_t[kMaxTrueTrjPoints];
+    _true_trj_sce_Z = new Float_t[kMaxTrueTrjPoints];
+
+    _true_elastic_X = new Float_t[kMaxTrueElasticPoints];
+    _true_elastic_Y = new Float_t[kMaxTrueElasticPoints];
+    _true_elastic_Z = new Float_t[kMaxTrueElasticPoints];
+
     // Initialize data members
     _nParticles = 0;
     _totalHits = 0;
     _nK0Candidates = 0;
     _hasTrueK0 = false;
     _nAllTrueParticles = 0;
+    _nTrueTrjPoints = 0;
+    _nTrueElasticPoints = 0;
+    _edHasTrueTrjSceBranches = true;
 }
 
 //********************************************************************
@@ -88,6 +108,15 @@ pdEventDisplay::~pdEventDisplay() {
     delete[] _hit_Y;
     delete[] _hit_Z;
     delete[] _hit_dEdx;
+    delete[] _true_trj_X;
+    delete[] _true_trj_Y;
+    delete[] _true_trj_Z;
+    delete[] _true_trj_sce_X;
+    delete[] _true_trj_sce_Y;
+    delete[] _true_trj_sce_Z;
+    delete[] _true_elastic_X;
+    delete[] _true_elastic_Y;
+    delete[] _true_elastic_Z;
 }
 
 //********************************************************************
@@ -186,6 +215,47 @@ void pdEventDisplay::AddExperimentVariables(OutputManager& output) {
                         "All true particle end process enums", ednAllTrueParticles, "ED_nAllTrueParticles",
                         -kMaxAllTrueParticles);
 
+    output.AddVar(tree_index, ednTrueTrjPoints, "ED_nTrueTrjPoints", "I", "Number of true trajectory points (all particles)");
+    output.AddVectorVar(tree_index, edtrueparticle_nTrjPoints, "ED_trueparticle_nTrjPoints", "I",
+                        "Number of true trajectory points per true particle", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles);
+    output.AddVectorVar(tree_index, edtrueparticle_trjPointIndex, "ED_trueparticle_trjPointIndex", "I",
+                        "Starting true trajectory-point index per true particle", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles);
+    output.AddVectorVar(tree_index, edtrue_trj_X, "ED_true_trj_X", "F",
+                        "True trajectory point X (G4 raw, Geant step order)", ednTrueTrjPoints, "ED_nTrueTrjPoints",
+                        -kMaxTrueTrjPoints);
+    output.AddVectorVar(tree_index, edtrue_trj_Y, "ED_true_trj_Y", "F",
+                        "True trajectory point Y (G4 raw, Geant step order)", ednTrueTrjPoints, "ED_nTrueTrjPoints",
+                        -kMaxTrueTrjPoints);
+    output.AddVectorVar(tree_index, edtrue_trj_Z, "ED_true_trj_Z", "F",
+                        "True trajectory point Z (G4 raw, Geant step order)", ednTrueTrjPoints, "ED_nTrueTrjPoints",
+                        -kMaxTrueTrjPoints);
+    output.AddVectorVar(tree_index, edtrue_trj_SCE_X, "ED_true_trj_SCE_X", "F",
+                        "True trajectory point X (SCE-distorted G4, same index as ED_true_trj_*)", ednTrueTrjPoints,
+                        "ED_nTrueTrjPoints", -kMaxTrueTrjPoints);
+    output.AddVectorVar(tree_index, edtrue_trj_SCE_Y, "ED_true_trj_SCE_Y", "F",
+                        "True trajectory point Y (SCE-distorted G4, same index as ED_true_trj_*)", ednTrueTrjPoints,
+                        "ED_nTrueTrjPoints", -kMaxTrueTrjPoints);
+    output.AddVectorVar(tree_index, edtrue_trj_SCE_Z, "ED_true_trj_SCE_Z", "F",
+                        "True trajectory point Z (SCE-distorted G4, same index as ED_true_trj_*)", ednTrueTrjPoints,
+                        "ED_nTrueTrjPoints", -kMaxTrueTrjPoints);
+
+    output.AddVar(tree_index, ednTrueElasticPoints, "ED_nTrueElasticPoints", "I",
+                  "Number of true elastic-scatter vertices (all particles)");
+    output.AddVectorVar(tree_index, edtrueparticle_nElasticPoints, "ED_trueparticle_nElasticPoints", "I",
+                        "Number of elastic vertices per true particle", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles);
+    output.AddVectorVar(tree_index, edtrueparticle_elasticPointIndex, "ED_trueparticle_elasticPointIndex", "I",
+                        "Starting elastic-vertex index per true particle", ednAllTrueParticles, "ED_nAllTrueParticles",
+                        -kMaxAllTrueParticles);
+    output.AddVectorVar(tree_index, edtrue_elastic_X, "ED_true_elastic_X", "F", "True elastic scatter X [cm]",
+                        ednTrueElasticPoints, "ED_nTrueElasticPoints", -kMaxTrueElasticPoints);
+    output.AddVectorVar(tree_index, edtrue_elastic_Y, "ED_true_elastic_Y", "F", "True elastic scatter Y [cm]",
+                        ednTrueElasticPoints, "ED_nTrueElasticPoints", -kMaxTrueElasticPoints);
+    output.AddVectorVar(tree_index, edtrue_elastic_Z, "ED_true_elastic_Z", "F", "True elastic scatter Z [cm]",
+                        ednTrueElasticPoints, "ED_nTrueElasticPoints", -kMaxTrueElasticPoints);
+
     // Call analysis-specific variable addition (e.g., K0 variables in neutralKaonEventDisplay)
     AddAnalysisVariables(output, tree_index);
 
@@ -216,9 +286,14 @@ void pdEventDisplay::FillExperimentData(OutputManager& output, const AnaEventB& 
     // Fill particle data
     Int_t hitIndex = 0;
 
+    Int_t trueTrjFlat = 0;
+    Int_t trueElasticFlat = 0;
     for (Int_t i = 0; i < event.nTrueParticles && i < kMaxAllTrueParticles; ++i) {
         AnaTrueParticlePD* truePart = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
         if (!truePart) continue;
+
+        const Int_t startIdx = trueTrjFlat;
+        const Int_t elasticStartIdx = trueElasticFlat;
 
         Float_t startPos[3] = {
             static_cast<Float_t>(truePart->Position[0]),
@@ -235,6 +310,81 @@ void pdEventDisplay::FillExperimentData(OutputManager& output, const AnaEventB& 
         output.FillMatrixVarFromArray(edallTrueParticle_endPos, endPos, 3);
         output.FillVectorVar(edallTrueParticle_PDG, truePart->PDG);
         output.FillVectorVar(edallTrueParticle_processEnd, static_cast<Int_t>(truePart->ProcessEnd));
+
+        // True trajectory points in Geant step order: store G4 raw in ED_true_trj_* and SCE G4 in ED_true_trj_SCE_*.
+        const Int_t nRaw = static_cast<Int_t>(truePart->TrjPoints.size());
+        Int_t nDroppedInvalidXyz = 0;
+        Int_t nTruncatedGlobalMax = 0;
+        for (Int_t t = 0; t < nRaw; ++t) {
+            if (trueTrjFlat >= kMaxTrueTrjPoints) {
+                nTruncatedGlobalMax = nRaw - t;
+                break;
+            }
+            const AnaTrueTrajectoryPointPD& tp = truePart->TrjPoints[t];
+            const Float_t x = static_cast<Float_t>(tp.Position_NoSCE.X());
+            const Float_t y = static_cast<Float_t>(tp.Position_NoSCE.Y());
+            const Float_t z = static_cast<Float_t>(tp.Position_NoSCE.Z());
+            const Float_t xSce = static_cast<Float_t>(tp.Position.X());
+            const Float_t ySce = static_cast<Float_t>(tp.Position.Y());
+            const Float_t zSce = static_cast<Float_t>(tp.Position.Z());
+            if (x > -900.f && y > -900.f && z > -900.f && xSce > -900.f && ySce > -900.f && zSce > -900.f) {
+                output.FillVectorVar(edtrue_trj_X, x);
+                output.FillVectorVar(edtrue_trj_Y, y);
+                output.FillVectorVar(edtrue_trj_Z, z);
+                output.FillVectorVar(edtrue_trj_SCE_X, xSce);
+                output.FillVectorVar(edtrue_trj_SCE_Y, ySce);
+                output.FillVectorVar(edtrue_trj_SCE_Z, zSce);
+                output.IncrementCounter(ednTrueTrjPoints);
+                ++trueTrjFlat;
+            } else {
+                ++nDroppedInvalidXyz;
+            }
+        }
+        const Int_t nThis = trueTrjFlat - startIdx;
+        if (const char* dbgTrj = std::getenv("HIGHLAND_DEBUG_TRUE_TRJ_COUNTS");
+            dbgTrj && std::strcmp(dbgTrj, "1") == 0 && event.EventInfo && nRaw > 0) {
+            std::cerr << "[TRUE_TRJ_COUNTS] stage=event_display_ED_ntuple run=" << event.EventInfo->Run
+                      << " subrun=" << event.EventInfo->SubRun << " evt=" << event.EventInfo->Event
+                      << " trueParticleIndex=" << i << " trueID=" << truePart->ID << " nRawTrjPoints=" << nRaw
+                      << " nStoredForED=" << nThis << " dropped_xyzLeqSentinel=" << nDroppedInvalidXyz
+                      << " truncated_EDGlobalCap=" << nTruncatedGlobalMax << "\n";
+        }
+        output.FillVectorVar(edtrueparticle_trjPointIndex, startIdx);
+        output.FillVectorVar(edtrueparticle_nTrjPoints, nThis);
+
+        // True elastic scatter vertices (TrueBeamElastic*; same ordering as analysis ntuple).
+        size_t nElastic = truePart->TrueBeamElasticX.size();
+        nElastic = std::min(nElastic, truePart->TrueBeamElasticY.size());
+        nElastic = std::min(nElastic, truePart->TrueBeamElasticZ.size());
+        size_t nElasticDroppedSentinel = 0;
+        for (size_t e = 0; e < nElastic && trueElasticFlat < kMaxTrueElasticPoints; ++e) {
+            const Float_t x = static_cast<Float_t>(truePart->TrueBeamElasticX[e]);
+            const Float_t y = static_cast<Float_t>(truePart->TrueBeamElasticY[e]);
+            const Float_t z = static_cast<Float_t>(truePart->TrueBeamElasticZ[e]);
+            if (x > -900.f && y > -900.f && z > -900.f) {
+                output.FillVectorVar(edtrue_elastic_X, x);
+                output.FillVectorVar(edtrue_elastic_Y, y);
+                output.FillVectorVar(edtrue_elastic_Z, z);
+                output.IncrementCounter(ednTrueElasticPoints);
+                ++trueElasticFlat;
+            } else {
+                ++nElasticDroppedSentinel;
+            }
+        }
+        if (std::getenv("HIGHLAND_DEBUG_TRUE_ELASTIC_COUNTS") && event.EventInfo &&
+            (nElastic > 0 || truePart->TrueBeamNElasticScatters > 0)) {
+            const Int_t nStoredThis = trueElasticFlat - elasticStartIdx;
+            std::cerr << "[TRUE_ELASTIC_COUNTS] stage=event_display_ED run=" << event.EventInfo->Run
+                      << " subrun=" << event.EventInfo->SubRun << " evt=" << event.EventInfo->Event
+                      << " trueParticleIndex=" << i << " trueID=" << truePart->ID << " PDG=" << truePart->PDG
+                      << " true_beam_nElasticScatters=" << truePart->TrueBeamNElasticScatters
+                      << " nElastic_xyz_vectors=" << static_cast<Int_t>(nElastic)
+                      << " nStoredForED=" << nStoredThis << " dropped_xyzLeqSentinel=" << nElasticDroppedSentinel
+                      << "\n";
+        }
+        output.FillVectorVar(edtrueparticle_elasticPointIndex, elasticStartIdx);
+        output.FillVectorVar(edtrueparticle_nElasticPoints, trueElasticFlat - elasticStartIdx);
+
         output.IncrementCounter(ednAllTrueParticles);
     }
 
@@ -285,6 +435,93 @@ void pdEventDisplay::FillExperimentData(OutputManager& output, const AnaEventB& 
 
     // Call analysis-specific data filling (e.g., K0 candidates in neutralKaonEventDisplay)
     FillAnalysisData(output, event, box);
+
+    if (std::getenv("HIGHLAND_DEBUG_ED_COORD_AUDIT") && event.EventInfo) {
+        const auto& ei = *event.EventInfo;
+        auto fmt3 = [](double x, double y, double z) {
+            std::ostringstream os;
+            os << "(" << x << "," << y << "," << z << ")";
+            return os.str();
+        };
+        auto dist3 = [](double ax, double ay, double az, double bx, double by, double bz) {
+            const double dx = ax - bx, dy = ay - by, dz = az - bz;
+            return std::sqrt(dx*dx + dy*dy + dz*dz);
+        };
+
+        for (Int_t p = 0; p < event.nParticles && p < kMaxParticles; ++p) {
+            AnaParticlePD* part = static_cast<AnaParticlePD*>(event.Particles[p]);
+            if (!part) continue;
+            Int_t pdg = 0;
+            if (part->TrueObject) {
+                AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(part->TrueObject);
+                if (tp) pdg = tp->PDG;
+            }
+            const size_t nTp = part->TrjPoints.size();
+            const TVector3 ps(part->PositionStart[0], part->PositionStart[1], part->PositionStart[2]);
+            const TVector3 pe(part->PositionEnd[0],   part->PositionEnd[1],   part->PositionEnd[2]);
+            std::cerr << "[ED_COORD_AUDIT] reco run=" << ei.Run << " sub=" << ei.SubRun
+                      << " evt=" << ei.Event << " UID=" << part->UniqueID << " PDG=" << pdg
+                      << " PositionStart=" << fmt3(ps.X(), ps.Y(), ps.Z())
+                      << " PositionEnd=" << fmt3(pe.X(), pe.Y(), pe.Z())
+                      << " nTrjPoints=" << nTp;
+            if (nTp > 0) {
+                const TVector3& f = part->TrjPoints.front().Position;
+                const TVector3& l = part->TrjPoints.back().Position;
+                std::cerr << " TrjFront=" << fmt3(f.X(), f.Y(), f.Z())
+                          << " TrjBack="  << fmt3(l.X(), l.Y(), l.Z())
+                          << " |start-front|=" << dist3(ps.X(), ps.Y(), ps.Z(), f.X(), f.Y(), f.Z())
+                          << " |end-back|="    << dist3(pe.X(), pe.Y(), pe.Z(), l.X(), l.Y(), l.Z());
+            }
+            std::cerr << "\n";
+        }
+
+        for (Int_t i = 0; i < event.nTrueParticles && i < kMaxAllTrueParticles; ++i) {
+            AnaTrueParticlePD* tp = static_cast<AnaTrueParticlePD*>(event.TrueParticles[i]);
+            if (!tp) continue;
+            const size_t nTrj = tp->TrjPoints.size();
+            const TVector3 P(tp->Position[0], tp->Position[1], tp->Position[2]);
+            const TVector3 PE(tp->PositionEnd[0], tp->PositionEnd[1], tp->PositionEnd[2]);
+            std::cerr << "[ED_COORD_AUDIT] true run=" << ei.Run << " sub=" << ei.SubRun
+                      << " evt=" << ei.Event << " ID=" << tp->ID << " PDG=" << tp->PDG
+                      << " Position(G4raw)=" << fmt3(P.X(), P.Y(), P.Z())
+                      << " PositionEnd(G4raw)=" << fmt3(PE.X(), PE.Y(), PE.Z())
+                      << " nTrjPoints=" << nTrj;
+            if (nTrj > 0) {
+                const TVector3& fSCE = tp->TrjPoints.front().Position;
+                const TVector3& lSCE = tp->TrjPoints.back().Position;
+                const TVector3& fRaw = tp->TrjPoints.front().Position_NoSCE;
+                const TVector3& lRaw = tp->TrjPoints.back().Position_NoSCE;
+                std::cerr << " TrjFront_SCE=" << fmt3(fSCE.X(), fSCE.Y(), fSCE.Z())
+                          << " TrjBack_SCE="  << fmt3(lSCE.X(), lSCE.Y(), lSCE.Z())
+                          << " TrjFront_NoSCE=" << fmt3(fRaw.X(), fRaw.Y(), fRaw.Z())
+                          << " TrjBack_NoSCE="  << fmt3(lRaw.X(), lRaw.Y(), lRaw.Z())
+                          << " |Pos-front_NoSCE|=" << dist3(P.X(), P.Y(), P.Z(), fRaw.X(), fRaw.Y(), fRaw.Z())
+                          << " |Pos-front_SCE|="   << dist3(P.X(), P.Y(), P.Z(), fSCE.X(), fSCE.Y(), fSCE.Z());
+            }
+            std::cerr << "\n";
+
+            const size_t nElX = tp->TrueBeamElasticX.size();
+            const size_t nElY = tp->TrueBeamElasticY.size();
+            const size_t nElZ = tp->TrueBeamElasticZ.size();
+            const size_t nEl = std::min(nElX, std::min(nElY, nElZ));
+            for (size_t e = 0; e < nEl; ++e) {
+                const double ex = tp->TrueBeamElasticX[e];
+                const double ey = tp->TrueBeamElasticY[e];
+                const double ez = tp->TrueBeamElasticZ[e];
+                double dMin = -1.;
+                for (size_t t = 0; t < nTrj; ++t) {
+                    const TVector3& v = tp->TrjPoints[t].Position_NoSCE;
+                    if (v.X() == -999 && v.Y() == -999 && v.Z() == -999) continue;
+                    const double d = dist3(ex, ey, ez, v.X(), v.Y(), v.Z());
+                    if (dMin < 0. || d < dMin) dMin = d;
+                }
+                std::cerr << "[ED_COORD_AUDIT] true_elastic run=" << ei.Run << " sub=" << ei.SubRun
+                          << " evt=" << ei.Event << " ID=" << tp->ID << " idx=" << e
+                          << " Pos(G4raw)=" << fmt3(ex, ey, ez)
+                          << " minDistTo_NoSCE_step=" << dMin << "\n";
+            }
+        }
+    }
 }
 
 //********************************************************************
@@ -401,6 +638,26 @@ bool pdEventDisplay::ReadEventData(TTree* tree, Int_t run, Int_t subrun, Int_t e
     tree->SetBranchAddress("ED_allTrueParticle_PDG", _allTrueParticle_PDG);
     tree->SetBranchAddress("ED_allTrueParticle_processEnd", _allTrueParticle_processEnd);
 
+    tree->SetBranchAddress("ED_nTrueTrjPoints", &_nTrueTrjPoints);
+    tree->SetBranchAddress("ED_trueparticle_nTrjPoints", _trueparticle_nTrjPoints);
+    tree->SetBranchAddress("ED_trueparticle_trjPointIndex", _trueparticle_trjPointIndex);
+    tree->SetBranchAddress("ED_true_trj_X", _true_trj_X);
+    tree->SetBranchAddress("ED_true_trj_Y", _true_trj_Y);
+    tree->SetBranchAddress("ED_true_trj_Z", _true_trj_Z);
+    _edHasTrueTrjSceBranches = (tree->GetBranch("ED_true_trj_SCE_X") != nullptr);
+    if (_edHasTrueTrjSceBranches) {
+        tree->SetBranchAddress("ED_true_trj_SCE_X", _true_trj_sce_X);
+        tree->SetBranchAddress("ED_true_trj_SCE_Y", _true_trj_sce_Y);
+        tree->SetBranchAddress("ED_true_trj_SCE_Z", _true_trj_sce_Z);
+    }
+
+    tree->SetBranchAddress("ED_nTrueElasticPoints", &_nTrueElasticPoints);
+    tree->SetBranchAddress("ED_trueparticle_nElasticPoints", _trueparticle_nElasticPoints);
+    tree->SetBranchAddress("ED_trueparticle_elasticPointIndex", _trueparticle_elasticPointIndex);
+    tree->SetBranchAddress("ED_true_elastic_X", _true_elastic_X);
+    tree->SetBranchAddress("ED_true_elastic_Y", _true_elastic_Y);
+    tree->SetBranchAddress("ED_true_elastic_Z", _true_elastic_Z);
+
     tree->SetBranchAddress("ED_k0_creationVtxPos", _k0_creationVtxPos);
     tree->SetBranchAddress("ED_k0_annihilationVtxPos", _k0_annihilationVtxPos);
     tree->SetBranchAddress("ED_k0_startPos", _k0_startPos);
@@ -420,6 +677,15 @@ bool pdEventDisplay::ReadEventData(TTree* tree, Int_t run, Int_t subrun, Int_t e
     // Reload the current entry after analysis-specific branch addresses are set.
     // Otherwise, derived-class arrays (e.g., trajectory points) keep default values.
     tree->GetEntry(tree->GetReadEntry());
+
+    if (!_edHasTrueTrjSceBranches && _nTrueTrjPoints > 0) {
+        const Int_t n = std::min(_nTrueTrjPoints, kMaxTrueTrjPoints);
+        for (Int_t j = 0; j < n; ++j) {
+            _true_trj_sce_X[j] = _true_trj_X[j];
+            _true_trj_sce_Y[j] = _true_trj_Y[j];
+            _true_trj_sce_Z[j] = _true_trj_Z[j];
+        }
+    }
 
     std::cout << "Read event data: " << _nParticles << " particles, "
               << _totalHits << " hits, " << _nK0Candidates << " K0 candidates" << std::endl;
@@ -534,13 +800,13 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
                 }
             }
 
-            startPosSet = new TEvePointSet("Pandora Start");
+            startPosSet = new TEvePointSet("Pandora Start (reco-SCE)");
             startPosSet->SetMarkerStyle(21);
             startPosSet->SetMarkerSize(1.2);
             startPosSet->SetMainColor(color);
             particleGroup->AddElement(startPosSet);
 
-            endPosSet = new TEvePointSet("Pandora End");
+            endPosSet = new TEvePointSet("Pandora End (reco-SCE)");
             endPosSet->SetMarkerStyle(22);
             endPosSet->SetMarkerSize(1.2);
             endPosSet->SetMainColor(color);
@@ -561,13 +827,13 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
                 particleGroup->AddElement(line);
             }
 
-            startPosSet = new TEvePointSet("Pandora Start");
+            startPosSet = new TEvePointSet("Pandora Start (reco-SCE)");
             startPosSet->SetMarkerStyle(21);
             startPosSet->SetMarkerSize(1.2);
             startPosSet->SetMainColor(color);
             particleGroup->AddElement(startPosSet);
 
-            endPosSet = new TEvePointSet("Pandora End");
+            endPosSet = new TEvePointSet("Pandora End (reco-SCE)");
             endPosSet->SetMarkerStyle(22);
             endPosSet->SetMarkerSize(1.2);
             endPosSet->SetMainColor(color);
@@ -601,34 +867,39 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
         Int_t trueColor = GetParticleColor(_allTrueParticle_PDG[i]);
         if (trueColor == kBlack) trueColor = kGray + 1;
 
-        TEveLine* trueLine = new TEveLine(Form("True Particle #%d", i));
-        trueLine->SetPoint(0, _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
-        trueLine->SetPoint(1, _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        const Int_t nTrj = _trueparticle_nTrjPoints[i];
+        const Int_t trjStart = _trueparticle_trjPointIndex[i];
+        const Float_t rawX0 = _allTrueParticle_startPos[i][0];
+        const Float_t rawY0 = _allTrueParticle_startPos[i][1];
+        const Float_t rawZ0 = _allTrueParticle_startPos[i][2];
+        const Float_t rawX1 = _allTrueParticle_endPos[i][0];
+        const Float_t rawY1 = _allTrueParticle_endPos[i][1];
+        const Float_t rawZ1 = _allTrueParticle_endPos[i][2];
+
+        TEveLine* trueLine = new TEveLine(Form("True Line #%d (G4 raw)", i));
+        trueLine->SetPoint(0, rawX0, rawY0, rawZ0);
+        trueLine->SetPoint(1, rawX1, rawY1, rawZ1);
         trueLine->SetMainColor(trueColor);
         trueLine->SetLineWidth(2);
         trueParticleGroup->AddElement(trueLine);
-        RegisterMeasurementAnchor(trueLine,
-                                  _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
-        RegisterMeasurementAnchor(trueLine,
-                                  _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        RegisterMeasurementAnchor(trueLine, rawX0, rawY0, rawZ0);
+        RegisterMeasurementAnchor(trueLine, rawX1, rawY1, rawZ1);
 
-        TEvePointSet* trueStart = new TEvePointSet(Form("True Particle #%d Start", i));
-        trueStart->SetNextPoint(_allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
+        TEvePointSet* trueStart = new TEvePointSet(Form("True Start #%d (G4 raw)", i));
+        trueStart->SetNextPoint(rawX0, rawY0, rawZ0);
         trueStart->SetMarkerStyle(29);
         trueStart->SetMarkerSize(1.8);
         trueStart->SetMainColor(trueColor);
         trueParticleGroup->AddElement(trueStart);
-        RegisterMeasurementAnchor(trueStart,
-                                  _allTrueParticle_startPos[i][0], _allTrueParticle_startPos[i][1], _allTrueParticle_startPos[i][2]);
+        RegisterMeasurementAnchor(trueStart, rawX0, rawY0, rawZ0);
 
-        TEvePointSet* trueEnd = new TEvePointSet(Form("True Particle #%d End", i));
-        trueEnd->SetNextPoint(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        TEvePointSet* trueEnd = new TEvePointSet(Form("True End #%d (G4 raw)", i));
+        trueEnd->SetNextPoint(rawX1, rawY1, rawZ1);
         trueEnd->SetMarkerStyle(29);
         trueEnd->SetMarkerSize(1.8);
         trueEnd->SetMainColor(trueColor);
         trueParticleGroup->AddElement(trueEnd);
-        RegisterMeasurementAnchor(trueEnd,
-                                  _allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        RegisterMeasurementAnchor(trueEnd, rawX1, rawY1, rawZ1);
 
         std::string procLabel = ProcessEnumToString(_allTrueParticle_processEnd[i]);
         std::string labelText;
@@ -640,8 +911,109 @@ void pdEventDisplay::DrawParticles3D(TEveScene* scene) {
         TEveText* procText = new TEveText(labelText.c_str());
         procText->SetMainColor(trueColor);
         procText->SetFontSize(14);
-        procText->RefMainTrans().SetPos(_allTrueParticle_endPos[i][0], _allTrueParticle_endPos[i][1], _allTrueParticle_endPos[i][2]);
+        procText->RefMainTrans().SetPos(rawX1, rawY1, rawZ1);
         trueParticleGroup->AddElement(procText);
+
+        TEveElementList* trueTrjGroup = new TEveElementList("True TrjPoints (G4 raw)");
+        trueParticleGroup->AddElement(trueTrjGroup);
+        TEveElementList* trueTrjSceGroup = new TEveElementList("True TrjPoints (SCE-distorted G4)");
+        trueParticleGroup->AddElement(trueTrjSceGroup);
+
+        Int_t firstSceG = -1;
+        Int_t lastSceG = -1;
+        if (nTrj > 0 && trjStart >= 0 && trjStart + nTrj <= _nTrueTrjPoints && trjStart + nTrj <= kMaxTrueTrjPoints) {
+            TEvePointSet* firstTrjSet = new TEvePointSet("First True TrjPoint (G4 raw)");
+            firstTrjSet->SetMarkerStyle(29);
+            firstTrjSet->SetMarkerSize(2.0);
+            firstTrjSet->SetMainColor(trueColor);
+            trueTrjGroup->AddElement(firstTrjSet);
+
+            TEvePointSet* trjSet = new TEvePointSet("True TrjPoints (G4 raw)");
+            trjSet->SetMarkerStyle(20);
+            trjSet->SetMarkerSize(0.55);
+            trjSet->SetMainColor(trueColor);
+            trueTrjGroup->AddElement(trjSet);
+
+            TEvePointSet* firstSceTrjSet = new TEvePointSet("First True TrjPoint (SCE-distorted G4)");
+            firstSceTrjSet->SetMarkerStyle(30);
+            firstSceTrjSet->SetMarkerSize(2.0);
+            firstSceTrjSet->SetMainColor(trueColor);
+            trueTrjSceGroup->AddElement(firstSceTrjSet);
+
+            TEvePointSet* sceTrjSet = new TEvePointSet("True TrjPoints (SCE-distorted G4)");
+            sceTrjSet->SetMarkerStyle(24);
+            sceTrjSet->SetMarkerSize(0.65);
+            sceTrjSet->SetMainColor(trueColor);
+            trueTrjSceGroup->AddElement(sceTrjSet);
+
+            bool firstRawDone = false;
+            bool firstSceDone = false;
+            for (Int_t t = 0; t < nTrj; ++t) {
+                const Int_t g = trjStart + t;
+                const Float_t x = _true_trj_X[g];
+                const Float_t y = _true_trj_Y[g];
+                const Float_t z = _true_trj_Z[g];
+                const Float_t sx = _true_trj_sce_X[g];
+                const Float_t sy = _true_trj_sce_Y[g];
+                const Float_t sz = _true_trj_sce_Z[g];
+                if (x > -900.f && y > -900.f && z > -900.f) {
+                    if (!firstRawDone) {
+                        firstTrjSet->SetNextPoint(x, y, z);
+                        firstRawDone = true;
+                    } else {
+                        trjSet->SetNextPoint(x, y, z);
+                    }
+                }
+                if (sx > -900.f && sy > -900.f && sz > -900.f) {
+                    if (firstSceG < 0) firstSceG = g;
+                    lastSceG = g;
+                    if (!firstSceDone) {
+                        firstSceTrjSet->SetNextPoint(sx, sy, sz);
+                        firstSceDone = true;
+                    } else {
+                        sceTrjSet->SetNextPoint(sx, sy, sz);
+                    }
+                }
+            }
+        }
+
+        if (std::getenv("HIGHLAND_ED_DRAW_SCE_TRUE_OVERLAY") && firstSceG >= 0 && lastSceG >= 0 &&
+            firstSceG != lastSceG) {
+            TEveLine* sceOverlay =
+                new TEveLine(Form("True Line #%d (SCE-distorted overlay)", i));
+            sceOverlay->SetPoint(0, _true_trj_sce_X[firstSceG], _true_trj_sce_Y[firstSceG], _true_trj_sce_Z[firstSceG]);
+            sceOverlay->SetPoint(1, _true_trj_sce_X[lastSceG], _true_trj_sce_Y[lastSceG], _true_trj_sce_Z[lastSceG]);
+            sceOverlay->SetMainColor(trueColor);
+            sceOverlay->SetLineStyle(7);
+            sceOverlay->SetLineWidth(2);
+            trueParticleGroup->AddElement(sceOverlay);
+        }
+
+        TEveElementList* elasticGroup = new TEveElementList("True Elastic (G4 raw)");
+        trueParticleGroup->AddElement(elasticGroup);
+
+        const Int_t nEl = _trueparticle_nElasticPoints[i];
+        const Int_t elStart = _trueparticle_elasticPointIndex[i];
+        if (nEl > 0 && elStart >= 0 && elStart + nEl <= _nTrueElasticPoints &&
+            elStart + nEl <= kMaxTrueElasticPoints) {
+            const Int_t elasticColor = kOrange + 7;
+            TEvePointSet* elasticSet = new TEvePointSet("True Elastic (G4 raw)");
+            elasticSet->SetMarkerStyle(5);
+            elasticSet->SetMarkerSize(1.35);
+            elasticSet->SetMainColor(elasticColor);
+            elasticGroup->AddElement(elasticSet);
+
+            for (Int_t e = 0; e < nEl; ++e) {
+                const Int_t g = elStart + e;
+                const Float_t x = _true_elastic_X[g];
+                const Float_t y = _true_elastic_Y[g];
+                const Float_t z = _true_elastic_Z[g];
+                if (x > -900.f && y > -900.f && z > -900.f) {
+                    elasticSet->SetNextPoint(x, y, z);
+                    RegisterMeasurementAnchor(elasticSet, x, y, z);
+                }
+            }
+        }
     }
 
     std::cout << "3D particles drawn" << std::endl;
@@ -808,19 +1180,24 @@ void pdEventDisplay::DrawParticlesCanvas2D(TCanvas* canvas, const std::string& p
         }
     }
 
+    const bool drawSceOverlay2D = (std::getenv("HIGHLAND_ED_DRAW_SCE_TRUE_OVERLAY") != nullptr);
     for (Int_t i = 0; i < _nAllTrueParticles && i < kMaxAllTrueParticles; ++i) {
         if (_allTrueParticle_startPos[i][0] <= -900 || _allTrueParticle_endPos[i][0] <= -900) continue;
 
+        const Float_t rawX0 = _allTrueParticle_startPos[i][0];
+        const Float_t rawY0 = _allTrueParticle_startPos[i][1];
+        const Float_t rawZ0 = _allTrueParticle_startPos[i][2];
+        const Float_t rawX1 = _allTrueParticle_endPos[i][0];
+        const Float_t rawY1 = _allTrueParticle_endPos[i][1];
+        const Float_t rawZ1 = _allTrueParticle_endPos[i][2];
+
         Float_t x1 = 0.f, y1 = 0.f, x2 = 0.f, y2 = 0.f;
         if (projection_type == "XY") {
-            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][1];
-            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][1];
+            x1 = rawX0; y1 = rawY0; x2 = rawX1; y2 = rawY1;
         } else if (projection_type == "XZ") {
-            x1 = _allTrueParticle_startPos[i][0]; y1 = _allTrueParticle_startPos[i][2];
-            x2 = _allTrueParticle_endPos[i][0];   y2 = _allTrueParticle_endPos[i][2];
+            x1 = rawX0; y1 = rawZ0; x2 = rawX1; y2 = rawZ1;
         } else if (projection_type == "YZ") {
-            x1 = _allTrueParticle_startPos[i][1]; y1 = _allTrueParticle_startPos[i][2];
-            x2 = _allTrueParticle_endPos[i][1];   y2 = _allTrueParticle_endPos[i][2];
+            x1 = rawY0; y1 = rawZ0; x2 = rawY1; y2 = rawZ1;
         } else {
             continue;
         }
@@ -843,6 +1220,44 @@ void pdEventDisplay::DrawParticlesCanvas2D(TCanvas* canvas, const std::string& p
         trueEndMarker->SetMarkerColor(trueColor);
         trueEndMarker->SetMarkerSize(2.0);
         trueEndMarker->Draw("SAME");
+
+        if (drawSceOverlay2D) {
+            const Int_t nTrj = _trueparticle_nTrjPoints[i];
+            const Int_t trjStart = _trueparticle_trjPointIndex[i];
+            if (nTrj > 0 && trjStart >= 0 && trjStart + nTrj <= _nTrueTrjPoints &&
+                trjStart + nTrj <= kMaxTrueTrjPoints) {
+                Int_t firstG = -1;
+                Int_t lastG = -1;
+                for (Int_t t = 0; t < nTrj; ++t) {
+                    const Int_t g = trjStart + t;
+                    const Float_t tx = _true_trj_sce_X[g];
+                    const Float_t ty = _true_trj_sce_Y[g];
+                    const Float_t tz = _true_trj_sce_Z[g];
+                    if (tx > -900.f && ty > -900.f && tz > -900.f) {
+                        if (firstG < 0) firstG = g;
+                        lastG = g;
+                    }
+                }
+                if (firstG >= 0 && lastG >= 0 && firstG != lastG) {
+                    Float_t sx1 = 0.f, sy1 = 0.f, sx2 = 0.f, sy2 = 0.f;
+                    if (projection_type == "XY") {
+                        sx1 = _true_trj_sce_X[firstG]; sy1 = _true_trj_sce_Y[firstG];
+                        sx2 = _true_trj_sce_X[lastG];  sy2 = _true_trj_sce_Y[lastG];
+                    } else if (projection_type == "XZ") {
+                        sx1 = _true_trj_sce_X[firstG]; sy1 = _true_trj_sce_Z[firstG];
+                        sx2 = _true_trj_sce_X[lastG];  sy2 = _true_trj_sce_Z[lastG];
+                    } else { // YZ
+                        sx1 = _true_trj_sce_Y[firstG]; sy1 = _true_trj_sce_Z[firstG];
+                        sx2 = _true_trj_sce_Y[lastG];  sy2 = _true_trj_sce_Z[lastG];
+                    }
+                    TLine* sceLine = new TLine(sx1, sy1, sx2, sy2);
+                    sceLine->SetLineColor(trueColor);
+                    sceLine->SetLineStyle(7);
+                    sceLine->SetLineWidth(2);
+                    sceLine->Draw("SAME");
+                }
+            }
+        }
     }
 
     TLegend* legend = new TLegend(0.85, 0.7, 0.98, 0.95);

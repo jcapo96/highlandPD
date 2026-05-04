@@ -152,6 +152,30 @@ protected:
     Int_t _allTrueParticle_PDG[kMaxAllTrueParticles];
     Int_t _allTrueParticle_processEnd[kMaxAllTrueParticles];
 
+    // True trajectory points (flat buffer + per-true-particle offsets; Geant step order)
+    static const Int_t kMaxTrueTrjPoints = 50000;
+    Int_t _nTrueTrjPoints;
+    Int_t _trueparticle_nTrjPoints[kMaxAllTrueParticles];
+    Int_t _trueparticle_trjPointIndex[kMaxAllTrueParticles];
+    Float_t* _true_trj_X;
+    Float_t* _true_trj_Y;
+    Float_t* _true_trj_Z;
+    /// Parallel to ED_true_trj_*: same indices, SCE-distorted G4 (for overlay vs reco space).
+    Float_t* _true_trj_sce_X;
+    Float_t* _true_trj_sce_Y;
+    Float_t* _true_trj_sce_Z;
+    /// False when reading pre-SCE-branch EventDisplayData files (SCE arrays mirror raw).
+    bool _edHasTrueTrjSceBranches;
+
+    // True elastic scatter vertices (TrueBeamElastic* on each true particle; typically beam MC)
+    static const Int_t kMaxTrueElasticPoints = 8192;
+    Int_t _nTrueElasticPoints;
+    Int_t _trueparticle_nElasticPoints[kMaxAllTrueParticles];
+    Int_t _trueparticle_elasticPointIndex[kMaxAllTrueParticles];
+    Float_t* _true_elastic_X;
+    Float_t* _true_elastic_Y;
+    Float_t* _true_elastic_Z;
+
     // Variable indices for EventDisplayData tree
     // Start after EventDisplayBase variables
     enum enumEventDisplayVar {
@@ -164,6 +188,21 @@ protected:
         edallTrueParticle_endPos,
         edallTrueParticle_PDG,
         edallTrueParticle_processEnd,
+        ednTrueTrjPoints,
+        edtrueparticle_nTrjPoints,
+        edtrueparticle_trjPointIndex,
+        edtrue_trj_X,
+        edtrue_trj_Y,
+        edtrue_trj_Z,
+        edtrue_trj_SCE_X,
+        edtrue_trj_SCE_Y,
+        edtrue_trj_SCE_Z,
+        ednTrueElasticPoints,
+        edtrueparticle_nElasticPoints,
+        edtrueparticle_elasticPointIndex,
+        edtrue_elastic_X,
+        edtrue_elastic_Y,
+        edtrue_elastic_Z,
 
         // Particle data
         ednParticles,

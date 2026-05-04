@@ -41,6 +41,11 @@ public:
   void ApplyTrjPointPositionCorrection(AnaTrajectoryPointPD& tp) const;
   void ApplyTrjPointDirectionCorrection(AnaParticlePD* part) const;
 
+  /// Same calorimetric SCE position map as reco `TrjPoints`, using true-step `Position_NoSCE` (G4 raw) as anchor.
+  void ApplyTrjPointPositionCorrection(AnaTrueParticlePD* truePart) const;
+  void ApplyTrjPointPositionCorrection(AnaTrueTrajectoryPointPD& tp) const;
+  void ApplyTrjPointDirectionCorrection(AnaTrueParticlePD* truePart) const;
+
   void ApplyGlobalVariation(const double var);
   void ApplyVoxelVariation(UInt_t xbin, UInt_t ybin, UInt_t zbin, double var, bool reset_splines = true);
   void ResetToNominal();

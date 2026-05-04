@@ -10,7 +10,6 @@ namespace pionMomentumAnaUtils {
 
   struct MomentumDiagConfig {
     bool enableMomentumDiagnosticMultigraphs = false;
-    bool ensureMomentumSignalOnly = true;
     bool freeRangeComputeDedxBiasDiagnostics = false;
     int freeRangeDedxMinInteriorHits = 15;
     int freeRangeDedxSkipHitsFirst = 3;
@@ -24,8 +23,11 @@ namespace pionMomentumAnaUtils {
   };
 
   void AddCustomCategories();
+  /// Truth-only stopping vs threshold on true |p| at end: 1 = stopping, 2 = not, 3 = truth but bad end momentum, else CATNOTRUTH.
+  int MainTrueStoppingCode(AnaParticlePD* mainTrack, double stoppingMaxTrueEndMomentumGeV);
   int FillMainTrueStoppingCategory(AnaParticlePD* mainTrack, double stoppingMaxTrueEndMomentumGeV);
   void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const AnaEventB& event, int stoppingCode,
+                                                   bool runTLE,
                                                    const MomentumDiagConfig& cfg, double bestTleMomentumGeV,
                                                    double bestMcsMomentumGeV, const std::vector<double>& pAxisTleGeV,
                                                    const std::vector<double>& logLTle,
@@ -34,7 +36,9 @@ namespace pionMomentumAnaUtils {
                                                    const std::vector<double>& mcsDeltaTheta,
                                                    const std::vector<double>& mcsSegmentLengthCm,
                                                    const std::vector<double>& mcsDeltaThetaKept,
-                                                   const std::vector<double>& mcsResidualRangeKeptCm);
+                                                   const std::vector<double>& mcsResidualRangeKeptCm,
+                                                   const std::vector<double>* mcsDeltaThetaTrue = nullptr,
+                                                   const std::vector<double>* mcsSegmentLengthTrueCm = nullptr);
   void WriteMomentumDiagnostics(OutputManager& output);
 
 }

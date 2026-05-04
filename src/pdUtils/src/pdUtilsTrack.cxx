@@ -237,6 +237,18 @@ int pdAnaUtils::GetPosTPCid(TVector3 pos){
 }
 
 //***************************************************************
+bool pdAnaUtils::IsInTPCSCEBox(const TVector3& p){
+//***************************************************************
+  // Strict-inequality TPC box mirroring SpaceCharge::IsInsideBoundaries
+  // (highlandPD/src/pdUtils/src/SpaceCharge.cxx). Keep in sync with it.
+  return !(
+    (TMath::Abs(p.X()) <= 0.0)  || (TMath::Abs(p.X()) >= 360.0) ||
+    (p.Y()             <= 5.2)  || (p.Y()             >= 604.0) ||
+    (p.Z()             <= -0.5) || (p.Z()             >= 695.3)
+  );
+}
+
+//***************************************************************
 void pdAnaUtils::EstimateHitsDirection(AnaParticlePD* part){
 //***************************************************************
 

@@ -4,12 +4,9 @@
 #include "pdDataClasses.hxx"
 #include "TVector3.h"
 #include <limits>
-#include <string>
 #include <vector>
 
 class TH2F;
-class TSpline3;
-
 struct JointK0sPionMomentumGridResult {
   bool ok = false;
   Float_t p1 = -999.f;
@@ -41,8 +38,8 @@ struct MCSLikelihoodConfig {
   double maxAbsDeltaThetaRad = -1.0;
   bool useDetectorSigma = false;
   double detectorSigmaFloorRad = 1e-6;
-  std::string detectorSigmaCalibFile = "";
-  std::string detectorSigmaSplineName = "sp_sigma_det_vs_segment";
+  double detectorSigmaA = 0.0;
+  double detectorSigmaC = 0.0;
 };
 
 class MCSLikelihood {
@@ -50,26 +47,71 @@ public:
   explicit MCSLikelihood(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg = MCSLikelihoodConfig());
 
   double ComputeNLL(double momentumGeV) const;
-  bool HasSamples() const { return !delta_theta_.empty(); }
-  size_t SampleCount() const { return delta_theta_.size(); }
+  bool HasSamples() const { return !theta_xz_.empty(); }
+  size_t SampleCount() const { return theta_xz_.size(); }
 
 private:
-  std::vector<double> delta_theta_;
+  std::vector<double> theta_xz_;
+  std::vector<double> theta_yz_;
   std::vector<double> x_over_x0_;
+  std::vector<double> cumulative_length_cm_;
   double theta0_floor_rad_ = 1e-6;
   double radiation_length_cm_ = 14.0;
   bool use_detector_sigma_ = false;
   double detector_sigma_floor_rad_ = 1e-6;
-  TSpline3* detector_sigma_spline_ = nullptr;
-  double detector_sigma_xmin_cm_ = 0.0;
-  double detector_sigma_xmax_cm_ = 0.0;
+  double detector_sigma_a_ = 0.0;
+  double detector_sigma_c_ = 0.0;
 };
 
+/// Geometry of one segment used by the MCS estimator (mirrors the internal Segment struct).
+struct MCSSegmentGeometry {
+  TVector3 startPoint;       ///< first ordered trajectory point of the segment
+  TVector3 endPoint;         ///< last ordered trajectory point of the segment
+  TVector3 centroid;         ///< mean of segment points
+  TVector3 fittedDirection;  ///< PCA direction, oriented along (end-start)
+  double arcLengthCm = 0.0;  ///< accumulated arc length within the segment
+};
+
+/// Returns the per-segment geometry used by BuildPionMcsScatteringSamples for the given track.
+/// Skips TrjPoints[0] (first calo sample) so ED can still draw it but MCS segments omit it.
+/// Useful to visualize what the MCS estimator actually segments.
+bool BuildPionMcsSegmentGeometry(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg,
+                                 std::vector<MCSSegmentGeometry>& outSegments);
+
+/// Same as BuildPionMcsSegmentGeometry but from pre-ordered 3D points.
+bool BuildPionMcsSegmentGeometryFromOrderedPositions(const std::vector<TVector3>& orderedPositions,
+                                                      const MCSLikelihoodConfig& cfg,
+                                                      std::vector<MCSSegmentGeometry>& outSegments);
+
 /// Build MCS samples from ordered trajectory points using arc-length segments.
+/// TrjPoints[0] is omitted (often misaligned with the rest); remaining points must still be >= 3 after filters.
 /// Optional rrMidCm: RR at the middle of each scattering sample (for plots); pass null for likelihood-only use.
 bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg,
                                   std::vector<double>& deltaTheta, std::vector<double>& xOverX0,
-                                  std::vector<double>* rrMidCm = nullptr);
+                                  std::vector<double>* rrMidCm = nullptr,
+                                  std::vector<double>* thetaXZ = nullptr,
+                                  std::vector<double>* thetaYZ = nullptr,
+                                  std::vector<double>* segmentFitChi2Ndf = nullptr,
+                                  std::vector<double>* segment1RrToEndCm = nullptr,
+                                  std::vector<double>* segment2RrToEndCm = nullptr,
+                                  std::vector<double>* segmentLengthCm = nullptr,
+                                  std::vector<double>* segmentFitChi2NdfSingle = nullptr,
+                                  std::vector<double>* segmentRrToEndCmSingle = nullptr);
+
+/// Same segmentation / scattering logic as BuildPionMcsScatteringSamples, but from pre-ordered 3D points
+/// (e.g. true trajectory SCE positions). Requires at least three points.
+bool BuildPionMcsScatteringSamplesFromOrderedPositions(const std::vector<TVector3>& orderedPositions,
+                                                       const MCSLikelihoodConfig& cfg,
+                                                       std::vector<double>& deltaTheta, std::vector<double>& xOverX0,
+                                                       std::vector<double>* rrMidCm = nullptr,
+                                                       std::vector<double>* thetaXZ = nullptr,
+                                                       std::vector<double>* thetaYZ = nullptr,
+                                                       std::vector<double>* segmentFitChi2Ndf = nullptr,
+                                                       std::vector<double>* segment1RrToEndCm = nullptr,
+                                                       std::vector<double>* segment2RrToEndCm = nullptr,
+                                                       std::vector<double>* segmentLengthCm = nullptr,
+                                                       std::vector<double>* segmentFitChi2NdfSingle = nullptr,
+                                                       std::vector<double>* segmentRrToEndCmSingle = nullptr);
 
 /// Build log L_MCS(p) = -NLL_MCS(p) on a provided momentum axis.
 bool BuildPionMCSLogLikelihoodVsMomentumCurve(const AnaParticlePD& track, const std::vector<double>& pAxisGeV,

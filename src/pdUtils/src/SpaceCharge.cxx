@@ -887,6 +887,57 @@ void SpaceCharge::ApplyTrjPointDirectionCorrection(AnaParticlePD* part) const {
 }
 
 //********************************************************************
+void SpaceCharge::ApplyTrjPointPositionCorrection(AnaTrueParticlePD* truePart) const {
+//********************************************************************
+  if (!truePart) return;
+  for (size_t itp = 0; itp < truePart->TrjPoints.size(); ++itp)
+    ApplyTrjPointPositionCorrection(truePart->TrjPoints[itp]);
+}
+
+//********************************************************************
+void SpaceCharge::ApplyTrjPointPositionCorrection(AnaTrueTrajectoryPointPD& tp) const {
+//********************************************************************
+  if (!tp.IsValid()) return;
+  int TPCid = pdAnaUtils::GetPosTPCid(tp.Position_NoSCE);
+  TVector3 offset = GetCalPosOffsets(tp.Position_NoSCE, TPCid);
+  tp.Position.SetX(tp.Position_NoSCE.X() - offset.X());
+  tp.Position.SetY(tp.Position_NoSCE.Y() + offset.Y());
+  tp.Position.SetZ(tp.Position_NoSCE.Z() + offset.Z());
+}
+
+//********************************************************************
+void SpaceCharge::ApplyTrjPointDirectionCorrection(AnaTrueParticlePD* truePart) const {
+//********************************************************************
+  if (!truePart) return;
+  int ntps = (int)truePart->TrjPoints.size();
+  for (int itp = 0; itp < ntps - 1; itp++) {
+    if (!truePart->TrjPoints[itp].IsValid()) continue;
+    int nexttp = -1;
+    for (int jtp = itp + 1; jtp < ntps; jtp++) {
+      if (truePart->TrjPoints[jtp].IsValid()) {
+        nexttp = jtp;
+        break;
+      }
+    }
+    if (nexttp == -1) break;
+    TVector3 dis = truePart->TrjPoints[nexttp].Position - truePart->TrjPoints[itp].Position;
+    dis.SetMag(1);
+    truePart->TrjPoints[itp].Direction = dis;
+  }
+  for (int itp = 1; itp < ntps; itp++) {
+    if (truePart->TrjPoints[ntps - itp].IsValid()) {
+      for (int jtp = itp; jtp < ntps; jtp++) {
+        if (truePart->TrjPoints[ntps - jtp - 1].IsValid()) {
+          truePart->TrjPoints[ntps - itp].Direction = truePart->TrjPoints[ntps - jtp - 1].Direction;
+          break;
+        }
+      }
+      break;
+    }
+  }
+}
+
+//********************************************************************
 UInt_t SpaceCharge::GetNbinsX() const {
 //********************************************************************
     

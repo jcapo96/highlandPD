@@ -110,8 +110,8 @@ need to be enabled in baseAnalysis parameter file
 < neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad = -1.0 >
 # Add detector angular term in quadrature: sigma_tot^2 = theta0^2 + sigma_det(L)^2
 < neutralKaonAnalysis.JointK0sMCSUseDetectorSigma = 1 >
-< neutralKaonAnalysis.JointK0sMCSDetectorSigmaCalibFile = highlandPD/src/pdUtils/data/pion_mcs_sigma_det_calibration.root >
-< neutralKaonAnalysis.JointK0sMCSDetectorSigmaSplineName = sp_sigma_det_vs_segment >
+< neutralKaonAnalysis.JointK0sMCSDetectorSigmaA = 3.249e-7 >
+< neutralKaonAnalysis.JointK0sMCSDetectorSigmaC = -1.62e-7 >
 < neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad = 1.0e-6 >
 # Diagnostics-only lower momentum bound for TLE/MCS likelihood-vs-momentum plots (does not affect joint fit scan).
 < neutralKaonAnalysis.JointK0sDiagMomentumPMinGeV = 0.01 >

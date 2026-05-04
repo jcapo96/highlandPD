@@ -2,7 +2,6 @@
 
 #include "CategoryManager.hxx"
 #include "Parameters.hxx"
-#include "TFile.h"
 #include "TGraph.h"
 #include "TH1F.h"
 #include "TMultiGraph.h"
@@ -10,7 +9,6 @@
 #include "TPad.h"
 #include "TLegend.h"
 #include "TTree.h"
-#include "TSpline.h"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "pdJointK0sPionMomentum.hxx"
 #include "pdUtilsDEdx.hxx"
@@ -19,7 +17,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <map>
 #include <unordered_map>
 #include <string>
 #include <tuple>
@@ -27,7 +24,6 @@
 #include <limits>
 #include <TH2F.h>
 #include <TGaxis.h>
-#include <TSystem.h>
 #include <TVector3.h>
 
 namespace {
@@ -64,59 +60,6 @@ namespace {
   std::vector<TGraph*> gK0JointObjectiveBestMarker;
   /// One-point marker TGraphs per joint 2D plot: TLE, true, joint (flat, 3 per TH2; nullptr if unavailable).
   std::vector<TGraph*> gK0JointObjective2DMarkerGraphs;
-
-  TSpline3* GetDetectorSigmaSplineForDiagnostics(const std::string& calibFile, const std::string& splineName) {
-    if (calibFile.empty() || splineName.empty()) return nullptr;
-    static std::map<std::string, std::pair<TFile*, TSpline3*> > cache;
-
-    std::vector<std::string> pathsToTry;
-    auto pushUnique = [&pathsToTry](const std::string& p) {
-      if (p.empty()) return;
-      if (std::find(pathsToTry.begin(), pathsToTry.end(), p) == pathsToTry.end()) pathsToTry.push_back(p);
-    };
-    pushUnique(calibFile);
-
-    if (!calibFile.empty() && calibFile[0] != '/') {
-      const char* hp = std::getenv("HIGHLANDPDPATH");
-      const std::string hpStr = (hp ? std::string(hp) : std::string());
-      if (!hpStr.empty()) {
-        const std::string prefix = "highlandPD/";
-        if (calibFile.rfind(prefix, 0) == 0) {
-          pushUnique(hpStr + "/" + calibFile.substr(prefix.size()));
-        } else {
-          pushUnique(hpStr + "/" + calibFile);
-        }
-      }
-      const char* h = std::getenv("HIGHLANDPATH");
-      const std::string hStr = (h ? std::string(h) : std::string());
-      if (!hStr.empty()) pushUnique(hStr + "/" + calibFile);
-    }
-
-    for (const std::string& path : pathsToTry) {
-      if (gSystem && gSystem->AccessPathName(path.c_str(), kReadPermission)) continue;
-      const std::string key = path + "::" + splineName;
-      auto it = cache.find(key);
-      if (it != cache.end()) return it->second.second;
-      TFile* f = TFile::Open(path.c_str(), "READ");
-      if (!f || f->IsZombie()) {
-        if (f) {
-          f->Close();
-          delete f;
-        }
-        continue;
-      }
-      TObject* obj = f->Get(splineName.c_str());
-      TSpline3* sp = dynamic_cast<TSpline3*>(obj);
-      if (!sp) {
-        f->Close();
-        delete f;
-        continue;
-      }
-      cache[key] = std::make_pair(f, sp);
-      return sp;
-    }
-    return nullptr;
-  }
 
   void DeleteMultiGraphAndGraphs(TMultiGraph* mg) {
     if (!mg) return;
@@ -526,18 +469,18 @@ void MaybeAccumulateJointMomentumLogLikelihoodGraphs(AnaNeutralParticlePD* candi
     mcsCfg.useDetectorSigma =
         ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") &&
         ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") != 0;
-    mcsCfg.detectorSigmaCalibFile =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaCalibFile")
-            ? ND::params().GetParameterS("neutralKaonAnalysis.JointK0sMCSDetectorSigmaCalibFile")
-            : "";
-    mcsCfg.detectorSigmaSplineName =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaSplineName")
-            ? ND::params().GetParameterS("neutralKaonAnalysis.JointK0sMCSDetectorSigmaSplineName")
-            : "sp_sigma_det_vs_segment";
     mcsCfg.detectorSigmaFloorRad =
         ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
             ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
             : 1e-6;
+    mcsCfg.detectorSigmaA =
+        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
+            : 0.0;
+    mcsCfg.detectorSigmaC =
+        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
+            : 0.0;
     std::vector<double> logLMcs;
     const bool hasMcs =
         pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*reco, pAxisDiag, mcsCfg, logLMcs) &&
@@ -805,40 +748,24 @@ void MaybeAccumulateJointMomentumLogLikelihoodGraphs(AnaNeutralParticlePD* candi
             }
           }
           if (mcsCfg.useDetectorSigma && !xOverX0Obs.empty()) {
-            TSpline3* detSpline =
-                GetDetectorSigmaSplineForDiagnostics(mcsCfg.detectorSigmaCalibFile, mcsCfg.detectorSigmaSplineName);
-            if (detSpline) {
+            double sumDet2 = 0.0;
+            size_t nDet = 0u;
+            for (double xov : xOverX0Obs) {
+              if (!(xov > 0.0) || !std::isfinite(xov)) continue;
+              const double segCm = xov * x0CmMcs;
+              double sigmaDet2 = 0.0;
+              if (std::isfinite(segCm) && segCm > 0.0) sigmaDet2 = mcsCfg.detectorSigmaA / (segCm * segCm) + mcsCfg.detectorSigmaC;
+              if (!std::isfinite(sigmaDet2) || sigmaDet2 <= 0.0) sigmaDet2 = mcsCfg.detectorSigmaFloorRad * mcsCfg.detectorSigmaFloorRad;
+              const double sigmaDet = std::max(std::sqrt(sigmaDet2), mcsCfg.detectorSigmaFloorRad);
+              sumDet2 += sigmaDet * sigmaDet;
+              ++nDet;
+            }
+            if (nDet > 0u && std::isfinite(sumDet2)) {
               stats.detectorSigmaApplied = true;
-              const int nKnots = detSpline->GetNp();
-              double xMin = 0.0;
-              double xMax = 0.0;
-              double yTmp = 0.0;
-              if (nKnots > 0) {
-                detSpline->GetKnot(0, xMin, yTmp);
-                detSpline->GetKnot(nKnots - 1, xMax, yTmp);
-                if (xMax < xMin) std::swap(xMin, xMax);
-              }
-              double sumDet2 = 0.0;
-              size_t nDet = 0u;
-              for (double xov : xOverX0Obs) {
-                if (!(xov > 0.0) || !std::isfinite(xov)) continue;
-                double segCm = xov * x0CmMcs;
-                if (nKnots > 0) {
-                  if (segCm < xMin) segCm = xMin;
-                  if (segCm > xMax) segCm = xMax;
-                }
-                double sigmaDet = detSpline->Eval(segCm);
-                if (!std::isfinite(sigmaDet) || sigmaDet <= 0.0) sigmaDet = mcsCfg.detectorSigmaFloorRad;
-                sigmaDet = std::max(sigmaDet, mcsCfg.detectorSigmaFloorRad);
-                sumDet2 += sigmaDet * sigmaDet;
-                ++nDet;
-              }
-              if (nDet > 0u && std::isfinite(sumDet2)) {
-                stats.rmsDetUsed = std::sqrt(sumDet2 / static_cast<double>(nDet));
-                if (std::isfinite(stats.rmsObs) && stats.rmsObs >= 0.0) {
-                  const double mcs2 = std::max(0.0, stats.rmsObs * stats.rmsObs - stats.rmsDetUsed * stats.rmsDetUsed);
-                  stats.rmsMcsFromObsSubDet = std::sqrt(mcs2);
-                }
+              stats.rmsDetUsed = std::sqrt(sumDet2 / static_cast<double>(nDet));
+              if (std::isfinite(stats.rmsObs) && stats.rmsObs >= 0.0) {
+                const double mcs2 = std::max(0.0, stats.rmsObs * stats.rmsObs - stats.rmsDetUsed * stats.rmsDetUsed);
+                stats.rmsMcsFromObsSubDet = std::sqrt(mcs2);
               }
             }
           }
@@ -957,18 +884,18 @@ void MaybeAccumulateJointObjective2DHeatmaps(AnaNeutralParticlePD* candidate, co
     mcsCfg.useDetectorSigma =
         ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") &&
         ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") != 0;
-    mcsCfg.detectorSigmaCalibFile =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaCalibFile")
-            ? ND::params().GetParameterS("neutralKaonAnalysis.JointK0sMCSDetectorSigmaCalibFile")
-            : "";
-    mcsCfg.detectorSigmaSplineName =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaSplineName")
-            ? ND::params().GetParameterS("neutralKaonAnalysis.JointK0sMCSDetectorSigmaSplineName")
-            : "sp_sigma_det_vs_segment";
     mcsCfg.detectorSigmaFloorRad =
         ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
             ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
             : 1e-6;
+    mcsCfg.detectorSigmaA =
+        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
+            : 0.0;
+    mcsCfg.detectorSigmaC =
+        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
+            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
+            : 0.0;
     std::vector<double> logLMcs1;
     std::vector<double> logLMcs2;
     if (pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*reco1, p1v, mcsCfg, logLMcs1) &&

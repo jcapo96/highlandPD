@@ -607,6 +607,124 @@ bool pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurveFromVectors(
   return pGeV.size() >= 2u;
 }
 
+//***************************************************************
+bool pdAnaUtils::ComputePionBraggWindowMeanNegLogLikelihoodVsTemplate(
+    AnaParticlePD* part, double maxBraggResidualRangeCm, int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+    double dedxMaxMeVcm, double pdfPathCm, int minBraggHits, double& meanNegLogL, int& nHitsUsed) {
+//***************************************************************
+  meanNegLogL = -999.;
+  nHitsUsed = 0;
+  if (!part || part->Hits[2].empty()) return false;
+  if (!std::isfinite(maxBraggResidualRangeCm) || maxBraggResidualRangeCm <= 0.) return false;
+  if (!std::isfinite(pdfPathCm) || pdfPathCm <= 0.) return false;
+  if (minBraggHits < 1) return false;
+  if (skipHitsFirst < 0) skipHitsFirst = 0;
+  if (skipHitsLast < 0) skipHitsLast = 0;
+
+  constexpr Int_t kPdg = 211;
+  std::string ssparticle;
+  Float_t mass = 0.f;
+  if (!PdgToMassAndKeName(kPdg, mass, ssparticle)) return false;
+
+  if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
+
+  TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
+  if (!tg_ke) return false;
+
+  const int n = static_cast<int>(part->Hits[2].size());
+  if (n < skipHitsFirst + skipHitsLast + 1) return false;
+
+  const double width = pdfPathCm;
+  TF1* pdf = FreeRangeLikelihoodPdf();
+  const bool dedxWindow = (dedxMinMeVcm > 0. && dedxMaxMeVcm > dedxMinMeVcm);
+
+  double sumNegLog = 0.;
+  int nContrib = 0;
+
+  for (int ihit = skipHitsFirst; ihit < n - skipHitsLast; ++ihit) {
+    const AnaHitPD& h = part->Hits[2][ihit];
+    const double rr = static_cast<double>(h.ResidualRange);
+    const double dEdx = static_cast<double>(h.dEdx);
+    if (!(rr > 0.) || !std::isfinite(rr) || rr > maxBraggResidualRangeCm) continue;
+    if (!std::isfinite(dEdx) || dEdx <= 0. || dEdx >= 1000. || dEdx == -999.) continue;
+    if (dedxWindow && (dEdx < dedxMinMeVcm || dEdx > dedxMaxMeVcm)) continue;
+
+    const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, rr);
+    if (ke < 0. || !std::isfinite(ke)) continue;
+
+    double par[5] = {0., 0., 0., 0., 0.};
+    if (!BuildDedxPdfParams(ke, mass, width, par)) continue;
+    pdf->SetParameters(par);
+    const double pval = pdf->Eval(dEdx);
+    if (!std::isfinite(pval) || pval <= 0.) continue;
+    sumNegLog += -std::log(pval);
+    ++nContrib;
+  }
+
+  if (nContrib < minBraggHits) return false;
+  meanNegLogL = sumNegLog / static_cast<double>(nContrib);
+  nHitsUsed = nContrib;
+  return std::isfinite(meanNegLogL);
+}
+
+//***************************************************************
+bool pdAnaUtils::ComputePionBraggWindowChi2PiEq61(AnaParticlePD* part, double maxResidualRangeCm, double sigmaDedxMeVcm,
+                                                 int minHits, int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+                                                 double dedxMaxMeVcm, double& meanChi2, int& nHitsUsed) {
+//***************************************************************
+  meanChi2 = -999.;
+  nHitsUsed = 0;
+  if (!part || part->Hits[2].empty()) return false;
+  if (!std::isfinite(maxResidualRangeCm) || maxResidualRangeCm <= 0.) return false;
+  if (!std::isfinite(sigmaDedxMeVcm) || sigmaDedxMeVcm <= 0.) return false;
+  if (minHits < 1) return false;
+  if (skipHitsFirst < 0) skipHitsFirst = 0;
+  if (skipHitsLast < 0) skipHitsLast = 0;
+
+  constexpr Int_t kPdg = 211;
+  std::string ssparticle;
+  Float_t mass = 0.f;
+  if (!PdgToMassAndKeName(kPdg, mass, ssparticle)) return false;
+
+  if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
+
+  TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
+  if (!tg_ke) return false;
+
+  const int n = static_cast<int>(part->Hits[2].size());
+  if (n < skipHitsFirst + skipHitsLast + 1) return false;
+
+  const bool dedxWindow = (dedxMinMeVcm > 0. && dedxMaxMeVcm > dedxMinMeVcm);
+  const double sigma2 = sigmaDedxMeVcm * sigmaDedxMeVcm;
+
+  double sumChi2 = 0.;
+  int nContrib = 0;
+
+  for (int ihit = skipHitsFirst; ihit < n - skipHitsLast; ++ihit) {
+    const AnaHitPD& h = part->Hits[2][ihit];
+    const double rr = static_cast<double>(h.ResidualRange);
+    const double dEdx = static_cast<double>(h.dEdx);
+    if (!(rr > 0.) || !std::isfinite(rr) || !(rr < maxResidualRangeCm)) continue;
+    if (!std::isfinite(dEdx) || dEdx <= 0. || dEdx >= 1000. || dEdx == -999.) continue;
+    if (dedxWindow && (dEdx < dedxMinMeVcm || dEdx > dedxMaxMeVcm)) continue;
+
+    const double ke = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg_ke, rr);
+    if (ke < 0. || !std::isfinite(ke)) continue;
+
+    const double dedx_bb = pdAnaUtils::GetdEdxBetheBloch(ke, static_cast<double>(mass));
+    if (!std::isfinite(dedx_bb) || dedx_bb <= 0.) continue;
+
+    const double diff = dEdx - dedx_bb;
+    sumChi2 += (diff * diff) / sigma2;
+    ++nContrib;
+  }
+
+  if (nContrib < minHits) return false;
+  meanChi2 = sumChi2 / static_cast<double>(nContrib);
+  nHitsUsed = nContrib;
+  return std::isfinite(meanChi2);
+}
+
 static TF1* FreeRangeLikelihoodPdf() {
   static TF1* pdf =
       new TF1("pdf_dedx_freerange_global", pdAnaUtils::dEdxPDF, -10., 20., 5);

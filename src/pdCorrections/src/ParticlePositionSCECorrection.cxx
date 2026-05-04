@@ -79,5 +79,24 @@ void ParticlePositionSCECorrection::Apply(AnaSpillC& spillC){
       }
     }
   }
+
+  for (UInt_t it = 0; it < spill.TrueParticles.size(); ++it) {
+    AnaTrueParticlePD* truePart = dynamic_cast<AnaTrueParticlePD*>(spill.TrueParticles[it]);
+    if (!truePart || truePart->TrjPoints.empty()) continue;
+    _sce->ApplyTrjPointPositionCorrection(truePart);
+    _sce->ApplyTrjPointDirectionCorrection(truePart);
+
+    if (xBiasCorrectionCm != 0.0) {
+      for (size_t itp = 0; itp < truePart->TrjPoints.size(); ++itp) {
+        AnaTrueTrajectoryPointPD& trj = truePart->TrjPoints[itp];
+        if (trj.Position.X() > -900) {
+          trj.Position.SetX(trj.Position.X() - xBiasCorrectionCm);
+        }
+        if (trj.Position_NoSCE.X() > -900) {
+          trj.Position_NoSCE.SetX(trj.Position_NoSCE.X() - xBiasCorrectionCm);
+        }
+      }
+    }
+  }
 }
 

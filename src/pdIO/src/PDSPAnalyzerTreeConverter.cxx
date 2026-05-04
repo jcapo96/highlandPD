@@ -2,10 +2,30 @@
 #include "InputManager.hxx"
 #include "Parameters.hxx"
 #include "pdAnalysisUtils.hxx"
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
+#include <iostream>
 
 namespace {
+  inline bool HighlandDebugTrueTrjCounts() {
+    const char* v = std::getenv("HIGHLAND_DEBUG_TRUE_TRJ_COUNTS");
+    return v && std::strcmp(v, "1") == 0;
+  }
+
   inline bool IsFiniteRecoPoint(double x, double y, double z) {
     return (x > -900. && y > -900. && z > -900.);
+  }
+
+  inline double DefaultTrueMassGeV(Int_t pdg) {
+    const int a = std::abs(static_cast<int>(pdg));
+    if (a == 211 || a == 111) return 0.13957039;
+    if (a == 321 || a == 311) return 0.493677;
+    if (a == 2212) return 0.9382720813;
+    if (a == 2112) return 0.93956542052;
+    if (a == 13) return 0.1056583755;
+    if (a == 221) return 0.547862;
+    return 0.13957039;
   }
 }
 
@@ -91,7 +111,203 @@ void PDSPAnalyzerTreeConverter::FillTrueBeamTrueParticleInfo(AnaTrueParticlePD* 
   truePart->PositionEnd[1] = true_beam_endY;
   truePart->PositionEnd[2] = true_beam_endZ;
     
-  truePart->ProcessEnd   = truePart->ConvertProcess(*true_beam_endProcess);  
+  truePart->ProcessEnd   = truePart->ConvertProcess(*true_beam_endProcess);
+
+  FillTrueBeamMcExtras(truePart);
+}
+
+//*****************************************************************************
+void PDSPAnalyzerTreeConverter::FillTrueBeamMcExtras(AnaTrueParticlePD* truePart){
+//*****************************************************************************
+
+  if (!truePart) return;
+
+  const bool dbgTrjCounts = HighlandDebugTrueTrjCounts();
+  size_t skipBadNonSce = 0;
+  size_t skipBadSce = 0;
+  size_t skipBadMomMeV = 0;
+  size_t skipBadKeFallback = 0;
+
+  truePart->TrueBeamLastStepLen = true_beam_last_len;
+  truePart->TrueBeamNElasticScatters = true_beam_nElasticScatters;
+  truePart->TrueBeamIDEtotalDep = true_beam_IDE_totalDep;
+  truePart->TrueBeamNHits = true_beam_nHits;
+
+  truePart->TrueBeamElasticCosTheta.clear();
+  if (true_beam_elastic_costheta)
+    truePart->TrueBeamElasticCosTheta.assign(true_beam_elastic_costheta->begin(),
+                                            true_beam_elastic_costheta->end());
+  truePart->TrueBeamElasticX.clear();
+  if (true_beam_elastic_X)
+    truePart->TrueBeamElasticX.assign(true_beam_elastic_X->begin(), true_beam_elastic_X->end());
+  truePart->TrueBeamElasticY.clear();
+  if (true_beam_elastic_Y)
+    truePart->TrueBeamElasticY.assign(true_beam_elastic_Y->begin(), true_beam_elastic_Y->end());
+  truePart->TrueBeamElasticZ.clear();
+  if (true_beam_elastic_Z)
+    truePart->TrueBeamElasticZ.assign(true_beam_elastic_Z->begin(), true_beam_elastic_Z->end());
+  truePart->TrueBeamElasticDeltaE.clear();
+  if (true_beam_elastic_deltaE)
+    truePart->TrueBeamElasticDeltaE.assign(true_beam_elastic_deltaE->begin(),
+                                          true_beam_elastic_deltaE->end());
+  truePart->TrueBeamElasticIDEedep.clear();
+  if (true_beam_elastic_IDE_edep)
+    truePart->TrueBeamElasticIDEedep.assign(true_beam_elastic_IDE_edep->begin(),
+                                           true_beam_elastic_IDE_edep->end());
+
+  truePart->TrueBeamProcesses.clear();
+  if (true_beam_processes)
+    truePart->TrueBeamProcesses.assign(true_beam_processes->begin(), true_beam_processes->end());
+
+  truePart->TrueBeamIncidentEnergies.clear();
+  if (true_beam_incidentEnergies)
+    truePart->TrueBeamIncidentEnergies.assign(true_beam_incidentEnergies->begin(),
+                                             true_beam_incidentEnergies->end());
+
+  truePart->TrjPoints.clear();
+  size_t rawTrajSteps = 0;
+  bool hasPosTrajBranches = false;
+  bool hasMomentumBranches = false;
+
+  const bool havePos = true_beam_traj_X && true_beam_traj_Y && true_beam_traj_Z && true_beam_traj_X_SCE &&
+                       true_beam_traj_Y_SCE && true_beam_traj_Z_SCE;
+  const bool haveMom = true_beam_traj_PX && true_beam_traj_PY && true_beam_traj_PZ;
+
+  if (havePos) {
+    hasPosTrajBranches = true;
+    hasMomentumBranches = haveMom;
+    size_t n = std::min(true_beam_traj_X->size(),
+                        std::min(true_beam_traj_Y->size(),
+                                 std::min(true_beam_traj_Z->size(),
+                                          std::min(true_beam_traj_X_SCE->size(),
+                                                   std::min(true_beam_traj_Y_SCE->size(),
+                                                            true_beam_traj_Z_SCE->size())))));
+    if (haveMom) {
+      n = std::min(n, std::min(true_beam_traj_PX->size(),
+                               std::min(true_beam_traj_PY->size(), true_beam_traj_PZ->size())));
+    }
+    rawTrajSteps = n;
+    const double massGeV = DefaultTrueMassGeV(truePart->PDG);
+    const double pFallbackGeV =
+        (std::isfinite(static_cast<double>(truePart->Momentum)) && truePart->Momentum > 0.)
+            ? static_cast<double>(truePart->Momentum)
+            : 0.;
+
+    truePart->TrjPoints.reserve(n);
+    for (size_t i = 0; i < n; ++i) {
+      const double x = (*true_beam_traj_X)[i];
+      const double y = (*true_beam_traj_Y)[i];
+      const double z = (*true_beam_traj_Z)[i];
+      if (!IsFiniteRecoPoint(x, y, z)) {
+        if (dbgTrjCounts) ++skipBadNonSce;
+        continue;
+      }
+      const double xSCE = (*true_beam_traj_X_SCE)[i];
+      const double ySCE = (*true_beam_traj_Y_SCE)[i];
+      const double zSCE = (*true_beam_traj_Z_SCE)[i];
+      if (!IsFiniteRecoPoint(xSCE, ySCE, zSCE)) {
+        if (dbgTrjCounts) ++skipBadSce;
+        continue;
+      }
+
+      double dirX = 0.;
+      double dirY = 0.;
+      double dirZ = 1.;
+      double pGeV = 0.;
+
+      if (haveMom) {
+        const double pxMeV = (*true_beam_traj_PX)[i];
+        const double pyMeV = (*true_beam_traj_PY)[i];
+        const double pzMeV = (*true_beam_traj_PZ)[i];
+        const double pMeV = std::sqrt(pxMeV * pxMeV + pyMeV * pyMeV + pzMeV * pzMeV);
+        if (!(pMeV > 0.0) || !std::isfinite(pMeV)) {
+          if (dbgTrjCounts) ++skipBadMomMeV;
+          continue;
+        }
+        pGeV = pMeV * 1e-3;
+        dirX = pxMeV / pMeV;
+        dirY = pyMeV / pMeV;
+        dirZ = pzMeV / pMeV;
+      } else {
+        double dx = 0.;
+        double dy = 0.;
+        double dz = 1.;
+        if (n >= 2) {
+          if (i == 0) {
+            dx = (*true_beam_traj_X_SCE)[1] - xSCE;
+            dy = (*true_beam_traj_Y_SCE)[1] - ySCE;
+            dz = (*true_beam_traj_Z_SCE)[1] - zSCE;
+          } else if (i + 1 == n) {
+            dx = xSCE - (*true_beam_traj_X_SCE)[i - 1];
+            dy = ySCE - (*true_beam_traj_Y_SCE)[i - 1];
+            dz = zSCE - (*true_beam_traj_Z_SCE)[i - 1];
+          } else {
+            dx = (*true_beam_traj_X_SCE)[i + 1] - (*true_beam_traj_X_SCE)[i - 1];
+            dy = (*true_beam_traj_Y_SCE)[i + 1] - (*true_beam_traj_Y_SCE)[i - 1];
+            dz = (*true_beam_traj_Z_SCE)[i + 1] - (*true_beam_traj_Z_SCE)[i - 1];
+          }
+        }
+        const double norm = std::sqrt(dx * dx + dy * dy + dz * dz);
+        if (norm > 1e-9) {
+          dirX = dx / norm;
+          dirY = dy / norm;
+          dirZ = dz / norm;
+        }
+        if (true_beam_traj_KE && i < true_beam_traj_KE->size()) {
+          // pduneana/beamana: true_beam_traj_KE is kinetic energy in MeV per step.
+          const double keMeV = (*true_beam_traj_KE)[i];
+          const double keGeV = keMeV * 1e-3;
+          if (std::isfinite(keGeV) && keGeV >= 0.)
+            pGeV = std::sqrt(std::max(0., keGeV * keGeV + 2. * massGeV * keGeV));
+        }
+        if (!(pGeV > 0.) || !std::isfinite(pGeV)) pGeV = pFallbackGeV;
+        if (!(pGeV > 0.) || !std::isfinite(pGeV)) {
+          if (dbgTrjCounts) ++skipBadKeFallback;
+          continue;
+        }
+      }
+
+      AnaTrueTrajectoryPointPD trj;
+      trj.Position.SetXYZ(xSCE, ySCE, zSCE);
+      trj.Position_NoSCE.SetXYZ(x, y, z);
+      trj.Momentum = static_cast<Float_t>(pGeV);
+      trj.Direction.SetXYZ(dirX, dirY, dirZ);
+      trj.IsScraper = (true_beam_traj_is_scraper && i < true_beam_traj_is_scraper->size() &&
+                       (*true_beam_traj_is_scraper)[i] != 0);
+      // Conservative: require BOTH SCE-distorted (Position) and raw G4 (Position_NoSCE)
+      // to lie inside the SCE map TPC volume.
+      trj.IsInTPC = pdAnaUtils::IsInTPCSCEBox(trj.Position) &&
+                    pdAnaUtils::IsInTPCSCEBox(trj.Position_NoSCE);
+      truePart->TrjPoints.push_back(trj);
+    }
+  }
+  if (std::getenv("HIGHLAND_DEBUG_BEAM_TRJ")) {
+    std::cerr << "[PDSPAnalyzerTreeConverter::FillTrueBeamMcExtras] run=" << run << " subrun=" << subrun
+              << " evt=" << event << " trueID=" << truePart->ID << " hasPosTraj=" << hasPosTrajBranches
+              << " hasMomTraj=" << hasMomentumBranches << " rawTrajSteps=" << rawTrajSteps
+              << " TrjPointsKept=" << truePart->TrjPoints.size()
+              << " (microtree mainntruetrajpoints when this truth is used)\n";
+  }
+  if (dbgTrjCounts && hasPosTrajBranches) {
+    static int s_prevRun = -1;
+    static int s_prevSub = -1;
+    static int s_prevEvt = -1;
+    static int s_fillCallInEvent = 0;
+    const bool newEvent = (run != s_prevRun || static_cast<int>(subrun) != s_prevSub || static_cast<int>(event) != s_prevEvt);
+    if (newEvent) {
+      s_prevRun = run;
+      s_prevSub = static_cast<int>(subrun);
+      s_prevEvt = static_cast<int>(event);
+      s_fillCallInEvent = 0;
+    }
+    ++s_fillCallInEvent;
+    std::cerr << "[TRUE_TRJ_COUNTS] stage=input_tree->AnaTrueParticlePD run=" << run << " subrun=" << subrun
+              << " evt=" << event << " trueID=" << truePart->ID << " fillTrueBeamMcExtrasCall=" << s_fillCallInEvent
+              << " rawAlignedSteps=" << rawTrajSteps << " keptTrjPoints=" << truePart->TrjPoints.size()
+              << " skip_nonSCE_xyz=" << skipBadNonSce << " skip_SCE_xyz=" << skipBadSce
+              << " skip_trajMomMeV=" << skipBadMomMeV << " skip_keFallback=" << skipBadKeFallback
+              << " useMomentumBranches=" << (hasMomentumBranches ? 1 : 0) << "\n";
+  }
 }
 
 //*****************************************************************************
@@ -306,7 +522,31 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
       AnaTrajectoryPointPD trj;
       trj.Position.SetXYZ(x, y, z);
       trj.Position_NoSCE.SetXYZ(x, y, z);
+      trj.IsInTPC = pdAnaUtils::IsInTPCSCEBox(trj.Position);
       part->TrjPoints.push_back(trj);
+    }
+  }
+
+  if (!part->TrjPoints.empty()) {
+    const bool caloStartOk =
+        IsFiniteRecoPoint(reco_beam_calo_startX, reco_beam_calo_startY, reco_beam_calo_startZ);
+    const bool caloEndOk = IsFiniteRecoPoint(reco_beam_calo_endX, reco_beam_calo_endY, reco_beam_calo_endZ);
+    if (caloStartOk && caloEndOk) {
+      part->PositionStart[0] = reco_beam_calo_startX;
+      part->PositionStart[1] = reco_beam_calo_startY;
+      part->PositionStart[2] = reco_beam_calo_startZ;
+      part->PositionEnd[0] = reco_beam_calo_endX;
+      part->PositionEnd[1] = reco_beam_calo_endY;
+      part->PositionEnd[2] = reco_beam_calo_endZ;
+    } else {
+      const TVector3& p0 = part->TrjPoints.front().Position;
+      const TVector3& p1 = part->TrjPoints.back().Position;
+      part->PositionStart[0] = p0.X();
+      part->PositionStart[1] = p0.Y();
+      part->PositionStart[2] = p0.Z();
+      part->PositionEnd[0] = p1.X();
+      part->PositionEnd[1] = p1.Y();
+      part->PositionEnd[2] = p1.Z();
     }
   }
 
@@ -390,6 +630,8 @@ void PDSPAnalyzerTreeConverter::FillBeamTrueParticleInfo(AnaTrueParticlePD* true
       truePart->DirectionEnd[2] = reco_beam_true_byE_endPz/reco_beam_true_byE_endP;
     }
   }
+
+  FillTrueBeamMcExtras(truePart);
 }
 
 //*****************************************************************************
@@ -433,12 +675,6 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
   part->DirectionStart[1] = (*reco_daughter_allTrack_trackDirY)[itrk];
   part->DirectionStart[2] = (*reco_daughter_allTrack_trackDirZ)[itrk];
   */
-
-  TVector3 dir(part->PositionEnd[0]-part->PositionStart[0],part->PositionEnd[1]-part->PositionStart[1],part->PositionEnd[2]-part->PositionStart[2]);
-  dir.SetMag(1);
-  part->DirectionStart[0] = dir.X();
-  part->DirectionStart[1] = dir.Y();
-  part->DirectionStart[2] = dir.Z();
 
   part->Length     = (*reco_daughter_allTrack_len)[itrk];
   part->Length_alt = (*reco_daughter_allTrack_alt_len)[itrk];
@@ -486,8 +722,49 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
       AnaTrajectoryPointPD trj;
       trj.Position.SetXYZ(trjX[i], trjY[i], trjZ[i]);
       trj.Position_NoSCE.SetXYZ(trjX[i], trjY[i], trjZ[i]);
+      trj.IsInTPC = pdAnaUtils::IsInTPCSCEBox(trj.Position);
       part->TrjPoints.push_back(trj);
     }
+  }
+
+  if (!part->TrjPoints.empty()) {
+    const TVector3& f = part->TrjPoints.front().Position;
+    const TVector3& b = part->TrjPoints.back().Position;
+    const double sx = (*reco_daughter_allTrack_startX)[itrk];
+    const double sy = (*reco_daughter_allTrack_startY)[itrk];
+    const double sz = (*reco_daughter_allTrack_startZ)[itrk];
+    const double ex = (*reco_daughter_allTrack_endX)[itrk];
+    const double ey = (*reco_daughter_allTrack_endY)[itrk];
+    const double ez = (*reco_daughter_allTrack_endZ)[itrk];
+    auto dist2 = [](double ax, double ay, double az, double bx, double by, double bz) {
+      const double dx = ax - bx, dy = ay - by, dz = az - bz;
+      return dx * dx + dy * dy + dz * dz;
+    };
+    if (IsFiniteRecoPoint(sx, sy, sz) && IsFiniteRecoPoint(ex, ey, ez)) {
+      const TVector3& ps = dist2(sx, sy, sz, f.X(), f.Y(), f.Z()) <= dist2(sx, sy, sz, b.X(), b.Y(), b.Z()) ? f : b;
+      const TVector3& pe = dist2(ex, ey, ez, f.X(), f.Y(), f.Z()) <= dist2(ex, ey, ez, b.X(), b.Y(), b.Z()) ? f : b;
+      part->PositionStart[0] = ps.X();
+      part->PositionStart[1] = ps.Y();
+      part->PositionStart[2] = ps.Z();
+      part->PositionEnd[0] = pe.X();
+      part->PositionEnd[1] = pe.Y();
+      part->PositionEnd[2] = pe.Z();
+    } else {
+      part->PositionStart[0] = f.X();
+      part->PositionStart[1] = f.Y();
+      part->PositionStart[2] = f.Z();
+      part->PositionEnd[0] = b.X();
+      part->PositionEnd[1] = b.Y();
+      part->PositionEnd[2] = b.Z();
+    }
+  }
+  TVector3 dir(part->PositionEnd[0] - part->PositionStart[0], part->PositionEnd[1] - part->PositionStart[1],
+               part->PositionEnd[2] - part->PositionStart[2]);
+  if (dir.Mag() > 1e-9) {
+    dir.SetMag(1);
+    part->DirectionStart[0] = dir.X();
+    part->DirectionStart[1] = dir.Y();
+    part->DirectionStart[2] = dir.Z();
   }
 
   std::pair<double,int> result = pdAnaUtils::Chi2PID(*part,13);
@@ -629,6 +906,7 @@ void PDSPAnalyzerTreeConverter::InitializeVariables(){
   true_beam_elastic_deltaE = 0;
   true_beam_elastic_IDE_edep = 0;
   true_beam_IDE_totalDep = 0;
+  true_beam_nHits = 0;
   true_daughter_nPi0 = 0;
   true_daughter_nPiPlus = 0;
   true_daughter_nProton = 0;
@@ -643,7 +921,14 @@ void PDSPAnalyzerTreeConverter::InitializeVariables(){
   true_beam_traj_X = 0;
   true_beam_traj_Y = 0;
   true_beam_traj_Z = 0;
+  true_beam_traj_X_SCE = 0;
+  true_beam_traj_Y_SCE = 0;
+  true_beam_traj_Z_SCE = 0;
+  true_beam_traj_PX = 0;
+  true_beam_traj_PY = 0;
+  true_beam_traj_PZ = 0;
   true_beam_traj_KE = 0;
+  true_beam_traj_is_scraper = 0;
   reco_beam_type = 0;
   reco_beam_trackID = 0;
   reco_beam_startX = 0;
@@ -939,6 +1224,7 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("true_beam_elastic_deltaE",&true_beam_elastic_deltaE,&b_true_beam_elastic_deltaE);
   fChain->SetBranchAddress("true_beam_elastic_IDE_edep",&true_beam_elastic_IDE_edep,&b_true_beam_elastic_IDE_edep);
   fChain->SetBranchAddress("true_beam_IDE_totalDep",&true_beam_IDE_totalDep,&b_true_beam_IDE_totalDep);
+  fChain->SetBranchAddress("true_beam_nHits",&true_beam_nHits,&b_true_beam_nHits);
   fChain->SetBranchAddress("true_daughter_nPi0",&true_daughter_nPi0,&b_true_daughter_nPi0);
   fChain->SetBranchAddress("true_daughter_nPiPlus",&true_daughter_nPiPlus,&b_true_daughter_nPiPlus);
   fChain->SetBranchAddress("true_daughter_nProton",&true_daughter_nProton,&b_true_daughter_nProton);
@@ -953,7 +1239,19 @@ void PDSPAnalyzerTreeConverter::SetBranchAddresses(){
   fChain->SetBranchAddress("true_beam_traj_X",&true_beam_traj_X,&b_true_beam_traj_X);
   fChain->SetBranchAddress("true_beam_traj_Y",&true_beam_traj_Y,&b_true_beam_traj_Y);
   fChain->SetBranchAddress("true_beam_traj_Z",&true_beam_traj_Z,&b_true_beam_traj_Z);
-  fChain->SetBranchAddress("true_beam_traj_KE",&true_beam_traj_KE,&b_true_beam_traj_KE);
+  fChain->SetBranchAddress("true_beam_traj_X_SCE",&true_beam_traj_X_SCE,&b_true_beam_traj_X_SCE);
+  fChain->SetBranchAddress("true_beam_traj_Y_SCE",&true_beam_traj_Y_SCE,&b_true_beam_traj_Y_SCE);
+  fChain->SetBranchAddress("true_beam_traj_Z_SCE",&true_beam_traj_Z_SCE,&b_true_beam_traj_Z_SCE);
+  if (fChain->GetBranch("true_beam_traj_PX"))
+    fChain->SetBranchAddress("true_beam_traj_PX",&true_beam_traj_PX,&b_true_beam_traj_PX);
+  if (fChain->GetBranch("true_beam_traj_PY"))
+    fChain->SetBranchAddress("true_beam_traj_PY",&true_beam_traj_PY,&b_true_beam_traj_PY);
+  if (fChain->GetBranch("true_beam_traj_PZ"))
+    fChain->SetBranchAddress("true_beam_traj_PZ",&true_beam_traj_PZ,&b_true_beam_traj_PZ);
+  if (fChain->GetBranch("true_beam_traj_KE"))
+    fChain->SetBranchAddress("true_beam_traj_KE",&true_beam_traj_KE,&b_true_beam_traj_KE);
+  if (fChain->GetBranch("true_beam_traj_is_scraper"))
+    fChain->SetBranchAddress("true_beam_traj_is_scraper",&true_beam_traj_is_scraper,&b_true_beam_traj_is_scraper);
   fChain->SetBranchAddress("reco_beam_type",&reco_beam_type,&b_reco_beam_type);
   fChain->SetBranchAddress("reco_beam_trackID",&reco_beam_trackID,&b_reco_beam_trackID);
   fChain->SetBranchAddress("reco_beam_startX",&reco_beam_startX,&b_reco_beam_startX);
