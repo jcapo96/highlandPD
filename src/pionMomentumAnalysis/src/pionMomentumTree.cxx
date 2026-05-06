@@ -15,6 +15,7 @@ void AddPionMomentumVariables_BeamParticleReco(OutputManager& output) {
   AddVarI(output, maintrueid, "Main track true ID");
   AddVarI(output, beamtrueid, "Beam particle true ID");
   AddVarF(output, mainlength, "Main track reconstructed length [cm]");
+  AddVarF(output, maintrueendtorecoendcm, "Main track distance true-end to reco-end [cm] (-999 if invalid)");
   AddVarMaxSizeVF(output, mainmcsdeltatheta, "Main track MCS projected-angle magnitude sqrt(theta_xz^2+theta_yz^2) [rad]", mainmcsnpairs, nmaxmcs);
   AddVarMaxSizeVF(output, mainmcsdeltathetaxz, "Main track MCS projected angle theta_xz [rad]", mainmcsnpairs, nmaxmcs);
   AddVarMaxSizeVF(output, mainmcsdeltathetayz, "Main track MCS projected angle theta_yz [rad]", mainmcsnpairs, nmaxmcs);
@@ -63,8 +64,83 @@ void AddPionMomentumVariables_BeamParticleReco(OutputManager& output) {
   AddVarMaxSizeVC(output, beamtrueprocesses, "Beam true processes along track (strings)", beamtrueprocessesn, nmaxproc);
   AddVarMaxSizeVD(output, beamtrueincidentenergies, "Beam thin-slice incident energies", beamtrueincidentn, nmaxincident);
   AddVarF(output, mainbraggchi2pibb,
-          "Main track chi2_pi mean (arXiv:2409.18288 Eq. 6.1): mean [(dEdx-dEdx_BB)^2/sigma^2] for 0<RR<Rmax; smaller≈stopping");
-  AddVarI(output, mainbraggdedxnhits, "Main track collection hits used for Bragg-window chi2_pi (Eq. 6.1)");
+          "Main track mean chi2/hit like Chi2PID(211): dedx_range_pi template + errors, hits with 0<RR<Rmax only");
+  AddVarI(output, mainbraggdedxnhits, "Main track collection hits used for Bragg-window Chi2PID-style chi2_pi");
+}
+
+//********************************************************************
+void AddPionMomentumVariables_BeamTrueDaughterBragg(OutputManager& output) {
+//********************************************************************
+  constexpr UInt_t nmaxdau = 64;
+  AddVarMaxSizeVI(output, beamdaughtertrueid, "Beam true daughter: true particle ID", beamdaughtern, nmaxdau);
+  AddVarMaxSizeVI(output, beamdaughtertruepdg, "Beam true daughter: true PDG", beamdaughtern, nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtertruestartmom, "Beam true daughter: true |p| at start [GeV/c]", beamdaughtern,
+                  nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtertrueendmom, "Beam true daughter: true |p| at end [GeV/c]", beamdaughtern,
+                  nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtertruestartekin, "Beam true daughter: true kinetic energy at start [GeV]",
+                  beamdaughtern, nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtertrueendekin, "Beam true daughter: true kinetic energy at end [GeV]",
+                  beamdaughtern, nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtercsdamomentum,
+                  "Beam daughter reco track: pion CSDA momentum estimate from range [GeV/c]", beamdaughtern, nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtercsdakineticenergy,
+                  "Beam daughter reco track: pion CSDA kinetic energy estimate from range [GeV]", beamdaughtern, nmaxdau);
+  AddVarMaxSizeVI(output, beamdaughtertrueendprocess,
+                  "Beam true daughter: true end process enum (AnaTrueParticleB::ProcessEnum as int)", beamdaughtern,
+                  nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtertrueendtorecostartcm,
+                  "Beam true daughter: distance true-end to reco-start [cm] (-999 if invalid)", beamdaughtern,
+                  nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughtertrueendtorecoendcm,
+                  "Beam true daughter: distance true-end to reco-end [cm] (-999 if invalid)", beamdaughtern, nmaxdau);
+  AddVarMaxSizeVF(output, beamdaughterbraggchi2pibb,
+                  "Beam true daughter: Bragg-window chi2_pi Eq. 6.1 on reco daughter track (-999 if invalid/fail)",
+                  beamdaughtern, nmaxdau);
+  AddVarMaxSizeVI(output, beamdaughterbraggdedxnhits,
+                  "Beam true daughter: collection hits used in Bragg chi2 (-999 if none/fail)", beamdaughtern, nmaxdau);
+}
+
+//********************************************************************
+void AddPionMomentumVariables_BeamDaughterTleTruncScan(OutputManager& output) {
+//********************************************************************
+  constexpr UInt_t nmaxrows = 4096;
+  AddVarMaxSizeVI(output, beamdaughtertletruncdauidx,
+                  "Beam daughter TLE trunc scan: daughter index in beamdaughter* arrays [0, beamdaughtern)",
+                  beamdaughtertletruncn, nmaxrows);
+  AddVarMaxSizeVI(output, beamdaughtertletrunck,
+                  "Beam daughter TLE trunc scan: extra end-veto k (skipHitsLast = FreeRange base + k)",
+                  beamdaughtertletruncn, nmaxrows);
+  AddVarMaxSizeVI(output, beamdaughtertletruncnhitsint,
+                  "Beam daughter TLE trunc scan: interior hits after skips + dE/dx window", beamdaughtertletruncn,
+                  nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtertletrunctrueekin0,
+                  "Beam daughter TLE trunc scan: true start Ekin [GeV] (reference)", beamdaughtertletruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtertletruncptle, "Beam daughter TLE trunc scan: TLEFit momentum [GeV/c]",
+                  beamdaughtertletruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtertletruncfracres,
+                  "Beam daughter TLE trunc scan: (E_K^TLE - E_K^true) / E_K^true", beamdaughtertletruncn, nmaxrows);
+}
+
+//********************************************************************
+void AddPionMomentumVariables_BeamDaughterMcsTruncScan(OutputManager& output) {
+//********************************************************************
+  constexpr UInt_t nmaxrows = 4096;
+  AddVarMaxSizeVI(output, beamdaughtermcstruncdauidx,
+                  "Beam daughter MCS trunc scan: daughter index in beamdaughter* arrays [0, beamdaughtern)",
+                  beamdaughtermcstruncn, nmaxrows);
+  AddVarMaxSizeVI(output, beamdaughtermcstrunck,
+                  "Beam daughter MCS trunc scan: extra low-RR segment drop k (dropLast = 3 + k)",
+                  beamdaughtermcstruncn, nmaxrows);
+  AddVarMaxSizeVI(output, beamdaughtermcstruncnsegments,
+                  "Beam daughter MCS trunc scan: surviving scattering segments after drops",
+                  beamdaughtermcstruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtermcstrunctrueekin0,
+                  "Beam daughter MCS trunc scan: true start Ekin [GeV] (reference)", beamdaughtermcstruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtermcstruncpmcs, "Beam daughter MCS trunc scan: MCS momentum [GeV/c]",
+                  beamdaughtermcstruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtermcstruncfracres,
+                  "Beam daughter MCS trunc scan: (E_K^MCS - E_K^true) / E_K^true", beamdaughtermcstruncn, nmaxrows);
 }
 
 //********************************************************************
@@ -95,6 +171,7 @@ void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaPartic
   Float_t pEndTrue = -999.f;
   Float_t trueLength = -999.f;
   Float_t recoLength = -999.f;
+  Float_t trueEndToRecoEndCm = -999.f;
   Int_t trueIdBeamParticle = -999;
   Int_t trueIdMainTrack = -999;
   Int_t nHitsCollection = 0;
@@ -111,6 +188,15 @@ void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaPartic
       pEndTrue = tpart->MomentumEnd;
       trueLength = tpart->Length;
       trueIdMainTrack = tpart->ID;
+      const TVector3 trueEnd(static_cast<double>(tpart->PositionEnd[0]), static_cast<double>(tpart->PositionEnd[1]),
+                             static_cast<double>(tpart->PositionEnd[2]));
+      const TVector3 recoEnd(static_cast<double>(part->PositionEnd[0]), static_cast<double>(part->PositionEnd[1]),
+                             static_cast<double>(part->PositionEnd[2]));
+      const auto validXYZ = [](const TVector3& p) {
+        return std::isfinite(p.X()) && std::isfinite(p.Y()) && std::isfinite(p.Z()) && p.X() > -900.0 &&
+               p.Y() > -900.0 && p.Z() > -900.0;
+      };
+      if (validXYZ(trueEnd) && validXYZ(recoEnd)) trueEndToRecoEndCm = static_cast<Float_t>((trueEnd - recoEnd).Mag());
     }
   }
   if (part) {
@@ -150,6 +236,7 @@ void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaPartic
   output.FillVar(maintrueid, trueIdMainTrack);
   output.FillVar(beamtrueid, trueIdBeamParticle);
   output.FillVar(mainlength, recoLength);
+  output.FillVar(maintrueendtorecoendcm, trueEndToRecoEndCm);
   output.FillVar(mainnhitscollection, nHitsCollection);
   output.FillVar(mainntrjpoints, nTrjPoints);
   output.FillVar(mainnvalidrrhits, nValidRRHits);
@@ -249,6 +336,85 @@ void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaPartic
   output.FillVar(mainbraggchi2pibb,
                  std::isfinite(mainbraggchi2pibbIn) ? static_cast<Float_t>(mainbraggchi2pibbIn) : -999.f);
   output.FillVar(mainbraggdedxnhits, mainbraggdedxnhitsIn);
+}
+
+//********************************************************************
+void FillPionMomentumVariables_BeamTrueDaughterBragg(OutputManager& output, const std::vector<Int_t>& trueIds,
+                                                    const std::vector<Int_t>& truePdgs,
+                                                    const std::vector<Float_t>& trueStartMomGeV,
+                                                    const std::vector<Float_t>& trueEndMomGeV,
+                                                    const std::vector<Float_t>& trueStartEkinGeV,
+                                                    const std::vector<Float_t>& trueEndEkinGeV,
+                                                    const std::vector<Float_t>& csdaMomentumGeV,
+                                                    const std::vector<Float_t>& csdaKineticEnergyGeV,
+                                                    const std::vector<Int_t>& trueEndProcess,
+                                                    const std::vector<Float_t>& trueEndToRecoStartDistCm,
+                                                    const std::vector<Float_t>& trueEndToRecoEndDistCm,
+                                                    const std::vector<double>& braggChi2MeanPerHit,
+                                                    const std::vector<Int_t>& braggNhits) {
+//********************************************************************
+  constexpr size_t nmaxdau = 64;
+  const size_t n = std::min(
+      {trueIds.size(), truePdgs.size(), trueStartMomGeV.size(), trueEndMomGeV.size(), trueStartEkinGeV.size(),
+       trueEndEkinGeV.size(), csdaMomentumGeV.size(), csdaKineticEnergyGeV.size(), trueEndProcess.size(),
+       trueEndToRecoStartDistCm.size(), trueEndToRecoEndDistCm.size(), braggChi2MeanPerHit.size(), braggNhits.size(),
+       nmaxdau});
+  for (size_t i = 0; i < n; ++i) {
+    output.FillVectorVar(beamdaughtertrueid, trueIds[i]);
+    output.FillVectorVar(beamdaughtertruepdg, truePdgs[i]);
+    output.FillVectorVar(beamdaughtertruestartmom, trueStartMomGeV[i]);
+    output.FillVectorVar(beamdaughtertrueendmom, trueEndMomGeV[i]);
+    output.FillVectorVar(beamdaughtertruestartekin, trueStartEkinGeV[i]);
+    output.FillVectorVar(beamdaughtertrueendekin, trueEndEkinGeV[i]);
+    output.FillVectorVar(beamdaughtercsdamomentum, csdaMomentumGeV[i]);
+    output.FillVectorVar(beamdaughtercsdakineticenergy, csdaKineticEnergyGeV[i]);
+    output.FillVectorVar(beamdaughtertrueendprocess, trueEndProcess[i]);
+    output.FillVectorVar(beamdaughtertrueendtorecostartcm, trueEndToRecoStartDistCm[i]);
+    output.FillVectorVar(beamdaughtertrueendtorecoendcm, trueEndToRecoEndDistCm[i]);
+    output.FillVectorVar(beamdaughterbraggchi2pibb, static_cast<Float_t>(braggChi2MeanPerHit[i]));
+    output.FillVectorVar(beamdaughterbraggdedxnhits, braggNhits[i]);
+    output.IncrementCounterForVar(beamdaughtertrueid);
+  }
+}
+
+//********************************************************************
+void FillPionMomentumVariables_BeamDaughterTleTruncScan(
+    OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
+    const std::vector<Int_t>& truncNhitsInt, const std::vector<Float_t>& truncTrueEkin0GeV,
+    const std::vector<Float_t>& truncPtleGeV, const std::vector<Float_t>& truncFracRes) {
+//********************************************************************
+  constexpr size_t nmaxrows = 4096;
+  const size_t n = std::min({truncDauIdx.size(), truncK.size(), truncNhitsInt.size(), truncTrueEkin0GeV.size(),
+                             truncPtleGeV.size(), truncFracRes.size(), nmaxrows});
+  for (size_t i = 0; i < n; ++i) {
+    output.FillVectorVar(beamdaughtertletruncdauidx, truncDauIdx[i]);
+    output.FillVectorVar(beamdaughtertletrunck, truncK[i]);
+    output.FillVectorVar(beamdaughtertletruncnhitsint, truncNhitsInt[i]);
+    output.FillVectorVar(beamdaughtertletrunctrueekin0, truncTrueEkin0GeV[i]);
+    output.FillVectorVar(beamdaughtertletruncptle, truncPtleGeV[i]);
+    output.FillVectorVar(beamdaughtertletruncfracres, truncFracRes[i]);
+    output.IncrementCounterForVar(beamdaughtertletruncdauidx);
+  }
+}
+
+//********************************************************************
+void FillPionMomentumVariables_BeamDaughterMcsTruncScan(
+    OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
+    const std::vector<Int_t>& truncNsegments, const std::vector<Float_t>& truncTrueEkin0GeV,
+    const std::vector<Float_t>& truncPmcsGeV, const std::vector<Float_t>& truncFracRes) {
+//********************************************************************
+  constexpr size_t nmaxrows = 4096;
+  const size_t n = std::min({truncDauIdx.size(), truncK.size(), truncNsegments.size(), truncTrueEkin0GeV.size(),
+                             truncPmcsGeV.size(), truncFracRes.size(), nmaxrows});
+  for (size_t i = 0; i < n; ++i) {
+    output.FillVectorVar(beamdaughtermcstruncdauidx, truncDauIdx[i]);
+    output.FillVectorVar(beamdaughtermcstrunck, truncK[i]);
+    output.FillVectorVar(beamdaughtermcstruncnsegments, truncNsegments[i]);
+    output.FillVectorVar(beamdaughtermcstrunctrueekin0, truncTrueEkin0GeV[i]);
+    output.FillVectorVar(beamdaughtermcstruncpmcs, truncPmcsGeV[i]);
+    output.FillVectorVar(beamdaughtermcstruncfracres, truncFracRes[i]);
+    output.IncrementCounterForVar(beamdaughtermcstruncdauidx);
+  }
 }
 
 }  // namespace pionMomentumTree

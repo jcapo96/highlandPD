@@ -17,7 +17,7 @@
 --- True Stopping Category ---------------
 # Main-track true stopping tag threshold [GeV/c] (any true PDG):
 # tagged stopping when true end momentum is at most this value.
-< pionMomentumAnalysis.StoppingMaxTrueEndMomentumGeV = 0.05 >
+< pionMomentumAnalysis.StoppingMaxTrueEndMomentumGeV = 0.03 >
 
 --- Main-track MCS sampling ------------
  # Effective material radiation length X0 [cm] used to convert segment length to x/X0.
@@ -66,11 +66,11 @@
 # Path length delta x (cm) used in the dE/dx likelihood PDF.
 < pionMomentumAnalysis.FreeRangeDedxPdfPathCm = 0.65 >
 
---- Bragg-window χ²_π± (arXiv:2409.18288 Eq. 6.1; stopping vs inelastic proxy) -----------
-# Hits with residual range strictly between 0 and the max below [cm] enter mean chi2 (paper: 26 cm).
+--- Bragg-window χ²_π± (Chi2PID-style template χ²/hit; stopping-end RR window) -----------
+# Hits with residual range strictly between 0 and the max below [cm] enter mean χ²/hit (same recipe as Chi2PID 211).
 < pionMomentumAnalysis.BraggChi2PiMaxResidualRangeCm = 26.0 >
-# Denominator σ [MeV/cm] for (dEdx_meas - ⟨dE/dx⟩_BB)²/σ² (v1: constant; extend later if needed).
-< pionMomentumAnalysis.BraggChi2PiSigmaMeVcm = 0.5 >
+# Eq. 6.1 denominator sigma [MeV/cm] (used for daughter Bragg χ² Eq. 6.1 branch).
+< pionMomentumAnalysis.BraggChi2PiSigmaMeVcm = 0.3 >
 # Minimum contributing hits required to fill the branch (else -999).
 < pionMomentumAnalysis.BraggChi2PiMinHits = 3 >
 # Optional: trim this many collection hits from track start/end before the RR max window (0 = paper-literal).
@@ -78,7 +78,7 @@
 < pionMomentumAnalysis.BraggChi2PiSkipHitsLast = 0 >
 # Optional dE/dx window [MeV/cm]; if Min <= 0 or Max <= Min, no truncation (paper §6.1 does not require it).
 < pionMomentumAnalysis.BraggChi2PiDedxMinMeVcm = 0.5 >
-< pionMomentumAnalysis.BraggChi2PiDedxMaxMeVcm = 5.0 >
+< pionMomentumAnalysis.BraggChi2PiDedxMaxMeVcm = 4.5 >
 
 --- Momentum estimation gate (TLE + MCS) -----------
 # If 1, run TLEFit and MCS momentum estimation only when the main track is the true beam pion:
@@ -87,8 +87,18 @@
 # Per-algorithm runtime switches:
 # RunTLEFit: 1 = run TLEFit, 0 = skip TLEFit.
 # RunMCS:    1 = run MCS,    0 = skip MCS.
+# RunCSDA:   1 = run CSDA (range-based) daughter momentum/KE, 0 = skip CSDA.
 < pionMomentumAnalysis.RunTLEFit = 0 >
 < pionMomentumAnalysis.RunMCS = 0 >
+< pionMomentumAnalysis.RunCSDA = 1 >
+# If 1, run paper-style beam-daughter TLE truncation scan (π + χ²_π±<6, ≥ FreeRangeDedxMinInteriorHits); flat vector branches.
+# Scan trims one extra hit at track end per step and continues until interior-hit selection can no longer be formed.
+# For this scan, no explicit dE/dx min/max window is applied to the interior-hit selection.
+< pionMomentumAnalysis.RunBeamDaughterTLETruncationScan = 0 >
+# If 1, run beam-daughter MCS truncation scan with the same daughter gate as TLE scan; flat vector branches.
+# Uses fixed MCS segment drops (first=3,last=3), then iteratively removes one extra segment from smallest-RR side.
+# Requires at least 15 surviving segments after segment drops at each truncation level.
+< pionMomentumAnalysis.RunBeamDaughterMCSTruncationScan = 1 >
 
 --- Momentum diagnostics -----------
 # Enable writing momentum diagnostics (dE/dx-vs-RR and MCS multigraph outputs).

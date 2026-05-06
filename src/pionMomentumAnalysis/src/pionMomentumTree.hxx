@@ -10,6 +10,12 @@ namespace pionMomentumTree {
 
   // Registers micro-tree branches for main-track MCS/TLEFit and beam true-info (see enumPionMomentumMicroTrees).
   void AddPionMomentumVariables_BeamParticleReco(OutputManager& output);
+  /// Per true_beam daughter (same ID order as beam true \c Daughters): true PDG, true |p| at start, Bragg-window π template χ²/hit on best-matched reco track (if any).
+  void AddPionMomentumVariables_BeamTrueDaughterBragg(OutputManager& output);
+  /// Flat rows: beam-daughter TLE truncation scan (optional; see RunBeamDaughterTLETruncationScan).
+  void AddPionMomentumVariables_BeamDaughterTleTruncScan(OutputManager& output);
+  /// Flat rows: beam-daughter MCS truncation scan (optional; see RunBeamDaughterMCSTruncationScan).
+  void AddPionMomentumVariables_BeamDaughterMcsTruncScan(OutputManager& output);
   // Fills those branches from reco particles, MCS vectors, and optional beam true particle.
   void FillPionMomentumVariables_BeamParticleReco(OutputManager& output, AnaParticlePD* part, AnaParticlePD* beampart,
                                                   const std::vector<double>& mainmcsdeltathetaPair,
@@ -31,6 +37,29 @@ namespace pionMomentumTree {
                                                   const std::vector<double>& maintruemcssegmentrrtoendSingle,
                                                   double maintruemcsmomentumGeV);
 
+  void FillPionMomentumVariables_BeamTrueDaughterBragg(OutputManager& output, const std::vector<Int_t>& trueIds,
+                                                        const std::vector<Int_t>& truePdgs,
+                                                        const std::vector<Float_t>& trueStartMomGeV,
+                                                        const std::vector<Float_t>& trueEndMomGeV,
+                                                        const std::vector<Float_t>& trueStartEkinGeV,
+                                                        const std::vector<Float_t>& trueEndEkinGeV,
+                                                        const std::vector<Float_t>& csdaMomentumGeV,
+                                                        const std::vector<Float_t>& csdaKineticEnergyGeV,
+                                                        const std::vector<Int_t>& trueEndProcess,
+                                                        const std::vector<Float_t>& trueEndToRecoStartDistCm,
+                                                        const std::vector<Float_t>& trueEndToRecoEndDistCm,
+                                                        const std::vector<double>& braggChi2MeanPerHit,
+                                                        const std::vector<Int_t>& braggNhits);
+
+  void FillPionMomentumVariables_BeamDaughterTleTruncScan(
+      OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
+      const std::vector<Int_t>& truncNhitsInt, const std::vector<Float_t>& truncTrueEkin0GeV,
+      const std::vector<Float_t>& truncPtleGeV, const std::vector<Float_t>& truncFracRes);
+  void FillPionMomentumVariables_BeamDaughterMcsTruncScan(
+      OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
+      const std::vector<Int_t>& truncNsegments, const std::vector<Float_t>& truncTrueEkin0GeV,
+      const std::vector<Float_t>& truncPmcsGeV, const std::vector<Float_t>& truncFracRes);
+
   // Indices for pion-momentum micro-tree branches (see AddPionMomentumVariables_BeamParticleReco).
   enum enumPionMomentumMicroTrees {
     mainispandora = standardPDTree::enumStandardMicroTreesLast_standardPDTree + 1,  // main track: Pandora reconstruction flag
@@ -41,6 +70,7 @@ namespace pionMomentumTree {
     maintrueid,                                                                   // main track: true particle ID
     beamtrueid,                                                                   // beam particle: true particle ID
     mainlength,                                                                   // main track: reconstructed length [cm]
+    maintrueendtorecoendcm,                                                       // main track: distance true-end to reco-end [cm]
     mainmcsnsegments,                                                             // main track: MCS segment count (vector size)
     mainmcsnpairs,                                                                // main track: MCS deflection-pair count (vector size)
     mainmcsdeltatheta,                                                            // main track: MCS sqrt(theta_xz^2+theta_yz^2) [rad], per pair
@@ -81,8 +111,36 @@ namespace pionMomentumTree {
     beamtrueprocesses,                                                            // beam true: process names along track (strings)
     beamtrueincidentn,                                                            // beam true: thin-slice incident-energy list size
     beamtrueincidentenergies,                                                     // beam true: thin-slice incident energies
-    mainbraggchi2pibb,  // main track: χ²_π± mean per arXiv:2409.18288 Eq. 6.1 (BB ⟨dE/dx⟩ vs meas, RR<param, σ param); smaller≈stopping
-    mainbraggdedxnhits,  // main track: collection hits used for Bragg-window χ² (Eq. 6.1)
+    mainbraggchi2pibb,  // main track: mean χ²/hit like Chi2PID(211) (dedx_range_pi template) in 0<RR<Rmax window
+    mainbraggdedxnhits,  // main track: collection hits used for Bragg-window template χ²
+    beamdaughtern,           // beam true first-level daughters: vector size (same order as true_beam daughter IDs)
+    beamdaughtertrueid,     // per daughter: true particle ID
+    beamdaughtertruepdg,    // per daughter: true PDG
+    beamdaughtertruestartmom,  // per daughter: true |p| at start [GeV/c]
+    beamdaughtertrueendmom,    // per daughter: true |p| at end [GeV/c]
+    beamdaughtertruestartekin,  // per daughter: true kinetic energy at start [GeV]
+    beamdaughtertrueendekin,    // per daughter: true kinetic energy at end [GeV]
+    beamdaughtercsdamomentum,   // per daughter: CSDA momentum estimate from reco range [GeV/c]
+    beamdaughtercsdakineticenergy,  // per daughter: CSDA kinetic-energy estimate from reco range [GeV]
+    beamdaughtertrueendprocess,  // per daughter: true end process enum (AnaTrueParticleB::ProcessEnum as int)
+    beamdaughtertrueendtorecostartcm,  // per daughter: distance true-end to reco-start [cm]
+    beamdaughtertrueendtorecoendcm,    // per daughter: distance true-end to reco-end [cm]
+    beamdaughterbraggchi2pibb,  // per daughter: Bragg-window χ²_π± Eq. 6.1 on reco daughter (-999 if invalid/fail)
+    beamdaughterbraggdedxnhits,  // per daughter: hits used for χ² (-999 if unmatched / fail)
+    beamdaughtertletruncn,       // TLE trunc scan: row count (vector size for following branches)
+    beamdaughtertletruncdauidx,  // TLE trunc: daughter index in beamdaughter* arrays [0, beamdaughtern)
+    beamdaughtertletrunck,       // TLE trunc: extra end skip k (effective skipHitsLast = base + k)
+    beamdaughtertletruncnhitsint,  // TLE trunc: interior collection hits after skips + dE/dx window
+    beamdaughtertletrunctrueekin0,  // TLE trunc: true start Ekin [GeV] (reference)
+    beamdaughtertletruncptle,       // TLE trunc: TLEFit momentum [GeV/c]
+    beamdaughtertletruncfracres,    // TLE trunc: (E_K^TLE - E_K^true) / E_K^true, E from momentum & mass
+    beamdaughtermcstruncn,       // MCS trunc scan: row count (vector size for following branches)
+    beamdaughtermcstruncdauidx,  // MCS trunc: daughter index in beamdaughter* arrays [0, beamdaughtern)
+    beamdaughtermcstrunck,       // MCS trunc: extra low-RR segment drop k (dropLast = 3 + k)
+    beamdaughtermcstruncnsegments,  // MCS trunc: surviving scattering segments after drops
+    beamdaughtermcstrunctrueekin0,  // MCS trunc: true start Ekin [GeV] (reference)
+    beamdaughtermcstruncpmcs,       // MCS trunc: MCS momentum [GeV/c]
+    beamdaughtermcstruncfracres,    // MCS trunc: (E_K^MCS - E_K^true) / E_K^true
   };
 
 }  // namespace pionMomentumTree

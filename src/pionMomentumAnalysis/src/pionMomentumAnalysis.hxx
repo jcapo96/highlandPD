@@ -75,6 +75,9 @@ class pionMomentumAnalysis : public pdBaseAnalysis {
   bool _MomentumRequireTrueBeamPion;
   bool _RunTLEFit;
   bool _RunMCS;
+  bool _RunCSDA;
+  bool _RunBeamDaughterTLETruncationScan;
+  bool _RunBeamDaughterMCSTruncationScan;
   bool _EnableMomentumDiagnosticMultigraphs;
   bool _FreeRangeComputeDedxBiasDiagnostics;
   double _StoppingMaxTrueEndMomentumGeV;
