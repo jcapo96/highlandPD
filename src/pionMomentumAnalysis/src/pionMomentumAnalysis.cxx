@@ -473,14 +473,18 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
   std::vector<Int_t> beamDaughterTleTruncK;
   std::vector<Int_t> beamDaughterTleTruncNhitsInt;
   std::vector<Float_t> beamDaughterTleTruncTrueEkin0GeV;
+  std::vector<Float_t> beamDaughterTleTruncEkinCsdaFullGeV;
   std::vector<Float_t> beamDaughterTleTruncPtleGeV;
-  std::vector<Float_t> beamDaughterTleTruncFracRes;
+  std::vector<Float_t> beamDaughterTleTruncFracResTrue;
+  std::vector<Float_t> beamDaughterTleTruncFracResCsda;
   std::vector<Int_t> beamDaughterMcsTruncDauIdx;
   std::vector<Int_t> beamDaughterMcsTruncK;
   std::vector<Int_t> beamDaughterMcsTruncNsegments;
   std::vector<Float_t> beamDaughterMcsTruncTrueEkin0GeV;
+  std::vector<Float_t> beamDaughterMcsTruncEkinCsdaFullGeV;
   std::vector<Float_t> beamDaughterMcsTruncPmcsGeV;
-  std::vector<Float_t> beamDaughterMcsTruncFracRes;
+  std::vector<Float_t> beamDaughterMcsTruncFracResTrue;
+  std::vector<Float_t> beamDaughterMcsTruncFracResCsda;
   constexpr size_t kMaxBeamDaughtersTree = 64;
   constexpr size_t kMaxTleTruncRows = 4096;
   constexpr size_t kMaxMcsTruncRows = 4096;
@@ -551,7 +555,10 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
       beamDaughterTruePendGeV.push_back(truePend);
       beamDaughterTrueEkin0GeV.push_back(trueEkin0);
       beamDaughterTrueEkinEndGeV.push_back(trueEkinEnd);
-      if (runCSDA) {
+      const bool needCsdaForScans =
+          (_RunBeamDaughterTLETruncationScan || _RunBeamDaughterMCSTruncationScan) &&
+          runMomentumForDaughters && recoDau->Type == AnaParticlePD::kTrack;
+      if (runCSDA || needCsdaForScans) {
         csdaMomentum = pdMomReconstruction::EstimatePionMomentumFromCSDA(recoDau);
         csdaKineticEnergy = pdMomReconstruction::EstimatePionKineticEnergyFromCSDA(recoDau);
       }
@@ -610,14 +617,18 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
                 const double ekinTleMeV =
                     pdMomReconstruction::MomentumToKineticEnergy(tleOut.bestMomentumGeV, massPiMeV);
                 const double ekinTrueMeV = static_cast<double>(trueEkin0) * 1000.0;
-                if (ekinTrueMeV > 0.) {
-                  const double fracRes = (ekinTleMeV - ekinTrueMeV) / ekinTrueMeV;
+                const double ekinCsdaFullMeV = static_cast<double>(csdaKineticEnergy) * 1000.0;
+                if (ekinTrueMeV > 0. && ekinCsdaFullMeV > 0.) {
+                  const double fracResTrue = (ekinTleMeV - ekinTrueMeV) / ekinTrueMeV;
+                  const double fracResCsda = (ekinTleMeV - ekinCsdaFullMeV) / ekinCsdaFullMeV;
                   beamDaughterTleTruncDauIdx.push_back(outDauIdx);
                   beamDaughterTleTruncK.push_back(k);
                   beamDaughterTleTruncNhitsInt.push_back(static_cast<Int_t>(dedxI.size()));
                   beamDaughterTleTruncTrueEkin0GeV.push_back(trueEkin0);
+                  beamDaughterTleTruncEkinCsdaFullGeV.push_back(csdaKineticEnergy);
                   beamDaughterTleTruncPtleGeV.push_back(static_cast<Float_t>(tleOut.bestMomentumGeV));
-                  beamDaughterTleTruncFracRes.push_back(static_cast<Float_t>(fracRes));
+                  beamDaughterTleTruncFracResTrue.push_back(static_cast<Float_t>(fracResTrue));
+                  beamDaughterTleTruncFracResCsda.push_back(static_cast<Float_t>(fracResCsda));
                 }
               }
             }
@@ -633,8 +644,8 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
           AnaParticlePD* recoDauMcs = const_cast<AnaParticlePD*>(recoDau);
           pdMomReconstruction::PionMCSConfig mcsCfgBase;
           pdMomReconstruction::FillPionMCSConfig_FromPionMomentumParams(mcsCfgBase);
-          mcsCfgBase.dropFirstNSegments = 3;
-          mcsCfgBase.dropLastNSegments = 3;
+          mcsCfgBase.dropFirstNSegments = 0;
+          mcsCfgBase.dropLastNSegments = 0;
           for (int k = 0;; ++k) {
             if (beamDaughterMcsTruncDauIdx.size() >= kMaxMcsTruncRows) break;
             pdMomReconstruction::PionMCSConfig cfgK = mcsCfgBase;
@@ -656,20 +667,24 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
               }
             }
             const int nSegmentsKept = std::max(0, nMcs - dropFirst - dropLast);
-            if (nSegmentsKept < 15) break;
+            if (nSegmentsKept < 5) break;
 
             if (mcsOut.valid) {
               const double massPiMeV = pdMomReconstruction::GetRestMass(211);
               const double ekinMcsMeV = pdMomReconstruction::MomentumToKineticEnergy(mcsOut.bestMomentumGeV, massPiMeV);
               const double ekinTrueMeV = static_cast<double>(trueEkin0) * 1000.0;
-              if (ekinTrueMeV > 0.) {
-                const double fracRes = (ekinMcsMeV - ekinTrueMeV) / ekinTrueMeV;
+              const double ekinCsdaFullMeV = static_cast<double>(csdaKineticEnergy) * 1000.0;
+              if (ekinTrueMeV > 0. && ekinCsdaFullMeV > 0.) {
+                const double fracResTrue = (ekinMcsMeV - ekinTrueMeV) / ekinTrueMeV;
+                const double fracResCsda = (ekinMcsMeV - ekinCsdaFullMeV) / ekinCsdaFullMeV;
                 beamDaughterMcsTruncDauIdx.push_back(outDauIdx);
                 beamDaughterMcsTruncK.push_back(k);
                 beamDaughterMcsTruncNsegments.push_back(nSegmentsKept);
                 beamDaughterMcsTruncTrueEkin0GeV.push_back(trueEkin0);
+                beamDaughterMcsTruncEkinCsdaFullGeV.push_back(csdaKineticEnergy);
                 beamDaughterMcsTruncPmcsGeV.push_back(static_cast<Float_t>(mcsOut.bestMomentumGeV));
-                beamDaughterMcsTruncFracRes.push_back(static_cast<Float_t>(fracRes));
+                beamDaughterMcsTruncFracResTrue.push_back(static_cast<Float_t>(fracResTrue));
+                beamDaughterMcsTruncFracResCsda.push_back(static_cast<Float_t>(fracResCsda));
               }
             }
           }
@@ -694,10 +709,12 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
 
   pionMomentumTree::FillPionMomentumVariables_BeamDaughterTleTruncScan(
       output(), beamDaughterTleTruncDauIdx, beamDaughterTleTruncK, beamDaughterTleTruncNhitsInt,
-      beamDaughterTleTruncTrueEkin0GeV, beamDaughterTleTruncPtleGeV, beamDaughterTleTruncFracRes);
+      beamDaughterTleTruncTrueEkin0GeV, beamDaughterTleTruncEkinCsdaFullGeV, beamDaughterTleTruncPtleGeV,
+      beamDaughterTleTruncFracResTrue, beamDaughterTleTruncFracResCsda);
   pionMomentumTree::FillPionMomentumVariables_BeamDaughterMcsTruncScan(
       output(), beamDaughterMcsTruncDauIdx, beamDaughterMcsTruncK, beamDaughterMcsTruncNsegments,
-      beamDaughterMcsTruncTrueEkin0GeV, beamDaughterMcsTruncPmcsGeV, beamDaughterMcsTruncFracRes);
+      beamDaughterMcsTruncTrueEkin0GeV, beamDaughterMcsTruncEkinCsdaFullGeV, beamDaughterMcsTruncPmcsGeV,
+      beamDaughterMcsTruncFracResTrue, beamDaughterMcsTruncFracResCsda);
 
   if (_CreateEventDisplay && _EventDisplay) {
     _EventDisplay->FillTree(output(), GetEvent(), const_cast<ToyBoxPD*>(&box()));

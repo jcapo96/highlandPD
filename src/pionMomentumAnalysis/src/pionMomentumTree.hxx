@@ -54,11 +54,13 @@ namespace pionMomentumTree {
   void FillPionMomentumVariables_BeamDaughterTleTruncScan(
       OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
       const std::vector<Int_t>& truncNhitsInt, const std::vector<Float_t>& truncTrueEkin0GeV,
-      const std::vector<Float_t>& truncPtleGeV, const std::vector<Float_t>& truncFracRes);
+      const std::vector<Float_t>& truncEkinCsdaFullGeV, const std::vector<Float_t>& truncPtleGeV,
+      const std::vector<Float_t>& truncFracResTrueRef, const std::vector<Float_t>& truncFracResCsdaRef);
   void FillPionMomentumVariables_BeamDaughterMcsTruncScan(
       OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
       const std::vector<Int_t>& truncNsegments, const std::vector<Float_t>& truncTrueEkin0GeV,
-      const std::vector<Float_t>& truncPmcsGeV, const std::vector<Float_t>& truncFracRes);
+      const std::vector<Float_t>& truncEkinCsdaFullGeV, const std::vector<Float_t>& truncPmcsGeV,
+      const std::vector<Float_t>& truncFracResTrueRef, const std::vector<Float_t>& truncFracResCsdaRef);
 
   // Indices for pion-momentum micro-tree branches (see AddPionMomentumVariables_BeamParticleReco).
   enum enumPionMomentumMicroTrees {
@@ -132,15 +134,19 @@ namespace pionMomentumTree {
     beamdaughtertletrunck,       // TLE trunc: extra end skip k (effective skipHitsLast = base + k)
     beamdaughtertletruncnhitsint,  // TLE trunc: interior collection hits after skips + dE/dx window
     beamdaughtertletrunctrueekin0,  // TLE trunc: true start Ekin [GeV] (reference)
+    beamdaughtertletruncekincsdafull,  // TLE trunc: CSDA Ekin from full reco track length [GeV] (data reference)
     beamdaughtertletruncptle,       // TLE trunc: TLEFit momentum [GeV/c]
     beamdaughtertletruncfracres,    // TLE trunc: (E_K^TLE - E_K^true) / E_K^true, E from momentum & mass
+    beamdaughtertletruncfracrescsda,    // TLE trunc: (E_K^TLE - E_K^CSDA,full) / E_K^CSDA,full
     beamdaughtermcstruncn,       // MCS trunc scan: row count (vector size for following branches)
     beamdaughtermcstruncdauidx,  // MCS trunc: daughter index in beamdaughter* arrays [0, beamdaughtern)
     beamdaughtermcstrunck,       // MCS trunc: extra low-RR segment drop k (dropLast = 3 + k)
     beamdaughtermcstruncnsegments,  // MCS trunc: surviving scattering segments after drops
     beamdaughtermcstrunctrueekin0,  // MCS trunc: true start Ekin [GeV] (reference)
+    beamdaughtermcstruncekincsdafull,  // MCS trunc: CSDA Ekin from full reco track length [GeV] (data reference)
     beamdaughtermcstruncpmcs,       // MCS trunc: MCS momentum [GeV/c]
     beamdaughtermcstruncfracres,    // MCS trunc: (E_K^MCS - E_K^true) / E_K^true
+    beamdaughtermcstruncfracrescsda,    // MCS trunc: (E_K^MCS - E_K^CSDA,full) / E_K^CSDA,full
   };
 
 }  // namespace pionMomentumTree

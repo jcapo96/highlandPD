@@ -96,8 +96,8 @@
 # For this scan, no explicit dE/dx min/max window is applied to the interior-hit selection.
 < pionMomentumAnalysis.RunBeamDaughterTLETruncationScan = 0 >
 # If 1, run beam-daughter MCS truncation scan with the same daughter gate as TLE scan; flat vector branches.
-# Uses fixed MCS segment drops (first=3,last=3), then iteratively removes one extra segment from smallest-RR side.
-# Requires at least 15 surviving segments after segment drops at each truncation level.
+# Uses no fixed MCS segment drops (first=0,last=0), then iteratively removes one extra segment from smallest-RR side.
+# Requires at least 5 surviving segments after segment drops at each truncation level.
 < pionMomentumAnalysis.RunBeamDaughterMCSTruncationScan = 1 >
 
 --- Momentum diagnostics -----------

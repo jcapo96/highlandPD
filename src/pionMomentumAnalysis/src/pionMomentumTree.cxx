@@ -116,10 +116,16 @@ void AddPionMomentumVariables_BeamDaughterTleTruncScan(OutputManager& output) {
                   nmaxrows);
   AddVarMaxSizeVF(output, beamdaughtertletrunctrueekin0,
                   "Beam daughter TLE trunc scan: true start Ekin [GeV] (reference)", beamdaughtertletruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtertletruncekincsdafull,
+                  "Beam daughter TLE trunc scan: CSDA Ekin from full reco track length [GeV] (reference for data)",
+                  beamdaughtertletruncn, nmaxrows);
   AddVarMaxSizeVF(output, beamdaughtertletruncptle, "Beam daughter TLE trunc scan: TLEFit momentum [GeV/c]",
                   beamdaughtertletruncn, nmaxrows);
   AddVarMaxSizeVF(output, beamdaughtertletruncfracres,
                   "Beam daughter TLE trunc scan: (E_K^TLE - E_K^true) / E_K^true", beamdaughtertletruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtertletruncfracrescsda,
+                  "Beam daughter TLE trunc scan: (E_K^TLE - E_K^CSDA,full) / E_K^CSDA,full", beamdaughtertletruncn,
+                  nmaxrows);
 }
 
 //********************************************************************
@@ -137,10 +143,16 @@ void AddPionMomentumVariables_BeamDaughterMcsTruncScan(OutputManager& output) {
                   beamdaughtermcstruncn, nmaxrows);
   AddVarMaxSizeVF(output, beamdaughtermcstrunctrueekin0,
                   "Beam daughter MCS trunc scan: true start Ekin [GeV] (reference)", beamdaughtermcstruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtermcstruncekincsdafull,
+                  "Beam daughter MCS trunc scan: CSDA Ekin from full reco track length [GeV] (reference for data)",
+                  beamdaughtermcstruncn, nmaxrows);
   AddVarMaxSizeVF(output, beamdaughtermcstruncpmcs, "Beam daughter MCS trunc scan: MCS momentum [GeV/c]",
                   beamdaughtermcstruncn, nmaxrows);
   AddVarMaxSizeVF(output, beamdaughtermcstruncfracres,
                   "Beam daughter MCS trunc scan: (E_K^MCS - E_K^true) / E_K^true", beamdaughtermcstruncn, nmaxrows);
+  AddVarMaxSizeVF(output, beamdaughtermcstruncfracrescsda,
+                  "Beam daughter MCS trunc scan: (E_K^MCS - E_K^CSDA,full) / E_K^CSDA,full", beamdaughtermcstruncn,
+                  nmaxrows);
 }
 
 //********************************************************************
@@ -381,18 +393,22 @@ void FillPionMomentumVariables_BeamTrueDaughterBragg(OutputManager& output, cons
 void FillPionMomentumVariables_BeamDaughterTleTruncScan(
     OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
     const std::vector<Int_t>& truncNhitsInt, const std::vector<Float_t>& truncTrueEkin0GeV,
-    const std::vector<Float_t>& truncPtleGeV, const std::vector<Float_t>& truncFracRes) {
+    const std::vector<Float_t>& truncEkinCsdaFullGeV, const std::vector<Float_t>& truncPtleGeV,
+    const std::vector<Float_t>& truncFracResTrueRef, const std::vector<Float_t>& truncFracResCsdaRef) {
 //********************************************************************
   constexpr size_t nmaxrows = 4096;
   const size_t n = std::min({truncDauIdx.size(), truncK.size(), truncNhitsInt.size(), truncTrueEkin0GeV.size(),
-                             truncPtleGeV.size(), truncFracRes.size(), nmaxrows});
+                             truncEkinCsdaFullGeV.size(), truncPtleGeV.size(), truncFracResTrueRef.size(),
+                             truncFracResCsdaRef.size(), nmaxrows});
   for (size_t i = 0; i < n; ++i) {
     output.FillVectorVar(beamdaughtertletruncdauidx, truncDauIdx[i]);
     output.FillVectorVar(beamdaughtertletrunck, truncK[i]);
     output.FillVectorVar(beamdaughtertletruncnhitsint, truncNhitsInt[i]);
     output.FillVectorVar(beamdaughtertletrunctrueekin0, truncTrueEkin0GeV[i]);
+    output.FillVectorVar(beamdaughtertletruncekincsdafull, truncEkinCsdaFullGeV[i]);
     output.FillVectorVar(beamdaughtertletruncptle, truncPtleGeV[i]);
-    output.FillVectorVar(beamdaughtertletruncfracres, truncFracRes[i]);
+    output.FillVectorVar(beamdaughtertletruncfracres, truncFracResTrueRef[i]);
+    output.FillVectorVar(beamdaughtertletruncfracrescsda, truncFracResCsdaRef[i]);
     output.IncrementCounterForVar(beamdaughtertletruncdauidx);
   }
 }
@@ -401,18 +417,22 @@ void FillPionMomentumVariables_BeamDaughterTleTruncScan(
 void FillPionMomentumVariables_BeamDaughterMcsTruncScan(
     OutputManager& output, const std::vector<Int_t>& truncDauIdx, const std::vector<Int_t>& truncK,
     const std::vector<Int_t>& truncNsegments, const std::vector<Float_t>& truncTrueEkin0GeV,
-    const std::vector<Float_t>& truncPmcsGeV, const std::vector<Float_t>& truncFracRes) {
+    const std::vector<Float_t>& truncEkinCsdaFullGeV, const std::vector<Float_t>& truncPmcsGeV,
+    const std::vector<Float_t>& truncFracResTrueRef, const std::vector<Float_t>& truncFracResCsdaRef) {
 //********************************************************************
   constexpr size_t nmaxrows = 4096;
   const size_t n = std::min({truncDauIdx.size(), truncK.size(), truncNsegments.size(), truncTrueEkin0GeV.size(),
-                             truncPmcsGeV.size(), truncFracRes.size(), nmaxrows});
+                             truncEkinCsdaFullGeV.size(), truncPmcsGeV.size(), truncFracResTrueRef.size(),
+                             truncFracResCsdaRef.size(), nmaxrows});
   for (size_t i = 0; i < n; ++i) {
     output.FillVectorVar(beamdaughtermcstruncdauidx, truncDauIdx[i]);
     output.FillVectorVar(beamdaughtermcstrunck, truncK[i]);
     output.FillVectorVar(beamdaughtermcstruncnsegments, truncNsegments[i]);
     output.FillVectorVar(beamdaughtermcstrunctrueekin0, truncTrueEkin0GeV[i]);
+    output.FillVectorVar(beamdaughtermcstruncekincsdafull, truncEkinCsdaFullGeV[i]);
     output.FillVectorVar(beamdaughtermcstruncpmcs, truncPmcsGeV[i]);
-    output.FillVectorVar(beamdaughtermcstruncfracres, truncFracRes[i]);
+    output.FillVectorVar(beamdaughtermcstruncfracres, truncFracResTrueRef[i]);
+    output.FillVectorVar(beamdaughtermcstruncfracrescsda, truncFracResCsdaRef[i]);
     output.IncrementCounterForVar(beamdaughtermcstruncdauidx);
   }
 }
