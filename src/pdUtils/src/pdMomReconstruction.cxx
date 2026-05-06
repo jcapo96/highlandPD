@@ -18,6 +18,63 @@ namespace {
 static constexpr double kPionMassMeV = 139.57;
 } // namespace
 
+namespace {
+// CSDA baseline curve for pions from mean Bethe–Bloch dE/dx:
+// X = range [cm], Y = KE [MeV].
+//
+// Paper reference: E_K^{full} from CSDA using Eq. (2.1).
+TGraph* PionCsdaRangeToKeGraphBB() {
+  static TGraph* tg = nullptr;
+  if (tg) return tg;
+
+  // KE grid (log-spaced) where we tabulate CSDA range.
+  constexpr double kKeMinMeV = 1.0;     // avoid beta->0 singularities
+  constexpr double kKeMaxMeV = 2000.0; // sufficient for this analysis
+  constexpr int kNKeGrid = 80;
+  constexpr int kNIntegrationSteps = 500;
+
+  std::vector<std::pair<double, double>> pts; // (range_cm, ke_mev)
+  pts.reserve(kNKeGrid);
+
+  for (int i = 0; i < kNKeGrid; ++i) {
+    const double t = (kNKeGrid > 1) ? static_cast<double>(i) / (kNKeGrid - 1) : 0.;
+    const double keMeV = kKeMinMeV * std::exp(t * std::log(kKeMaxMeV / kKeMinMeV));
+
+    // CSDA: range = ∫ dE / (dE/dx(E)), with dE/dx from Bethe–Bloch.
+    // Midpoint rule in energy.
+    const double eMin = kKeMinMeV;
+    const double eMax = keMeV;
+    if (!(eMax > eMin) || !std::isfinite(eMax)) continue;
+
+    const double dE = (eMax - eMin) / static_cast<double>(kNIntegrationSteps);
+    if (!(dE > 0.) || !std::isfinite(dE)) continue;
+
+    double rangeCm = 0.;
+    for (int j = 0; j < kNIntegrationSteps; ++j) {
+      const double eMid = eMin + (static_cast<double>(j) + 0.5) * dE;
+      const double dedx = pdAnaUtils::GetdEdxBetheBloch(eMid, kPionMassMeV); // MeV/cm
+      if (!(dedx > 0.) || !std::isfinite(dedx)) continue;
+      rangeCm += dE / dedx;
+    }
+
+    if (rangeCm > 0. && std::isfinite(rangeCm)) {
+      pts.emplace_back(rangeCm, keMeV);
+    }
+  }
+
+  if (pts.empty()) return nullptr;
+
+  std::sort(pts.begin(), pts.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+
+  tg = new TGraph(static_cast<int>(pts.size()));
+  tg->SetName("pion_csda_ke_vs_range_bb");
+  for (int i = 0; i < static_cast<int>(pts.size()); ++i) {
+    tg->SetPoint(i, pts[i].first, pts[i].second); // X: range_cm, Y: KE_MeV
+  }
+  return tg;
+}
+} // namespace
+
 //***************************************************************
 double CalculateDepositedEnergy(AnaParticlePD* particle, int plane) {
 //***************************************************************
@@ -443,6 +500,39 @@ Float_t EstimateMomentumFromRange(AnaParticlePD* particle) {
                                           pionRangeEnergyGraph, kPionMassMeV);
   if (!(momentum > 0.0) || !std::isfinite(momentum)) return -999.0f;
   return static_cast<Float_t>(momentum);
+}
+
+//***************************************************************
+Float_t EstimatePionMomentumFromCSDA(const AnaParticlePD* particle) {
+//***************************************************************
+  if (!particle) return -999.0f;
+  if (!(particle->Length > 0.0f) || particle->Length == -999.0f) return -999.0f;
+
+  TGraph* tg = PionCsdaRangeToKeGraphBB();
+  if (!tg) return -999.0f;
+
+  const double rangeCm = static_cast<double>(particle->Length);
+  const double kineticEnergyMeV = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg, rangeCm);
+  if (!(kineticEnergyMeV > 0.0) || !std::isfinite(kineticEnergyMeV)) return -999.f;
+
+  const double momentumMeV =
+      std::sqrt(kineticEnergyMeV * kineticEnergyMeV + 2.0 * kPionMassMeV * kineticEnergyMeV);
+  return static_cast<Float_t>(momentumMeV / 1000.0);
+}
+
+//***************************************************************
+Float_t EstimatePionKineticEnergyFromCSDA(const AnaParticlePD* particle) {
+//***************************************************************
+  if (!particle) return -999.f;
+  if (!(particle->Length > 0.0f) || particle->Length == -999.0f) return -999.f;
+
+  TGraph* tg = PionCsdaRangeToKeGraphBB();
+  if (!tg) return -999.f;
+
+  const double rangeCm = static_cast<double>(particle->Length);
+  const double kineticEnergyMeV = pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(tg, rangeCm);
+  if (!(kineticEnergyMeV > 0.0) || !std::isfinite(kineticEnergyMeV)) return -999.f;
+  return static_cast<Float_t>(kineticEnergyMeV / 1000.0);
 }
 
 //***************************************************************

@@ -54,6 +54,7 @@ namespace pdAnaUtils {
                                                    int skipHitsLast, double dedxMinMeVcm, double dedxMaxMeVcm,
                                                    int minInteriorPoints, double pdfPathCm,
                                                    const char* xAxisTitle = nullptr);
+  TGraph* MakePionBetheBlochDedxVsRRReference(double rrMinCm, double rrMaxCm, double rrStepCm = 0.5);
 
   TH1F* MakePionFreeRangeDedxBiasHistogram(AnaParticlePD* part, double Lmax, double step, int skipHitsFirst,
                                            int skipHitsLast, double dedxMinMeVcm, double dedxMaxMeVcm,
@@ -70,6 +71,15 @@ namespace pdAnaUtils {
   /// For π (PDG 211): same free-range scan as GetdEdxLikelihoodFreeRangeFit, map each trial offset L to
   /// momentum via R_eff = measured_length + L and RangeCmToMomentumGeV. Duplicate p bins keep max log L.
   /// Returns false if fewer than two usable (p, logL) points.
+  /// Same interior selection as π free-range TLE: collection hits, optional RR cap, finite dE/dx and RR, RR > 0.
+  bool InteriorPionCollectionPlaneDedxRr(AnaParticlePD* part, double maxResidualRangeCm, int minInteriorPoints,
+                                          int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+                                          double dedxMaxMeVcm, std::vector<double>& dedxMeVcmOut,
+                                          std::vector<double>& rrCmOut);
+
+  /// R_eff baseline for free-range momentum mapping: particle Length when valid, else max interior RR.
+  double MeasuredTrackLengthCmForPionFreeRange(const AnaParticlePD* part, const std::vector<double>& rrInteriorCm);
+
   bool BuildPionFreeRangeLogLikelihoodVsMomentumCurve(AnaParticlePD* part, double Lmax, double step,
                                                        int minInteriorPoints, int skipHitsFirst, int skipHitsLast,
                                                        double dedxMinMeVcm, double dedxMaxMeVcm, double pdfPathCm,

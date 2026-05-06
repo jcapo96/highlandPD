@@ -93,8 +93,10 @@ int MainTrueStoppingCode(AnaParticlePD* mainTrack, double stoppingMaxTrueEndMome
   const AnaTrueParticlePD* tpart = static_cast<const AnaTrueParticlePD*>(mainTrack->TrueObject);
   if (!tpart) return CATNOTRUTH;
   const double pend = static_cast<double>(tpart->MomentumEnd);
+  const int procEnd = static_cast<int>(tpart->ProcessEnd);
+  const bool isStoppingProcess = (procEnd == 2 || procEnd == 11);
   if (std::isfinite(pend) && pend >= 0.) {
-    return (pend <= stoppingMaxTrueEndMomentumGeV) ? 1 : 2;
+    return (pend <= stoppingMaxTrueEndMomentumGeV && isStoppingProcess) ? 1 : 2;
   }
   return 3;
 }
@@ -126,7 +128,6 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
   if (!cfg.enableMomentumDiagnosticMultigraphs || !mainTrack) return;
   const bool hasTle = !pAxisTleGeV.empty() && pAxisTleGeV.size() == logLTle.size();
   const bool hasMcs = !pAxisMcsGeV.empty() && pAxisMcsGeV.size() == logLMcs.size();
-  if (!hasTle && !hasMcs) return;
 
   Int_t runId = -1, subRunId = -1, evtId = -1;
   if (event.EventInfo) {
@@ -140,6 +141,9 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
   DiagBundle bundle;
   bundle.signalCode = stoppingCode;
   bundle.serialInCode = sDiagSerialByCode[stoppingCode]++;
+  const AnaTrueParticlePD* truePartForDedxTitle =
+      mainTrack->TrueObject ? static_cast<const AnaTrueParticlePD*>(mainTrack->TrueObject) : nullptr;
+  const int truePdgForDedxTitle = truePartForDedxTitle ? truePartForDedxTitle->PDG : -999;
 
   char dedxXAxis[200];
   std::snprintf(dedxXAxis, sizeof(dedxXAxis), "(run %d, subrun %d, evt %d) Residual range [cm]", static_cast<int>(runId),
@@ -149,6 +153,37 @@ void MaybeAccumulateMainTrackMomentumDiagnostics(AnaParticlePD* mainTrack, const
         mainTrack, cfg.freeRangeScanLmaxCm, cfg.freeRangeScanStepCm, cfg.freeRangeDedxSkipHitsFirst,
         cfg.freeRangeDedxSkipHitsLast, cfg.freeRangeDedxMinMeVcm, cfg.freeRangeDedxMaxMeVcm,
         cfg.freeRangeDedxMinInteriorHits, cfg.freeRangeDedxPdfPathCm, dedxXAxis);
+    if (bundle.dedx) {
+      bundle.dedx->SetTitle(
+          Form("Main-track dE/dx vs RR (TLE diagnostics, category code %d, true PDG %d);%s;dE/dx [MeV/cm]", stoppingCode,
+               truePdgForDedxTitle, dedxXAxis));
+    }
+  } else {
+    std::vector<double> rrDedxRaw, dedxRaw;
+    if (CollectCollectionPlaneDedxVsRR(*mainTrack, rrDedxRaw, dedxRaw)) {
+      bundle.dedx = new TMultiGraph();
+      if (bundle.dedx) {
+        bundle.dedx->SetName(Form("mg_main_sigdedxrr_%d_%d", stoppingCode, bundle.serialInCode));
+        bundle.dedx->SetTitle(
+            Form("Main-track dE/dx vs RR (raw collection hits, category code %d, true PDG %d);%s;dE/dx [MeV/cm]",
+                 stoppingCode, truePdgForDedxTitle,
+                 dedxXAxis));
+        TGraph* gRaw = new TGraph(static_cast<int>(rrDedxRaw.size()), rrDedxRaw.data(), dedxRaw.data());
+        gRaw->SetMarkerStyle(kFullCircle);
+        gRaw->SetMarkerSize(0.55);
+        gRaw->SetMarkerColor(kBlack);
+        gRaw->SetLineColor(kBlack);
+        bundle.dedx->Add(gRaw, "P");
+        double rrMin = *std::min_element(rrDedxRaw.begin(), rrDedxRaw.end());
+        double rrMax = *std::max_element(rrDedxRaw.begin(), rrDedxRaw.end());
+        rrMin = std::max(0.02, rrMin);
+        if (rrMax > rrMin) {
+          if (TGraph* gBb = pdAnaUtils::MakePionBetheBlochDedxVsRRReference(rrMin, rrMax, 0.5)) {
+            bundle.dedx->Add(gBb, "L");
+          }
+        }
+      }
+    }
   }
 
   if (hasTle) {

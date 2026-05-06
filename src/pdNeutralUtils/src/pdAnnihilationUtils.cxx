@@ -613,59 +613,20 @@ bool JointK0sCollectionResidualRangeLooksUnset(const AnaParticlePD* part) {
   return true;
 }
 
-bool JointK0sInteriorDedxRr(AnaParticlePD* part, int minInteriorHits, int skipFirst, int skipLast,
-                           double dedxMinMeVcm, double dedxMaxMeVcm, std::vector<double>& dedx,
-                           std::vector<double>& rr) {
-  dedx.clear();
-  rr.clear();
-  if (!part || part->Hits[2].empty()) return false;
-  if (skipFirst < 0) skipFirst = 0;
-  if (skipLast < 0) skipLast = 0;
-  const int n = static_cast<int>(part->Hits[2].size());
-  if (n < skipFirst + skipLast + 1) return false;
-  for (int ihit = skipFirst; ihit < n - skipLast; ++ihit) {
-    const AnaHitPD& h = part->Hits[2][ihit];
-    dedx.push_back(static_cast<double>(h.dEdx));
-    rr.push_back(static_cast<double>(h.ResidualRange));
-  }
-  const bool dedxWindow = (dedxMinMeVcm > 0. && dedxMaxMeVcm > dedxMinMeVcm);
-  if (dedxWindow) {
-    std::vector<double> nd, nr;
-    nd.reserve(dedx.size());
-    nr.reserve(rr.size());
-    for (size_t i = 0; i < dedx.size(); ++i) {
-      if (dedx[i] >= dedxMinMeVcm && dedx[i] <= dedxMaxMeVcm) {
-        nd.push_back(dedx[i]);
-        nr.push_back(rr[i]);
-      }
-    }
-    dedx.swap(nd);
-    rr.swap(nr);
-  }
-  return static_cast<int>(dedx.size()) >= minInteriorHits;
-}
-
-double JointK0sMeasuredLenCm(const AnaParticlePD* part, const std::vector<double>& rrInterior) {
-  if (part && part->Length > 0.f && part->Length != -999.f) return static_cast<double>(part->Length);
-  double mx = 0.;
-  for (double r : rrInterior) {
-    if (r > mx) mx = r;
-  }
-  return mx;
-}
-
 bool JointK0sPrepPionInterior(AnaParticlePD* part, int minInteriorHits, int skipFirst, int skipLast,
                              double dedxMinMeVcm, double dedxMaxMeVcm, std::vector<double>& dedx,
                              std::vector<double>& rr) {
   if (JointK0sCollectionResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
-  return JointK0sInteriorDedxRr(part, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm, dedx, rr);
+  const double kRRNoCap = 0.5 * std::numeric_limits<double>::max();
+  return pdAnaUtils::InteriorPionCollectionPlaneDedxRr(part, kRRNoCap, minInteriorHits, skipFirst, skipLast,
+                                                        dedxMinMeVcm, dedxMaxMeVcm, dedx, rr);
 }
 
 bool JointK0sBestExtensionForMomentum(const AnaParticlePD* part, const std::vector<double>& rrInterior,
                                      double pTargetGeV, double scanLmaxCm, TGraph* ke, double& extOut) {
   extOut = 0.;
   if (!part || !ke || !(pTargetGeV > 0.) || !std::isfinite(pTargetGeV) || !(scanLmaxCm > 0.)) return false;
-  const double len = JointK0sMeasuredLenCm(part, rrInterior);
+  const double len = pdAnaUtils::MeasuredTrackLengthCmForPionFreeRange(part, rrInterior);
   double bestDiff = 1e300;
   double bestExt = 0.;
   constexpr int kNScan = 128;
@@ -1133,278 +1094,147 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       vertex->Daughter2MomentumJoint = -999.0f;
       bool jointApplied = false;
       if (jointEnable) {
-        const double scanLmaxCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanLmaxCm")
-                                      ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanLmaxCm")
-                                      : 450.;
-        const double scanStepCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepCm")
-                                      ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepCm")
-                                      : 1.;
-        const int minInteriorHits =
-            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
-                ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
-                : 15;
-        const int skipFirst =
-            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
-                ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
-                : 3;
-        const int skipLast =
-            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
-                ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
-                : 3;
-        double dedxMinMeVcm =
-            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
-                : 0.5;
-        double dedxMaxMeVcm =
-            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
-                : 5.0;
-        const double pdfPathCm = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
-                                     ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
-                                     : 0.65;
-        const double scanStepFineCm =
-            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepFineCm")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepFineCm")
-                : 0.;
-        const double lowPMomentumRefineGeV =
-            ND::params().HasParameter("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
-                : 0.2;
+        pdMomReconstruction::JointK0sTwoPionGridFitConfig jcfg;
+        pdMomReconstruction::FillJointK0sTwoPionGridFitConfig_FromNeutralKaonParams(jcfg);
+        const double scanLmaxCm = jcfg.tle.scanLmaxCm;
+        const int minInteriorHits = jcfg.tle.minInteriorHits;
+        const int skipFirst = jcfg.tle.skipHitsFirst;
+        const int skipLast = jcfg.tle.skipHitsLast;
+        const double dedxMinMeVcm = jcfg.tle.dedxMinMeVcm;
+        const double dedxMaxMeVcm = jcfg.tle.dedxMaxMeVcm;
+        const double sigmaMassLoGeV = std::min(jcfg.sigmaMassMinGeV, jcfg.sigmaMassMaxGeV);
+        const double sigmaMassHiGeV = std::max(jcfg.sigmaMassMinGeV, jcfg.sigmaMassMaxGeV);
 
-        const double pMinGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
-                                   ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
-                                   : 0.05;
-        const double pMaxGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPMaxGeV")
-                                   ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPMaxGeV")
-                                   : 2.0;
-        const double pStepGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPStepGeV")
-                                    ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPStepGeV")
-                                    : 0.05;
-        const double sigmaMassMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMeV")
-                                          ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMeV")
-                                          : 10.0;
-        const double sigmaMassMinMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMinMeV")
-                                           ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMinMeV")
-                                           : 5.0;
-        const double sigmaMassMaxMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMaxMeV")
-                                           ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMaxMeV")
-                                           : 50.0;
-        const double penaltyScale = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassPenaltyScale")
-                                        ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassPenaltyScale")
-                                        : 1.0;
-        const int refineFactor =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumRefineFactor")
-                ? ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMomentumRefineFactor")
-                : 2;
-        const bool useMCS =
-            !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSEnable") ||
-            ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSEnable") != 0;
-        const double mcsWeight =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSWeight")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSWeight")
-                : 1.0;
-        pdJointK0sPionMomentum::MCSLikelihoodConfig mcsCfg;
-        mcsCfg.radiationLengthCm =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
-                : 14.0;
-        mcsCfg.minSegmentLengthCm =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
-                : 0.5;
-        mcsCfg.theta0FloorRad =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
-                : 1e-6;
-        mcsCfg.maxAbsDeltaThetaRad =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
-                : -1.0;
-        mcsCfg.useDetectorSigma =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") &&
-            ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") != 0;
-        mcsCfg.detectorSigmaFloorRad =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
-                : 1e-6;
-        mcsCfg.detectorSigmaA =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
-                : 0.0;
-        mcsCfg.detectorSigmaC =
-            ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
-                ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
-                : 0.0;
-        constexpr double kK0sMassGeV = 0.497611;
-        const double sigmaMassGeV = sigmaMassMeV * 1e-3;
-        const double sigmaMassMinGeV = sigmaMassMinMeV * 1e-3;
-        const double sigmaMassMaxGeV = sigmaMassMaxMeV * 1e-3;
-        const double sigmaMassLoGeV = std::min(sigmaMassMinGeV, sigmaMassMaxGeV);
-        const double sigmaMassHiGeV = std::max(sigmaMassMinGeV, sigmaMassMaxGeV);
+        TVector3 dirP1, dirP2, dirFit1, dirFit2;
+        DaughterPandoraAndFitDirs(vertex, trackFitLength, trackFitDistanceFromStart, dirP1, dirP2, dirFit1, dirFit2);
 
-        const bool useEventSigmaM =
-            !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") ||
-            ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") != 0;
+        pdMomReconstruction::JointK0sTwoPionFitAuxiliary aux;
+        JointK0sSigmaMEventDiagnostics sigmaDiag;
+        JointK0sPionMomentumGridResult jr;
+        const bool curvesOk = pdMomReconstruction::FitJointK0sTwoPionMomentaOnGrid(
+            daughter1, daughter2, dirFit1, dirFit2, jcfg, jr, &sigmaDiag, &aux);
 
-        std::vector<double> p1v, logL1, p2v, logL2;
-        if (pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
-                daughter1, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
-                pdfPathCm, p1v, logL1, scanStepFineCm, lowPMomentumRefineGeV) &&
-            pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
-                daughter2, scanLmaxCm, scanStepCm, minInteriorHits, skipFirst, skipLast, dedxMinMeVcm, dedxMaxMeVcm,
-                pdfPathCm, p2v, logL2, scanStepFineCm, lowPMomentumRefineGeV)) {
-          auto argmaxMomentumFromCurve = [](const std::vector<double>& pAxis, const std::vector<double>& logL) -> double {
-            if (pAxis.empty() || pAxis.size() != logL.size()) return std::numeric_limits<double>::quiet_NaN();
-            size_t im = 0;
-            for (size_t i = 1; i < logL.size(); ++i) {
-              if (logL[i] > logL[im]) im = i;
-            }
-            return pAxis[im];
-          };
-
-          const double p1_tle = argmaxMomentumFromCurve(p1v, logL1);
-          const double p2_tle = argmaxMomentumFromCurve(p2v, logL2);
-          if (std::isfinite(p1_tle) && p1_tle > 0.) vertex->Daughter1MomentumTLE = static_cast<Float_t>(p1_tle);
-          if (std::isfinite(p2_tle) && p2_tle > 0.) vertex->Daughter2MomentumTLE = static_cast<Float_t>(p2_tle);
-
-          std::vector<double> logL1Joint = logL1;
-          std::vector<double> logL2Joint = logL2;
-          if (useMCS) {
-            std::vector<double> logLMcs1;
-            std::vector<double> logLMcs2;
-            const bool okMcs1 =
-                pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*daughter1, p1v, mcsCfg, logLMcs1);
-            const bool okMcs2 =
-                pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*daughter2, p2v, mcsCfg, logLMcs2);
-            if (okMcs1 && okMcs2 && logLMcs1.size() == logL1Joint.size() && logLMcs2.size() == logL2Joint.size()) {
-              const double p1_mcs = argmaxMomentumFromCurve(p1v, logLMcs1);
-              const double p2_mcs = argmaxMomentumFromCurve(p2v, logLMcs2);
-              if (std::isfinite(p1_mcs) && p1_mcs > 0.) vertex->Daughter1MomentumMCS = static_cast<Float_t>(p1_mcs);
-              if (std::isfinite(p2_mcs) && p2_mcs > 0.) vertex->Daughter2MomentumMCS = static_cast<Float_t>(p2_mcs);
-              if (std::isfinite(mcsWeight) && mcsWeight > 0.) {
-                for (size_t i = 0; i < logL1Joint.size(); ++i) logL1Joint[i] += mcsWeight * logLMcs1[i];
-                for (size_t i = 0; i < logL2Joint.size(); ++i) logL2Joint[i] += mcsWeight * logLMcs2[i];
-              }
-            }
-          }
-
-          TVector3 dirP1, dirP2, dirFit1, dirFit2;
-          DaughterPandoraAndFitDirs(vertex, trackFitLength, trackFitDistanceFromStart, dirP1, dirP2, dirFit1, dirFit2);
-
-          double sigma_m_for_grid = sigmaMassGeV;
-          JointK0sSigmaMEventDiagnostics sigmaDiag;
-          if (useEventSigmaM &&
-              pdJointK0sPionMomentum::ComputeSigmaMEventGeV(p1v, logL1, p2v, logL2, dirFit1, dirFit2, sigmaMassGeV,
-                                                            sigmaDiag, sigmaMassLoGeV, sigmaMassHiGeV) &&
-              std::isfinite(sigmaDiag.sigma_m_event_gev) && sigmaDiag.sigma_m_event_gev > 0.) {
-            sigma_m_for_grid = sigmaDiag.sigma_m_event_gev;
+        if (curvesOk) {
+          double sigma_m_display = jcfg.sigmaMassGeV;
+          if (jcfg.useEventSigmaM && std::isfinite(sigmaDiag.sigma_m_event_gev) && sigmaDiag.sigma_m_event_gev > 0.) {
+            sigma_m_display = sigmaDiag.sigma_m_event_gev;
             vertex->JointK0sSigmaP1GeV = static_cast<Float_t>(sigmaDiag.sigma_p1_gev);
             vertex->JointK0sSigmaP2GeV = static_cast<Float_t>(sigmaDiag.sigma_p2_gev);
             vertex->JointK0sDmDp1 = static_cast<Float_t>(sigmaDiag.dm_dp1);
             vertex->JointK0sDmDp2 = static_cast<Float_t>(sigmaDiag.dm_dp2);
           }
-          if (std::isfinite(sigma_m_for_grid) && sigma_m_for_grid > 0.) {
-            sigma_m_for_grid = std::max(sigma_m_for_grid, sigmaMassLoGeV);
-            sigma_m_for_grid = std::min(sigma_m_for_grid, sigmaMassHiGeV);
+          if (std::isfinite(sigma_m_display) && sigma_m_display > 0.) {
+            sigma_m_display = std::max(sigma_m_display, sigmaMassLoGeV);
+            sigma_m_display = std::min(sigma_m_display, sigmaMassHiGeV);
           }
-          vertex->JointK0sSigmaMEventGeV = static_cast<Float_t>(sigma_m_for_grid);
+          vertex->JointK0sSigmaMEventGeV = static_cast<Float_t>(sigma_m_display);
+        }
 
-          const JointK0sPionMomentumGridResult jr = pdJointK0sPionMomentum::FitJointMomentaOnGrid(
-              p1v, logL1Joint, p2v, logL2Joint, dirFit1, dirFit2, pMinGeV, pMaxGeV, pStepGeV, kK0sMassGeV, sigma_m_for_grid,
-              penaltyScale, refineFactor);
-          if (jr.ok && std::isfinite(static_cast<double>(jr.p1)) && std::isfinite(static_cast<double>(jr.p2)) &&
-              jr.p1 > 0.f && jr.p2 > 0.f) {
-            daughter1->Momentum = jr.p1;
-            daughter2->Momentum = jr.p2;
-            vertex->Daughter1MomentumJoint = jr.p1;
-            vertex->Daughter2MomentumJoint = jr.p2;
-            jointApplied = true;
-            vertex->JointK0sMomentumUsed = 1;
-            vertex->JointK0sBestScore = jr.bestScore;
-            vertex->JointK0sInvMassAtBest = jr.invMassAtBest;
-            vertex->JointK0sMomentumConstraintRatioR = jr.constraintRatioR;
-            vertex->JointK0sMomentumDedxChi2Degradation = -999.0f;
-            vertex->JointK0sDebugClass = 0;
-            {
-              TProfile* jointPionTmpl = nullptr;
-              TGraph* jointPionKe = nullptr;
-              if (pdMomShared::LoadPionTemplates(jointPionTmpl, jointPionKe,
-                                                  "pionRangeEnergyGraph_joint_postfit_dedx")) {
-                std::vector<double> jk_d1x, jk_d1r, jk_d2x, jk_d2r;
-                const bool jk_ok1 = JointK0sPrepPionInterior(daughter1, minInteriorHits, skipFirst, skipLast,
-                                                            dedxMinMeVcm, dedxMaxMeVcm, jk_d1x, jk_d1r);
-                const bool jk_ok2 = JointK0sPrepPionInterior(daughter2, minInteriorHits, skipFirst, skipLast,
-                                                            dedxMinMeVcm, dedxMaxMeVcm, jk_d2x, jk_d2r);
-                if (jk_ok1 && jk_ok2) {
-                  size_t im1 = 0;
-                  size_t im2 = 0;
-                  for (size_t i = 1; i < logL1.size(); ++i) {
-                    if (logL1[i] > logL1[im1]) im1 = i;
-                  }
-                  for (size_t i = 1; i < logL2.size(); ++i) {
-                    if (logL2[i] > logL2[im2]) im2 = i;
-                  }
-                  const double p1_marg = p1v[im1];
-                  const double p2_marg = p2v[im2];
-                  double e1m = 0.;
-                  double e2m = 0.;
-                  double e1j = 0.;
-                  double e2j = 0.;
-                  const bool sol1m =
-                      JointK0sBestExtensionForMomentum(daughter1, jk_d1r, p1_marg, scanLmaxCm, jointPionKe, e1m);
-                  const bool sol2m =
-                      JointK0sBestExtensionForMomentum(daughter2, jk_d2r, p2_marg, scanLmaxCm, jointPionKe, e2m);
-                  const bool sol1j = JointK0sBestExtensionForMomentum(daughter1, jk_d1r, static_cast<double>(jr.p1),
-                                                                      scanLmaxCm, jointPionKe, e1j);
-                  const bool sol2j = JointK0sBestExtensionForMomentum(daughter2, jk_d2r, static_cast<double>(jr.p2),
-                                                                      scanLmaxCm, jointPionKe, e2j);
-                  const double c1b = pdMomReconstruction::CalculateExtensionChi2(jk_d1x, jk_d1r, e1m, jointPionTmpl);
-                  const double c2b = pdMomReconstruction::CalculateExtensionChi2(jk_d2x, jk_d2r, e2m, jointPionTmpl);
-                  const double c1a = pdMomReconstruction::CalculateExtensionChi2(jk_d1x, jk_d1r, e1j, jointPionTmpl);
-                  const double c2a = pdMomReconstruction::CalculateExtensionChi2(jk_d2x, jk_d2r, e2j, jointPionTmpl);
-                  const auto chi2FiniteOk = [](double x) { return std::isfinite(x) && x < 9000.; };
-                  const bool okBefore =
-                      chi2FiniteOk(c1b) && chi2FiniteOk(c2b) && sol1m && sol2m;
-                  const bool okAfter = chi2FiniteOk(c1a) && chi2FiniteOk(c2a) && sol1j && sol2j;
-                  const double sumB = c1b + c2b;
-                  const double sumA = c1a + c2a;
-                  if (okBefore && okAfter) {
-                    vertex->JointK0sMomentumDedxChi2Degradation = static_cast<Float_t>(sumA - sumB);
-                  } else if (okAfter) {
-                    // Independent-TLE χ² baseline unavailable: store χ² at joint extensions only.
-                    vertex->JointK0sMomentumDedxChi2Degradation = static_cast<Float_t>(sumA);
-                  }
-                  const Float_t Rv = jr.constraintRatioR;
-                  if (okBefore && okAfter) {
-                    const double del = sumA - sumB;
-                    if (Rv < 0.3f && del <= 0.) vertex->JointK0sDebugClass = 1;
-                    else if (Rv >= 1.f) vertex->JointK0sDebugClass = 2;
-                    else if (del > 5.) vertex->JointK0sDebugClass = 3;
-                  } else if (Rv >= 1.f) {
-                    vertex->JointK0sDebugClass = 2;
-                  }
+        if (curvesOk && aux.p1AxisGeV.size() == aux.logL1Tle.size() && aux.p2AxisGeV.size() == aux.logL2Tle.size()) {
+          if (std::isfinite(aux.p1TleArgmaxGeV) && aux.p1TleArgmaxGeV > 0.)
+            vertex->Daughter1MomentumTLE = static_cast<Float_t>(aux.p1TleArgmaxGeV);
+          if (std::isfinite(aux.p2TleArgmaxGeV) && aux.p2TleArgmaxGeV > 0.)
+            vertex->Daughter2MomentumTLE = static_cast<Float_t>(aux.p2TleArgmaxGeV);
+          if (std::isfinite(aux.p1McsArgmaxGeV) && aux.p1McsArgmaxGeV > 0.)
+            vertex->Daughter1MomentumMCS = static_cast<Float_t>(aux.p1McsArgmaxGeV);
+          if (std::isfinite(aux.p2McsArgmaxGeV) && aux.p2McsArgmaxGeV > 0.)
+            vertex->Daughter2MomentumMCS = static_cast<Float_t>(aux.p2McsArgmaxGeV);
+        }
+
+        if (jr.ok && std::isfinite(static_cast<double>(jr.p1)) && std::isfinite(static_cast<double>(jr.p2)) &&
+            jr.p1 > 0.f && jr.p2 > 0.f) {
+          daughter1->Momentum = jr.p1;
+          daughter2->Momentum = jr.p2;
+          vertex->Daughter1MomentumJoint = jr.p1;
+          vertex->Daughter2MomentumJoint = jr.p2;
+          jointApplied = true;
+          vertex->JointK0sMomentumUsed = 1;
+          vertex->JointK0sBestScore = jr.bestScore;
+          vertex->JointK0sInvMassAtBest = jr.invMassAtBest;
+          vertex->JointK0sMomentumConstraintRatioR = jr.constraintRatioR;
+          vertex->JointK0sMomentumDedxChi2Degradation = -999.0f;
+          vertex->JointK0sDebugClass = 0;
+          {
+            TProfile* jointPionTmpl = nullptr;
+            TGraph* jointPionKe = nullptr;
+            if (pdMomShared::LoadPionTemplates(jointPionTmpl, jointPionKe,
+                                                "pionRangeEnergyGraph_joint_postfit_dedx")) {
+              std::vector<double> jk_d1x, jk_d1r, jk_d2x, jk_d2r;
+              const bool jk_ok1 = JointK0sPrepPionInterior(daughter1, minInteriorHits, skipFirst, skipLast,
+                                                          dedxMinMeVcm, dedxMaxMeVcm, jk_d1x, jk_d1r);
+              const bool jk_ok2 = JointK0sPrepPionInterior(daughter2, minInteriorHits, skipFirst, skipLast,
+                                                          dedxMinMeVcm, dedxMaxMeVcm, jk_d2x, jk_d2r);
+              if (jk_ok1 && jk_ok2 && !aux.logL1Tle.empty() && !aux.logL2Tle.empty()) {
+                const std::vector<double>& logL1 = aux.logL1Tle;
+                const std::vector<double>& logL2 = aux.logL2Tle;
+                const std::vector<double>& p1v = aux.p1AxisGeV;
+                const std::vector<double>& p2v = aux.p2AxisGeV;
+                size_t im1 = 0;
+                size_t im2 = 0;
+                for (size_t i = 1; i < logL1.size(); ++i) {
+                  if (logL1[i] > logL1[im1]) im1 = i;
+                }
+                for (size_t i = 1; i < logL2.size(); ++i) {
+                  if (logL2[i] > logL2[im2]) im2 = i;
+                }
+                const double p1_marg = p1v[im1];
+                const double p2_marg = p2v[im2];
+                double e1m = 0.;
+                double e2m = 0.;
+                double e1j = 0.;
+                double e2j = 0.;
+                const bool sol1m =
+                    JointK0sBestExtensionForMomentum(daughter1, jk_d1r, p1_marg, scanLmaxCm, jointPionKe, e1m);
+                const bool sol2m =
+                    JointK0sBestExtensionForMomentum(daughter2, jk_d2r, p2_marg, scanLmaxCm, jointPionKe, e2m);
+                const bool sol1j = JointK0sBestExtensionForMomentum(daughter1, jk_d1r, static_cast<double>(jr.p1),
+                                                                    scanLmaxCm, jointPionKe, e1j);
+                const bool sol2j = JointK0sBestExtensionForMomentum(daughter2, jk_d2r, static_cast<double>(jr.p2),
+                                                                    scanLmaxCm, jointPionKe, e2j);
+                const double c1b = pdMomReconstruction::CalculateExtensionChi2(jk_d1x, jk_d1r, e1m, jointPionTmpl);
+                const double c2b = pdMomReconstruction::CalculateExtensionChi2(jk_d2x, jk_d2r, e2m, jointPionTmpl);
+                const double c1a = pdMomReconstruction::CalculateExtensionChi2(jk_d1x, jk_d1r, e1j, jointPionTmpl);
+                const double c2a = pdMomReconstruction::CalculateExtensionChi2(jk_d2x, jk_d2r, e2j, jointPionTmpl);
+                const auto chi2FiniteOk = [](double x) { return std::isfinite(x) && x < 9000.; };
+                const bool okBefore = chi2FiniteOk(c1b) && chi2FiniteOk(c2b) && sol1m && sol2m;
+                const bool okAfter = chi2FiniteOk(c1a) && chi2FiniteOk(c2a) && sol1j && sol2j;
+                const double sumB = c1b + c2b;
+                const double sumA = c1a + c2a;
+                if (okBefore && okAfter) {
+                  vertex->JointK0sMomentumDedxChi2Degradation = static_cast<Float_t>(sumA - sumB);
+                } else if (okAfter) {
+                  vertex->JointK0sMomentumDedxChi2Degradation = static_cast<Float_t>(sumA);
+                }
+                const Float_t Rv = jr.constraintRatioR;
+                if (okBefore && okAfter) {
+                  const double del = sumA - sumB;
+                  if (Rv < 0.3f && del <= 0.) vertex->JointK0sDebugClass = 1;
+                  else if (Rv >= 1.f) vertex->JointK0sDebugClass = 2;
+                  else if (del > 5.) vertex->JointK0sDebugClass = 3;
+                } else if (Rv >= 1.f) {
+                  vertex->JointK0sDebugClass = 2;
                 }
               }
             }
-            daughter1Debug.hasPreexistingMomentum = -1;
-            daughter2Debug.hasPreexistingMomentum = -1;
-            daughter1Debug.extensionAttempted = 1;
-            daughter2Debug.extensionAttempted = 1;
-            daughter1Debug.extensionValid = 1;
-            daughter2Debug.extensionValid = 1;
-            daughter1Debug.extensionChi2Ndf = jr.bestScore;
-            daughter2Debug.extensionChi2Ndf = jr.bestScore;
-            daughter1Debug.extensionNValidHits = CountValidCollectionPlaneHits(daughter1);
-            daughter2Debug.extensionNValidHits = CountValidCollectionPlaneHits(daughter2);
-            daughter1Debug.extensionDedxBias = -999.0f;
-            daughter2Debug.extensionDedxBias = -999.0f;
-            daughter1Debug.extensionDedxSigma = -999.0f;
-            daughter2Debug.extensionDedxSigma = -999.0f;
-            daughter1Debug.extensionDedxFitOk = 1;
-            daughter2Debug.extensionDedxFitOk = 1;
-            vertex->Daughter1MomentumMethod = kMomMethodJointK0sGrid;
-            vertex->Daughter2MomentumMethod = kMomMethodJointK0sGrid;
           }
+          daughter1Debug.hasPreexistingMomentum = -1;
+          daughter2Debug.hasPreexistingMomentum = -1;
+          daughter1Debug.extensionAttempted = 1;
+          daughter2Debug.extensionAttempted = 1;
+          daughter1Debug.extensionValid = 1;
+          daughter2Debug.extensionValid = 1;
+          daughter1Debug.extensionChi2Ndf = jr.bestScore;
+          daughter2Debug.extensionChi2Ndf = jr.bestScore;
+          daughter1Debug.extensionNValidHits = CountValidCollectionPlaneHits(daughter1);
+          daughter2Debug.extensionNValidHits = CountValidCollectionPlaneHits(daughter2);
+          daughter1Debug.extensionDedxBias = -999.0f;
+          daughter2Debug.extensionDedxBias = -999.0f;
+          daughter1Debug.extensionDedxSigma = -999.0f;
+          daughter2Debug.extensionDedxSigma = -999.0f;
+          daughter1Debug.extensionDedxFitOk = 1;
+          daughter2Debug.extensionDedxFitOk = 1;
+          vertex->Daughter1MomentumMethod = kMomMethodJointK0sGrid;
+          vertex->Daughter2MomentumMethod = kMomMethodJointK0sGrid;
         }
       }
 

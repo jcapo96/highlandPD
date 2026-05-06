@@ -1,5 +1,6 @@
 #include "pdUtilsRangePID.hxx"
 
+#include "pdUtilsTrack.hxx"
 #include "AnalysisUtils.hxx"
 #include "TSpline.h"
 #include <TFile.h>
@@ -263,4 +264,78 @@ std::pair<double, int> pdAnaUtils::Chi2PID_UpToRR(const AnaParticlePD& part, con
     return std::make_pair(9999., -1);
 
   return std::make_pair(pid_chi2, npt);
+}
+
+namespace {
+
+bool CollectionPlaneResidualRangeLooksUnset_BraggTemplateChi2(const AnaParticlePD* part) {
+  if (!part || part->Hits[2].empty()) return false;
+  for (const AnaHitPD& h : part->Hits[2]) {
+    if (h.ResidualRange > 0 && std::isfinite(static_cast<double>(h.ResidualRange))) return false;
+  }
+  return true;
+}
+
+}  // namespace
+
+//*****************************************************************************
+bool pdAnaUtils::ComputePionBraggWindowChi2PionRangeTemplate(AnaParticlePD* part, double maxResidualRangeCm, int minHits,
+                                                             int skipHitsFirst, int skipHitsLast, double dedxMinMeVcm,
+                                                             double dedxMaxMeVcm, double& meanChi2PerHit, int& nHitsUsed) {
+//*****************************************************************************
+
+  meanChi2PerHit = -999.;
+  nHitsUsed = 0;
+  if (!part || part->Hits[2].empty()) return false;
+  if (!std::isfinite(maxResidualRangeCm) || maxResidualRangeCm <= 0.) return false;
+  if (minHits < 1) return false;
+  if (skipHitsFirst < 0) skipHitsFirst = 0;
+  if (skipHitsLast < 0) skipHitsLast = 0;
+
+  if (CollectionPlaneResidualRangeLooksUnset_BraggTemplateChi2(part)) pdAnaUtils::ComputeResidualRange(part);
+
+  constexpr Int_t plane = 2;
+  TProfile* profile = PionTemplate;
+  if (!profile) return false;
+
+  const int n = static_cast<int>(part->Hits[plane].size());
+  if (n < skipHitsFirst + skipHitsLast + 1) return false;
+
+  const bool dedxWindow = (dedxMinMeVcm > 0. && dedxMaxMeVcm > dedxMinMeVcm);
+
+  double sumChi2 = 0.;
+  int nContrib = 0;
+
+  for (int ihit = skipHitsFirst; ihit < n - skipHitsLast; ++ihit) {
+    const AnaHitPD& h = part->Hits[plane][ihit];
+    const double rr = static_cast<double>(h.ResidualRange);
+    const double dEdx = static_cast<double>(h.dEdx);
+    if (!(rr > 0.) || !std::isfinite(rr) || !(rr < maxResidualRangeCm)) continue;
+    if (h.dEdx > 1000. || h.dEdx == -999) continue;
+    if (dedxWindow && (dEdx < dedxMinMeVcm || dEdx > dedxMaxMeVcm)) continue;
+
+    const int bin = profile->FindBin(rr);
+    if (bin < 1 || bin > profile->GetNbinsX()) continue;
+
+    double template_dedx = profile->GetBinContent(bin);
+    if (template_dedx < 1.e-6) {
+      template_dedx = (profile->GetBinContent(bin - 1) + profile->GetBinContent(bin + 1)) / 2.;
+    }
+    double template_dedx_err = profile->GetBinError(bin);
+    if (template_dedx_err < 1.e-6) {
+      template_dedx_err = (profile->GetBinError(bin - 1) + profile->GetBinError(bin + 1)) / 2.;
+    }
+
+    double dedx_res = 0.04231 + 0.0001783 * dEdx * dEdx;
+    dedx_res *= dEdx;
+
+    sumChi2 += ((dEdx - template_dedx) * (dEdx - template_dedx)) /
+               (template_dedx_err * template_dedx_err + dedx_res * dedx_res);
+    ++nContrib;
+  }
+
+  if (nContrib < minHits) return false;
+  meanChi2PerHit = sumChi2 / static_cast<double>(nContrib);
+  nHitsUsed = nContrib;
+  return std::isfinite(meanChi2PerHit);
 }

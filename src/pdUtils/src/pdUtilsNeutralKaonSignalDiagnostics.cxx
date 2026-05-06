@@ -11,6 +11,9 @@
 #include "TTree.h"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "pdJointK0sPionMomentum.hxx"
+#include "pdMomReconstructionMCS.hxx"
+#include "pdMomReconstructionJointK0s.hxx"
+#include "pdMomReconstructionFromParams.hxx"
 #include "pdUtilsDEdx.hxx"
 #include "pdUtilsLineFit.hxx"
 #include <algorithm>
@@ -181,9 +184,9 @@ namespace {
     return (std::isfinite(pGeV) && pGeV > 0.) ? pGeV : -1.;
   }
 
-  bool BuildMcsSegments(const AnaParticlePD& track, const pdJointK0sPionMomentum::MCSLikelihoodConfig& cfg,
+  bool BuildMcsSegments(const AnaParticlePD& track, const pdMomReconstruction::MCSLikelihoodConfig& cfg,
                         std::vector<double>& deltaTheta, std::vector<double>& xOverX0, std::vector<double>& rrMidCm) {
-    return pdJointK0sPionMomentum::BuildPionMcsScatteringSamples(track, cfg, deltaTheta, xOverX0, &rrMidCm);
+    return pdMomReconstruction::BuildPionMcsScatteringSamples(track, cfg, deltaTheta, xOverX0, &rrMidCm);
   }
 
   /// All collection-plane (view 2) dE/dx vs residual range hits — same convention as dEdx likelihood utilities.
@@ -352,44 +355,13 @@ void MaybeAccumulateJointMomentumLogLikelihoodGraphs(AnaNeutralParticlePD* candi
     if (!IsSignalLikeCode(signalCode)) return;
   }
 
-  const double Lmax = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanLmaxCm")
-                          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanLmaxCm")
-                          : 450.;
-  const double step = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepCm")
-                          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepCm")
-                          : 1.;
-  const int minInterior =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
-          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
-          : 15;
-  const int skipFirst =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
-          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
-          : 3;
-  const int skipLast =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
-          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
-          : 3;
-  const double dedxMin =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
-          : 0.5;
-  const double dedxMax =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
-          : 5.0;
-  const double pdfPath =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
-          : 0.65;
-  const double scanStepFineCm =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepFineCm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepFineCm")
-          : 0.;
-  const double lowPMomentumRefineGeV =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
-          : 0.2;
+  pdMomReconstruction::JointK0sTwoPionGridFitConfig jcfg;
+  pdMomReconstruction::FillJointK0sTwoPionGridFitConfig_FromNeutralKaonParams(jcfg);
+  const pdMomReconstruction::MCSLikelihoodConfig& mcsCfg = jcfg.mcs.likelihood;
+  const double diagPMin =
+      ND::params().HasParameter("neutralKaonAnalysis.JointK0sDiagMomentumPMinGeV")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sDiagMomentumPMinGeV")
+          : 0.01;
 
   for (int idau = 0; idau < 2; ++idau) {
     const std::string dauKey = MakeDiagDauKey(event, candidateIndex, idau);
@@ -402,99 +374,16 @@ void MaybeAccumulateJointMomentumLogLikelihoodGraphs(AnaNeutralParticlePD* candi
     AnaParticlePD* reco = static_cast<AnaParticlePD*>(vertex->Particles[idau]);
     if (!reco) continue;
 
-    std::vector<double> pAxis;
-    std::vector<double> logL;
-    if (!pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
-            reco, Lmax, step, minInterior, skipFirst, skipLast, dedxMin, dedxMax, pdfPath, pAxis, logL,
-            scanStepFineCm, lowPMomentumRefineGeV)) {
-      continue;
-    }
-    if (pAxis.empty() || pAxis.size() != logL.size()) continue;
-
-    // Diagnostics-only axis extension toward near-zero momentum (fit range remains untouched).
     std::vector<double> pAxisDiag;
-    pAxisDiag.reserve(pAxis.size() + 64u);
-    const double diagPMin =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sDiagMomentumPMinGeV")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sDiagMomentumPMinGeV")
-            : 0.01;
-    double pStepDiag = 0.05;
-    if (pAxis.size() >= 2u) {
-      std::vector<double> dP;
-      dP.reserve(pAxis.size() - 1u);
-      for (size_t ip = 1; ip < pAxis.size(); ++ip) {
-        const double dp = pAxis[ip] - pAxis[ip - 1u];
-        if (std::isfinite(dp) && dp > 1e-9) dP.push_back(dp);
-      }
-      if (!dP.empty()) {
-        const size_t mid = dP.size() / 2u;
-        std::nth_element(dP.begin(), dP.begin() + static_cast<std::ptrdiff_t>(mid), dP.end());
-        pStepDiag = std::max(1e-3, dP[mid]);
-      }
-    }
-    const double pStartDiag = (std::isfinite(diagPMin) && diagPMin > 0.0) ? diagPMin : 0.01;
-    if (pStartDiag < pAxis.front() - 1e-9) {
-      for (double p = pStartDiag; p < pAxis.front() - 0.5 * pStepDiag; p += pStepDiag) pAxisDiag.push_back(p);
-    }
-    pAxisDiag.insert(pAxisDiag.end(), pAxis.begin(), pAxis.end());
-    if (pAxisDiag.empty()) continue;
-
     std::vector<double> rawLogLTle;
-    rawLogLTle.reserve(pAxisDiag.size());
-    for (double p : pAxisDiag) rawLogLTle.push_back(pdJointK0sPionMomentum::InterpolateLogLikelihoodClamped(pAxis, logL, p));
-    auto itBestTle = std::max_element(rawLogLTle.begin(), rawLogLTle.end());
-    if (itBestTle == rawLogLTle.end()) continue;
-    const size_t bestTleIdx = static_cast<size_t>(std::distance(rawLogLTle.begin(), itBestTle));
-    if (bestTleIdx >= pAxisDiag.size()) continue;
-    const double pBestTle = pAxisDiag[bestTleIdx];
-
-
-    pdJointK0sPionMomentum::MCSLikelihoodConfig mcsCfg;
-    mcsCfg.radiationLengthCm =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
-            : 14.0;
-    mcsCfg.minSegmentLengthCm =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
-            : 0.5;
-    mcsCfg.theta0FloorRad =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
-            : 1e-6;
-    mcsCfg.maxAbsDeltaThetaRad =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
-            : -1.0;
-    mcsCfg.useDetectorSigma =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") &&
-        ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") != 0;
-    mcsCfg.detectorSigmaFloorRad =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
-            : 1e-6;
-    mcsCfg.detectorSigmaA =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
-            : 0.0;
-    mcsCfg.detectorSigmaC =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
-            : 0.0;
-    std::vector<double> logLMcs;
-    const bool hasMcs =
-        pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*reco, pAxisDiag, mcsCfg, logLMcs) &&
-        logLMcs.size() == pAxisDiag.size();
     std::vector<double> rawLogLMcs;
+    double pBestTle = -1.;
     double pBestMcs = -1.;
-    if (hasMcs) {
-      auto itBestMcs = std::max_element(logLMcs.begin(), logLMcs.end());
-      if (itBestMcs != logLMcs.end()) {
-        const size_t bestMcsIdx = static_cast<size_t>(std::distance(logLMcs.begin(), itBestMcs));
-        if (bestMcsIdx < pAxisDiag.size()) pBestMcs = pAxisDiag[bestMcsIdx];
-        rawLogLMcs = logLMcs;
-      }
-    }
+    if (!pdMomReconstruction::BuildNeutralKaonJointDiagnosticsCurvesForDaughter(
+            reco, jcfg.tle, mcsCfg, diagPMin, pAxisDiag, rawLogLTle, rawLogLMcs, pBestTle, pBestMcs))
+      continue;
+    if (pAxisDiag.empty() || rawLogLTle.size() != pAxisDiag.size()) continue;
+    if (!std::isfinite(pBestTle) || pBestTle <= 0.) continue;
 
     const double pJoint =
         (idau == 0) ? static_cast<double>(vertex->Daughter1MomentumJoint) : static_cast<double>(vertex->Daughter2MomentumJoint);
@@ -806,103 +695,32 @@ void MaybeAccumulateJointObjective2DHeatmaps(AnaNeutralParticlePD* candidate, co
   AnaParticlePD* reco2 = static_cast<AnaParticlePD*>(vertex->Particles[1]);
   if (!reco1 || !reco2) return;
 
-  const double Lmax = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanLmaxCm")
-                          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanLmaxCm")
-                          : 450.;
-  const double step = ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepCm")
-                          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepCm")
-                          : 1.;
-  const int minInterior =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
-          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxMinInteriorHits")
-          : 15;
-  const int skipFirst =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
-          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsFirst")
-          : 3;
-  const int skipLast =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
-          ? ND::params().GetParameterI("neutralKaonAnalysis.FreeRangeDedxSkipHitsLast")
-          : 3;
-  const double dedxMin =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMinMeVcm")
-          : 0.5;
-  const double dedxMax =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxMaxMeVcm")
-          : 5.0;
-  const double pdfPath =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeDedxPdfPathCm")
-          : 0.65;
-  const double scanStepFineCm =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeScanStepFineCm")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeScanStepFineCm")
-          : 0.;
-  const double lowPMomentumRefineGeV =
-      ND::params().HasParameter("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.FreeRangeLowPMomentumRefineGeV")
-          : 0.2;
+  pdMomReconstruction::JointK0sTwoPionGridFitConfig jcfgHeat;
+  pdMomReconstruction::FillJointK0sTwoPionGridFitConfig_FromNeutralKaonParams(jcfgHeat);
+  const pdMomReconstruction::PionTLEFitConfig& tle = jcfgHeat.tle;
 
   std::vector<double> p1v, logL1, p2v, logL2;
   if (!pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
-          reco1, Lmax, step, minInterior, skipFirst, skipLast, dedxMin, dedxMax, pdfPath, p1v, logL1, scanStepFineCm,
-          lowPMomentumRefineGeV) ||
+          reco1, tle.scanLmaxCm, tle.scanStepCm, tle.minInteriorHits, tle.skipHitsFirst, tle.skipHitsLast,
+          tle.dedxMinMeVcm, tle.dedxMaxMeVcm, tle.dedxPdfPathCm, p1v, logL1, tle.scanStepFineCm,
+          tle.lowPMomentumRefineGeV) ||
       !pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
-          reco2, Lmax, step, minInterior, skipFirst, skipLast, dedxMin, dedxMax, pdfPath, p2v, logL2, scanStepFineCm,
-          lowPMomentumRefineGeV)) {
+          reco2, tle.scanLmaxCm, tle.scanStepCm, tle.minInteriorHits, tle.skipHitsFirst, tle.skipHitsLast,
+          tle.dedxMinMeVcm, tle.dedxMaxMeVcm, tle.dedxPdfPathCm, p2v, logL2, tle.scanStepFineCm,
+          tle.lowPMomentumRefineGeV)) {
     return;
   }
   std::vector<double> logL1Joint = logL1;
   std::vector<double> logL2Joint = logL2;
-  const bool useMCS =
-      !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSEnable") ||
-      ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSEnable") != 0;
-  const double mcsWeight =
-      ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSWeight")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSWeight")
-          : 1.0;
-  if (useMCS && std::isfinite(mcsWeight) && mcsWeight > 0.) {
-    pdJointK0sPionMomentum::MCSLikelihoodConfig mcsCfg;
-    mcsCfg.radiationLengthCm =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSRadiationLengthCm")
-            : 14.0;
-    mcsCfg.minSegmentLengthCm =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMinSegmentCm")
-            : 0.5;
-    mcsCfg.theta0FloorRad =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSTheta0FloorRad")
-            : 1e-6;
-    mcsCfg.maxAbsDeltaThetaRad =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSMaxAbsDeltaThetaRad")
-            : -1.0;
-    mcsCfg.useDetectorSigma =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") &&
-        ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMCSUseDetectorSigma") != 0;
-    mcsCfg.detectorSigmaFloorRad =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaFloorRad")
-            : 1e-6;
-    mcsCfg.detectorSigmaA =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaA")
-            : 0.0;
-    mcsCfg.detectorSigmaC =
-        ND::params().HasParameter("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
-            ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMCSDetectorSigmaC")
-            : 0.0;
+  if (jcfgHeat.useMCS && std::isfinite(jcfgHeat.mcsWeight) && jcfgHeat.mcsWeight > 0.) {
+    const pdMomReconstruction::MCSLikelihoodConfig& mcsCfg = jcfgHeat.mcs.likelihood;
     std::vector<double> logLMcs1;
     std::vector<double> logLMcs2;
-    if (pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*reco1, p1v, mcsCfg, logLMcs1) &&
-        pdJointK0sPionMomentum::BuildPionMCSLogLikelihoodVsMomentumCurve(*reco2, p2v, mcsCfg, logLMcs2) &&
+    if (pdMomReconstruction::BuildPionMCSLogLikelihoodVsMomentumCurve(*reco1, p1v, mcsCfg, logLMcs1) &&
+        pdMomReconstruction::BuildPionMCSLogLikelihoodVsMomentumCurve(*reco2, p2v, mcsCfg, logLMcs2) &&
         logLMcs1.size() == logL1Joint.size() && logLMcs2.size() == logL2Joint.size()) {
-      for (size_t i = 0; i < logL1Joint.size(); ++i) logL1Joint[i] += mcsWeight * logLMcs1[i];
-      for (size_t i = 0; i < logL2Joint.size(); ++i) logL2Joint[i] += mcsWeight * logLMcs2[i];
+      for (size_t i = 0; i < logL1Joint.size(); ++i) logL1Joint[i] += jcfgHeat.mcsWeight * logLMcs1[i];
+      for (size_t i = 0; i < logL2Joint.size(); ++i) logL2Joint[i] += jcfgHeat.mcsWeight * logLMcs2[i];
     }
   }
 
@@ -912,30 +730,16 @@ void MaybeAccumulateJointObjective2DHeatmaps(AnaNeutralParticlePD* candidate, co
   TVector3 dirFit1, dirFit2;
   DiagAnnihilationDaughterFitDirs(vertex, trackFitLength, trackFitDistanceFromStart, dirFit1, dirFit2);
 
-  const double pMinGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
-                             ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPMinGeV")
-                             : 0.05;
-  const double pMaxGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPMaxGeV")
-                             ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPMaxGeV")
-                             : 2.0;
-  const double pStepGeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMomentumPStepGeV")
-                              ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMomentumPStepGeV")
-                              : 0.05;
-  constexpr double kK0sMassGeV = 0.497611;
-  const double sigmaMassMeV = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaMeV")
-                                  ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassSigmaMeV")
-                                  : 10.0;
-  double sigma_m_gev = sigmaMassMeV * 1e-3;
-  const bool useEventSigmaM =
-      !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") ||
-      ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") != 0;
-  if (useEventSigmaM && std::isfinite(static_cast<double>(vertex->JointK0sSigmaMEventGeV)) &&
+  const double pMinGeV = jcfgHeat.pMinGeV;
+  const double pMaxGeV = jcfgHeat.pMaxGeV;
+  const double pStepGeV = jcfgHeat.pStepGeV;
+  const double kK0sMassGeV = jcfgHeat.mK0sMassGeV;
+  double sigma_m_gev = jcfgHeat.sigmaMassGeV;
+  if (jcfgHeat.useEventSigmaM && std::isfinite(static_cast<double>(vertex->JointK0sSigmaMEventGeV)) &&
       vertex->JointK0sSigmaMEventGeV > 0.f) {
     sigma_m_gev = static_cast<double>(vertex->JointK0sSigmaMEventGeV);
   }
-  const double penaltyScale = ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassPenaltyScale")
-                                  ? ND::params().GetParameterD("neutralKaonAnalysis.JointK0sMassPenaltyScale")
-                                  : 1.0;
+  const double penaltyScale = jcfgHeat.massPenaltyScale;
 
   Int_t runId = -1;
   Int_t subRunId = -1;

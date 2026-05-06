@@ -4,7 +4,7 @@
 #include "Parameters.hxx"
 #include "ToyBoxPD.hxx"
 #include "pdDataClasses.hxx"
-#include "pdJointK0sPionMomentum.hxx"
+#include "pdMomReconstructionMCS.hxx"
 
 #include <TEveElement.h>
 #include <TEveLine.h>
@@ -203,7 +203,7 @@ void pionMomentumEventDisplay::FillAnalysisData(OutputManager& output, const Ana
   if (tbox && tbox->MainTrack) {
     mcsMainUID = tbox->MainTrack->UniqueID;
 
-    pdJointK0sPionMomentum::MCSLikelihoodConfig cfg;
+    pdMomReconstruction::MCSLikelihoodConfig cfg;
     if (ND::params().HasParameter("pionMomentumAnalysis.MCSRadiationLengthCm"))
       cfg.radiationLengthCm = ND::params().GetParameterD("pionMomentumAnalysis.MCSRadiationLengthCm");
     if (ND::params().HasParameter("pionMomentumAnalysis.MCSTargetSegmentLengthCm"))
@@ -215,8 +215,8 @@ void pionMomentumEventDisplay::FillAnalysisData(OutputManager& output, const Ana
     if (ND::params().HasParameter("pionMomentumAnalysis.MCSMaxAbsDeltaThetaRad"))
       cfg.maxAbsDeltaThetaRad = ND::params().GetParameterD("pionMomentumAnalysis.MCSMaxAbsDeltaThetaRad");
 
-    std::vector<pdJointK0sPionMomentum::MCSSegmentGeometry> segs;
-    pdJointK0sPionMomentum::BuildPionMcsSegmentGeometry(*tbox->MainTrack, cfg, segs);
+    std::vector<pdMomReconstruction::MCSSegmentGeometry> segs;
+    pdMomReconstruction::BuildPionMcsSegmentGeometry(*tbox->MainTrack, cfg, segs);
 
     Int_t nSeg = 0;
     for (size_t s = 0; s < segs.size() && nSeg < kMaxMcsSegments; ++s) {
@@ -266,9 +266,9 @@ void pionMomentumEventDisplay::FillAnalysisData(OutputManager& output, const Ana
           trueOrdered.push_back(p);
       }
     }
-    std::vector<pdJointK0sPionMomentum::MCSSegmentGeometry> trueSegs;
+    std::vector<pdMomReconstruction::MCSSegmentGeometry> trueSegs;
     if (!trueOrdered.empty())
-      pdJointK0sPionMomentum::BuildPionMcsSegmentGeometryFromOrderedPositions(trueOrdered, cfg, trueSegs);
+      pdMomReconstruction::BuildPionMcsSegmentGeometryFromOrderedPositions(trueOrdered, cfg, trueSegs);
 
     Int_t nTrueSeg = 0;
     for (size_t s = 0; s < trueSegs.size() && nTrueSeg < kMaxMcsSegments; ++s) {

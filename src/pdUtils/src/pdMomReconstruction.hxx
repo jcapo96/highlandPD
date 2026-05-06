@@ -49,6 +49,8 @@ namespace pdMomReconstruction {
   Float_t EstimateMomentumByExtension(AnaParticlePD* particle, int pdg = 211);
   ExtensionFitResult EstimateMomentumDetailedByExtension(AnaParticlePD* particle, int pdg = 211);
   Float_t EstimateMomentumFromRange(AnaParticlePD* particle);
+  Float_t EstimatePionMomentumFromCSDA(const AnaParticlePD* particle);
+  Float_t EstimatePionKineticEnergyFromCSDA(const AnaParticlePD* particle);
 
   // Likelihood method
   Float_t EstimateMomentumByLikelihood(AnaParticlePD* particle, int pdg = 211);
@@ -114,6 +116,11 @@ namespace pdMomShared {
   double RangeCmToMomentumGeV(double rangeCm, int pdg, TGraph* rangeEnergyGraph, double massMeV);
 
 }
+
+#include "pdMomReconstructionTLEFit.hxx"
+#include "pdMomReconstructionMCS.hxx"
+#include "pdMomReconstructionJointK0s.hxx"
+#include "pdMomReconstructionFromParams.hxx"
 
 #endif
 
