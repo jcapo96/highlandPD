@@ -292,6 +292,56 @@ namespace {
     return nRecoDaughters;
   }
 
+  // Truth-free end-of-track information of a vertex pion, at the endpoint farther from the vertex
+  // (robust against reversed tracks). Inputs for tagging stopping pions.
+  const Float_t kFarEndNearObjectCm = 5.0f;
+  const size_t kFarEndNHits = 4;
+
+  struct FarEndInfo {
+    TVector3 position{-999., -999., -999.};
+    Float_t dedx = -999.f;
+    Int_t nNearObjects = -1;
+    Float_t maxNearMichel = -999.f;
+  };
+
+  FarEndInfo ComputeFarEndInfo(const AnaParticlePD* part, const AnaParticlePD* partner, const TVector3& vertexPos,
+                               const AnaEventB& event) {
+    FarEndInfo info;
+    if (!part) return info;
+    const TVector3 start(part->PositionStart[0], part->PositionStart[1], part->PositionStart[2]);
+    const TVector3 end(part->PositionEnd[0], part->PositionEnd[1], part->PositionEnd[2]);
+    if (!IsValidPos(start) || !IsValidPos(end)) return info;
+    info.position = (IsValidPos(vertexPos) && (start - vertexPos).Mag() > (end - vertexPos).Mag()) ? start : end;
+
+    std::vector<std::pair<double, Float_t> > hits;  // (distance to far end, dE/dx)
+    for (const AnaHitPD& hit : part->Hits[2]) {
+      const Float_t dedx = (hit.dEdx_calib > 0.0f && std::isfinite(hit.dEdx_calib)) ? hit.dEdx_calib : hit.dEdx;
+      if (!(dedx > 0.0f) || dedx >= 1000.0f || !IsValidPos(hit.Position)) continue;
+      hits.emplace_back((hit.Position - info.position).Mag(), dedx);
+    }
+    if (hits.size() >= kFarEndNHits) {
+      std::partial_sort(hits.begin(), hits.begin() + kFarEndNHits, hits.end());
+      std::vector<Float_t> closest;
+      for (size_t i = 0; i < kFarEndNHits; ++i) closest.push_back(hits[i].second);
+      std::sort(closest.begin(), closest.end());
+      info.dedx = 0.5f * (closest[(kFarEndNHits - 1) / 2] + closest[kFarEndNHits / 2]);
+    }
+
+    info.nNearObjects = 0;
+    for (Int_t ip = 0; ip < event.nParticles; ++ip) {
+      const AnaParticlePD* other = static_cast<const AnaParticlePD*>(event.Particles[ip]);
+      if (!other || other == part || other == partner) continue;
+      const TVector3 oStart(other->PositionStart[0], other->PositionStart[1], other->PositionStart[2]);
+      const TVector3 oEnd(other->PositionEnd[0], other->PositionEnd[1], other->PositionEnd[2]);
+      const bool near = (IsValidPos(oStart) && (oStart - info.position).Mag() < kFarEndNearObjectCm) ||
+                        (IsValidPos(oEnd) && (oEnd - info.position).Mag() < kFarEndNearObjectCm);
+      if (!near) continue;
+      ++info.nNearObjects;
+      if (other->CNNscore[2] > -900.f) info.maxNearMichel = std::max(info.maxNearMichel, other->CNNscore[2]);
+    }
+    return info;
+  }
+
 }
 
 //********************************************************************
@@ -526,6 +576,32 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
                   "Visible calo energy [GeV] in reco daughter subtree of vertex pion 2 (coll. plane dE/dx*dx)", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdaughtersrecovisiblee,
                   "Visible calo energy [GeV] in reco daughter subtrees of both vertex pions (coll. plane dE/dx*dx)", nk0,
+                  nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1momentumcsda, "CSDA pion momentum of the reco length, daughter 1 [GeV/c]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2momentumcsda, "CSDA pion momentum of the reco length, daughter 2 [GeV/c]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1cnntrack, "PFP CNN track score (collection), daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2cnntrack, "PFP CNN track score (collection), daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1cnnmichel, "PFP CNN Michel score (collection), daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2cnnmichel, "PFP CNN Michel score (collection), daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1vtxmichel, "CNN Michel score around the track end, daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2vtxmichel, "CNN Michel score around the track end, daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1farendx, "Far-end x (endpoint farther from the vertex), daughter 1 [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1farendy, "Far-end y, daughter 1 [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1farendz, "Far-end z, daughter 1 [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2farendx, "Far-end x (endpoint farther from the vertex), daughter 2 [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2farendy, "Far-end y, daughter 2 [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2farendz, "Far-end z, daughter 2 [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1farenddedx, "Median dE/dx of the collection hits closest to the far end, daughter 1",
+                  nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2farenddedx, "Median dE/dx of the collection hits closest to the far end, daughter 2",
+                  nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau1farendnobj, "Other reco objects with an endpoint near the far end, daughter 1", nk0,
+                  nmax);
+  AddVarMaxSizeVI(output, k0vtxdau2farendnobj, "Other reco objects with an endpoint near the far end, daughter 2", nk0,
+                  nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1farendmichel, "Max CNN Michel score of the objects near the far end, daughter 1", nk0,
+                  nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2farendmichel, "Max CNN Michel score of the objects near the far end, daughter 2", nk0,
                   nmax);
 }
 
@@ -1739,6 +1815,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   Float_t k0vtxdau1recovisiblee_val = -999.0f;
   Float_t k0vtxdau2recovisiblee_val = -999.0f;
   Float_t k0vtxdaughtersrecovisiblee_val = -999.0f;
+  Float_t momentumcsda_val[2] = {-999.0f, -999.0f};
+  Float_t cnntrack_val[2] = {-999.0f, -999.0f};
+  Float_t cnnmichel_val[2] = {-999.0f, -999.0f};
+  Float_t vtxmichel_val[2] = {-999.0f, -999.0f};
+  FarEndInfo farEnd[2];
 
   if (vertex) {
     k0vtxdau1momentumtle_val = vertex->Daughter1MomentumTLE;
@@ -1843,6 +1924,19 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
         k0vtxdau2recovisiblee_val = static_cast<Float_t>(vis2MeV / 1000.0);
       }
       k0vtxdaughtersrecovisiblee_val = static_cast<Float_t>((vis1MeV + vis2MeV) / 1000.0);
+
+      TVector3 vertexPos(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
+      if (!IsValidPos(vertexPos)) vertexPos.SetXYZ(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
+      const AnaParticlePD* recoParticles[2] = {recoParticle1, recoParticle2};
+      for (int i = 0; i < 2; ++i) {
+        const AnaParticlePD* part = recoParticles[i];
+        if (!part) continue;
+        momentumcsda_val[i] = pdMomReconstruction::EstimatePionMomentumFromCSDA(part);
+        cnntrack_val[i] = part->CNNscore[0];
+        cnnmichel_val[i] = part->CNNscore[2];
+        vtxmichel_val[i] = part->vtx_CNN_michelscore;
+        farEnd[i] = ComputeFarEndInfo(part, recoParticles[1 - i], vertexPos, event);
+      }
     }
   }
 
@@ -1907,6 +2001,26 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxdau1recovisiblee, k0vtxdau1recovisiblee_val);
   output.FillVectorVar(k0vtxdau2recovisiblee, k0vtxdau2recovisiblee_val);
   output.FillVectorVar(k0vtxdaughtersrecovisiblee, k0vtxdaughtersrecovisiblee_val);
+  output.FillVectorVar(k0vtxdau1momentumcsda, momentumcsda_val[0]);
+  output.FillVectorVar(k0vtxdau2momentumcsda, momentumcsda_val[1]);
+  output.FillVectorVar(k0vtxdau1cnntrack, cnntrack_val[0]);
+  output.FillVectorVar(k0vtxdau2cnntrack, cnntrack_val[1]);
+  output.FillVectorVar(k0vtxdau1cnnmichel, cnnmichel_val[0]);
+  output.FillVectorVar(k0vtxdau2cnnmichel, cnnmichel_val[1]);
+  output.FillVectorVar(k0vtxdau1vtxmichel, vtxmichel_val[0]);
+  output.FillVectorVar(k0vtxdau2vtxmichel, vtxmichel_val[1]);
+  output.FillVectorVar(k0vtxdau1farendx, static_cast<Float_t>(farEnd[0].position.X()));
+  output.FillVectorVar(k0vtxdau1farendy, static_cast<Float_t>(farEnd[0].position.Y()));
+  output.FillVectorVar(k0vtxdau1farendz, static_cast<Float_t>(farEnd[0].position.Z()));
+  output.FillVectorVar(k0vtxdau2farendx, static_cast<Float_t>(farEnd[1].position.X()));
+  output.FillVectorVar(k0vtxdau2farendy, static_cast<Float_t>(farEnd[1].position.Y()));
+  output.FillVectorVar(k0vtxdau2farendz, static_cast<Float_t>(farEnd[1].position.Z()));
+  output.FillVectorVar(k0vtxdau1farenddedx, farEnd[0].dedx);
+  output.FillVectorVar(k0vtxdau2farenddedx, farEnd[1].dedx);
+  output.FillVectorVar(k0vtxdau1farendnobj, farEnd[0].nNearObjects);
+  output.FillVectorVar(k0vtxdau2farendnobj, farEnd[1].nNearObjects);
+  output.FillVectorVar(k0vtxdau1farendmichel, farEnd[0].maxNearMichel);
+  output.FillVectorVar(k0vtxdau2farendmichel, farEnd[1].maxNearMichel);
 }
 
 //********************************************************************

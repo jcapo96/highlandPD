@@ -302,6 +302,27 @@ namespace neutralKaonTree {
     k0vtxdau1recovisiblee, // Visible calo energy [GeV] in reco daughter subtree of vertex pion 1 (coll. plane)
     k0vtxdau2recovisiblee, // Visible calo energy [GeV] in reco daughter subtree of vertex pion 2 (coll. plane)
     k0vtxdaughtersrecovisiblee, // Sum visible calo energy [GeV] in reco daughter subtrees of both vertex pions (coll. plane)
+    // Truth-free stopping-tag inputs, taken at the endpoint of each vertex pion farther from the vertex
+    k0vtxdau1momentumcsda, // CSDA pion momentum of the reco length, daughter 1 [GeV/c]
+    k0vtxdau2momentumcsda, // CSDA pion momentum of the reco length, daughter 2 [GeV/c]
+    k0vtxdau1cnntrack, // Pandora PFP CNN track score (collection), daughter 1
+    k0vtxdau2cnntrack, // Pandora PFP CNN track score (collection), daughter 2
+    k0vtxdau1cnnmichel, // Pandora PFP CNN Michel score (collection), daughter 1
+    k0vtxdau2cnnmichel, // Pandora PFP CNN Michel score (collection), daughter 2
+    k0vtxdau1vtxmichel, // CNN Michel score of hits around the track end (vtx_CNN_michelscore), daughter 1
+    k0vtxdau2vtxmichel, // CNN Michel score of hits around the track end (vtx_CNN_michelscore), daughter 2
+    k0vtxdau1farendx, // Far-end x, daughter 1 [cm]
+    k0vtxdau1farendy, // Far-end y, daughter 1 [cm]
+    k0vtxdau1farendz, // Far-end z, daughter 1 [cm]
+    k0vtxdau2farendx, // Far-end x, daughter 2 [cm]
+    k0vtxdau2farendy, // Far-end y, daughter 2 [cm]
+    k0vtxdau2farendz, // Far-end z, daughter 2 [cm]
+    k0vtxdau1farenddedx, // Median dE/dx of the collection hits closest to the far end, daughter 1 [MeV/cm]
+    k0vtxdau2farenddedx, // Median dE/dx of the collection hits closest to the far end, daughter 2 [MeV/cm]
+    k0vtxdau1farendnobj, // Other reco objects with an endpoint near the far end, daughter 1
+    k0vtxdau2farendnobj, // Other reco objects with an endpoint near the far end, daughter 2
+    k0vtxdau1farendmichel, // Max CNN Michel score among those objects, daughter 1
+    k0vtxdau2farendmichel, // Max CNN Michel score among those objects, daughter 2
     k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };
