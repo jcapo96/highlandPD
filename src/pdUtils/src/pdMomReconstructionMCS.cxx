@@ -1,4 +1,5 @@
 #include "pdMomReconstructionMCS.hxx"
+#include "pdUtilsDEdx.hxx"
 
 #include <algorithm>
 #include <cmath>
@@ -278,6 +279,34 @@ void CopyInternalSegmentsToGeometry(const std::vector<McsInternalSegment>& segs,
 
 }  // namespace
 
+bool CollectPionMcsOrderedPoints(const AnaParticlePD& track, std::vector<TVector3>& orderedPoints,
+                                 bool useHitPositionsIfNoTrajectory) {
+  orderedPoints.clear();
+  orderedPoints.reserve(track.TrjPoints.size());
+  for (size_t i = 0; i < track.TrjPoints.size(); ++i) {
+    if (i == 0) continue;
+    const AnaTrajectoryPointPD& tp = track.TrjPoints[i];
+    if (!tp.IsInTPC) continue;
+    if (!HasValidXYZ(tp.Position)) continue;
+    orderedPoints.push_back(tp.Position);
+  }
+  if (orderedPoints.size() >= 3u) return true;
+  if (!useHitPositionsIfNoTrajectory) return false;
+
+  orderedPoints.clear();
+  std::vector<std::pair<double, TVector3>> hits;
+  hits.reserve(track.Hits[2].size());
+  for (const AnaHitPD& h : track.Hits[2]) {
+    const double rr = static_cast<double>(h.ResidualRange);
+    if (!std::isfinite(rr) || !(rr > 0.) || !HasValidXYZ(h.Position)) continue;
+    hits.emplace_back(rr, h.Position);
+  }
+  std::stable_sort(hits.begin(), hits.end(),
+                   [](const std::pair<double, TVector3>& a, const std::pair<double, TVector3>& b) { return a.first > b.first; });
+  for (const auto& h : hits) orderedPoints.push_back(h.second);
+  return orderedPoints.size() >= 3u;
+}
+
 bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg,
                                    std::vector<double>& deltaTheta, std::vector<double>& xOverX0,
                                    std::vector<double>* rrMidCm, std::vector<double>* thetaXZ,
@@ -298,15 +327,7 @@ bool BuildPionMcsScatteringSamples(const AnaParticlePD& track, const MCSLikeliho
   if (segmentRrToEndCmSingle) segmentRrToEndCmSingle->clear();
 
   std::vector<TVector3> orderedPoints;
-  orderedPoints.reserve(track.TrjPoints.size());
-  for (size_t i = 0; i < track.TrjPoints.size(); ++i) {
-    if (i == 0) continue;
-    const AnaTrajectoryPointPD& tp = track.TrjPoints[i];
-    if (!tp.IsInTPC) continue;
-    if (!HasValidXYZ(tp.Position)) continue;
-    orderedPoints.push_back(tp.Position);
-  }
-  if (orderedPoints.size() < 3u) return false;
+  if (!CollectPionMcsOrderedPoints(track, orderedPoints, cfg.useHitPositionsIfNoTrajectory)) return false;
   return BuildPionMcsScatteringSamplesCore(orderedPoints, cfg, deltaTheta, xOverX0, rrMidCm, thetaXZ, thetaYZ,
                                            segmentFitChi2Ndf, segment1RrToEndCm, segment2RrToEndCm, segmentLengthCm,
                                            segmentFitChi2NdfSingle, segmentRrToEndCmSingle);
@@ -343,15 +364,7 @@ bool BuildPionMcsSegmentGeometry(const AnaParticlePD& track, const MCSLikelihood
                                  std::vector<MCSSegmentGeometry>& outSegments) {
   outSegments.clear();
   std::vector<TVector3> orderedPoints;
-  orderedPoints.reserve(track.TrjPoints.size());
-  for (size_t i = 0; i < track.TrjPoints.size(); ++i) {
-    if (i == 0) continue;
-    const AnaTrajectoryPointPD& tp = track.TrjPoints[i];
-    if (!tp.IsInTPC) continue;
-    if (!HasValidXYZ(tp.Position)) continue;
-    orderedPoints.push_back(tp.Position);
-  }
-  if (orderedPoints.size() < 3u) return false;
+  if (!CollectPionMcsOrderedPoints(track, orderedPoints, cfg.useHitPositionsIfNoTrajectory)) return false;
   std::vector<McsInternalSegment> segs;
   if (!BuildMcsInternalSegments(orderedPoints, cfg, segs)) return false;
   CopyInternalSegmentsToGeometry(segs, outSegments);
@@ -369,7 +382,7 @@ bool BuildPionMcsSegmentGeometryFromOrderedPositions(const std::vector<TVector3>
   return !outSegments.empty();
 }
 
-MCSLikelihood::MCSLikelihood(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg) {
+MCSLikelihood::MCSLikelihood(const AnaParticlePD& track, const MCSLikelihoodConfig& cfg) : cfg_(cfg) {
   theta0_floor_rad_ = (std::isfinite(cfg.theta0FloorRad) && cfg.theta0FloorRad > 0.) ? cfg.theta0FloorRad : 1e-6;
   radiation_length_cm_ =
       (std::isfinite(cfg.radiationLengthCm) && cfg.radiationLengthCm > 1e-9) ? cfg.radiationLengthCm : 14.0;
@@ -420,13 +433,31 @@ double ComputePionMcsNLLFromScatteringSamples(const std::vector<double>& theta_x
   const float E0 = std::sqrt(p0_MeV * p0_MeV + m_pi * m_pi);
   if (!std::isfinite(E0) || E0 <= 0.0f) return std::numeric_limits<double>::infinity();
 
+  const double highlandConstant =
+      (std::isfinite(cfg.highlandConstantMeV) && cfg.highlandConstantMeV > 0.) ? cfg.highlandConstantMeV
+                                                                              : kHighlandConstantMeV;
+  const double tailFraction =
+      (std::isfinite(cfg.tailFraction) && cfg.tailFraction > 0. && cfg.tailFraction < 1.) ? cfg.tailFraction : 0.;
+  const double tailWidth = (std::isfinite(cfg.tailWidthFactor) && cfg.tailWidthFactor > 1.) ? cfg.tailWidthFactor : 5.;
+  // NLL given to hypotheses for which the pion would stop before a sample (rangeLowerBound).
+  constexpr double kStoppedNLL = 1e9;
+
   double nll = 0.;
+  // Energy is propagated incrementally along the (increasing) sample positions instead of restarting from the
+  // track start for every sample (same 1 cm steps; restarts if the positions are not ordered).
+  float EPrev = E0;
+  float xPrev = 0.0f;
   for (size_t i = 0; i < theta_xz.size(); ++i) {
-    float Ej = E0;
     const float step = 1.0f;
     const float L = static_cast<float>(cumulative_length_cm_midtrack[i]);
     if (!std::isfinite(L) || L < 0.0f) return std::numeric_limits<double>::infinity();
-    for (float x = 0.0f; x < L; x += step) {
+    if (L < xPrev) {
+      EPrev = E0;
+      xPrev = 0.0f;
+    }
+    float Ej = EPrev;
+    float x = xPrev;
+    for (; x < L; x += step) {
       const float p2 = Ej * Ej - m_pi * m_pi;
       if (!std::isfinite(p2) || p2 <= 0.0f) {
         Ej = m_pi;
@@ -435,11 +466,17 @@ double ComputePionMcsNLLFromScatteringSamples(const std::vector<double>& theta_x
       const float pj = std::sqrt(p2);
       const float betaj = pj / Ej;
       const float gammaj = Ej / m_pi;
-      const float dEdx = BetheBloch_dEdx_MeV_per_cm(betaj, gammaj);
+      const float dEdx = cfg.rangeLowerBound ? static_cast<float>(pdAnaUtils::GetdEdxBetheBloch(Ej - m_pi, m_pi))
+                                             : BetheBloch_dEdx_MeV_per_cm(betaj, gammaj);
       Ej -= dEdx * step;
       if (Ej <= m_pi + 1.0f) break;
     }
-    if (Ej <= m_pi + 1.0f) continue;
+    EPrev = Ej;
+    xPrev = x;
+    if (Ej <= m_pi + 1.0f) {
+      if (cfg.rangeLowerBound) return kStoppedNLL;
+      continue;
+    }
 
     const float p2local = Ej * Ej - m_pi * m_pi;
     if (!std::isfinite(p2local) || p2local <= 0.0f) continue;
@@ -453,7 +490,7 @@ double ComputePionMcsNLLFromScatteringSamples(const std::vector<double>& theta_x
     double corr = 1.0 + 0.038 * std::log(logArg);
     if (!std::isfinite(corr) || corr < 0.1) corr = 0.1;
 
-    double theta0 = (kHighlandConstantMeV / (static_cast<double>(betaj) * static_cast<double>(pj))) * std::sqrt(xOverX0) *
+    double theta0 = (highlandConstant / (static_cast<double>(betaj) * static_cast<double>(pj))) * std::sqrt(xOverX0) *
                     corr;
     if (!std::isfinite(theta0) || theta0 <= 0.) theta0 = theta0_floor_rad;
     theta0 = std::max(theta0, theta0_floor_rad);
@@ -476,13 +513,22 @@ double ComputePionMcsNLLFromScatteringSamples(const std::vector<double>& theta_x
     if (!std::isfinite(dtxz) || !std::isfinite(dtyz)) return std::numeric_limits<double>::infinity();
     const double pullX = dtxz / sigma;
     const double pullY = dtyz / sigma;
-    nll += 0.5 * (pullX * pullX + pullY * pullY) + 2.0 * std::log(sigma);
+    if (tailFraction > 0.) {
+      // Gaussian core + wide Gaussian tail, per projection (normalisation constants dropped).
+      const auto mix = [&](double pull) {
+        return (1. - tailFraction) * std::exp(-0.5 * pull * pull) / sigma +
+               tailFraction * std::exp(-0.5 * pull * pull / (tailWidth * tailWidth)) / (tailWidth * sigma);
+      };
+      nll -= std::log(std::max(mix(pullX), 1e-300)) + std::log(std::max(mix(pullY), 1e-300));
+    } else {
+      nll += 0.5 * (pullX * pullX + pullY * pullY) + 2.0 * std::log(sigma);
+    }
   }
   return (std::isfinite(nll)) ? nll : std::numeric_limits<double>::infinity();
 }
 
 double MCSLikelihood::ComputeNLL(double momentumGeV) const {
-  MCSLikelihoodConfig c;
+  MCSLikelihoodConfig c = cfg_;
   c.radiationLengthCm = radiation_length_cm_;
   c.theta0FloorRad = theta0_floor_rad_;
   c.maxAbsDeltaThetaRad = -1.0;

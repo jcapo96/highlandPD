@@ -2,6 +2,7 @@
 #define pionMomentumAnalysis_h
 
 #include "pdBaseAnalysis.hxx"
+#include "pionMomentumDump.hxx"
 #include "pionMomentumEventDisplay.hxx"
 #include "standardPDTree.hxx"
 #include "ToyBoxPD.hxx"
@@ -39,6 +40,8 @@ class pionMomentumAnalysis : public pdBaseAnalysis {
   virtual AnaTrueVertexB* GetTrueVertex() const { return box().TrueVertex; }
 
  private:
+  bool _WriteTrackDump;
+  pionMomentumDump::TrackDump* _TrackDump;
   bool _ApplySCECorrection;
   bool _ApplySCESystematic;
   double _MCSRadiationLengthCm;

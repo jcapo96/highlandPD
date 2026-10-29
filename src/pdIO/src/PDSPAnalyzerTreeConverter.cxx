@@ -505,6 +505,15 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
       hit.dEdx          = (*reco_beam_calibrated_dEdX_SCE)[j];      
       hit.ResidualRange = (*reco_beam_resRange_SCE)[j];
       hit.Pitch         = (*reco_beam_TrkPitch_SCE)[j];
+      // Raw collection-plane coordinates of the calorimetry points (wire, drift tick, TPC), used by MCS:
+      // the calo X/Y/Z positions are the smoothed track trajectory, not the hit measurements.
+      if (reco_beam_calo_wire && j < reco_beam_calo_wire->size()) hit.WireID.Wire = (Int_t)(*reco_beam_calo_wire)[j];
+      if (reco_beam_calo_tick && j < reco_beam_calo_tick->size()) hit.PeakTime = (Float_t)(*reco_beam_calo_tick)[j];
+      if (reco_beam_calo_TPC && j < reco_beam_calo_TPC->size()) {
+        hit.WireID.TPC = (*reco_beam_calo_TPC)[j];
+        hit.TPCid = (*reco_beam_calo_TPC)[j];
+      }
+      hit.WireID.Plane = (Int_t)plane;
            
       part->Hits[plane].push_back(hit);
     }

@@ -79,15 +79,29 @@ double pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(TGraph* tg_ke, double ran
     return k;
   };
 
-  std::vector<std::pair<double, double>> pts;
-  pts.reserve(static_cast<size_t>(std::max(1, tg_ke->GetN())));
-  for (int i = 0; i < tg_ke->GetN(); ++i) {
-    double x = 0., y = 0.;
-    tg_ke->GetPoint(i, x, y);
-    if (x > 0. && std::isfinite(x) && std::isfinite(y)) pts.emplace_back(x, std::max(y, 0.));
+  // Sorted copy of the table, cached per graph (this is called once per hit and scan step).
+  struct SortedTable {
+    int n = -1;
+    double x0 = 0., xN = 0.;
+    std::vector<std::pair<double, double>> pts;
+  };
+  static std::unordered_map<const TGraph*, SortedTable> cache;
+  SortedTable& tab = cache[tg_ke];
+  if (tab.n != tg_ke->GetN() || (tab.n > 0 && (tab.x0 != tg_ke->GetX()[0] || tab.xN != tg_ke->GetX()[tab.n - 1]))) {
+    tab.n = tg_ke->GetN();
+    tab.x0 = tab.n > 0 ? tg_ke->GetX()[0] : 0.;
+    tab.xN = tab.n > 0 ? tg_ke->GetX()[tab.n - 1] : 0.;
+    tab.pts.clear();
+    tab.pts.reserve(static_cast<size_t>(std::max(1, tab.n)));
+    for (int i = 0; i < tab.n; ++i) {
+      double x = 0., y = 0.;
+      tg_ke->GetPoint(i, x, y);
+      if (x > 0. && std::isfinite(x) && std::isfinite(y)) tab.pts.emplace_back(x, std::max(y, 0.));
+    }
+    std::sort(tab.pts.begin(), tab.pts.end());
   }
+  const std::vector<std::pair<double, double>>& pts = tab.pts;
   if (pts.empty()) return -1.;
-  std::sort(pts.begin(), pts.end());
 
   const double r = range_cm;
   if (r <= 0.) return kKeFloorMeV;
@@ -112,14 +126,14 @@ double pdAnaUtils::KineticEnergyMeVFromResidualRangeCm(TGraph* tg_ke, double ran
     return adopt_ke(k0 * (r / r0));
   }
 
-  for (size_t i = 1; i < pts.size(); ++i) {
-    if (r <= pts[i].first + 1e-15) {
-      const double r0 = pts[i - 1].first, k0 = pts[i - 1].second;
-      const double r1 = pts[i].first, k1 = pts[i].second;
-      if (std::abs(r1 - r0) < 1e-18) return adopt_ke(k0);
-      const double t = (r - r0) / (r1 - r0);
-      return adopt_ke(k0 + t * (k1 - k0));
-    }
+  const auto it = std::lower_bound(pts.begin() + 1, pts.end(), std::make_pair(r - 1e-15, -1e300));
+  if (it != pts.end()) {
+    const size_t i = static_cast<size_t>(std::distance(pts.begin(), it));
+    const double r0 = pts[i - 1].first, k0 = pts[i - 1].second;
+    const double r1 = pts[i].first, k1 = pts[i].second;
+    if (std::abs(r1 - r0) < 1e-18) return adopt_ke(k0);
+    const double t = (r - r0) / (r1 - r0);
+    return adopt_ke(k0 + t * (k1 - k0));
   }
   return adopt_ke(pts.back().second);
 }
@@ -327,6 +341,58 @@ bool CollectionPlaneResidualRangeLooksUnset(const AnaParticlePD* part) {
   return true;
 }
 
+// The ke_vs_range.root tables start at KE = 100 MeV (pion: 26.9 cm), and KineticEnergyMeVFromResidualRangeCm
+// extrapolated linearly below the first point (pion: KE = 38 MeV at zero range), which misplaces the Bragg peak.
+// Add Bethe-Bloch CSDA points below the first tabulated point, scaled to join it continuously.
+TGraph* ExtendKeVsRangeBelowTable(TGraph* g, const std::string& ssparticle) {
+  Float_t mass = 0.f;
+  std::string nm;
+  int pdg = 0;
+  if (ssparticle == "muon") pdg = 13;
+  else if (ssparticle == "pion") pdg = 211;
+  else if (ssparticle == "kaon") pdg = 321;
+  else if (ssparticle == "proton") pdg = 2212;
+  if (!g || g->GetN() < 2 || !PdgToMassAndKeName(pdg, mass, nm)) return g;
+  std::vector<std::pair<double, double>> pts;
+  for (int i = 0; i < g->GetN(); ++i)
+    if (g->GetX()[i] > 0. && std::isfinite(g->GetX()[i]) && std::isfinite(g->GetY()[i]))
+      pts.emplace_back(g->GetX()[i], g->GetY()[i]);
+  std::sort(pts.begin(), pts.end());
+  if (pts.empty()) return g;
+  const double keFirst = pts.front().second;
+  const double rFirst = pts.front().first;
+  // CSDA range from 0.5 MeV upwards (below it the range is negligible), log-spaced in KE.
+  constexpr double kKeLow = 0.5;
+  constexpr int kN = 120;
+  std::vector<std::pair<double, double>> low;  // (range, ke)
+  double range = 0.;
+  double kePrev = kKeLow;
+  const double dedx0 = pdAnaUtils::GetdEdxBetheBloch(kKeLow, mass);
+  if (dedx0 > 0. && std::isfinite(dedx0)) range = kKeLow / dedx0;
+  low.emplace_back(range, kKeLow);
+  for (int i = 1; i <= kN; ++i) {
+    const double ke = kKeLow * std::exp(std::log(keFirst / kKeLow) * i / kN);
+    const int nStep = 20;
+    for (int j = 0; j < nStep; ++j) {
+      const double e0 = kePrev + (ke - kePrev) * j / nStep;
+      const double e1 = kePrev + (ke - kePrev) * (j + 1) / nStep;
+      const double dedx = pdAnaUtils::GetdEdxBetheBloch(0.5 * (e0 + e1), mass);
+      if (dedx > 0. && std::isfinite(dedx)) range += (e1 - e0) / dedx;
+    }
+    kePrev = ke;
+    low.emplace_back(range, ke);
+  }
+  if (!(range > 0.)) return g;
+  const double scale = rFirst / range;  // join the tabulated point exactly
+  TGraph* out = new TGraph();
+  out->SetName(g->GetName());
+  int n = 0;
+  for (size_t i = 0; i + 1 < low.size(); ++i) out->SetPoint(n++, low[i].first * scale, low[i].second);
+  for (const auto& pr : pts) out->SetPoint(n++, pr.first, pr.second);
+  delete g;
+  return out;
+}
+
 TGraph* KeVsRangeGraphCached(const std::string& ssparticle) {
   static std::unordered_map<std::string, TGraph*> cache;
   static bool triedLoad = false;
@@ -341,7 +407,10 @@ TGraph* KeVsRangeGraphCached(const std::string& ssparticle) {
           auto* g = dynamic_cast<TGraph*>(f->Get(nm));
           if (!g) continue;
           auto* clone = dynamic_cast<TGraph*>(g->Clone());
-          if (clone) cache[nm] = clone;
+          // HIGHLAND_LEGACY_KE_TABLE=1 keeps the old linear extrapolation (for before/after comparisons).
+          const char* legacy = getenv("HIGHLAND_LEGACY_KE_TABLE");
+          const bool extend = !(legacy && std::string(legacy) == "1");
+          if (clone) cache[nm] = extend ? ExtendKeVsRangeBelowTable(clone, nm) : clone;
         }
         f->Close();
       }
@@ -390,7 +459,8 @@ bool BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(AnaParticlePD* part,
                                                             int minInteriorPoints, int skipHitsFirst, int skipHitsLast,
                                                             double dedxMinMeVcm, double dedxMaxMeVcm, double pdfPathCm,
                                                             std::vector<double>& pGeV, std::vector<double>& logL,
-                                                            double scanStepFineCm, double lowPMomentumRefineGeV) {
+                                                            double scanStepFineCm, double lowPMomentumRefineGeV,
+                                                            double dedxScale) {
   pGeV.clear();
   logL.clear();
   if (!part || part->Hits[2].empty()) return false;
@@ -409,6 +479,9 @@ bool BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(AnaParticlePD* part,
   TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
   if (!tg_ke) return false;
 
+  // Calibration of the measured dE/dx to the likelihood model (MC: measured/model = 0.98 on the dE/dx plateau).
+  if (std::isfinite(dedxScale) && dedxScale > 0. && dedxScale != 1.)
+    for (double& d : dedx) d *= dedxScale;
   TGraph* tg = new TGraph(static_cast<int>(dedx.size()), rr.data(), dedx.data());
   const double lenCm = pdAnaUtils::MeasuredTrackLengthCmForPionFreeRange(part, rr);
 
@@ -502,11 +575,13 @@ bool pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(AnaParticlePD* p
                                                                 int skipHitsLast, double dedxMinMeVcm,
                                                                 double dedxMaxMeVcm, double pdfPathCm,
                                                                 std::vector<double>& pGeV, std::vector<double>& logL,
-                                                                double scanStepFineCm, double lowPMomentumRefineGeV) {
+                                                                double scanStepFineCm, double lowPMomentumRefineGeV,
+                                                                double dedxScale) {
 //***************************************************************
   return BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(part, Lmax, step, minInteriorPoints, skipHitsFirst,
                                                                 skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm, pdfPathCm,
-                                                                pGeV, logL, scanStepFineCm, lowPMomentumRefineGeV);
+                                                                pGeV, logL, scanStepFineCm, lowPMomentumRefineGeV,
+                                                                dedxScale);
 }
 
 //***************************************************************

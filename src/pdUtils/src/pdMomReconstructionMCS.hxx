@@ -18,7 +18,24 @@ struct MCSLikelihoodConfig {
   double detectorSigmaFloorRad = 1e-6;
   double detectorSigmaA = 0.0;
   double detectorSigmaC = 0.0;
+  /// Highland constant [MeV]; an effective value absorbs the smoothing of the reco points (calibrated in MC).
+  double highlandConstantMeV = 13.6;
+  /// Gaussian outlier component: fraction and width in units of sigma (hadronic elastic scatters, kinks).
+  double tailFraction = 0.0;
+  double tailWidthFactor = 5.0;
+  /// If true, momentum hypotheses for which a pion stops before a scattering sample get a large NLL
+  /// (the old behaviour skipped those samples, which favoured too-low momenta).
+  bool rangeLowerBound = false;
+  /// If true and the track has fewer than 3 usable trajectory points, use collection-plane hit positions
+  /// (off by default so that callers such as the K0S joint fit keep their previous behaviour).
+  bool useHitPositionsIfNoTrajectory = false;
 };
+
+/// Ordered 3D points from track start to end used for MCS: reco trajectory points (in TPC, first point skipped);
+/// if fewer than 3 and \a useHitPositionsIfNoTrajectory, collection-plane hit positions ordered by decreasing
+/// residual range (minitrees store no trajectory points for non-beam particles).
+bool CollectPionMcsOrderedPoints(const AnaParticlePD& track, std::vector<TVector3>& orderedPoints,
+                                 bool useHitPositionsIfNoTrajectory = true);
 
 class MCSLikelihood {
 public:
@@ -39,6 +56,7 @@ private:
   double detector_sigma_floor_rad_ = 1e-6;
   double detector_sigma_a_ = 0.0;
   double detector_sigma_c_ = 0.0;
+  MCSLikelihoodConfig cfg_{};
 };
 
 struct MCSSegmentGeometry {

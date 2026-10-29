@@ -7,6 +7,7 @@ namespace pdMomReconstruction {
 
 void FillPionTLEFitConfig_FromPionMomentumParams(PionTLEFitConfig& cfg);
 void FillPionMCSConfig_FromPionMomentumParams(PionMCSConfig& cfg);
+void FillPionMomentumRecoConfig_FromPionMomentumParams(PionMomentumRecoConfig& cfg);
 
 void FillJointK0sTwoPionGridFitConfig_FromNeutralKaonParams(JointK0sTwoPionGridFitConfig& cfg);
 

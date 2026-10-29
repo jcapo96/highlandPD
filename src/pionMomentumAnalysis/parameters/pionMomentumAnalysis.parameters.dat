@@ -47,6 +47,19 @@
  < pionMomentumAnalysis.MCSDetectorSigmaC = -1.62e-7 >
  # Lower bound for sigma_det [rad] when detector-resolution mode is enabled.
  < pionMomentumAnalysis.MCSDetectorSigmaFloorRad = 1.0e-10 >
+ # Effective Highland constant [MeV]. The reco trajectory / calorimetry points are smoothed by the track fit, so the
+ # measured angles between 6 cm segments are ~0.56 of Highland (unbinned ML fit on MC 0.5/1 GeV beam pions, 2026-10-29;
+ # the fitted detector term is ~0, consistent with the sigma_det above). 13.6 = plain Highland.
+ < pionMomentumAnalysis.MCSHighlandConstantMeV = 7.58 >
+ # Outlier component (kinks, hard scatters): fraction and width in units of sigma (same ML fit).
+ < pionMomentumAnalysis.MCSTailFraction = 0.075 >
+ < pionMomentumAnalysis.MCSTailWidthFactor = 25.0 >
+ # 1: momenta for which the pion would stop before the last scattering sample are excluded (range lower bound).
+ # 0: old behaviour (those samples were skipped, which biased the fit low).
+ < pionMomentumAnalysis.MCSRangeLowerBound = 1 >
+ # 1: tracks without trajectory points (minitree daughters) use collection-plane hit positions ordered by residual
+ # range. Those positions are the smoothed track fit as well, with a different smoothing (see the study report).
+ < pionMomentumAnalysis.MCSUseHitPositionsIfNoTrajectory = 1 >
 
 --- ML residual-range dE/dx (main-track pion TLEFit) -----------
 # Minimum interior hits after skipping ends (before dE/dx window).
@@ -65,6 +78,14 @@
 < pionMomentumAnalysis.FreeRangeLowPMomentumRefineGeV = 0.0 >
 # Path length delta x (cm) used in the dE/dx likelihood PDF.
 < pionMomentumAnalysis.FreeRangeDedxPdfPathCm = 0.65 >
+# Measured dE/dx is multiplied by this factor before the fit (1 = off). In MC (K0S-daughter minitree) the measured
+# per-hit median is 0.977-0.986 of the model median at the true KE for 50-700 MeV (2026-10-29 study).
+< pionMomentumAnalysis.FreeRangeDedxScale = 1.0 >
+
+--- Recommended K0S-daughter momentum (TLE with CSDA lower bound) -----------
+# p = max(p_TLE, p_CSDA(reco length)); flagged "measured" below this momentum [GeV/c]
+# (above it dE/dx is on the minimum-ionising plateau and p is only a lower bound).
+< pionMomentumAnalysis.PionMomentumMeasuredMaxGeV = 0.45 >
 
 --- Bragg-window χ²_π± (Chi2PID-style template χ²/hit; stopping-end RR window) -----------
 # Hits with residual range strictly between 0 and the max below [cm] enter mean χ²/hit (same recipe as Chi2PID 211).
@@ -109,6 +130,14 @@
 # 1 = enabled, 0 = disabled (faster, keeps these fields at sentinel values).
 < pionMomentumAnalysis.FreeRangeComputeDedxBiasDiagnostics = 0 >
 
+
+--- Per-track dump (estimator studies) -----------
+# If 1, write the "piondump" TTree: one entry per beam track, true-pion beam daughter (MC) and
+# true K0S-daughter pion (MC), with collection-plane hits, reco trajectory points, truth and the
+# TLE / MCS / CSDA estimates computed with the settings above.
+< pionMomentumAnalysis.WriteTrackDump = 0 >
+# If 1, also store the TLE lnL(p) curve per track (tlep, tlell); doubles the TLE time.
+< pionMomentumAnalysis.TrackDumpTleCurves = 1 >
 
 --- Event Skim File ------------
  < baseAnalysis.StoreSurvivingEvents = 0 >

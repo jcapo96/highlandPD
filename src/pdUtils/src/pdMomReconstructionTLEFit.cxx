@@ -1,6 +1,8 @@
 #include "pdMomReconstructionTLEFit.hxx"
+#include "pdMomReconstruction.hxx"
 #include "pdUtilsDEdx.hxx"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -20,7 +22,7 @@ bool EstimatePionMomentumTLEFit(AnaParticlePD* track, const PionTLEFitConfig& cf
   if (!pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurve(
           track, cfg.scanLmaxCm, cfg.scanStepCm, cfg.minInteriorHits, cfg.skipHitsFirst, cfg.skipHitsLast,
           cfg.dedxMinMeVcm, cfg.dedxMaxMeVcm, cfg.dedxPdfPathCm, pAxisGeV, logL, cfg.scanStepFineCm,
-          cfg.lowPMomentumRefineGeV) ||
+          cfg.lowPMomentumRefineGeV, cfg.dedxScale) ||
       logL.size() != pAxisGeV.size())
     return false;
 
@@ -41,6 +43,24 @@ bool EstimatePionMomentumTLEFit(AnaParticlePD* track, const PionTLEFitConfig& cf
   if (pAxisGeVOut) *pAxisGeVOut = pAxisGeV;
   if (logLOut) *logLOut = logL;
   return true;
+}
+
+bool EstimatePionMomentumRecommended(AnaParticlePD* track, const PionMomentumRecoConfig& cfg,
+                                     PionMomentumRecoResult& out) {
+  out = PionMomentumRecoResult();
+  if (!track) return false;
+  const Float_t pRange = EstimatePionMomentumFromCSDA(track);
+  out.rangeMomentumGeV = (pRange > 0.f) ? static_cast<double>(pRange) : -999.0;
+  PionTLEFitResult tle;
+  out.tleValid = EstimatePionMomentumTLEFit(track, cfg.tle, tle) && tle.valid;
+  if (out.tleValid) out.tleMomentumGeV = tle.bestMomentumGeV;
+  if (out.tleValid)
+    out.momentumGeV = std::max(out.tleMomentumGeV, out.rangeMomentumGeV);
+  else
+    out.momentumGeV = out.rangeMomentumGeV;
+  out.valid = out.momentumGeV > 0.0;
+  out.measured = out.valid && out.momentumGeV < cfg.measuredMaxGeV;
+  return out.valid;
 }
 
 }  // namespace pdMomReconstruction

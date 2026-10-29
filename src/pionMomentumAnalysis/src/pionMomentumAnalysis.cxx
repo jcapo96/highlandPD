@@ -66,6 +66,8 @@ pionMomentumAnalysis::pionMomentumAnalysis(AnalysisAlgorithm* ana) : pdBaseAnaly
   _StoppingMaxTrueEndMomentumGeV = 0.03;
   _CreateEventDisplay = false;
   _EventDisplay = nullptr;
+  _WriteTrackDump = false;
+  _TrackDump = nullptr;
 }
 
 //********************************************************************
@@ -75,6 +77,8 @@ pionMomentumAnalysis::~pionMomentumAnalysis() {
     delete _EventDisplay;
     _EventDisplay = nullptr;
   }
+  delete _TrackDump;
+  _TrackDump = nullptr;
 }
 
 //********************************************************************
@@ -146,6 +150,10 @@ bool pionMomentumAnalysis::Initialize() {
       ND::params().GetParameterI("pionMomentumAnalysis.FreeRangeComputeDedxBiasDiagnostics");
   _StoppingMaxTrueEndMomentumGeV = ND::params().GetParameterD("pionMomentumAnalysis.StoppingMaxTrueEndMomentumGeV");
   _CreateEventDisplay = ND::params().GetParameterI("pionMomentumAnalysis.CreateEventDisplay");
+  _WriteTrackDump = ND::params().HasParameter("pionMomentumAnalysis.WriteTrackDump")
+                        ? ND::params().GetParameterI("pionMomentumAnalysis.WriteTrackDump")
+                        : 0;
+  if (_WriteTrackDump && !_TrackDump) _TrackDump = new pionMomentumDump::TrackDump();
 
   // Register the standard category set used by anaUtils::FillCategories(mainTrack, "")
   anaUtils::AddStandardCategories();
@@ -162,6 +170,7 @@ bool pionMomentumAnalysis::Initialize() {
 void pionMomentumAnalysis::Finalize() {
 //********************************************************************
   pionMomentumAnaUtils::WriteMomentumDiagnostics(output());
+  if (_TrackDump) _TrackDump->Write(output());
 }
 
 //********************************************************************
@@ -715,6 +724,17 @@ void pionMomentumAnalysis::FillMicroTrees(bool addBase) {
       output(), beamDaughterMcsTruncDauIdx, beamDaughterMcsTruncK, beamDaughterMcsTruncNsegments,
       beamDaughterMcsTruncTrueEkin0GeV, beamDaughterMcsTruncEkinCsdaFullGeV, beamDaughterMcsTruncPmcsGeV,
       beamDaughterMcsTruncFracResTrue, beamDaughterMcsTruncFracResCsda);
+
+  if (_TrackDump) {
+    pionMomentumDump::DumpConfig dumpCfg;
+    pdMomReconstruction::FillPionMCSConfig_FromPionMomentumParams(dumpCfg.mcs);
+    pdMomReconstruction::FillPionMomentumRecoConfig_FromPionMomentumParams(dumpCfg.reco);
+    dumpCfg.tle = dumpCfg.reco.tle;
+    dumpCfg.storeTleCurve = !ND::params().HasParameter("pionMomentumAnalysis.TrackDumpTleCurves") ||
+                            ND::params().GetParameterI("pionMomentumAnalysis.TrackDumpTleCurves") != 0;
+    const Long64_t anaEntry = output().GetTree() ? output().GetTree()->GetEntries() : -1;
+    _TrackDump->FillEvent(output(), static_cast<AnaEventB&>(GetEvent()), box().MainTrack, beam, anaEntry, dumpCfg);
+  }
 
   if (_CreateEventDisplay && _EventDisplay) {
     _EventDisplay->FillTree(output(), GetEvent(), const_cast<ToyBoxPD*>(&box()));

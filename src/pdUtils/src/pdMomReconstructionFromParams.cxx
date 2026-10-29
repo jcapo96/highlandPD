@@ -14,6 +14,9 @@ void FillPionTLEFitConfig_FromPionMomentumParams(PionTLEFitConfig& cfg) {
   cfg.scanStepFineCm = ND::params().GetParameterD("pionMomentumAnalysis.FreeRangeScanStepFineCm");
   cfg.lowPMomentumRefineGeV = ND::params().GetParameterD("pionMomentumAnalysis.FreeRangeLowPMomentumRefineGeV");
   cfg.dedxPdfPathCm = ND::params().GetParameterD("pionMomentumAnalysis.FreeRangeDedxPdfPathCm");
+  cfg.dedxScale = ND::params().HasParameter("pionMomentumAnalysis.FreeRangeDedxScale")
+                      ? ND::params().GetParameterD("pionMomentumAnalysis.FreeRangeDedxScale")
+                      : 1.0;
 }
 
 void FillPionMCSConfig_FromPionMomentumParams(PionMCSConfig& cfg) {
@@ -35,6 +38,22 @@ void FillPionMCSConfig_FromPionMomentumParams(PionMCSConfig& cfg) {
   cfg.momentumScanMaxGeV = ND::params().HasParameter("pionMomentumAnalysis.MCSMomentumScanMaxGeV")
                                ? ND::params().GetParameterD("pionMomentumAnalysis.MCSMomentumScanMaxGeV")
                                : 2.5;
+  // Calibrated angular model (defaults reproduce the previous behaviour).
+  const auto getD = [](const char* key, double def) {
+    return ND::params().HasParameter(key) ? ND::params().GetParameterD(key) : def;
+  };
+  cfg.likelihood.highlandConstantMeV = getD("pionMomentumAnalysis.MCSHighlandConstantMeV", 13.6);
+  cfg.likelihood.tailFraction = getD("pionMomentumAnalysis.MCSTailFraction", 0.0);
+  cfg.likelihood.tailWidthFactor = getD("pionMomentumAnalysis.MCSTailWidthFactor", 5.0);
+  cfg.likelihood.rangeLowerBound = getD("pionMomentumAnalysis.MCSRangeLowerBound", 0.0) != 0.0;
+  cfg.likelihood.useHitPositionsIfNoTrajectory = getD("pionMomentumAnalysis.MCSUseHitPositionsIfNoTrajectory", 0.0) != 0.0;
+}
+
+void FillPionMomentumRecoConfig_FromPionMomentumParams(PionMomentumRecoConfig& cfg) {
+  FillPionTLEFitConfig_FromPionMomentumParams(cfg.tle);
+  cfg.measuredMaxGeV = ND::params().HasParameter("pionMomentumAnalysis.PionMomentumMeasuredMaxGeV")
+                           ? ND::params().GetParameterD("pionMomentumAnalysis.PionMomentumMeasuredMaxGeV")
+                           : 0.45;
 }
 
 void FillJointK0sTwoPionGridFitConfig_FromNeutralKaonParams(JointK0sTwoPionGridFitConfig& cfg) {
