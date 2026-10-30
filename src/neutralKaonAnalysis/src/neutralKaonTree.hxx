@@ -323,6 +323,11 @@ namespace neutralKaonTree {
     k0vtxdau2farendnobj, // Other reco objects with an endpoint near the far end, daughter 2
     k0vtxdau1farendmichel, // Max CNN Michel score among those objects, daughter 1
     k0vtxdau2farendmichel, // Max CNN Michel score among those objects, daughter 2
+    // Truth-free activity around the decay vertex (a V0 has two prongs, a hadronic interaction usually more)
+    k0vtxnobjnear, // Other reco objects with an endpoint within 3 cm of the vertex
+    k0vtxnobjnear10, // Other reco objects with an endpoint within 10 cm of the vertex
+    k0vtxnearestobjdist, // Distance from the vertex to the nearest endpoint of another reco object [cm]
+    k0vtxnhitsnear, // Collection hits of other reco objects within 3 cm of the vertex
     // Truth links of the vertex daughters, to identify Lambda -> p pi- when the Lambda itself is not stored
     k0vtxdau1trueparentid, // True ParentID of daughter 1
     k0vtxdau2trueparentid, // True ParentID of daughter 2

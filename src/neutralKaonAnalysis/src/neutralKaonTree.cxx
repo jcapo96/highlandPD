@@ -342,6 +342,44 @@ namespace {
     return info;
   }
 
+  // Activity around the decay vertex from the reco objects other than the two daughters
+  const Float_t kVertexNearObjectCm = 3.0f;
+  const Float_t kVertexFarObjectCm = 10.0f;
+
+  struct VertexActivity {
+    Int_t nNear = -1;
+    Int_t nFar = -1;
+    Float_t nearestDist = -999.f;
+    Int_t nHitsNear = -1;
+  };
+
+  VertexActivity ComputeVertexActivity(const AnaParticlePD* dau1, const AnaParticlePD* dau2, const TVector3& vertexPos,
+                                       const AnaEventB& event) {
+    VertexActivity info;
+    if (!IsValidPos(vertexPos)) return info;
+    info.nNear = 0;
+    info.nFar = 0;
+    info.nHitsNear = 0;
+    double nearest = 1e9;
+    for (Int_t ip = 0; ip < event.nParticles; ++ip) {
+      const AnaParticlePD* other = static_cast<const AnaParticlePD*>(event.Particles[ip]);
+      if (!other || other == dau1 || other == dau2) continue;
+      const TVector3 oStart(other->PositionStart[0], other->PositionStart[1], other->PositionStart[2]);
+      const TVector3 oEnd(other->PositionEnd[0], other->PositionEnd[1], other->PositionEnd[2]);
+      double d = 1e9;
+      if (IsValidPos(oStart)) d = std::min(d, (oStart - vertexPos).Mag());
+      if (IsValidPos(oEnd)) d = std::min(d, (oEnd - vertexPos).Mag());
+      if (d < kVertexNearObjectCm) ++info.nNear;
+      if (d < kVertexFarObjectCm) ++info.nFar;
+      nearest = std::min(nearest, d);
+      for (const AnaHitPD& hit : other->Hits[2]) {
+        if (IsValidPos(hit.Position) && (hit.Position - vertexPos).Mag() < kVertexNearObjectCm) ++info.nHitsNear;
+      }
+    }
+    if (nearest < 1e8) info.nearestDist = static_cast<Float_t>(nearest);
+    return info;
+  }
+
 }
 
 //********************************************************************
@@ -603,6 +641,11 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
                   nmax);
   AddVarMaxSizeVF(output, k0vtxdau2farendmichel, "Max CNN Michel score of the objects near the far end, daughter 2", nk0,
                   nmax);
+  AddVarMaxSizeVI(output, k0vtxnobjnear, "Other reco objects with an endpoint within 3 cm of the vertex", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxnobjnear10, "Other reco objects with an endpoint within 10 cm of the vertex", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxnearestobjdist, "Distance from the vertex to the nearest other reco endpoint [cm]", nk0,
+                  nmax);
+  AddVarMaxSizeVI(output, k0vtxnhitsnear, "Collection hits of other reco objects within 3 cm of the vertex", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1trueparentid, "True ParentID of daughter 1", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2trueparentid, "True ParentID of daughter 2", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1trueparentpdg, "True parent PDG of daughter 1 (-999 if not stored)", nk0, nmax);
@@ -1826,6 +1869,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   Float_t cnnmichel_val[2] = {-999.0f, -999.0f};
   Float_t vtxmichel_val[2] = {-999.0f, -999.0f};
   FarEndInfo farEnd[2];
+  VertexActivity vtxActivity;
   Int_t trueparentid_val[2] = {-999, -999};
   Int_t trueparentpdg_val[2] = {-999, -999};
   Int_t trueprocstart_val[2] = {-999, -999};
@@ -1937,6 +1981,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
       TVector3 vertexPos(vertex->PositionFit[0], vertex->PositionFit[1], vertex->PositionFit[2]);
       if (!IsValidPos(vertexPos)) vertexPos.SetXYZ(vertex->PositionPandora[0], vertex->PositionPandora[1], vertex->PositionPandora[2]);
       const AnaParticlePD* recoParticles[2] = {recoParticle1, recoParticle2};
+      vtxActivity = ComputeVertexActivity(recoParticle1, recoParticle2, vertexPos, event);
       for (int i = 0; i < 2; ++i) {
         const AnaParticlePD* part = recoParticles[i];
         if (!part) continue;
@@ -2038,6 +2083,10 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxdau2farendnobj, farEnd[1].nNearObjects);
   output.FillVectorVar(k0vtxdau1farendmichel, farEnd[0].maxNearMichel);
   output.FillVectorVar(k0vtxdau2farendmichel, farEnd[1].maxNearMichel);
+  output.FillVectorVar(k0vtxnobjnear, vtxActivity.nNear);
+  output.FillVectorVar(k0vtxnobjnear10, vtxActivity.nFar);
+  output.FillVectorVar(k0vtxnearestobjdist, vtxActivity.nearestDist);
+  output.FillVectorVar(k0vtxnhitsnear, vtxActivity.nHitsNear);
   output.FillVectorVar(k0vtxdau1trueparentid, trueparentid_val[0]);
   output.FillVectorVar(k0vtxdau2trueparentid, trueparentid_val[1]);
   output.FillVectorVar(k0vtxdau1trueparentpdg, trueparentpdg_val[0]);
