@@ -487,7 +487,11 @@ bool neutralKaonAnalysis::CheckFillTruthTree(const AnaTrueVertex& vtx){
 bool neutralKaonAnalysis::CheckFillTruthTreePD(const AnaTrueParticlePD* part){
 //********************************************************************
   if (!part) return false;
-  if(part->PDG != 310) return false;
+  // PDG of the true neutral the truth tree is filled for (default K0S; e.g. 3122 to study Lambda -> p pi-)
+  static const Int_t truthTreePDG = ND::params().HasParameter("neutralKaonAnalysis.TruthTreePDG")
+                                        ? ND::params().GetParameterI("neutralKaonAnalysis.TruthTreePDG")
+                                        : 310;
+  if(part->PDG != truthTreePDG) return false;
   return true;
 }
 
@@ -843,6 +847,9 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       daughter2RecoZStartGreaterThanEnd,
                                                       parentIsPandoraBeam,
                                                       parentExactlyOneRecoProtonNearK0Creation);
+  output().FillVectorVar(neutralKaonTruthTree::k0trueendx, part.PositionEnd[0]);
+  output().FillVectorVar(neutralKaonTruthTree::k0trueendy, part.PositionEnd[1]);
+  output().FillVectorVar(neutralKaonTruthTree::k0trueendz, part.PositionEnd[2]);
   output().IncrementCounter(neutralKaonTruthTree::ntruek0);
 }
 

@@ -135,6 +135,9 @@ namespace neutralKaonTruthTree{
     k0dau2truelength, // |PositionEnd-Position| for daughter 2 (cm; -999 if invalid)
     k0dau2recolength, // Reco Length for daughter 2 (cm; -999 if no reco)
     k0truelength, // |PositionEnd-Position| for K0 (cm; -999 if invalid)
+    k0trueendx, // True end (decay or interaction) position x of the K0 (cm)
+    k0trueendy, // True end position y of the K0 (cm)
+    k0trueendz, // True end position z of the K0 (cm)
     k0dau1recohits, // Reco NHits for daughter 1 (-999 if no reco)
     k0dau2recohits, // Reco NHits for daughter 2 (-999 if no reco)
     k0dau1truensubreco, // Number of true sub-daughters of daughter 1 with reco valid start/end + hits

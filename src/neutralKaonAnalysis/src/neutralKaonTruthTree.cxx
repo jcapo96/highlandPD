@@ -86,6 +86,9 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
     AddVarMaxSizeVF(output, k0dau2truelength, "True |end-start| K0 daughter2 (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau2recolength, "Reco length K0 daughter2 (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0truelength, "True |end-start| K0 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0trueendx, "True end (decay) position x of the K0 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0trueendy, "True end (decay) position y of the K0 (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0trueendz, "True end (decay) position z of the K0 (cm)", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau1recohits, "Reco NHits K0 daughter1", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau2recohits, "Reco NHits K0 daughter2", ntruek0, nmax);
     AddVarMaxSizeVI(output, k0dau1truensubreco,
