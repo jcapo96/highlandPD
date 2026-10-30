@@ -391,9 +391,12 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
 
   // AddVarI(output(), nAllParticles, "Number of all particles with valid start positions");
 
-  AddVarI(output(), neutralKaonTree::ntruelambdapairs,
-          "True p + pi- with the same parent, both created by a decay (Lambda -> p pi-), among stored true particles");
-  AddVarI(output(), neutralKaonTree::ntruelambdapairsreco, "Those pairs with both daughters matched to a reco object");
+  // AddVarI would name the branches after the qualified enum ("neutralKaonTree::..."), hence AddVar
+  output().AddVar(neutralKaonTree::ntruelambdapairs, "ntruelambdapairs", "I",
+                  "True p + pi- with the same parent, both created by a decay (Lambda -> p pi-), among stored true "
+                  "particles", -9999);
+  output().AddVar(neutralKaonTree::ntruelambdapairsreco, "ntruelambdapairsreco", "I",
+                  "Those pairs with both daughters matched to a reco object", -9999);
 
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
