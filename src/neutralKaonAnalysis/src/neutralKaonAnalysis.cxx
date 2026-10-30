@@ -397,6 +397,29 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
                   "particles", -9999);
   output().AddVar(neutralKaonTree::ntruelambdapairsreco, "ntruelambdapairsreco", "I",
                   "Those pairs with both daughters matched to a reco object", -9999);
+  output().AddVar(neutralKaonTree::lampairrecoflag, "lampairrecoflag", "I",
+                  "Lambda pair: -1 none, 0 both daughters reco, 1 proton not reco, 2 pion not reco, 3 neither", -9999);
+  output().AddVar(neutralKaonTree::lampairstage, "lampairstage", "I",
+                  "Lambda pair: first failed vertex requirement (0 none, 1 hits, 2 parent, 3 PID, 4 distance, 5 overlap)",
+                  -9999);
+  output().AddVar(neutralKaonTree::lampairdist, "lampairdist", "F", "Lambda pair: smallest endpoint distance [cm]",
+                  -9999);
+  output().AddVar(neutralKaonTree::lampairnhitsp, "lampairnhitsp", "I", "Lambda pair: proton collection hits", -9999);
+  output().AddVar(neutralKaonTree::lampairnhitspi, "lampairnhitspi", "I", "Lambda pair: pion collection hits", -9999);
+  output().AddVar(neutralKaonTree::lampairpchi2p, "lampairpchi2p", "F", "Lambda pair: proton Chi2PID(2212)/npts",
+                  -9999);
+  output().AddVar(neutralKaonTree::lampairpichi2p, "lampairpichi2p", "F", "Lambda pair: pion Chi2PID(2212)/npts",
+                  -9999);
+  output().AddVar(neutralKaonTree::lampairpichi2pi, "lampairpichi2pi", "F", "Lambda pair: pion Chi2PID(211)/npts",
+                  -9999);
+  output().AddVar(neutralKaonTree::lampairtruemomp, "lampairtruemomp", "F", "Lambda pair: true proton momentum",
+                  -9999);
+  output().AddVar(neutralKaonTree::lampairtruemompi, "lampairtruemompi", "F", "Lambda pair: true pion momentum",
+                  -9999);
+  output().AddVar(neutralKaonTree::lampairtruelengthp, "lampairtruelengthp", "F",
+                  "Lambda pair: true proton start-end distance [cm]", -9999);
+  output().AddVar(neutralKaonTree::lampairtruelengthpi, "lampairtruelengthpi", "F",
+                  "Lambda pair: true pion start-end distance [cm]", -9999);
 
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
@@ -422,6 +445,103 @@ void neutralKaonAnalysis::DefineTruthTree(){
   // Variables from pdBaseAnalysis (run, event, ...)
   pdBaseAnalysis::DefineTruthTree();
   neutralKaonTruthTree::AddNeutralKaonTruthVariables(output(), 10);
+}
+
+//********************************************************************
+void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* trueP, const AnaTrueParticleB* truePi){
+//********************************************************************
+
+  // Replays the pair requirements of pdAnnihilationUtils::CreateVerticesCommon (proton-pion mode) on the reco objects
+  // of one true Lambda -> p pi- and records the first one that fails; the pair is a candidate when some neutral
+  // candidate's vertex holds both reco objects.
+  Int_t recoFlag = -1, stage = -1, nHitsP = -999, nHitsPi = -999;
+  Float_t dist = -999.f, pChi2P = -999.f, piChi2P = -999.f, piChi2Pi = -999.f;
+  Float_t momP = -999.f, momPi = -999.f, lenP = -999.f, lenPi = -999.f;
+  auto trueLength = [](const AnaTrueParticleB* t) {
+    const TVector3 a(t->Position[0], t->Position[1], t->Position[2]);
+    const TVector3 b(t->PositionEnd[0], t->PositionEnd[1], t->PositionEnd[2]);
+    return (t->Position[0] < -900 || t->PositionEnd[0] < -900) ? -999.f : static_cast<Float_t>((b - a).Mag());
+  };
+  if (trueP && truePi) {
+    momP = trueP->Momentum;
+    momPi = truePi->Momentum;
+    lenP = trueLength(trueP);
+    lenPi = trueLength(truePi);
+    // The reco object of each true daughter: the one with most collection hits among those matched to it
+    AnaEventB& event = GetEvent();
+    AnaParticlePD* recoP = nullptr;
+    AnaParticlePD* recoPi = nullptr;
+    for (Int_t i = 0; i < event.nParticles; ++i) {
+      AnaParticlePD* reco = static_cast<AnaParticlePD*>(event.Particles[i]);
+      if (!reco || !reco->TrueObject) continue;
+      if (reco->TrueObject->ID == trueP->ID && (!recoP || reco->NHitsPerPlane[2] > recoP->NHitsPerPlane[2])) recoP = reco;
+      if (reco->TrueObject->ID == truePi->ID && (!recoPi || reco->NHitsPerPlane[2] > recoPi->NHitsPerPlane[2])) recoPi = reco;
+    }
+    recoFlag = (recoP ? 0 : 1) + (recoPi ? 0 : 2);
+    if (recoP && recoPi) {
+      nHitsP = recoP->NHitsPerPlane[2];
+      nHitsPi = recoPi->NHitsPerPlane[2];
+      pChi2P = pdAnaUtils::Chi2PIDChi2PerHit(recoP, 2212);
+      piChi2P = pdAnaUtils::Chi2PIDChi2PerHit(recoPi, 2212);
+      piChi2Pi = pdAnaUtils::Chi2PIDChi2PerHit(recoPi, 211);
+      double best = 1e9;
+      const Float_t* endsP[2] = {recoP->PositionStart, recoP->PositionEnd};
+      const Float_t* endsPi[2] = {recoPi->PositionStart, recoPi->PositionEnd};
+      for (const Float_t* a : endsP) {
+        for (const Float_t* b : endsPi) {
+          if (a[0] < -900 || b[0] < -900) continue;
+          best = std::min(best, (TVector3(a[0], a[1], a[2]) - TVector3(b[0], b[1], b[2])).Mag());
+        }
+      }
+      if (best < 1e8) dist = static_cast<Float_t>(best);
+
+      const int minHits = ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexMinCollectionHits");
+      const double maxDist = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
+      const double protonBelow =
+          ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow")
+              ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow")
+              : 100.0;
+      const double pionAbove =
+          ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
+              ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
+              : 25.0;
+      const bool pIsProtonLike = pChi2P > -900.f && pChi2P < protonBelow;
+      const bool piIsProtonLike = piChi2P > -900.f && piChi2P < protonBelow;
+      // Pion veto as in pdAnnihilationUtils (IsProtonLikeAndNotPionLike is file-local there)
+      const bool piPassesVeto = !(piChi2P > -900.f && (piChi2P < protonBelow || (piChi2Pi > -900.f && piChi2Pi > pionAbove)));
+
+      bool isCandidate = false;
+      const ToyBoxNeutralKaon& nkBox = static_cast<const ToyBoxNeutralKaon&>(box());
+      for (const AnaNeutralParticlePD* cand : nkBox.neutralParticleCandidates) {
+        const AnaAnnihilationVertexPD* v = cand ? cand->AnnihilationVertex : nullptr;
+        if (!v || v->Particles.size() < 2) continue;
+        if ((v->Particles[0] == recoP && v->Particles[1] == recoPi) ||
+            (v->Particles[0] == recoPi && v->Particles[1] == recoP)) {
+          isCandidate = true;
+          break;
+        }
+      }
+      if (isCandidate) stage = 0;
+      else if (recoP->PositionStart[0] < -900 || recoPi->PositionStart[0] < -900 || nHitsP <= minHits ||
+               nHitsPi <= minHits) stage = 1;
+      else if (recoP->ParentID != recoPi->ParentID) stage = 2;
+      else if (!pIsProtonLike || piIsProtonLike || !piPassesVeto) stage = 3;
+      else if (!(dist > -900.f) || dist > maxDist) stage = 4;
+      else stage = 5;
+    }
+  }
+  output().FillVar(neutralKaonTree::lampairrecoflag, recoFlag);
+  output().FillVar(neutralKaonTree::lampairstage, stage);
+  output().FillVar(neutralKaonTree::lampairdist, dist);
+  output().FillVar(neutralKaonTree::lampairnhitsp, nHitsP);
+  output().FillVar(neutralKaonTree::lampairnhitspi, nHitsPi);
+  output().FillVar(neutralKaonTree::lampairpchi2p, pChi2P);
+  output().FillVar(neutralKaonTree::lampairpichi2p, piChi2P);
+  output().FillVar(neutralKaonTree::lampairpichi2pi, piChi2Pi);
+  output().FillVar(neutralKaonTree::lampairtruemomp, momP);
+  output().FillVar(neutralKaonTree::lampairtruemompi, momPi);
+  output().FillVar(neutralKaonTree::lampairtruelengthp, lenP);
+  output().FillVar(neutralKaonTree::lampairtruelengthpi, lenPi);
 }
 
 //********************************************************************
@@ -452,13 +572,21 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
       if (t->PDG == -211) byParent[t->ParentID].second = t;
     }
     Int_t nPairs = 0, nPairsReco = 0;
+    const AnaTrueParticleB* diagP = nullptr;
+    const AnaTrueParticleB* diagPi = nullptr;
     for (const auto& kv : byParent) {
       if (!kv.second.first || !kv.second.second) continue;
       ++nPairs;
-      if (recoMatchedIDs.count(kv.second.first->ID) && recoMatchedIDs.count(kv.second.second->ID)) ++nPairsReco;
+      const bool bothReco = recoMatchedIDs.count(kv.second.first->ID) && recoMatchedIDs.count(kv.second.second->ID);
+      if (bothReco) ++nPairsReco;
+      if (!diagP || (bothReco && nPairsReco == 1)) {
+        diagP = kv.second.first;
+        diagPi = kv.second.second;
+      }
     }
     output().FillVar(neutralKaonTree::ntruelambdapairs, nPairs);
     output().FillVar(neutralKaonTree::ntruelambdapairsreco, nPairsReco);
+    FillLambdaPairDiagnostics(diagP, diagPi);
   }
 
   // Get neutral kaon box for accessing candidates

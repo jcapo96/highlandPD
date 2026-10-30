@@ -31,6 +31,7 @@ class neutralKaonAnalysis: public pdBaseAnalysis {
   void DefineTruthTree();
 
   void FillMicroTrees(bool addBase=true);
+  void FillLambdaPairDiagnostics(const AnaTrueParticleB* trueP, const AnaTrueParticleB* truePi);
   void FillToyVarsInMicroTrees(bool addBase=true);
 
   bool CheckFillTruthTree(const AnaTrueVertex& vtx);

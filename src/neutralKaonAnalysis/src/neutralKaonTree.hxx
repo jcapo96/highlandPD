@@ -338,6 +338,19 @@ namespace neutralKaonTree {
     // Event-level Lambda -> p pi- truth census (true p + pi- with the same parent, both created by a decay)
     ntruelambdapairs, // Such pairs among the stored true particles
     ntruelambdapairsreco, // Such pairs with both daughters matched to a reco object
+    // Where one true Lambda -> p pi- is lost (the first pair with both daughters reco, else the first pair)
+    lampairrecoflag, // -1 no pair, 0 both daughters reco, 1 proton not reco, 2 pion not reco, 3 neither
+    lampairstage, // First failed vertex requirement: 0 none (candidate), 1 collection hits, 2 reco parent, 3 PID roles, 4 endpoint distance, 5 overlap filter
+    lampairdist, // Smallest endpoint distance between the two reco daughters [cm]
+    lampairnhitsp, // Collection hits of the reco proton
+    lampairnhitspi, // Collection hits of the reco pion
+    lampairpchi2p, // Chi2PID(2212)/npts of the reco proton
+    lampairpichi2p, // Chi2PID(2212)/npts of the reco pion
+    lampairpichi2pi, // Chi2PID(211)/npts of the reco pion
+    lampairtruemomp, // True proton momentum [GeV/c]
+    lampairtruemompi, // True pion momentum [GeV/c]
+    lampairtruelengthp, // True proton start-end distance [cm]
+    lampairtruelengthpi, // True pion start-end distance [cm]
     k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };
