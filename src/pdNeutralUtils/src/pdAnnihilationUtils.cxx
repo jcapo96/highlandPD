@@ -79,11 +79,10 @@ AnnihilationEndpointPairing StartStartAnnihilationPairing(const AnaParticlePD* d
   return out;
 }
 
-// Swap start/end, reverse trajectory and hit order, flip TrajectoryDirection when start Z > end Z.
-void ReverseParticleIfStartZGreaterThanEndZ(AnaParticlePD* p) {
+// Swap start/end, reverse trajectory and hit order, flip TrajectoryDirection.
+void ReverseParticle(AnaParticlePD* p) {
   if (!p) return;
   if (!HasValidStartPosition(p) || !HasValidEndPosition(p)) return;
-  if (p->PositionStart[2] <= p->PositionEnd[2]) return;
 
   for (int k = 0; k < 4; ++k) {
     std::swap(p->PositionStart[k], p->PositionEnd[k]);
@@ -112,12 +111,17 @@ void ReverseParticleIfStartZGreaterThanEndZ(AnaParticlePD* p) {
   }
 }
 
-// SS: no reversal. SE/ES/EE: reverse each daughter if PositionStart(Z) > PositionEnd(Z).
+// SS: no reversal. Otherwise reverse the daughters whose end is the paired (vertex-side) endpoint, so that both
+// start at the vertex: SE reverses daughter 2, ES daughter 1, EE both. (Until k0s/phase1 every daughter with
+// start Z > end Z was reversed, which flipped backward-going pions and missed forward-pointing reversed tracks.)
 void ApplyAnnihilationPairingReversal(int combo, AnaParticlePD* d1, AnaParticlePD* d2) {
-  if (combo <= 0) return;
-  ReverseParticleIfStartZGreaterThanEndZ(d1);
-  ReverseParticleIfStartZGreaterThanEndZ(d2);
+  if (combo == 2 || combo == 3) ReverseParticle(d1);
+  if (combo == 1 || combo == 3) ReverseParticle(d2);
 }
+
+// Whether daughter 1 / daughter 2 is paired by its start (true) or its end (false) for a pairing combo.
+bool PairingUsesStart1(int combo) { return combo == 0 || combo == 1; }
+bool PairingUsesStart2(int combo) { return combo == 0 || combo == 2; }
 
 TVector3 GetAnnihilationVertexPositionForDegeneracy(const AnaAnnihilationVertexPD* vertex) {
   if (vertex && HasValidPosition3(vertex->PositionFit)) {
@@ -848,7 +852,8 @@ void FillPositionPandora(AnaAnnihilationVertexPD* vertex) {
 }
 
 //***************************************************************
-void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, double trackFitDistanceFromStart) {
+void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, double trackFitDistanceFromStart,
+                     bool useStart1, bool useStart2) {
 //***************************************************************
   if (!vertex || vertex->Particles.size() < 2) return;
 
@@ -858,11 +863,13 @@ void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, dou
 
   std::vector<double> fit1;
   std::vector<double> fit2;
-  pdAnaUtils::ExtrapolateTrack(p1, fit1, trackFitLength, true, trackFitDistanceFromStart);
-  pdAnaUtils::ExtrapolateTrack(p2, fit2, trackFitLength, true, trackFitDistanceFromStart);
+  pdAnaUtils::ExtrapolateTrack(p1, fit1, trackFitLength, useStart1, trackFitDistanceFromStart);
+  pdAnaUtils::ExtrapolateTrack(p2, fit2, trackFitLength, useStart2, trackFitDistanceFromStart);
 
-  TVector3 s1(p1->PositionStart[0], p1->PositionStart[1], p1->PositionStart[2]);
-  TVector3 s2(p2->PositionStart[0], p2->PositionStart[1], p2->PositionStart[2]);
+  const Float_t* a1 = useStart1 ? p1->PositionStart : p1->PositionEnd;
+  const Float_t* a2 = useStart2 ? p2->PositionStart : p2->PositionEnd;
+  TVector3 s1(a1[0], a1[1], a1[2]);
+  TVector3 s2(a2[0], a2[1], a2[2]);
   const bool fit1Valid = (fit1.size() >= 6 && fit1[0] > -900.0 && fit1[1] > -900.0 && fit1[2] > -900.0);
   const bool fit2Valid = (fit2.size() >= 6 && fit2[0] > -900.0 && fit2[1] > -900.0 && fit2[2] > -900.0);
 
@@ -873,8 +880,10 @@ void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, dou
     s2.SetXYZ(fit2[0], fit2[1], fit2[2]);
   }
 
-  TVector3 d1(p1->DirectionStart[0], p1->DirectionStart[1], p1->DirectionStart[2]);
-  TVector3 d2(p2->DirectionStart[0], p2->DirectionStart[1], p2->DirectionStart[2]);
+  TVector3 d1 = useStart1 ? TVector3(p1->DirectionStart[0], p1->DirectionStart[1], p1->DirectionStart[2])
+                          : -TVector3(p1->DirectionEnd[0], p1->DirectionEnd[1], p1->DirectionEnd[2]);
+  TVector3 d2 = useStart2 ? TVector3(p2->DirectionStart[0], p2->DirectionStart[1], p2->DirectionStart[2])
+                          : -TVector3(p2->DirectionEnd[0], p2->DirectionEnd[1], p2->DirectionEnd[2]);
   if (fit1Valid) d1.SetXYZ(fit1[3], fit1[4], fit1[5]);
   if (fit2Valid) d2.SetXYZ(fit2[3], fit2[4], fit2[5]);
 
@@ -1025,9 +1034,11 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       reconstructedVertex->Particles.push_back(daughter2);
       reconstructedVertex->NParticles = reconstructedVertex->Particles.size();
 
-      // Pre-reversal fit for overlap filtering (MinimumDistanceFit); refined after ApplyAnnihilationPairingReversal.
+      // Fit for overlap filtering (MinimumDistanceFit), taken at the paired endpoints without reversing the
+      // daughters yet (they can belong to several candidate vertices); refitted after ApplyAnnihilationPairingReversal.
       FillPositionPandora(reconstructedVertex);
-      FillPositionFit(reconstructedVertex, trackFitLength, trackFitDistanceFromStart);
+      FillPositionFit(reconstructedVertex, trackFitLength, trackFitDistanceFromStart,
+                      PairingUsesStart1(pairing.combo), PairingUsesStart2(pairing.combo));
       reconstructedVertices.push_back(reconstructedVertex);
     }
   }
