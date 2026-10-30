@@ -603,6 +603,12 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
                   nmax);
   AddVarMaxSizeVF(output, k0vtxdau2farendmichel, "Max CNN Michel score of the objects near the far end, daughter 2", nk0,
                   nmax);
+  AddVarMaxSizeVI(output, k0vtxdau1trueparentid, "True ParentID of daughter 1", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau2trueparentid, "True ParentID of daughter 2", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau1trueparentpdg, "True parent PDG of daughter 1 (-999 if not stored)", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau2trueparentpdg, "True parent PDG of daughter 2 (-999 if not stored)", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau1trueprocstart, "True creation process enum of daughter 1", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau2trueprocstart, "True creation process enum of daughter 2", nk0, nmax);
 }
 
 //********************************************************************
@@ -1820,6 +1826,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   Float_t cnnmichel_val[2] = {-999.0f, -999.0f};
   Float_t vtxmichel_val[2] = {-999.0f, -999.0f};
   FarEndInfo farEnd[2];
+  Int_t trueparentid_val[2] = {-999, -999};
+  Int_t trueparentpdg_val[2] = {-999, -999};
+  Int_t trueprocstart_val[2] = {-999, -999};
 
   if (vertex) {
     k0vtxdau1momentumtle_val = vertex->Daughter1MomentumTLE;
@@ -1936,6 +1945,14 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
         cnnmichel_val[i] = part->CNNscore[2];
         vtxmichel_val[i] = part->vtx_CNN_michelscore;
         farEnd[i] = ComputeFarEndInfo(part, recoParticles[1 - i], vertexPos, event);
+        const AnaTrueParticlePD* truePart = static_cast<const AnaTrueParticlePD*>(part->TrueObject);
+        if (truePart) {
+          trueparentid_val[i] = truePart->ParentID;
+          trueprocstart_val[i] = static_cast<Int_t>(truePart->ProcessStart);
+          const AnaTrueParticlePD* trueParent =
+              pdAnaUtils::GetTrueParticle(const_cast<AnaEventB*>(&event), truePart->ParentID);
+          if (trueParent) trueparentpdg_val[i] = trueParent->PDG;
+        }
       }
     }
   }
@@ -2021,6 +2038,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxdau2farendnobj, farEnd[1].nNearObjects);
   output.FillVectorVar(k0vtxdau1farendmichel, farEnd[0].maxNearMichel);
   output.FillVectorVar(k0vtxdau2farendmichel, farEnd[1].maxNearMichel);
+  output.FillVectorVar(k0vtxdau1trueparentid, trueparentid_val[0]);
+  output.FillVectorVar(k0vtxdau2trueparentid, trueparentid_val[1]);
+  output.FillVectorVar(k0vtxdau1trueparentpdg, trueparentpdg_val[0]);
+  output.FillVectorVar(k0vtxdau2trueparentpdg, trueparentpdg_val[1]);
+  output.FillVectorVar(k0vtxdau1trueprocstart, trueprocstart_val[0]);
+  output.FillVectorVar(k0vtxdau2trueprocstart, trueprocstart_val[1]);
 }
 
 //********************************************************************

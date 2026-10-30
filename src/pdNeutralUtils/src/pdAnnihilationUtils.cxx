@@ -998,6 +998,19 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics")
           ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics")
           : 1;
+  // 0 = two pion-like daughters (K0S -> pi+ pi-); 1 = exactly one proton-like daughter (Chi2PID(2212)/npts below
+  // the proton threshold) and one daughter that passes the pion veto (Lambda -> p pi-).
+  const int daughterHypothesis =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterHypothesis")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexDaughterHypothesis")
+          : 0;
+  auto isProtonLike = [&](const AnaParticlePD* p) {
+    const Float_t chi2 = pdAnaUtils::Chi2PIDChi2PerHit(p, 2212);
+    return chi2 > -900.f && static_cast<double>(chi2) < annihilationProtonChi2NdfRejectBelow;
+  };
+  auto passesPionVeto = [&](const AnaParticlePD* p) {
+    return !IsProtonLikeAndNotPionLike(p, annihilationProtonChi2NdfRejectBelow, annihilationPionChi2NdfRejectAbove);
+  };
 
   std::vector<AnaAnnihilationVertexPD*> reconstructedVertices;
   int vertexID = 0;
@@ -1007,9 +1020,7 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
     if (!daughter1) continue;
     if (daughter1->PositionStart[0] < -900 || daughter1->PositionStart[1] < -900 || daughter1->PositionStart[2] < -900) continue;
     if (daughter1->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
-    if (IsProtonLikeAndNotPionLike(daughter1, annihilationProtonChi2NdfRejectBelow,
-                                   annihilationPionChi2NdfRejectAbove))
-      continue;
+    if (daughterHypothesis == 0 && !passesPionVeto(daughter1)) continue;
 
     for (int j = i + 1; j < nParts; ++j) {
       AnaParticlePD* daughter2 = static_cast<AnaParticlePD*>(parts[j]);
@@ -1017,9 +1028,13 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       if (daughter1->ParentID != daughter2->ParentID) continue;
       if (daughter2->PositionStart[0] < -900 || daughter2->PositionStart[1] < -900 || daughter2->PositionStart[2] < -900) continue;
       if (daughter2->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
-      if (IsProtonLikeAndNotPionLike(daughter2, annihilationProtonChi2NdfRejectBelow,
-                                     annihilationPionChi2NdfRejectAbove))
-        continue;
+      if (daughterHypothesis == 0 && !passesPionVeto(daughter2)) continue;
+      if (daughterHypothesis == 1) {
+        const bool p1 = isProtonLike(daughter1);
+        const bool p2 = isProtonLike(daughter2);
+        if (p1 == p2) continue;
+        if (!passesPionVeto(p1 ? daughter2 : daughter1)) continue;
+      }
 
       const AnnihilationEndpointPairing pairing =
           (annihilationUseEndpointCombinatorics != 0) ? BestAnnihilationPairEndpoint(daughter1, daughter2)

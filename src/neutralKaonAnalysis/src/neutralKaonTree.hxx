@@ -323,6 +323,16 @@ namespace neutralKaonTree {
     k0vtxdau2farendnobj, // Other reco objects with an endpoint near the far end, daughter 2
     k0vtxdau1farendmichel, // Max CNN Michel score among those objects, daughter 1
     k0vtxdau2farendmichel, // Max CNN Michel score among those objects, daughter 2
+    // Truth links of the vertex daughters, to identify Lambda -> p pi- when the Lambda itself is not stored
+    k0vtxdau1trueparentid, // True ParentID of daughter 1
+    k0vtxdau2trueparentid, // True ParentID of daughter 2
+    k0vtxdau1trueparentpdg, // True PDG of the parent of daughter 1 (-999 if the parent is not stored)
+    k0vtxdau2trueparentpdg, // True PDG of the parent of daughter 2 (-999 if the parent is not stored)
+    k0vtxdau1trueprocstart, // True creation process enum of daughter 1
+    k0vtxdau2trueprocstart, // True creation process enum of daughter 2
+    // Event-level Lambda -> p pi- truth census (true p + pi- with the same parent, both created by a decay)
+    ntruelambdapairs, // Such pairs among the stored true particles
+    ntruelambdapairsreco, // Such pairs with both daughters matched to a reco object
     k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };

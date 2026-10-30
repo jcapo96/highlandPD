@@ -12,6 +12,8 @@
 #include "pdUtilsRangePID.hxx"
 #include "standardPDTree.hxx"
 #include <sstream>
+#include <map>
+#include <set>
 
 #include "PDSPAnalyzerTreeConverter.hxx"
 #include "HighlandMiniTreeConverter.hxx"
@@ -389,6 +391,10 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
 
   // AddVarI(output(), nAllParticles, "Number of all particles with valid start positions");
 
+  AddVarI(output(), neutralKaonTree::ntruelambdapairs,
+          "True p + pi- with the same parent, both created by a decay (Lambda -> p pi-), among stored true particles");
+  AddVarI(output(), neutralKaonTree::ntruelambdapairsreco, "Those pairs with both daughters matched to a reco object");
+
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
   neutralKaonTree::AddNeutralKaonVariables_K0Particle(output(), nK0Max);
@@ -426,6 +432,31 @@ void neutralKaonAnalysis::FillMicroTrees(bool addBase){
   standardPDTree::FillStandardVariables_EventInfo(output(), static_cast<AnaEventInfoPD*>(GetEvent().EventInfo));
   standardPDTree::FillStandardVariables_BeamInstrumentationReco(output(), GetSpill().Beam);
   standardPDTree::FillStandardVariables_BeamInstrumentationTrue(output(), GetSpill().Beam);
+
+  // Lambda -> p pi- census. The minitrees often drop the Lambda itself but keep reco-matched particles, so a
+  // Lambda decay is recognised from its daughters: a true p and pi- with the same parent, both created by a decay.
+  {
+    std::set<Int_t> recoMatchedIDs;
+    for (size_t i = 0; i < GetBunch().Particles.size(); ++i) {
+      const AnaParticleB* reco = GetBunch().Particles[i];
+      if (reco && reco->TrueObject) recoMatchedIDs.insert(reco->TrueObject->ID);
+    }
+    std::map<Int_t, std::pair<const AnaTrueParticleB*, const AnaTrueParticleB*> > byParent;  // (p, pi-)
+    for (size_t i = 0; i < GetSpill().TrueParticles.size(); ++i) {
+      const AnaTrueParticleB* t = GetSpill().TrueParticles[i];
+      if (!t || t->ProcessStart != AnaTrueParticleB::Decay) continue;
+      if (t->PDG == 2212) byParent[t->ParentID].first = t;
+      if (t->PDG == -211) byParent[t->ParentID].second = t;
+    }
+    Int_t nPairs = 0, nPairsReco = 0;
+    for (const auto& kv : byParent) {
+      if (!kv.second.first || !kv.second.second) continue;
+      ++nPairs;
+      if (recoMatchedIDs.count(kv.second.first->ID) && recoMatchedIDs.count(kv.second.second->ID)) ++nPairsReco;
+    }
+    output().FillVar(neutralKaonTree::ntruelambdapairs, nPairs);
+    output().FillVar(neutralKaonTree::ntruelambdapairsreco, nPairsReco);
+  }
 
   // Get neutral kaon box for accessing candidates
   const ToyBoxNeutralKaon& neutralKaonBox = static_cast<const ToyBoxNeutralKaon&>(box());
