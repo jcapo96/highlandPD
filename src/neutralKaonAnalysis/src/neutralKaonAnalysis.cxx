@@ -402,6 +402,8 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
   output().AddVar(neutralKaonTree::lampairstage, "lampairstage", "I",
                   "Lambda pair: first failed vertex requirement (0 none, 1 hits, 2 parent, 3 PID, 4 distance, 5 overlap)",
                   -9999);
+  output().AddVar(neutralKaonTree::lampairfailmask, "lampairfailmask", "I",
+                  "Lambda pair: every failed requirement, bits 1 hits, 2 parent, 4 PID, 8 distance", -9999);
   output().AddVar(neutralKaonTree::lampairdist, "lampairdist", "F", "Lambda pair: smallest endpoint distance [cm]",
                   -9999);
   output().AddVar(neutralKaonTree::lampairnhitsp, "lampairnhitsp", "I", "Lambda pair: proton collection hits", -9999);
@@ -452,9 +454,9 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
 //********************************************************************
 
   // Replays the pair requirements of pdAnnihilationUtils::CreateVerticesCommon (proton-pion mode) on the reco objects
-  // of one true Lambda -> p pi- and records the first one that fails; the pair is a candidate when some neutral
-  // candidate's vertex holds both reco objects.
-  Int_t recoFlag = -1, stage = -1, nHitsP = -999, nHitsPi = -999;
+  // of one true Lambda -> p pi- and records the first one that fails and the mask of all that fail; the pair is a
+  // candidate when some neutral candidate's vertex holds reco objects of both true daughters.
+  Int_t recoFlag = -1, stage = -1, failMask = -1, nHitsP = -999, nHitsPi = -999;
   Float_t dist = -999.f, pChi2P = -999.f, piChi2P = -999.f, piChi2Pi = -999.f;
   Float_t momP = -999.f, momPi = -999.f, lenP = -999.f, lenPi = -999.f;
   auto trueLength = [](const AnaTrueParticleB* t) {
@@ -510,28 +512,37 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
       // Pion veto as in pdAnnihilationUtils (IsProtonLikeAndNotPionLike is file-local there)
       const bool piPassesVeto = !(piChi2P > -900.f && (piChi2P < protonBelow || (piChi2Pi > -900.f && piChi2Pi > pionAbove)));
 
+      // A candidate by truth (either reco object of each daughter), as in the analysis signal definition
       bool isCandidate = false;
       const ToyBoxNeutralKaon& nkBox = static_cast<const ToyBoxNeutralKaon&>(box());
       for (const AnaNeutralParticlePD* cand : nkBox.neutralParticleCandidates) {
         const AnaAnnihilationVertexPD* v = cand ? cand->AnnihilationVertex : nullptr;
-        if (!v || v->Particles.size() < 2) continue;
-        if ((v->Particles[0] == recoP && v->Particles[1] == recoPi) ||
-            (v->Particles[0] == recoPi && v->Particles[1] == recoP)) {
+        if (!v || v->Particles.size() < 2 || !v->Particles[0] || !v->Particles[1]) continue;
+        const auto* t0 = v->Particles[0]->TrueObject;
+        const auto* t1 = v->Particles[1]->TrueObject;
+        if (!t0 || !t1) continue;
+        if ((t0->ID == trueP->ID && t1->ID == truePi->ID) || (t0->ID == truePi->ID && t1->ID == trueP->ID)) {
           isCandidate = true;
           break;
         }
       }
+      const bool failHits = recoP->PositionStart[0] < -900 || recoPi->PositionStart[0] < -900 || nHitsP <= minHits ||
+                            nHitsPi <= minHits;
+      const bool failParent = recoP->ParentID != recoPi->ParentID;
+      const bool failPID = !pIsProtonLike || piIsProtonLike || !piPassesVeto;
+      const bool failDist = !(dist > -900.f) || dist > maxDist;
+      failMask = (failHits ? 1 : 0) | (failParent ? 2 : 0) | (failPID ? 4 : 0) | (failDist ? 8 : 0);
       if (isCandidate) stage = 0;
-      else if (recoP->PositionStart[0] < -900 || recoPi->PositionStart[0] < -900 || nHitsP <= minHits ||
-               nHitsPi <= minHits) stage = 1;
-      else if (recoP->ParentID != recoPi->ParentID) stage = 2;
-      else if (!pIsProtonLike || piIsProtonLike || !piPassesVeto) stage = 3;
-      else if (!(dist > -900.f) || dist > maxDist) stage = 4;
+      else if (failHits) stage = 1;
+      else if (failParent) stage = 2;
+      else if (failPID) stage = 3;
+      else if (failDist) stage = 4;
       else stage = 5;
     }
   }
   output().FillVar(neutralKaonTree::lampairrecoflag, recoFlag);
   output().FillVar(neutralKaonTree::lampairstage, stage);
+  output().FillVar(neutralKaonTree::lampairfailmask, failMask);
   output().FillVar(neutralKaonTree::lampairdist, dist);
   output().FillVar(neutralKaonTree::lampairnhitsp, nHitsP);
   output().FillVar(neutralKaonTree::lampairnhitspi, nHitsPi);

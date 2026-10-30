@@ -341,6 +341,7 @@ namespace neutralKaonTree {
     // Where one true Lambda -> p pi- is lost (the first pair with both daughters reco, else the first pair)
     lampairrecoflag, // -1 no pair, 0 both daughters reco, 1 proton not reco, 2 pion not reco, 3 neither
     lampairstage, // First failed vertex requirement: 0 none (candidate), 1 collection hits, 2 reco parent, 3 PID roles, 4 endpoint distance, 5 overlap filter
+    lampairfailmask, // Every failed requirement: bits 1 hits, 2 reco parent, 4 PID roles, 8 endpoint distance
     lampairdist, // Smallest endpoint distance between the two reco daughters [cm]
     lampairnhitsp, // Collection hits of the reco proton
     lampairnhitspi, // Collection hits of the reco pion
