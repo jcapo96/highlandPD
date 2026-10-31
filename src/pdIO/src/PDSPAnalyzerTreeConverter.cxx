@@ -2,6 +2,7 @@
 #include "InputManager.hxx"
 #include "Parameters.hxx"
 #include "pdAnalysisUtils.hxx"
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
@@ -799,6 +800,11 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
       const double dx = ax - bx, dy = ay - by, dz = az - bz;
       return dx * dx + dy * dy + dz * dz;
     };
+    // The calo points come from the track end backwards (residual range increasing); the minitrees store the
+    // trajectory points from the start, which the direction fits assume: put them in that order.
+    if (FillAllPlanes() && IsFiniteRecoPoint(sx, sy, sz) && IsFiniteRecoPoint(ex, ey, ez) &&
+        dist2(sx, sy, sz, f.X(), f.Y(), f.Z()) > dist2(ex, ey, ez, f.X(), f.Y(), f.Z()))
+      std::reverse(part->TrjPoints.begin(), part->TrjPoints.end());
     if (IsFiniteRecoPoint(sx, sy, sz) && IsFiniteRecoPoint(ex, ey, ez)) {
       const TVector3& ps = dist2(sx, sy, sz, f.X(), f.Y(), f.Z()) <= dist2(sx, sy, sz, b.X(), b.Y(), b.Z()) ? f : b;
       const TVector3& pe = dist2(ex, ey, ez, f.X(), f.Y(), f.Z()) <= dist2(ex, ey, ez, b.X(), b.Y(), b.Z()) ? f : b;
