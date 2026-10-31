@@ -344,22 +344,6 @@ bool IsProtonLikeAndNotPionLike(const AnaParticlePD* particle, double protonChi2
   return static_cast<double>(pionChi2Ndf) > pionChi2NdfRejectAbove;
 }
 
-// Mean collection-plane dE/dx after dropping the lowest and highest 16% of the valid hits (sorted by dE/dx)
-Float_t TruncatedMeanDedx(const AnaParticlePD* particle) {
-  if (!particle) return -999.f;
-  std::vector<Float_t> v;
-  for (const AnaHitPD& hit : particle->Hits[2]) {
-    if (hit.dEdx > 0.f && hit.dEdx <= 1000.f) v.push_back(hit.dEdx);
-  }
-  if (v.size() < 3) return -999.f;
-  std::sort(v.begin(), v.end());
-  const size_t lo = static_cast<size_t>(std::lround(0.16 * v.size()));
-  const size_t hi = v.size() - lo;
-  double sum = 0.;
-  for (size_t k = lo; k < hi; ++k) sum += v[k];
-  return (hi > lo) ? static_cast<Float_t>(sum / (hi - lo)) : -999.f;
-}
-
 enum DaughterMomentumMethod {
   kMomMethodUnassigned = -1,
   kMomMethodPionRangeStopping = 0,
@@ -1048,22 +1032,6 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
   auto passesPionVeto = [&](const AnaParticlePD* p) {
     return !IsProtonLikeAndNotPionLike(p, annihilationProtonChi2NdfRejectBelow, annihilationPionChi2NdfRejectAbove);
   };
-  // Proton role (proton-pion mode). 0 (default): Chi2PID(2212)/npts below the proton threshold; 1: that, or a
-  // truncated-mean dE/dx above AnnihilationVertexProtonMinTruncatedDedx (protons that interact have no Bragg peak).
-  const int protonRoleMode =
-      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
-          ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
-          : 0;
-  const double protonMinTruncatedDedx =
-      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
-          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
-          : 1e9;
-  auto isProtonRole = [&](const AnaParticlePD* p) {
-    if (isProtonLike(p)) return true;
-    if (protonRoleMode != 1) return false;
-    const Float_t t = TruncatedMeanDedx(p);
-    return t > -900.f && static_cast<double>(t) > protonMinTruncatedDedx;
-  };
 
   std::vector<AnaAnnihilationVertexPD*> reconstructedVertices;
   int vertexID = 0;
@@ -1083,8 +1051,8 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       if (daughter2->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
       if (daughterHypothesis == 0 && !passesPionVeto(daughter2)) continue;
       if (daughterHypothesis == 1) {
-        const bool p1 = isProtonRole(daughter1);
-        const bool p2 = isProtonRole(daughter2);
+        const bool p1 = isProtonLike(daughter1);
+        const bool p2 = isProtonLike(daughter2);
         if (p1 == p2) continue;
         if (!passesPionVeto(p1 ? daughter2 : daughter1)) continue;
       }

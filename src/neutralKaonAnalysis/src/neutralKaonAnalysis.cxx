@@ -608,18 +608,9 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
           ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
               ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
               : 25.0;
-      // Proton role as in pdAnnihilationUtils (AnnihilationVertexProtonRoleMode), pion veto as there
-      // (IsProtonLikeAndNotPionLike is file-local there)
-      const int roleMode = ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
-                               ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
-                               : 0;
-      const double minTrm = ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
-                                ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
-                                : 1e9;
-      const bool pIsProtonLike = (pChi2P > -900.f && pChi2P < protonBelow) ||
-                                 (roleMode == 1 && trmP > -900.f && trmP > minTrm);
-      const bool piIsProtonLike = (piChi2P > -900.f && piChi2P < protonBelow) ||
-                                  (roleMode == 1 && trmPi > -900.f && trmPi > minTrm);
+      const bool pIsProtonLike = pChi2P > -900.f && pChi2P < protonBelow;
+      const bool piIsProtonLike = piChi2P > -900.f && piChi2P < protonBelow;
+      // Pion veto as in pdAnnihilationUtils (IsProtonLikeAndNotPionLike is file-local there)
       const bool piPassesVeto =
           !(piChi2P > -900.f && (piChi2P < protonBelow || (piChi2Pi > -900.f && piChi2Pi > pionAbove)));
 
