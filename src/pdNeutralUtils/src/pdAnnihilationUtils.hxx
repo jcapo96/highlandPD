@@ -20,6 +20,12 @@ namespace pdAnnihilationUtils {
                                                              Int_t* nBeforeFiltering = nullptr,
                                                              Int_t* nAfterFiltering = nullptr);
 
+  // Plane used to judge a vertex daughter: the collection plane; with inductionFallback, a daughter with no more than
+  // minCollectionHits collection hits is judged on its induction plane with more hits (filled only from PDSPAnalyzer
+  // ntuples with pdIO.PDSPAnalyzerFillAllPlanes = 1). Hits counted by the hit requirement, and Chi2PID(pdg)/npts.
+  Int_t VertexDaughterHits(const AnaParticlePD* p, bool inductionFallback, int minCollectionHits);
+  Float_t VertexDaughterChi2PerHit(const AnaParticlePD* p, int pdg, bool inductionFallback, int minCollectionHits);
+
   // Fill PositionPandora from the two daughter start-point/direction lines.
   void FillPositionPandora(AnaAnnihilationVertexPD* vertex);
 

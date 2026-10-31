@@ -331,6 +331,13 @@ namespace neutralKaonTree {
     k0vtxncompeting, // Other vertices (before the overlap filter) sharing a daughter with this one
     k0vtxdau1trmdedx, // Truncated-mean collection dE/dx (16% dropped each side), daughter 1 [MeV/cm]
     k0vtxdau2trmdedx, // Truncated-mean collection dE/dx (16% dropped each side), daughter 2 [MeV/cm]
+    // Induction planes (filled only from PDSPAnalyzer ntuples with pdIO.PDSPAnalyzerFillAllPlanes = 1)
+    k0vtxdau1nhitsind, // Hits on the induction plane with more hits, daughter 1
+    k0vtxdau2nhitsind, // Hits on the induction plane with more hits, daughter 2
+    k0vtxdau1protonchi2ndfind, // Chi2PID(2212)/npts on that induction plane, daughter 1
+    k0vtxdau2protonchi2ndfind, // Chi2PID(2212)/npts on that induction plane, daughter 2
+    k0vtxdau1pionchi2ndfind, // Chi2PID(211)/npts on that induction plane, daughter 1
+    k0vtxdau2pionchi2ndfind, // Chi2PID(211)/npts on that induction plane, daughter 2
     // Truth links of the vertex daughters, to identify Lambda -> p pi- when the Lambda itself is not stored
     k0vtxdau1trueparentid, // True ParentID of daughter 1
     k0vtxdau2trueparentid, // True ParentID of daughter 2
@@ -369,6 +376,13 @@ namespace neutralKaonTree {
     lampairptrmdedx, // Lambda pair: proton truncated-mean collection dE/dx [MeV/cm]
     lampairpitrmdedx, // Lambda pair: pion truncated-mean collection dE/dx [MeV/cm]
     lampairpchi2pi, // Lambda pair: proton Chi2PID(211)/npts
+    lampairpnhitsind, // Lambda pair: proton hits on the induction plane with more hits (ntuple input only)
+    lampairpinhitsind, // Lambda pair: pion hits on the induction plane with more hits (ntuple input only)
+    lampairpchi2pind, // Lambda pair: proton Chi2PID(2212)/npts on that induction plane
+    lampairpichi2pind, // Lambda pair: pion Chi2PID(2212)/npts on that induction plane
+    lampairpichi2piind, // Lambda pair: pion Chi2PID(211)/npts on that induction plane
+    lampairpvtxmichel, // Lambda pair: proton CNN Michel score around the track end (ntuple input only)
+    lampairpivtxmichel, // Lambda pair: pion CNN Michel score around the track end (ntuple input only)
     k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };

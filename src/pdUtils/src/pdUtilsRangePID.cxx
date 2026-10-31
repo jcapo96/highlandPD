@@ -146,10 +146,18 @@ Float_t pdAnaUtils::ComputeKineticEnergy(const AnaParticlePD &part) {
 std::pair<double, int> pdAnaUtils::Chi2PID(const AnaParticlePD& part, const int pdg ){
 //*****************************************************************************
 
+  return Chi2PIDPlane(part, pdg, 2);
+}
+
+//*****************************************************************************
+std::pair<double, int> pdAnaUtils::Chi2PIDPlane(const AnaParticlePD& part, const int pdg, const int plane){
+//*****************************************************************************
+
   double pid_chi2 = 0.;
   int npt = 0;
 
-  Int_t plane=2;
+  if(plane < 0 || plane > 2)
+    return std::make_pair(9999., -1);
 
   TProfile* profile;
 
@@ -205,6 +213,17 @@ Float_t pdAnaUtils::Chi2PIDChi2PerHit(const AnaParticlePD* part, const int pdg){
 
   if(!part) return -999.f;
   const std::pair<double, int> r = Chi2PID(*part, pdg);
+  if(r.first < 0.0 || r.second <= 0) return -999.f;
+  return static_cast<Float_t>(r.first / static_cast<double>(r.second));
+}
+
+//*****************************************************************************
+Float_t pdAnaUtils::Chi2PIDChi2PerHitInduction(const AnaParticlePD* part, const int pdg){
+//*****************************************************************************
+
+  if(!part) return -999.f;
+  const int plane = (part->Hits[0].size() >= part->Hits[1].size()) ? 0 : 1;
+  const std::pair<double, int> r = Chi2PIDPlane(*part, pdg, plane);
   if(r.first < 0.0 || r.second <= 0) return -999.f;
   return static_cast<Float_t>(r.first / static_cast<double>(r.second));
 }

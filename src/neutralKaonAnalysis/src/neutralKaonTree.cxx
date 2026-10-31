@@ -664,6 +664,12 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
   AddVarMaxSizeVI(output, k0vtxncompeting, "Other vertices before the overlap filter sharing a daughter", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdau1trmdedx, "Truncated-mean collection dE/dx, daughter 1 [MeV/cm]", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdau2trmdedx, "Truncated-mean collection dE/dx, daughter 2 [MeV/cm]", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau1nhitsind, "Hits on the induction plane with more hits, daughter 1", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxdau2nhitsind, "Hits on the induction plane with more hits, daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1protonchi2ndfind, "Chi2PID(2212)/npts on the induction plane, daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2protonchi2ndfind, "Chi2PID(2212)/npts on the induction plane, daughter 2", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1pionchi2ndfind, "Chi2PID(211)/npts on the induction plane, daughter 1", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2pionchi2ndfind, "Chi2PID(211)/npts on the induction plane, daughter 2", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1trueparentid, "True ParentID of daughter 1", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2trueparentid, "True ParentID of daughter 2", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1trueparentpdg, "True parent PDG of daughter 1 (-999 if not stored)", nk0, nmax);
@@ -1889,6 +1895,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   FarEndInfo farEnd[2];
   VertexActivity vtxActivity;
   Float_t trmdedx_val[2] = {-999.0f, -999.0f};
+  Int_t nhitsind_val[2] = {-999, -999};
+  Float_t pchi2ind_val[2] = {-999.0f, -999.0f};
+  Float_t pichi2ind_val[2] = {-999.0f, -999.0f};
   Int_t trueparentid_val[2] = {-999, -999};
   Int_t trueparentpdg_val[2] = {-999, -999};
   Int_t trueprocstart_val[2] = {-999, -999};
@@ -2010,6 +2019,10 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
         vtxmichel_val[i] = part->vtx_CNN_michelscore;
         farEnd[i] = ComputeFarEndInfo(part, recoParticles[1 - i], vertexPos, event);
         trmdedx_val[i] = TruncatedMeanCollectionDedx(part);
+        if (part->NHitsPerPlane[0] > -900 || part->NHitsPerPlane[1] > -900)
+          nhitsind_val[i] = std::max(part->NHitsPerPlane[0], part->NHitsPerPlane[1]);
+        pchi2ind_val[i] = pdAnaUtils::Chi2PIDChi2PerHitInduction(part, 2212);
+        pichi2ind_val[i] = pdAnaUtils::Chi2PIDChi2PerHitInduction(part, 211);
         const AnaTrueParticlePD* truePart = static_cast<const AnaTrueParticlePD*>(part->TrueObject);
         if (truePart) {
           trueparentid_val[i] = truePart->ParentID;
@@ -2110,6 +2123,12 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxncompeting, vertex ? vertex->NCompeting : -1);
   output.FillVectorVar(k0vtxdau1trmdedx, trmdedx_val[0]);
   output.FillVectorVar(k0vtxdau2trmdedx, trmdedx_val[1]);
+  output.FillVectorVar(k0vtxdau1nhitsind, nhitsind_val[0]);
+  output.FillVectorVar(k0vtxdau2nhitsind, nhitsind_val[1]);
+  output.FillVectorVar(k0vtxdau1protonchi2ndfind, pchi2ind_val[0]);
+  output.FillVectorVar(k0vtxdau2protonchi2ndfind, pchi2ind_val[1]);
+  output.FillVectorVar(k0vtxdau1pionchi2ndfind, pichi2ind_val[0]);
+  output.FillVectorVar(k0vtxdau2pionchi2ndfind, pichi2ind_val[1]);
   output.FillVectorVar(k0vtxdau1trueparentid, trueparentid_val[0]);
   output.FillVectorVar(k0vtxdau2trueparentid, trueparentid_val[1]);
   output.FillVectorVar(k0vtxdau1trueparentpdg, trueparentpdg_val[0]);

@@ -41,6 +41,13 @@ need to be enabled in baseAnalysis parameter file
 # Minimum number of collection-plane hits required per daughter to create a vertex.
 # Vertex is created only if both daughters satisfy NHitsPerPlane[2] > this value.
 < neutralKaonAnalysis.AnnihilationVertexMinCollectionHits = 21 >
+# 1 = a daughter with no more than that many collection hits is judged on its induction plane with more hits
+# (hit requirement and Chi2PID). Needs induction hits: PDSPAnalyzer ntuple input with pdIO.PDSPAnalyzerFillAllPlanes = 1.
+< neutralKaonAnalysis.AnnihilationVertexInductionFallback = 0 >
+
+# PDSPAnalyzer ntuple input only: 1 = fill NHitsPerPlane, the collection hit positions, the induction-plane hits of
+# the daughters and their ParentID (the beam); 0 = the conversion used so far. The minitrees are not affected.
+< pdIO.PDSPAnalyzerFillAllPlanes = 0 >
 
 # Daughter PID veto when building annihilation vertex candidates (both daughters must pass).
 # Reject if Chi2PID(2212) chi2/npts is strictly below this (proton template; same machinery as truth tree).

@@ -330,15 +330,16 @@ Int_t ComputeVertexDegeneracyAtPosition(const AnaEventB& event,
 }
 
 bool IsProtonLikeAndNotPionLike(const AnaParticlePD* particle, double protonChi2NdfRejectBelow,
-                                double pionChi2NdfRejectAbove) {
+                                double pionChi2NdfRejectAbove, bool inductionFallback = false,
+                                int minCollectionHits = 0) {
   if (!particle) return false;
 
-  const Float_t protonChi2Ndf = pdAnaUtils::Chi2PIDChi2PerHit(particle, 2212);
+  const Float_t protonChi2Ndf = VertexDaughterChi2PerHit(particle, 2212, inductionFallback, minCollectionHits);
   if (!(protonChi2Ndf > -900.f)) return false;
 
   if (static_cast<double>(protonChi2Ndf) < protonChi2NdfRejectBelow) return true;
 
-  const Float_t pionChi2Ndf = pdAnaUtils::Chi2PIDChi2PerHit(particle, 211);
+  const Float_t pionChi2Ndf = VertexDaughterChi2PerHit(particle, 211, inductionFallback, minCollectionHits);
   if (!(pionChi2Ndf > -900.f)) return false;
 
   return static_cast<double>(pionChi2Ndf) > pionChi2NdfRejectAbove;
@@ -1025,12 +1026,20 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterHypothesis")
           ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexDaughterHypothesis")
           : 0;
+  // 1 = a daughter with too few collection hits is judged on its best induction plane (see VertexDaughterHits)
+  const bool inductionFallback =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexInductionFallback") &&
+      ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexInductionFallback") == 1;
   auto isProtonLike = [&](const AnaParticlePD* p) {
-    const Float_t chi2 = pdAnaUtils::Chi2PIDChi2PerHit(p, 2212);
+    const Float_t chi2 = VertexDaughterChi2PerHit(p, 2212, inductionFallback, minCollectionHitsPerDaughter);
     return chi2 > -900.f && static_cast<double>(chi2) < annihilationProtonChi2NdfRejectBelow;
   };
   auto passesPionVeto = [&](const AnaParticlePD* p) {
-    return !IsProtonLikeAndNotPionLike(p, annihilationProtonChi2NdfRejectBelow, annihilationPionChi2NdfRejectAbove);
+    return !IsProtonLikeAndNotPionLike(p, annihilationProtonChi2NdfRejectBelow, annihilationPionChi2NdfRejectAbove,
+                                       inductionFallback, minCollectionHitsPerDaughter);
+  };
+  auto hits = [&](const AnaParticlePD* p) {
+    return VertexDaughterHits(p, inductionFallback, minCollectionHitsPerDaughter);
   };
 
   std::vector<AnaAnnihilationVertexPD*> reconstructedVertices;
@@ -1040,7 +1049,7 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
     AnaParticlePD* daughter1 = static_cast<AnaParticlePD*>(parts[i]);
     if (!daughter1) continue;
     if (daughter1->PositionStart[0] < -900 || daughter1->PositionStart[1] < -900 || daughter1->PositionStart[2] < -900) continue;
-    if (daughter1->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
+    if (hits(daughter1) <= minCollectionHitsPerDaughter) continue;
     if (daughterHypothesis == 0 && !passesPionVeto(daughter1)) continue;
 
     for (int j = i + 1; j < nParts; ++j) {
@@ -1048,7 +1057,7 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       if (!daughter2) continue;
       if (daughter1->ParentID != daughter2->ParentID) continue;
       if (daughter2->PositionStart[0] < -900 || daughter2->PositionStart[1] < -900 || daughter2->PositionStart[2] < -900) continue;
-      if (daughter2->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
+      if (hits(daughter2) <= minCollectionHitsPerDaughter) continue;
       if (daughterHypothesis == 0 && !passesPionVeto(daughter2)) continue;
       if (daughterHypothesis == 1) {
         const bool p1 = isProtonLike(daughter1);
@@ -1349,6 +1358,22 @@ std::vector<AnaAnnihilationVertexPD*> CreateVertices(AnaEventB& event, double ma
                                                      Int_t* nAfterFiltering) {
 //***************************************************************
   return CreateVerticesCommon(event, maxDaughterDistance, nBeforeFiltering, nAfterFiltering);
+}
+
+//***************************************************************
+Int_t VertexDaughterHits(const AnaParticlePD* p, bool inductionFallback, int minCollectionHits) {
+//***************************************************************
+  if (!p) return -999;
+  if (!inductionFallback || p->NHitsPerPlane[2] > minCollectionHits) return p->NHitsPerPlane[2];
+  return std::max(p->NHitsPerPlane[0], p->NHitsPerPlane[1]);
+}
+
+//***************************************************************
+Float_t VertexDaughterChi2PerHit(const AnaParticlePD* p, int pdg, bool inductionFallback, int minCollectionHits) {
+//***************************************************************
+  if (!p) return -999.f;
+  if (!inductionFallback || p->NHitsPerPlane[2] > minCollectionHits) return pdAnaUtils::Chi2PIDChi2PerHit(p, pdg);
+  return pdAnaUtils::Chi2PIDChi2PerHitInduction(p, pdg);
 }
 
 } // namespace pdAnnihilationUtils

@@ -8,6 +8,16 @@
 #include <iostream>
 
 namespace {
+  // pdIO.PDSPAnalyzerFillAllPlanes = 1 fills NHitsPerPlane, the collection hit positions, the induction-plane hits
+  // of the daughters and their ParentID (default 0: the conversion used so far). Read once, at the first event.
+  bool FillAllPlanes() {
+    static const bool fill = ND::params().HasParameter("pdIO.PDSPAnalyzerFillAllPlanes") &&
+                             ND::params().GetParameterI("pdIO.PDSPAnalyzerFillAllPlanes") == 1;
+    return fill;
+  }
+}
+
+namespace {
   inline bool HighlandDebugTrueTrjCounts() {
     const char* v = std::getenv("HIGHLAND_DEBUG_TRUE_TRJ_COUNTS");
     return v && std::strcmp(v, "1") == 0;
@@ -418,6 +428,8 @@ void PDSPAnalyzerTreeConverter::FillBunchInfo(std::vector<AnaTrueParticleB*>& tr
     AnaParticlePD* dautrk = MakeParticle();
     FillDaughterPFPInfo(i, dautrk);
     FillDaughterParticleTrackInfo(trueParticles, i, dautrk);
+    // the ntuple holds only the beam daughters: link them to the beam, as the minitrees do through ParentID
+    if (FillAllPlanes()) dautrk->ParentID = part->UniqueID;
     bunch->Particles.push_back(dautrk);
     part->Daughters.push_back(dautrk);
     part->DaughtersIDs.push_back(dautrk->UniqueID);
@@ -518,6 +530,11 @@ void PDSPAnalyzerTreeConverter::FillBeamParticleInfo(std::vector<AnaTrueParticle
       part->Hits[plane].push_back(hit);
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_beam_calibrated_dEdX_SCE));
+  }
+  if (FillAllPlanes()) {  // no induction calorimetry for the beam track in the ntuple
+    part->NHitsPerPlane[0] = 0;
+    part->NHitsPerPlane[1] = 0;
+    part->NHitsPerPlane[2] = (Int_t)reco_beam_calibrated_dEdX_SCE->size();
   }
 
   if (reco_beam_calo_X && reco_beam_calo_Y && reco_beam_calo_Z) {
@@ -716,6 +733,39 @@ void PDSPAnalyzerTreeConverter::FillDaughterParticleTrackInfo(std::vector<AnaTru
       part->Hits[plane].push_back(hit);
     }
     part->truncLibo_dEdx = pdAnaUtils::ComputeTruncatedMean(0.16,0.16,(*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk]);
+  }
+
+  if (FillAllPlanes()) {
+    // Hit counts per plane, collection hit positions (calo points, same index as the dE/dx) and the induction-plane
+    // calorimetry, which the default conversion drops; the induction hits have dE/dx and residual range only.
+    const std::vector<double>& dedx2 = (*reco_daughter_allTrack_calibrated_dEdX_SCE)[itrk];
+    part->NHitsPerPlane[2] = (Int_t)dedx2.size();
+    if (reco_daughter_allTrack_calo_X && itrk < (Int_t)reco_daughter_allTrack_calo_X->size() &&
+        (*reco_daughter_allTrack_calo_X)[itrk].size() == dedx2.size()) {
+      for (size_t j = 0; j < part->Hits[2].size(); j++)
+        part->Hits[2][j].Position.SetXYZ((*reco_daughter_allTrack_calo_X)[itrk][j], (*reco_daughter_allTrack_calo_Y)[itrk][j],
+                                         (*reco_daughter_allTrack_calo_Z)[itrk][j]);
+    }
+    const std::vector<std::vector<double> >* dedxInd[2] = {reco_daughter_allTrack_calibrated_dEdX_SCE_plane0,
+                                                           reco_daughter_allTrack_calibrated_dEdX_SCE_plane1};
+    const std::vector<std::vector<double> >* rrInd[2] = {reco_daughter_allTrack_resRange_plane0,
+                                                         reco_daughter_allTrack_resRange_plane1};
+    for (int plane = 0; plane < 2; plane++) {
+      part->NHitsPerPlane[plane] = 0;
+      if (!dedxInd[plane] || !rrInd[plane] || itrk >= (Int_t)dedxInd[plane]->size() || itrk >= (Int_t)rrInd[plane]->size())
+        continue;
+      const std::vector<double>& dedx = (*dedxInd[plane])[itrk];
+      const std::vector<double>& rr = (*rrInd[plane])[itrk];
+      part->NHitsPerPlane[plane] = (Int_t)dedx.size();
+      const size_t nHits = std::min((size_t)NMAXHITSPERPLANE, std::min(dedx.size(), rr.size()));
+      for (size_t j = 0; j < nHits; j++) {
+        AnaHitPD hit;
+        hit.dEdx          = dedx[j];
+        hit.ResidualRange = rr[j];
+        hit.WireID.Plane  = plane;
+        part->Hits[plane].push_back(hit);
+      }
+    }
   }
 
   if (reco_daughter_allTrack_calo_X && reco_daughter_allTrack_calo_Y && reco_daughter_allTrack_calo_Z &&
