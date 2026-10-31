@@ -422,6 +422,28 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
                   "Lambda pair: true proton start-end distance [cm]", -9999);
   output().AddVar(neutralKaonTree::lampairtruelengthpi, "lampairtruelengthpi", "F",
                   "Lambda pair: true pion start-end distance [cm]", -9999);
+  output().AddVar(neutralKaonTree::lampairptrueendproc, "lampairptrueendproc", "I",
+                  "Lambda pair: true proton ProcessEnd (8 protonInelastic)", -9999);
+  output().AddVar(neutralKaonTree::lampairpitrueendproc, "lampairpitrueendproc", "I",
+                  "Lambda pair: true pion ProcessEnd (2 Decay, 10 piminusInelastic, 11 capture at rest)", -9999);
+  output().AddVar(neutralKaonTree::lampairprecoreversed, "lampairprecoreversed", "I",
+                  "Lambda pair: reco proton runs against the true one (1), along it (0)", -9999);
+  output().AddVar(neutralKaonTree::lampairpirecoreversed, "lampairpirecoreversed", "I",
+                  "Lambda pair: reco pion runs against the true one (1), along it (0)", -9999);
+  output().AddVar(neutralKaonTree::lampairpvtxreversed, "lampairpvtxreversed", "I",
+                  "Lambda pair: the proton endpoint nearest the pion is its reco end (1) or start (0)", -9999);
+  output().AddVar(neutralKaonTree::lampairpivtxreversed, "lampairpivtxreversed", "I",
+                  "Lambda pair: the pion endpoint nearest the proton is its reco end (1) or start (0)", -9999);
+  output().AddVar(neutralKaonTree::lampairpchi2prev, "lampairpchi2prev", "F",
+                  "Lambda pair: proton Chi2PID(2212)/npts with the residual range reversed", -9999);
+  output().AddVar(neutralKaonTree::lampairpichi2pirev, "lampairpichi2pirev", "F",
+                  "Lambda pair: pion Chi2PID(211)/npts with the residual range reversed", -9999);
+  output().AddVar(neutralKaonTree::lampairpichi2prev, "lampairpichi2prev", "F",
+                  "Lambda pair: pion Chi2PID(2212)/npts with the residual range reversed", -9999);
+  output().AddVar(neutralKaonTree::lampairpnhitsdedx, "lampairpnhitsdedx", "I",
+                  "Lambda pair: proton collection hits stored with a valid dE/dx", -9999);
+  output().AddVar(neutralKaonTree::lampairpinhitsdedx, "lampairpinhitsdedx", "I",
+                  "Lambda pair: pion collection hits stored with a valid dE/dx", -9999);
 
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
@@ -459,6 +481,45 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
   Int_t recoFlag = -1, stage = -1, failMask = -1, nHitsP = -999, nHitsPi = -999;
   Float_t dist = -999.f, pChi2P = -999.f, piChi2P = -999.f, piChi2Pi = -999.f;
   Float_t momP = -999.f, momPi = -999.f, lenP = -999.f, lenPi = -999.f;
+  Int_t endProcP = -999, endProcPi = -999, recoRevP = -1, recoRevPi = -1, vtxRevP = -1, vtxRevPi = -1;
+  Int_t nDedxP = -999, nDedxPi = -999;
+  Float_t pChi2PRev = -999.f, piChi2PiRev = -999.f, piChi2PRev = -999.f;
+  // Chi2PID per point with the residual range of the collection hits reversed (as if the track ran the other way)
+  // (the residual ranges are flipped in place and restored afterwards)
+  auto chi2Reversed = [](const AnaParticlePD* part, int pdg) {
+    std::vector<AnaHitPD>& hits = const_cast<AnaParticlePD*>(part)->Hits[2];
+    Float_t lo = 1e9f, hi = -1e9f;
+    for (const AnaHitPD& hit : hits) {
+      if (hit.ResidualRange < -900.f) continue;
+      lo = std::min(lo, hit.ResidualRange);
+      hi = std::max(hi, hit.ResidualRange);
+    }
+    if (hi < lo) return -999.f;
+    std::vector<Float_t> saved;
+    saved.reserve(hits.size());
+    for (AnaHitPD& hit : hits) {
+      saved.push_back(hit.ResidualRange);
+      if (hit.ResidualRange > -900.f) hit.ResidualRange = hi + lo - hit.ResidualRange;
+    }
+    const Float_t chi2 = pdAnaUtils::Chi2PIDChi2PerHit(part, pdg);
+    for (size_t i = 0; i < hits.size(); ++i) hits[i].ResidualRange = saved[i];
+    return chi2;
+  };
+  auto nValidDedx = [](const AnaParticlePD* part) {
+    Int_t n = 0;
+    for (const AnaHitPD& hit : part->Hits[2]) {
+      if (hit.dEdx <= 1000.f && hit.dEdx != -999.f) ++n;
+    }
+    return n;
+  };
+  // 1 when the reco track starts nearer the true end than the true start
+  auto recoReversed = [](const AnaParticlePD* reco, const AnaTrueParticleB* t) {
+    if (reco->PositionStart[0] < -900 || reco->PositionEnd[0] < -900 || t->Position[0] < -900) return -1;
+    const TVector3 ts(t->Position[0], t->Position[1], t->Position[2]);
+    const TVector3 rs(reco->PositionStart[0], reco->PositionStart[1], reco->PositionStart[2]);
+    const TVector3 re(reco->PositionEnd[0], reco->PositionEnd[1], reco->PositionEnd[2]);
+    return ((re - ts).Mag() < (rs - ts).Mag()) ? 1 : 0;
+  };
   auto trueLength = [](const AnaTrueParticleB* t) {
     const TVector3 a(t->Position[0], t->Position[1], t->Position[2]);
     const TVector3 b(t->PositionEnd[0], t->PositionEnd[1], t->PositionEnd[2]);
@@ -467,6 +528,8 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
   if (trueP && truePi) {
     momP = trueP->Momentum;
     momPi = truePi->Momentum;
+    endProcP = static_cast<Int_t>(trueP->ProcessEnd);
+    endProcPi = static_cast<Int_t>(truePi->ProcessEnd);
     lenP = trueLength(trueP);
     lenPi = trueLength(truePi);
     // The reco object of each true daughter: the one with most collection hits among those matched to it
@@ -489,12 +552,26 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
       double best = 1e9;
       const Float_t* endsP[2] = {recoP->PositionStart, recoP->PositionEnd};
       const Float_t* endsPi[2] = {recoPi->PositionStart, recoPi->PositionEnd};
-      for (const Float_t* a : endsP) {
-        for (const Float_t* b : endsPi) {
+      for (int ia = 0; ia < 2; ++ia) {
+        for (int ib = 0; ib < 2; ++ib) {
+          const Float_t* a = endsP[ia];
+          const Float_t* b = endsPi[ib];
           if (a[0] < -900 || b[0] < -900) continue;
-          best = std::min(best, (TVector3(a[0], a[1], a[2]) - TVector3(b[0], b[1], b[2])).Mag());
+          const double d = (TVector3(a[0], a[1], a[2]) - TVector3(b[0], b[1], b[2])).Mag();
+          if (d < best) {
+            best = d;
+            vtxRevP = ia;
+            vtxRevPi = ib;
+          }
         }
       }
+      recoRevP = recoReversed(recoP, trueP);
+      recoRevPi = recoReversed(recoPi, truePi);
+      nDedxP = nValidDedx(recoP);
+      nDedxPi = nValidDedx(recoPi);
+      pChi2PRev = chi2Reversed(recoP, 2212);
+      piChi2PiRev = chi2Reversed(recoPi, 211);
+      piChi2PRev = chi2Reversed(recoPi, 2212);
       if (best < 1e8) dist = static_cast<Float_t>(best);
 
       const int minHits = ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexMinCollectionHits");
@@ -553,6 +630,17 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
   output().FillVar(neutralKaonTree::lampairtruemompi, momPi);
   output().FillVar(neutralKaonTree::lampairtruelengthp, lenP);
   output().FillVar(neutralKaonTree::lampairtruelengthpi, lenPi);
+  output().FillVar(neutralKaonTree::lampairptrueendproc, endProcP);
+  output().FillVar(neutralKaonTree::lampairpitrueendproc, endProcPi);
+  output().FillVar(neutralKaonTree::lampairprecoreversed, recoRevP);
+  output().FillVar(neutralKaonTree::lampairpirecoreversed, recoRevPi);
+  output().FillVar(neutralKaonTree::lampairpvtxreversed, vtxRevP);
+  output().FillVar(neutralKaonTree::lampairpivtxreversed, vtxRevPi);
+  output().FillVar(neutralKaonTree::lampairpchi2prev, pChi2PRev);
+  output().FillVar(neutralKaonTree::lampairpichi2pirev, piChi2PiRev);
+  output().FillVar(neutralKaonTree::lampairpichi2prev, piChi2PRev);
+  output().FillVar(neutralKaonTree::lampairpnhitsdedx, nDedxP);
+  output().FillVar(neutralKaonTree::lampairpinhitsdedx, nDedxPi);
 }
 
 //********************************************************************

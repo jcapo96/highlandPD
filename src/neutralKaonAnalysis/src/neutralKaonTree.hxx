@@ -352,6 +352,17 @@ namespace neutralKaonTree {
     lampairtruemompi, // True pion momentum [GeV/c]
     lampairtruelengthp, // True proton start-end distance [cm]
     lampairtruelengthpi, // True pion start-end distance [cm]
+    lampairptrueendproc, // Lambda pair: true proton ProcessEnd (8 protonInelastic)
+    lampairpitrueendproc, // Lambda pair: true pion ProcessEnd (2 Decay, 10 piminusInelastic, 11 capture at rest)
+    lampairprecoreversed, // Lambda pair: reco proton runs against the true one (1), along it (0)
+    lampairpirecoreversed, // Lambda pair: reco pion runs against the true one (1), along it (0)
+    lampairpvtxreversed, // Lambda pair: the proton endpoint nearest the pion is its reco end (1) or start (0)
+    lampairpivtxreversed, // Lambda pair: the pion endpoint nearest the proton is its reco end (1) or start (0)
+    lampairpchi2prev, // Lambda pair: proton Chi2PID(2212)/npts with the residual range reversed
+    lampairpichi2pirev, // Lambda pair: pion Chi2PID(211)/npts with the residual range reversed
+    lampairpichi2prev, // Lambda pair: pion Chi2PID(2212)/npts with the residual range reversed
+    lampairpnhitsdedx, // Lambda pair: proton collection hits stored with a valid dE/dx
+    lampairpinhitsdedx, // Lambda pair: pion collection hits stored with a valid dE/dx
     k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };
