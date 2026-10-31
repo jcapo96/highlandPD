@@ -328,6 +328,9 @@ namespace neutralKaonTree {
     k0vtxnobjnear10, // Other reco objects with an endpoint within 10 cm of the vertex
     k0vtxnearestobjdist, // Distance from the vertex to the nearest endpoint of another reco object [cm]
     k0vtxnhitsnear, // Collection hits of other reco objects within 3 cm of the vertex
+    k0vtxncompeting, // Other vertices (before the overlap filter) sharing a daughter with this one
+    k0vtxdau1trmdedx, // Truncated-mean collection dE/dx (16% dropped each side), daughter 1 [MeV/cm]
+    k0vtxdau2trmdedx, // Truncated-mean collection dE/dx (16% dropped each side), daughter 2 [MeV/cm]
     // Truth links of the vertex daughters, to identify Lambda -> p pi- when the Lambda itself is not stored
     k0vtxdau1trueparentid, // True ParentID of daughter 1
     k0vtxdau2trueparentid, // True ParentID of daughter 2
@@ -363,6 +366,9 @@ namespace neutralKaonTree {
     lampairpichi2prev, // Lambda pair: pion Chi2PID(2212)/npts with the residual range reversed
     lampairpnhitsdedx, // Lambda pair: proton collection hits stored with a valid dE/dx
     lampairpinhitsdedx, // Lambda pair: pion collection hits stored with a valid dE/dx
+    lampairptrmdedx, // Lambda pair: proton truncated-mean collection dE/dx [MeV/cm]
+    lampairpitrmdedx, // Lambda pair: pion truncated-mean collection dE/dx [MeV/cm]
+    lampairpchi2pi, // Lambda pair: proton Chi2PID(211)/npts
     k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };

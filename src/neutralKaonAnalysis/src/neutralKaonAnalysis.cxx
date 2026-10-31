@@ -444,6 +444,12 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
                   "Lambda pair: proton collection hits stored with a valid dE/dx", -9999);
   output().AddVar(neutralKaonTree::lampairpinhitsdedx, "lampairpinhitsdedx", "I",
                   "Lambda pair: pion collection hits stored with a valid dE/dx", -9999);
+  output().AddVar(neutralKaonTree::lampairptrmdedx, "lampairptrmdedx", "F",
+                  "Lambda pair: proton truncated-mean collection dE/dx [MeV/cm]", -9999);
+  output().AddVar(neutralKaonTree::lampairpitrmdedx, "lampairpitrmdedx", "F",
+                  "Lambda pair: pion truncated-mean collection dE/dx [MeV/cm]", -9999);
+  output().AddVar(neutralKaonTree::lampairpchi2pi, "lampairpchi2pi", "F",
+                  "Lambda pair: proton Chi2PID(211)/npts", -9999);
 
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
@@ -484,6 +490,7 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
   Int_t endProcP = -999, endProcPi = -999, recoRevP = -1, recoRevPi = -1, vtxRevP = -1, vtxRevPi = -1;
   Int_t nDedxP = -999, nDedxPi = -999;
   Float_t pChi2PRev = -999.f, piChi2PiRev = -999.f, piChi2PRev = -999.f;
+  Float_t trmP = -999.f, trmPi = -999.f, pChi2Pi = -999.f;
   // Chi2PID per point with the residual range of the collection hits reversed (as if the track ran the other way)
   // (the residual ranges are flipped in place and restored afterwards)
   auto chi2Reversed = [](const AnaParticlePD* part, int pdg) {
@@ -504,6 +511,20 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
     const Float_t chi2 = pdAnaUtils::Chi2PIDChi2PerHit(part, pdg);
     for (size_t i = 0; i < hits.size(); ++i) hits[i].ResidualRange = saved[i];
     return chi2;
+  };
+  // Truncated-mean collection dE/dx (lowest and highest 16% of the sorted valid hits dropped), as in pdAnnihilationUtils
+  auto truncatedMean = [](const AnaParticlePD* part) {
+    std::vector<Float_t> v;
+    for (const AnaHitPD& hit : part->Hits[2]) {
+      if (hit.dEdx > 0.f && hit.dEdx <= 1000.f) v.push_back(hit.dEdx);
+    }
+    if (v.size() < 3) return -999.f;
+    std::sort(v.begin(), v.end());
+    const size_t lo = static_cast<size_t>(std::lround(0.16 * v.size()));
+    const size_t hi = v.size() - lo;
+    double sum = 0.;
+    for (size_t k = lo; k < hi; ++k) sum += v[k];
+    return (hi > lo) ? static_cast<Float_t>(sum / (hi - lo)) : -999.f;
   };
   auto nValidDedx = [](const AnaParticlePD* part) {
     Int_t n = 0;
@@ -572,6 +593,9 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
       pChi2PRev = chi2Reversed(recoP, 2212);
       piChi2PiRev = chi2Reversed(recoPi, 211);
       piChi2PRev = chi2Reversed(recoPi, 2212);
+      trmP = truncatedMean(recoP);
+      trmPi = truncatedMean(recoPi);
+      pChi2Pi = pdAnaUtils::Chi2PIDChi2PerHit(recoP, 211);
       if (best < 1e8) dist = static_cast<Float_t>(best);
 
       const int minHits = ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexMinCollectionHits");
@@ -584,10 +608,20 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
           ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
               ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDaughterPionChi2NdfRejectAbove")
               : 25.0;
-      const bool pIsProtonLike = pChi2P > -900.f && pChi2P < protonBelow;
-      const bool piIsProtonLike = piChi2P > -900.f && piChi2P < protonBelow;
-      // Pion veto as in pdAnnihilationUtils (IsProtonLikeAndNotPionLike is file-local there)
-      const bool piPassesVeto = !(piChi2P > -900.f && (piChi2P < protonBelow || (piChi2Pi > -900.f && piChi2Pi > pionAbove)));
+      // Proton role as in pdAnnihilationUtils (AnnihilationVertexProtonRoleMode), pion veto as there
+      // (IsProtonLikeAndNotPionLike is file-local there)
+      const int roleMode = ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
+                               ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
+                               : 0;
+      const double minTrm = ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
+                                ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
+                                : 1e9;
+      const bool pIsProtonLike = (pChi2P > -900.f && pChi2P < protonBelow) ||
+                                 (roleMode == 1 && trmP > -900.f && trmP > minTrm);
+      const bool piIsProtonLike = (piChi2P > -900.f && piChi2P < protonBelow) ||
+                                  (roleMode == 1 && trmPi > -900.f && trmPi > minTrm);
+      const bool piPassesVeto =
+          !(piChi2P > -900.f && (piChi2P < protonBelow || (piChi2Pi > -900.f && piChi2Pi > pionAbove)));
 
       // A candidate by truth (either reco object of each daughter), as in the analysis signal definition
       bool isCandidate = false;
@@ -641,6 +675,9 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
   output().FillVar(neutralKaonTree::lampairpichi2prev, piChi2PRev);
   output().FillVar(neutralKaonTree::lampairpnhitsdedx, nDedxP);
   output().FillVar(neutralKaonTree::lampairpinhitsdedx, nDedxPi);
+  output().FillVar(neutralKaonTree::lampairptrmdedx, trmP);
+  output().FillVar(neutralKaonTree::lampairpitrmdedx, trmPi);
+  output().FillVar(neutralKaonTree::lampairpchi2pi, pChi2Pi);
 }
 
 //********************************************************************

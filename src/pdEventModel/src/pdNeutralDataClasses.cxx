@@ -62,6 +62,7 @@ AnaAnnihilationVertexPD::AnaAnnihilationVertexPD(){
 	OriginalDistance = kFloatUnassigned;
 	PairingEndpointCombo = -1;
 	Degeneracy = kIntUnassigned;
+	NCompeting = -1;
 	Momentum = kFloatUnassigned;
 	InvariantMass = kFloatUnassigned;
 	MomentumPandora = kFloatUnassigned;

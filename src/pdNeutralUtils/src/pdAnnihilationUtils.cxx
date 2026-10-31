@@ -10,6 +10,7 @@
 #include <cmath>
 #include <limits>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 namespace pdAnnihilationUtils {
@@ -341,6 +342,22 @@ bool IsProtonLikeAndNotPionLike(const AnaParticlePD* particle, double protonChi2
   if (!(pionChi2Ndf > -900.f)) return false;
 
   return static_cast<double>(pionChi2Ndf) > pionChi2NdfRejectAbove;
+}
+
+// Mean collection-plane dE/dx after dropping the lowest and highest 16% of the valid hits (sorted by dE/dx)
+Float_t TruncatedMeanDedx(const AnaParticlePD* particle) {
+  if (!particle) return -999.f;
+  std::vector<Float_t> v;
+  for (const AnaHitPD& hit : particle->Hits[2]) {
+    if (hit.dEdx > 0.f && hit.dEdx <= 1000.f) v.push_back(hit.dEdx);
+  }
+  if (v.size() < 3) return -999.f;
+  std::sort(v.begin(), v.end());
+  const size_t lo = static_cast<size_t>(std::lround(0.16 * v.size()));
+  const size_t hi = v.size() - lo;
+  double sum = 0.;
+  for (size_t k = lo; k < hi; ++k) sum += v[k];
+  return (hi > lo) ? static_cast<Float_t>(sum / (hi - lo)) : -999.f;
 }
 
 enum DaughterMomentumMethod {
@@ -928,21 +945,40 @@ void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, dou
 }
 
 //***************************************************************
-std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::vector<AnaAnnihilationVertexPD*>& vertices) {
+std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::vector<AnaAnnihilationVertexPD*>& vertices,
+                                                                         int overlapMode) {
 //***************************************************************
   std::sort(vertices.begin(), vertices.end(),
             [](const AnaAnnihilationVertexPD* a, const AnaAnnihilationVertexPD* b) {
               return a->MinimumDistanceFit < b->MinimumDistanceFit;
             });
 
-  std::unordered_set<AnaParticlePD*> usedParticles;
+  // Competing vertices: those sharing a daughter, counted before any is removed
+  for (AnaAnnihilationVertexPD* vtx : vertices) {
+    vtx->NCompeting = 0;
+    for (AnaAnnihilationVertexPD* other : vertices) {
+      if (other == vtx) continue;
+      bool shares = false;
+      for (AnaParticlePD* p : vtx->Particles) {
+        if (std::find(other->Particles.begin(), other->Particles.end(), p) != other->Particles.end()) shares = true;
+      }
+      if (shares) ++vtx->NCompeting;
+    }
+  }
+
+  // Endpoint by which each used particle is paired (true = start)
+  std::unordered_map<AnaParticlePD*, bool> usedParticles;
   std::vector<AnaAnnihilationVertexPD*> filtered;
   filtered.reserve(vertices.size());
 
   for (AnaAnnihilationVertexPD* vtx : vertices) {
     bool overlaps = false;
-    for (AnaParticlePD* p : vtx->Particles) {
-      if (usedParticles.find(p) != usedParticles.end()) {
+    for (size_t k = 0; k < vtx->Particles.size(); ++k) {
+      auto it = usedParticles.find(vtx->Particles[k]);
+      if (it == usedParticles.end()) continue;
+      const bool usesStart = (k == 0) ? PairingUsesStart1(vtx->PairingEndpointCombo)
+                                      : PairingUsesStart2(vtx->PairingEndpointCombo);
+      if (overlapMode == 0 || it->second != usesStart) {
         overlaps = true;
         break;
       }
@@ -954,8 +990,9 @@ std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::ve
     }
 
     filtered.push_back(vtx);
-    for (AnaParticlePD* p : vtx->Particles) {
-      usedParticles.insert(p);
+    for (size_t k = 0; k < vtx->Particles.size(); ++k) {
+      usedParticles[vtx->Particles[k]] = (k == 0) ? PairingUsesStart1(vtx->PairingEndpointCombo)
+                                                  : PairingUsesStart2(vtx->PairingEndpointCombo);
     }
   }
 
@@ -1011,6 +1048,22 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
   auto passesPionVeto = [&](const AnaParticlePD* p) {
     return !IsProtonLikeAndNotPionLike(p, annihilationProtonChi2NdfRejectBelow, annihilationPionChi2NdfRejectAbove);
   };
+  // Proton role (proton-pion mode). 0 (default): Chi2PID(2212)/npts below the proton threshold; 1: that, or a
+  // truncated-mean dE/dx above AnnihilationVertexProtonMinTruncatedDedx (protons that interact have no Bragg peak).
+  const int protonRoleMode =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexProtonRoleMode")
+          : 0;
+  const double protonMinTruncatedDedx =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexProtonMinTruncatedDedx")
+          : 1e9;
+  auto isProtonRole = [&](const AnaParticlePD* p) {
+    if (isProtonLike(p)) return true;
+    if (protonRoleMode != 1) return false;
+    const Float_t t = TruncatedMeanDedx(p);
+    return t > -900.f && static_cast<double>(t) > protonMinTruncatedDedx;
+  };
 
   std::vector<AnaAnnihilationVertexPD*> reconstructedVertices;
   int vertexID = 0;
@@ -1030,8 +1083,8 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       if (daughter2->NHitsPerPlane[2] <= minCollectionHitsPerDaughter) continue;
       if (daughterHypothesis == 0 && !passesPionVeto(daughter2)) continue;
       if (daughterHypothesis == 1) {
-        const bool p1 = isProtonLike(daughter1);
-        const bool p2 = isProtonLike(daughter2);
+        const bool p1 = isProtonRole(daughter1);
+        const bool p2 = isProtonRole(daughter2);
         if (p1 == p2) continue;
         if (!passesPionVeto(p1 ? daughter2 : daughter1)) continue;
       }
@@ -1061,17 +1114,29 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
   if (nBeforeFiltering) {
     *nBeforeFiltering = static_cast<Int_t>(reconstructedVertices.size());
   }
-  std::vector<AnaAnnihilationVertexPD*> filteredVertices = FilterVerticesByMinimumDistanceFit(reconstructedVertices);
+  // 0 (default): each particle in at most one vertex; 1: shared particles allowed when paired by the same endpoint
+  const int overlapMode =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexOverlapMode")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexOverlapMode")
+          : 0;
+  std::vector<AnaAnnihilationVertexPD*> filteredVertices =
+      FilterVerticesByMinimumDistanceFit(reconstructedVertices, overlapMode);
   if (nAfterFiltering) {
     *nAfterFiltering = static_cast<Int_t>(filteredVertices.size());
   }
 
+  std::unordered_set<AnaParticlePD*> reversedParticles;  // a shared particle is reversed once (same endpoint in all)
   for (AnaAnnihilationVertexPD* vertex : filteredVertices) {
     if (!vertex || vertex->Particles.size() < 2) continue;
     AnaParticlePD* d1 = vertex->Particles[0];
     AnaParticlePD* d2 = vertex->Particles[1];
     if (!d1 || !d2) continue;
-    ApplyAnnihilationPairingReversal(vertex->PairingEndpointCombo, d1, d2);
+    if (overlapMode == 0) {
+      ApplyAnnihilationPairingReversal(vertex->PairingEndpointCombo, d1, d2);
+    } else {
+      if (!PairingUsesStart1(vertex->PairingEndpointCombo) && reversedParticles.insert(d1).second) ReverseParticle(d1);
+      if (!PairingUsesStart2(vertex->PairingEndpointCombo) && reversedParticles.insert(d2).second) ReverseParticle(d2);
+    }
     FillPositionPandora(vertex);
     FillPositionFit(vertex, trackFitLength, trackFitDistanceFromStart);
     vertex->Degeneracy =

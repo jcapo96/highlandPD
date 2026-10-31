@@ -342,6 +342,21 @@ namespace {
     return info;
   }
 
+  // Truncated-mean collection dE/dx: the lowest and highest 16% of the valid hits (sorted by dE/dx) dropped
+  Float_t TruncatedMeanCollectionDedx(const AnaParticlePD* part) {
+    std::vector<Float_t> v;
+    for (const AnaHitPD& hit : part->Hits[2]) {
+      if (hit.dEdx > 0.f && hit.dEdx <= 1000.f) v.push_back(hit.dEdx);
+    }
+    if (v.size() < 3) return -999.f;
+    std::sort(v.begin(), v.end());
+    const size_t lo = static_cast<size_t>(std::lround(0.16 * v.size()));
+    const size_t hi = v.size() - lo;
+    double sum = 0.;
+    for (size_t k = lo; k < hi; ++k) sum += v[k];
+    return (hi > lo) ? static_cast<Float_t>(sum / (hi - lo)) : -999.f;
+  }
+
   // Activity around the decay vertex from the reco objects other than the two daughters
   const Float_t kVertexNearObjectCm = 3.0f;
   const Float_t kVertexFarObjectCm = 10.0f;
@@ -646,6 +661,9 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
   AddVarMaxSizeVF(output, k0vtxnearestobjdist, "Distance from the vertex to the nearest other reco endpoint [cm]", nk0,
                   nmax);
   AddVarMaxSizeVI(output, k0vtxnhitsnear, "Collection hits of other reco objects within 3 cm of the vertex", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxncompeting, "Other vertices before the overlap filter sharing a daughter", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1trmdedx, "Truncated-mean collection dE/dx, daughter 1 [MeV/cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2trmdedx, "Truncated-mean collection dE/dx, daughter 2 [MeV/cm]", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1trueparentid, "True ParentID of daughter 1", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2trueparentid, "True ParentID of daughter 2", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1trueparentpdg, "True parent PDG of daughter 1 (-999 if not stored)", nk0, nmax);
@@ -1870,6 +1888,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   Float_t vtxmichel_val[2] = {-999.0f, -999.0f};
   FarEndInfo farEnd[2];
   VertexActivity vtxActivity;
+  Float_t trmdedx_val[2] = {-999.0f, -999.0f};
   Int_t trueparentid_val[2] = {-999, -999};
   Int_t trueparentpdg_val[2] = {-999, -999};
   Int_t trueprocstart_val[2] = {-999, -999};
@@ -1990,6 +2009,7 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
         cnnmichel_val[i] = part->CNNscore[2];
         vtxmichel_val[i] = part->vtx_CNN_michelscore;
         farEnd[i] = ComputeFarEndInfo(part, recoParticles[1 - i], vertexPos, event);
+        trmdedx_val[i] = TruncatedMeanCollectionDedx(part);
         const AnaTrueParticlePD* truePart = static_cast<const AnaTrueParticlePD*>(part->TrueObject);
         if (truePart) {
           trueparentid_val[i] = truePart->ParentID;
@@ -2087,6 +2107,9 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxnobjnear10, vtxActivity.nFar);
   output.FillVectorVar(k0vtxnearestobjdist, vtxActivity.nearestDist);
   output.FillVectorVar(k0vtxnhitsnear, vtxActivity.nHitsNear);
+  output.FillVectorVar(k0vtxncompeting, vertex ? vertex->NCompeting : -1);
+  output.FillVectorVar(k0vtxdau1trmdedx, trmdedx_val[0]);
+  output.FillVectorVar(k0vtxdau2trmdedx, trmdedx_val[1]);
   output.FillVectorVar(k0vtxdau1trueparentid, trueparentid_val[0]);
   output.FillVectorVar(k0vtxdau2trueparentid, trueparentid_val[1]);
   output.FillVectorVar(k0vtxdau1trueparentpdg, trueparentpdg_val[0]);

@@ -28,8 +28,10 @@ namespace pdAnnihilationUtils {
   void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, double trackFitDistanceFromStart = 0.0,
                        bool useStart1 = true, bool useStart2 = true);
 
-  // Keep vertices with smallest MinimumDistanceFit first, with each particle used at most once.
-  std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::vector<AnaAnnihilationVertexPD*>& vertices);
+  // Keep vertices with smallest MinimumDistanceFit first. overlapMode 0: each particle used at most once;
+  // 1: a particle may be shared by several vertices as long as all of them pair it by the same endpoint.
+  std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::vector<AnaAnnihilationVertexPD*>& vertices,
+                                                                           int overlapMode = 0);
 
   // Angle (rad) between neutral creation→annihilation axis and reconstructed vertex momentum (Pandora / fit).
   void FillNeutralParticleAlignment(AnaNeutralParticlePD* neutral, const AnaEventB& event, double trackFitLength,

@@ -55,6 +55,8 @@ public:
 	/// Which endpoint pair minimized distance: 0=SS, 1=SE, 2=ES, 3=EE (-1 unset). Used for daughter reversal policy.
 	Int_t PairingEndpointCombo;
 	Int_t Degeneracy;
+	/// Other vertices (before the overlap filter) that share a daughter with this one (-1 unset).
+	Int_t NCompeting;
 	Float_t Momentum;
 	Float_t InvariantMass;
 	Float_t MomentumPandora;
