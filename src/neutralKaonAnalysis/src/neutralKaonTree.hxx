@@ -331,6 +331,12 @@ namespace neutralKaonTree {
     k0vtxncompeting, // Other vertices (before the overlap filter) sharing a daughter with this one
     k0vtxdau1trmdedx, // Truncated-mean collection dE/dx (16% dropped each side), daughter 1 [MeV/cm]
     k0vtxdau2trmdedx, // Truncated-mean collection dE/dx (16% dropped each side), daughter 2 [MeV/cm]
+    // Line geometry of the pair (pdAnnihilationUtils::ComputePairLineGeometry, daughters starting at the vertex)
+    k0vtxpairgeom, // 1 when paired by the geometric pairing (endpoints beyond the vertex radius), 0 otherwise
+    k0vtxlinedoca, // Closest approach of the two fitted daughter lines (MinimumDistanceFit) [cm]
+    k0vtxdau1gap, // Distance along the daughter 1 line from the closest-approach point to its start [cm]
+    k0vtxdau2gap, // Distance along the daughter 2 line from the closest-approach point to its start [cm]
+    k0vtxcosopen, // Cosine of the opening angle between the two fitted daughter lines
     // Induction planes (filled only from PDSPAnalyzer ntuples with pdIO.PDSPAnalyzerFillAllPlanes = 1)
     k0vtxdau1nhitsind, // Hits on the induction plane with more hits, daughter 1
     k0vtxdau2nhitsind, // Hits on the induction plane with more hits, daughter 2
@@ -383,6 +389,11 @@ namespace neutralKaonTree {
     lampairpichi2piind, // Lambda pair: pion Chi2PID(211)/npts on that induction plane
     lampairpvtxmichel, // Lambda pair: proton CNN Michel score around the track end (ntuple input only)
     lampairpivtxmichel, // Lambda pair: pion CNN Michel score around the track end (ntuple input only)
+    lampairdoca, // Lambda pair: closest approach of the fitted daughter lines (BestGeometricPairing combination) [cm]
+    lampairgapp, // Lambda pair: proton gap, closest-approach point to its paired endpoint along its line [cm]
+    lampairgappi, // Lambda pair: pion gap [cm]
+    lampaircosopen, // Lambda pair: cosine of the opening angle of the fitted daughter lines
+    lampairgeompass, // Lambda pair: 1 when some endpoint combination passes the geometric pairing cuts
     k0vtxinvariantmasstrue, // Invariant mass from true daughter directions and momenta (pion hypothesis) [GeV/c^2]
   enumNeutralKaonMicroTreesLast
   };

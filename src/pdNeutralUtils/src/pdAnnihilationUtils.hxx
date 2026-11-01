@@ -26,6 +26,39 @@ namespace pdAnnihilationUtils {
   Int_t VertexDaughterHits(const AnaParticlePD* p, bool inductionFallback, int minCollectionHits);
   Float_t VertexDaughterChi2PerHit(const AnaParticlePD* p, int pdg, bool inductionFallback, int minCollectionHits);
 
+  // Geometry of the two daughter lines at the given endpoints (line fits as in FillPositionFit, the Pandora endpoint
+  // and direction as fallback): distance of closest approach, cosine of the opening angle (both lines pointing into
+  // their tracks) and, per daughter, the gap: the distance along its line from the closest-approach point to its
+  // endpoint, positive when the vertex lies upstream of the endpoint (a track whose first segment is missing).
+  struct PairLineGeometry {
+    Float_t doca = -999.f;
+    Float_t gap1 = -999.f;
+    Float_t gap2 = -999.f;
+    Float_t cosOpening = -999.f;
+    bool valid = false;
+  };
+  PairLineGeometry ComputePairLineGeometry(const AnaParticlePD* d1, const AnaParticlePD* d2, bool useStart1,
+                                           bool useStart2, double trackFitLength, double trackFitDistanceFromStart);
+
+  // Geometric pairing (AnnihilationVertexPairingMode = 1): closest approach <= AnnihilationVertexGeomMaxDoca, both
+  // gaps in [AnnihilationVertexGeomMinGap, AnnihilationVertexGeomMaxGap] and cosine of the opening angle below
+  // AnnihilationVertexGeomMaxCosOpening (the closest-approach point is undefined for nearly parallel lines).
+  struct GeometricPairingCuts {
+    double maxDoca = 4.0;
+    double minGap = -3.0;
+    double maxGap = 60.0;
+    double maxCosOpening = 0.998;
+  };
+  GeometricPairingCuts ReadGeometricPairingCuts();
+  bool PassesGeometricPairing(const PairLineGeometry& geometry, const GeometricPairingCuts& cuts);
+
+  // Endpoint combination (0=SS, 1=SE, 2=ES, 3=EE; SS only without endpoint combinatorics) that passes the geometric
+  // pairing with the smallest gap sum, or -1. geometry is that combination's, or the one of the combination with the
+  // smallest endpoint distance when none passes.
+  Int_t BestGeometricPairing(const AnaParticlePD* d1, const AnaParticlePD* d2, bool useEndpointCombinatorics,
+                             double trackFitLength, double trackFitDistanceFromStart, const GeometricPairingCuts& cuts,
+                             PairLineGeometry& geometry);
+
   // Fill PositionPandora from the two daughter start-point/direction lines.
   void FillPositionPandora(AnaAnnihilationVertexPD* vertex);
 

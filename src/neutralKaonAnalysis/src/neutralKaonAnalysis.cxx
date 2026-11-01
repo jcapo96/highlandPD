@@ -465,6 +465,16 @@ void neutralKaonAnalysis::DefineMicroTrees(bool addBase){
                   "Lambda pair: proton CNN Michel score around the track end", -9999);
   output().AddVar(neutralKaonTree::lampairpivtxmichel, "lampairpivtxmichel", "F",
                   "Lambda pair: pion CNN Michel score around the track end", -9999);
+  output().AddVar(neutralKaonTree::lampairdoca, "lampairdoca", "F",
+                  "Lambda pair: closest approach of the fitted daughter lines [cm]", -9999);
+  output().AddVar(neutralKaonTree::lampairgapp, "lampairgapp", "F",
+                  "Lambda pair: proton gap from the closest-approach point to its endpoint [cm]", -9999);
+  output().AddVar(neutralKaonTree::lampairgappi, "lampairgappi", "F",
+                  "Lambda pair: pion gap from the closest-approach point to its endpoint [cm]", -9999);
+  output().AddVar(neutralKaonTree::lampaircosopen, "lampaircosopen", "F",
+                  "Lambda pair: cosine of the opening angle of the fitted daughter lines", -9999);
+  output().AddVar(neutralKaonTree::lampairgeompass, "lampairgeompass", "I",
+                  "Lambda pair: 1 when an endpoint combination passes the geometric pairing", -9999);
 
   // Add neutral particle candidates variables
   const UInt_t nK0Max = neutralKaonAnalysisConstants::NMAX_K0_MICROTREE;
@@ -508,6 +518,8 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
   Float_t trmP = -999.f, trmPi = -999.f, pChi2Pi = -999.f;
   Int_t nHitsIndP = -999, nHitsIndPi = -999;
   Float_t pChi2PInd = -999.f, piChi2PInd = -999.f, piChi2PiInd = -999.f, michelP = -999.f, michelPi = -999.f;
+  Int_t geomPass = -1;
+  pdAnnihilationUtils::PairLineGeometry geometry;
   // Chi2PID per point with the residual range of the collection hits reversed (as if the track ran the other way)
   // (the residual ranges are flipped in place and restored afterwards)
   auto chi2Reversed = [](const AnaParticlePD* part, int pdg) {
@@ -623,6 +635,18 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
       michelP = recoP->vtx_CNN_michelscore;
       michelPi = recoPi->vtx_CNN_michelscore;
       if (best < 1e8) dist = static_cast<Float_t>(best);
+      // Line geometry as in the geometric pairing of the vertex builder, whatever the endpoint distance
+      {
+        const bool combinatorics =
+            !ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics") ||
+            ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics") != 0;
+        geomPass = pdAnnihilationUtils::BestGeometricPairing(
+                       recoP, recoPi, combinatorics, ND::params().GetParameterD("neutralKaonAnalysis.TrackFitLength"),
+                       ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceFromStart"),
+                       pdAnnihilationUtils::ReadGeometricPairingCuts(), geometry) >= 0
+                       ? 1
+                       : 0;
+      }
 
       const int minHits = ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexMinCollectionHits");
       const double maxDist = ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexRadius");
@@ -711,6 +735,11 @@ void neutralKaonAnalysis::FillLambdaPairDiagnostics(const AnaTrueParticleB* true
   output().FillVar(neutralKaonTree::lampairpichi2piind, piChi2PiInd);
   output().FillVar(neutralKaonTree::lampairpvtxmichel, michelP);
   output().FillVar(neutralKaonTree::lampairpivtxmichel, michelPi);
+  output().FillVar(neutralKaonTree::lampairdoca, geometry.doca);
+  output().FillVar(neutralKaonTree::lampairgapp, geometry.gap1);
+  output().FillVar(neutralKaonTree::lampairgappi, geometry.gap2);
+  output().FillVar(neutralKaonTree::lampaircosopen, geometry.cosOpening);
+  output().FillVar(neutralKaonTree::lampairgeompass, geomPass);
 }
 
 //********************************************************************
@@ -1178,6 +1207,22 @@ void neutralKaonAnalysis::FillTruthTree(const AnaTrueParticlePD& part){
                                                       daughter2RecoZStartGreaterThanEnd,
                                                       parentIsPandoraBeam,
                                                       parentExactlyOneRecoProtonNearK0Creation);
+  // Line geometry of the reco daughters as in the geometric pairing, whatever their start distance
+  {
+    pdAnnihilationUtils::PairLineGeometry geometry;
+    Int_t geomPass = -1;
+    if(daughter1Reco && daughter2Reco){
+      const bool combinatorics =
+        !ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics") ||
+        ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics") != 0;
+      geomPass = (pdAnnihilationUtils::BestGeometricPairing(daughter1Reco, daughter2Reco, combinatorics,
+                                                            trackFitLength, trackFitDistanceFromStart,
+                                                            pdAnnihilationUtils::ReadGeometricPairingCuts(),
+                                                            geometry) >= 0) ? 1 : 0;
+    }
+    neutralKaonTruthTree::FillNeutralKaonTruthPairGeometry(output(), geometry.doca, geometry.gap1, geometry.gap2,
+                                                           geometry.cosOpening, geomPass);
+  }
   output().FillVectorVar(neutralKaonTruthTree::k0trueendx, part.PositionEnd[0]);
   output().FillVectorVar(neutralKaonTruthTree::k0trueendy, part.PositionEnd[1]);
   output().FillVectorVar(neutralKaonTruthTree::k0trueendz, part.PositionEnd[2]);

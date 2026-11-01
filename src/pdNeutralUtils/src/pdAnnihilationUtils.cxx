@@ -930,6 +930,103 @@ void FillPositionFit(AnaAnnihilationVertexPD* vertex, double trackFitLength, dou
 }
 
 //***************************************************************
+PairLineGeometry ComputePairLineGeometry(const AnaParticlePD* d1, const AnaParticlePD* d2, bool useStart1,
+                                         bool useStart2, double trackFitLength, double trackFitDistanceFromStart) {
+//***************************************************************
+  PairLineGeometry out;
+  if (!d1 || !d2) return out;
+
+  // Line of one daughter at one endpoint, as in FillPositionFit: the fitted line when valid, otherwise the endpoint
+  // and the Pandora direction pointing into the track
+  auto daughterLine = [&](const AnaParticlePD* p, bool useStart, TVector3& endpoint, std::vector<double>& line) {
+    const Float_t* a = useStart ? p->PositionStart : p->PositionEnd;
+    if (!HasValidPosition3(a)) return false;
+    endpoint.SetXYZ(a[0], a[1], a[2]);
+    std::vector<double> fit;
+    pdAnaUtils::ExtrapolateTrack(const_cast<AnaParticlePD*>(p), fit, trackFitLength, useStart,
+                                 trackFitDistanceFromStart);
+    TVector3 s = endpoint;
+    TVector3 d = useStart ? TVector3(p->DirectionStart[0], p->DirectionStart[1], p->DirectionStart[2])
+                          : -TVector3(p->DirectionEnd[0], p->DirectionEnd[1], p->DirectionEnd[2]);
+    if (fit.size() >= 6 && fit[0] > -900.0 && fit[1] > -900.0 && fit[2] > -900.0) {
+      s.SetXYZ(fit[0], fit[1], fit[2]);
+      d.SetXYZ(fit[3], fit[4], fit[5]);
+    }
+    if (d.Mag2() < 1e-10) return false;
+    d = d.Unit();
+    line = {s.X(), s.Y(), s.Z(), d.X(), d.Y(), d.Z()};
+    return true;
+  };
+
+  TVector3 a1, a2;
+  std::vector<double> line1, line2;
+  if (!daughterLine(d1, useStart1, a1, line1) || !daughterLine(d2, useStart2, a2, line2)) return out;
+
+  TVector3 c1, c2;
+  const double doca = pdAnaUtils::FindClosestPointsBetweenLines(line1, line2, c1, c2);
+  if (!std::isfinite(doca) || doca < 0.0) return out;
+  const TVector3 u1(line1[3], line1[4], line1[5]);
+  const TVector3 u2(line2[3], line2[4], line2[5]);
+  out.doca = static_cast<Float_t>(doca);
+  out.gap1 = static_cast<Float_t>((a1 - c1).Dot(u1));
+  out.gap2 = static_cast<Float_t>((a2 - c2).Dot(u2));
+  out.cosOpening = static_cast<Float_t>(u1.Dot(u2));
+  out.valid = true;
+  return out;
+}
+
+//***************************************************************
+GeometricPairingCuts ReadGeometricPairingCuts() {
+//***************************************************************
+  GeometricPairingCuts cuts;
+  auto read = [](const char* name, double& value) {
+    if (ND::params().HasParameter(name)) value = ND::params().GetParameterD(name);
+  };
+  read("neutralKaonAnalysis.AnnihilationVertexGeomMaxDoca", cuts.maxDoca);
+  read("neutralKaonAnalysis.AnnihilationVertexGeomMinGap", cuts.minGap);
+  read("neutralKaonAnalysis.AnnihilationVertexGeomMaxGap", cuts.maxGap);
+  read("neutralKaonAnalysis.AnnihilationVertexGeomMaxCosOpening", cuts.maxCosOpening);
+  return cuts;
+}
+
+//***************************************************************
+bool PassesGeometricPairing(const PairLineGeometry& geometry, const GeometricPairingCuts& cuts) {
+//***************************************************************
+  return geometry.valid && geometry.doca <= cuts.maxDoca && geometry.gap1 >= cuts.minGap &&
+         geometry.gap1 <= cuts.maxGap && geometry.gap2 >= cuts.minGap && geometry.gap2 <= cuts.maxGap &&
+         geometry.cosOpening < cuts.maxCosOpening;
+}
+
+//***************************************************************
+Int_t BestGeometricPairing(const AnaParticlePD* d1, const AnaParticlePD* d2, bool useEndpointCombinatorics,
+                           double trackFitLength, double trackFitDistanceFromStart, const GeometricPairingCuts& cuts,
+                           PairLineGeometry& geometry) {
+//***************************************************************
+  geometry = PairLineGeometry();
+  if (!d1 || !d2) return -1;
+  const AnnihilationEndpointPairing nearest =
+      useEndpointCombinatorics ? BestAnnihilationPairEndpoint(d1, d2) : StartStartAnnihilationPairing(d1, d2);
+  if (nearest.combo < 0) return -1;
+
+  Int_t best = -1;
+  double bestGapSum = std::numeric_limits<double>::infinity();
+  const int nCombos = useEndpointCombinatorics ? 4 : 1;
+  for (int combo = 0; combo < nCombos; ++combo) {
+    const PairLineGeometry g = ComputePairLineGeometry(d1, d2, PairingUsesStart1(combo), PairingUsesStart2(combo),
+                                                       trackFitLength, trackFitDistanceFromStart);
+    if (combo == nearest.combo && best < 0) geometry = g;
+    if (!PassesGeometricPairing(g, cuts)) continue;
+    const double gapSum = static_cast<double>(g.gap1) + static_cast<double>(g.gap2);
+    if (gapSum < bestGapSum) {
+      bestGapSum = gapSum;
+      best = combo;
+      geometry = g;
+    }
+  }
+  return best;
+}
+
+//***************************************************************
 std::vector<AnaAnnihilationVertexPD*> FilterVerticesByMinimumDistanceFit(std::vector<AnaAnnihilationVertexPD*>& vertices,
                                                                          int overlapMode) {
 //***************************************************************
@@ -1020,6 +1117,13 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
       ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics")
           ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics")
           : 1;
+  // 0 = endpoint distance only; 1 = a pair whose endpoints are farther apart than maxDaughterDistance is also accepted
+  // when its fitted lines meet upstream of both daughters (PassesGeometricPairing)
+  const int pairingMode =
+      ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexPairingMode")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.AnnihilationVertexPairingMode")
+          : 0;
+  const GeometricPairingCuts geometricCuts = ReadGeometricPairingCuts();
   // 0 = two pion-like daughters (K0S -> pi+ pi-); 1 = exactly one proton-like daughter (Chi2PID(2212)/npts below
   // the proton threshold) and one daughter that passes the pion veto (Lambda -> p pi-).
   const int daughterHypothesis =
@@ -1066,14 +1170,27 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
         if (!passesPionVeto(p1 ? daughter2 : daughter1)) continue;
       }
 
-      const AnnihilationEndpointPairing pairing =
+      AnnihilationEndpointPairing pairing =
           (annihilationUseEndpointCombinatorics != 0) ? BestAnnihilationPairEndpoint(daughter1, daughter2)
                                                       : StartStartAnnihilationPairing(daughter1, daughter2);
-      if (!std::isfinite(pairing.distance) || pairing.distance > maxDaughterDistance) continue;
+      bool pairedByGeometry = false;
+      if (!std::isfinite(pairing.distance) || pairing.distance > maxDaughterDistance) {
+        if (pairingMode != 1) continue;
+        PairLineGeometry geometry;
+        const Int_t combo = BestGeometricPairing(daughter1, daughter2, annihilationUseEndpointCombinatorics != 0,
+                                                 trackFitLength, trackFitDistanceFromStart, geometricCuts, geometry);
+        if (combo < 0) continue;
+        const Float_t* e1 = PairingUsesStart1(combo) ? daughter1->PositionStart : daughter1->PositionEnd;
+        const Float_t* e2 = PairingUsesStart2(combo) ? daughter2->PositionStart : daughter2->PositionEnd;
+        pairing.combo = combo;
+        pairing.distance = static_cast<float>((TVector3(e1[0], e1[1], e1[2]) - TVector3(e2[0], e2[1], e2[2])).Mag());
+        pairedByGeometry = true;
+      }
 
       AnaAnnihilationVertexPD* reconstructedVertex = new AnaAnnihilationVertexPD();
       reconstructedVertex->OriginalDistance = pairing.distance;
       reconstructedVertex->PairingEndpointCombo = pairing.combo;
+      reconstructedVertex->PairedByGeometry = pairedByGeometry ? 1 : 0;
       reconstructedVertex->UniqueID = vertexID++;
       reconstructedVertex->Particles.push_back(daughter1);
       reconstructedVertex->Particles.push_back(daughter2);
@@ -1116,6 +1233,11 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
     }
     FillPositionPandora(vertex);
     FillPositionFit(vertex, trackFitLength, trackFitDistanceFromStart);
+    const PairLineGeometry geometry =
+        ComputePairLineGeometry(d1, d2, true, true, trackFitLength, trackFitDistanceFromStart);
+    vertex->PairGap1 = geometry.gap1;
+    vertex->PairGap2 = geometry.gap2;
+    vertex->PairCosOpening = geometry.cosOpening;
     vertex->Degeneracy =
         ComputeAnnihilationVertexDegeneracy(event, vertex, annihilationDegeneracyRadius,
                                            annihilationDegeneracyLineToVertexDistance,

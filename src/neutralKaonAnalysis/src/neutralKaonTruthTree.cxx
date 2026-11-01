@@ -41,6 +41,15 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
                     "Distance reco vs true PositionEnd for K0 daughter2 (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0daupairfitmindist,
                     "Minimum distance between fitted lines for K0 daughter pair (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0daupairlinedoca,
+                    "Closest approach of the daughter lines, whatever the start distance (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0daupairgap1,
+                    "Daughter 1 gap: closest-approach point to its paired endpoint along its line (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0daupairgap2,
+                    "Daughter 2 gap: closest-approach point to its paired endpoint along its line (cm)", ntruek0, nmax);
+    AddVarMaxSizeVF(output, k0daupaircosopen, "Cosine of the opening angle of the daughter lines", ntruek0, nmax);
+    AddVarMaxSizeVI(output, k0daupairgeompass, "1 when an endpoint combination passes the geometric pairing",
+                    ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau1otherpairfitmindist,
                     "Minimum fit-line distance for daughter1 with other nearby particles (cm)", ntruek0, nmax);
     AddVarMaxSizeVF(output, k0dau2otherpairfitmindist,
@@ -127,6 +136,15 @@ void neutralKaonTruthTree::AddNeutralKaonTruthVariables(OutputManager& output, U
 }
 
 //********************************************************************
+void neutralKaonTruthTree::FillNeutralKaonTruthPairGeometry(OutputManager& output, Float_t doca, Float_t gap1,
+                                                            Float_t gap2, Float_t cosOpening, Int_t geomPass){
+    output.FillVectorVar(k0daupairlinedoca, doca);
+    output.FillVectorVar(k0daupairgap1, gap1);
+    output.FillVectorVar(k0daupairgap2, gap2);
+    output.FillVectorVar(k0daupaircosopen, cosOpening);
+    output.FillVectorVar(k0daupairgeompass, geomPass);
+}
+
 void neutralKaonTruthTree::FillNeutralKaonTruthVariables(OutputManager& output,
                                                          bool parentHasRecoObject,
                                                          bool daughter1HasRecoObject,

@@ -8,6 +8,9 @@ namespace neutralKaonTruthTree{
 
   // Minimal truth-tree content for true K0s in selected two-pion channels.
   void AddNeutralKaonTruthVariables(OutputManager& output, UInt_t nmax);
+  // Line geometry of the reco daughter pair (pdAnnihilationUtils::BestGeometricPairing); call before IncrementCounter.
+  void FillNeutralKaonTruthPairGeometry(OutputManager& output, Float_t doca, Float_t gap1, Float_t gap2,
+                                        Float_t cosOpening, Int_t geomPass);
   void FillNeutralKaonTruthVariables(OutputManager& output,
                                      bool parentHasRecoObject,
                                      bool daughter1HasRecoObject,
@@ -107,6 +110,11 @@ namespace neutralKaonTruthTree{
     k0dau2recotruestartdist, // 3D |reco start - true start| for daughter 2 (-999 if invalid)
     k0dau2recotrueenddist, // 3D |reco end - true end| for daughter 2 (-999 if invalid)
     k0daupairfitmindist, // Closest approach of annihilation-style line fits for the two daughter reco tracks (-999 if not computed; only when starts within AnnihilationVertexRadius)
+    k0daupairlinedoca, // Closest approach of the daughter lines for the BestGeometricPairing combination, whatever the start distance (-999 if not computed)
+    k0daupairgap1, // Gap of daughter 1: closest-approach point to its paired endpoint along its line [cm]
+    k0daupairgap2, // Gap of daughter 2 [cm]
+    k0daupaircosopen, // Cosine of the opening angle of the daughter lines
+    k0daupairgeompass, // 1 when some endpoint combination passes the geometric pairing cuts, 0 if not, -1 without both reco daughters
     k0dau1otherpairfitmindist, // Minimum of those line-separation distances for daughter1 vs any other reco (not the other K0 daughter), within vertex radius (-999 if none)
     k0dau2otherpairfitmindist, // Same for daughter2 vs other reco tracks (-999 if none)
     k0otherpairsfitmindistglobal, // Minimum of k0dau1otherpairfitmindist and k0dau2otherpairfitmindist when both valid (-999 if neither valid)

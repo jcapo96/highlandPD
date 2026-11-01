@@ -57,6 +57,13 @@ public:
 	Int_t Degeneracy;
 	/// Other vertices (before the overlap filter) that share a daughter with this one (-1 unset).
 	Int_t NCompeting;
+	/// 1 when the pair was accepted by the geometric pairing (endpoints farther apart than the vertex radius), 0 otherwise.
+	Int_t PairedByGeometry;
+	/// Distance along each daughter line from the closest-approach point to the daughter start (> 0: vertex upstream).
+	Float_t PairGap1;
+	Float_t PairGap2;
+	/// Cosine of the opening angle between the two fitted daughter lines, both pointing away from the vertex.
+	Float_t PairCosOpening;
 	Float_t Momentum;
 	Float_t InvariantMass;
 	Float_t MomentumPandora;

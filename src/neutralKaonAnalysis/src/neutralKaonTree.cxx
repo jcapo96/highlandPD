@@ -664,6 +664,11 @@ void neutralKaonTree::AddNeutralKaonVariables_K0VtxDaughters(OutputManager& outp
   AddVarMaxSizeVI(output, k0vtxncompeting, "Other vertices before the overlap filter sharing a daughter", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdau1trmdedx, "Truncated-mean collection dE/dx, daughter 1 [MeV/cm]", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdau2trmdedx, "Truncated-mean collection dE/dx, daughter 2 [MeV/cm]", nk0, nmax);
+  AddVarMaxSizeVI(output, k0vtxpairgeom, "1 when paired by the geometric pairing, 0 otherwise", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxlinedoca, "Closest approach of the fitted daughter lines [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau1gap, "Closest-approach point to daughter 1 start along its line [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxdau2gap, "Closest-approach point to daughter 2 start along its line [cm]", nk0, nmax);
+  AddVarMaxSizeVF(output, k0vtxcosopen, "Cosine of the opening angle of the fitted daughter lines", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau1nhitsind, "Hits on the induction plane with more hits, daughter 1", nk0, nmax);
   AddVarMaxSizeVI(output, k0vtxdau2nhitsind, "Hits on the induction plane with more hits, daughter 2", nk0, nmax);
   AddVarMaxSizeVF(output, k0vtxdau1protonchi2ndfind, "Chi2PID(2212)/npts on the induction plane, daughter 1", nk0, nmax);
@@ -2123,6 +2128,11 @@ void neutralKaonTree::FillNeutralKaonVariables_K0vtxDaughters(OutputManager& out
   output.FillVectorVar(k0vtxncompeting, vertex ? vertex->NCompeting : -1);
   output.FillVectorVar(k0vtxdau1trmdedx, trmdedx_val[0]);
   output.FillVectorVar(k0vtxdau2trmdedx, trmdedx_val[1]);
+  output.FillVectorVar(k0vtxpairgeom, vertex ? vertex->PairedByGeometry : -1);
+  output.FillVectorVar(k0vtxlinedoca, vertex ? vertex->MinimumDistanceFit : -999.0f);
+  output.FillVectorVar(k0vtxdau1gap, vertex ? vertex->PairGap1 : -999.0f);
+  output.FillVectorVar(k0vtxdau2gap, vertex ? vertex->PairGap2 : -999.0f);
+  output.FillVectorVar(k0vtxcosopen, vertex ? vertex->PairCosOpening : -999.0f);
   output.FillVectorVar(k0vtxdau1nhitsind, nhitsind_val[0]);
   output.FillVectorVar(k0vtxdau2nhitsind, nhitsind_val[1]);
   output.FillVectorVar(k0vtxdau1protonchi2ndfind, pchi2ind_val[0]);

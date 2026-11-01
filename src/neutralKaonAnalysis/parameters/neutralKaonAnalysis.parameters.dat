@@ -27,6 +27,18 @@ need to be enabled in baseAnalysis parameter file
 # 0 = plain start–start distance only; PairingEndpointCombo stays SS and no track reversal is applied.
 < neutralKaonAnalysis.AnnihilationVertexUseEndpointCombinatorics = 0 >
 
+# 0 = pair daughters by endpoint distance only (AnnihilationVertexRadius).
+# 1 = also accept a pair whose endpoints are farther apart when the fitted lines meet upstream of both daughters
+#     (tracks whose first segment is missing): closest approach at most GeomMaxDoca, gap of each daughter (distance along
+#     its line from the closest-approach point to its paired endpoint, positive upstream) in [GeomMinGap, GeomMaxGap],
+#     cosine of the opening angle below GeomMaxCosOpening. The same cuts define the geometric-pairing diagnostics
+#     (k0daupairgeompass, lampairgeompass) in every mode.
+< neutralKaonAnalysis.AnnihilationVertexPairingMode = 0 >
+< neutralKaonAnalysis.AnnihilationVertexGeomMaxDoca = 4.0 >
+< neutralKaonAnalysis.AnnihilationVertexGeomMinGap = -3.0 >
+< neutralKaonAnalysis.AnnihilationVertexGeomMaxGap = 60.0 >
+< neutralKaonAnalysis.AnnihilationVertexGeomMaxCosOpening = 0.998 >
+
 # Radius used only for annihilation-vertex degeneracy counting (cm).
 # It is only a loose preselection on raw PositionStart / early hits near the vertex.
 # It does not affect vertex pairing or overlap filtering.
