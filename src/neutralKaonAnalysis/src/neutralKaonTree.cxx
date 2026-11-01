@@ -425,6 +425,8 @@ void neutralKaonTree::AddNeutralKaonVariables_K0Particle(OutputManager& output, 
   AddVarMaxSizeVF(output, k0truelength, "True K0 length using true creation and decay vertices", nk0, nmax);
   AddVarMaxSizeVI(output, k0truepdg, "True PDG of reconstructed neutral candidate", nk0, nmax);
   AddVarMaxSizeVI(output, k0truegeneration, "True generation of reconstructed neutral candidate", nk0, nmax);
+  AddVarMaxSizeVI(output, k0parenttruematch,
+                  "1 when a signal candidate's neutral is also truth-matched through its reco parent, else 0", nk0, nmax);
   AddVarMaxSizeVF(output, k0alignmentpandora,
                    "K0 alignment (Pandora): angle (rad) between creation→annihilation(Pandora) and vertex Σp (Pandora dirs)", nk0,
                    nmax);
@@ -761,6 +763,7 @@ void neutralKaonTree::FillNeutralKaonVariables(OutputManager& output, AnaNeutral
   output.FillVectorVar(k0nvtxbeforefiltering, nVerticesBeforeFiltering);
   output.FillVectorVar(k0nvtxafterfiltering, nVerticesAfterFiltering);
   neutralKaonTree::FillNeutralKaonVariables_K0Particle(output, candidate);
+  output.FillVectorVar(k0parenttruematch, neutralKaonAnaUtils::IsParentMatchedSignalCandidate(candidate, event) ? 1 : 0);
   neutralKaonTree::FillNeutralKaonVariables_K0AlignVariants(output, candidate);
   neutralKaonTree::FillNeutralKaonVariables_K0Parent(output, candidate);
   neutralKaonTree::FillNeutralKaonVariables_K0CreationVtx(output, candidate);

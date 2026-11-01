@@ -4,6 +4,8 @@
 #include "CategoryManager.hxx"
 #include "standardPDTree.hxx"
 #include "pdAnalysisUtils.hxx"
+#include "TVector3.h"
+#include <cmath>
 
 namespace {
 
@@ -97,6 +99,49 @@ AnaTrueParticlePD* GetSignalTrueParentFromVertex(AnaAnnihilationVertexPD* vertex
     return nullptr;
   }
   return trueParent;
+}
+
+// True K0S -> pi+ pi- whose K0S is not in the stored truth (the minitree truth keeps a K0S only when it descends from a
+// K+; 96 % of the stored ones do): opposite-charge pions with the same true ParentID and a common true start, whose true
+// invariant mass is the K0S mass. The two-body decay fixes it exactly (stored K0S: within 0.003 MeV of 497.611 MeV),
+// while pi+ pi- pairs from hadronic interactions populate it at about 25 pairs/MeV in the 12 MC files (about 2.6 pairs
+// expected inside the window, against 849 K0S).
+const double kK0SMassGeV = 0.497611;
+const double kPionMassGeV = 0.13957;
+const double kK0SPairMassToleranceGeV = 5e-5;
+const double kCommonTrueStartCm = 0.01;
+
+bool IsK0SPionPairByTrueMass(const AnaTrueParticlePD* t1, const AnaTrueParticlePD* t2) {
+  if (!(t1->Position[0] > -900.f && t2->Position[0] > -900.f && t1->Momentum > 0.f && t2->Momentum > 0.f)) {
+    return false;
+  }
+  const TVector3 x1(t1->Position[0], t1->Position[1], t1->Position[2]);
+  const TVector3 x2(t2->Position[0], t2->Position[1], t2->Position[2]);
+  if ((x1 - x2).Mag() > kCommonTrueStartCm) return false;
+  TVector3 u1(t1->Direction[0], t1->Direction[1], t1->Direction[2]);
+  TVector3 u2(t2->Direction[0], t2->Direction[1], t2->Direction[2]);
+  if (u1.Mag2() <= 0. || u2.Mag2() <= 0.) return false;
+  const double p1 = t1->Momentum, p2 = t2->Momentum;
+  const double e1 = std::sqrt(p1 * p1 + kPionMassGeV * kPionMassGeV);
+  const double e2 = std::sqrt(p2 * p2 + kPionMassGeV * kPionMassGeV);
+  const double m2 = 2. * kPionMassGeV * kPionMassGeV + 2. * (e1 * e2 - p1 * p2 * u1.Unit().Dot(u2.Unit()));
+  return m2 > 0. && std::fabs(std::sqrt(m2) - kK0SMassGeV) < kK0SPairMassToleranceGeV;
+}
+
+// Signal decay vertex: its two reco particles are the pi+ and pi- of one true K0S -> pi+ pi- decay, the K0S being
+// stored in the truth (GetSignalTrueParentFromVertex) or identified by the true pair mass when it is not.
+bool IsSignalPairFromVertex(AnaAnnihilationVertexPD* vertex, const AnaEventB& event) {
+  if (GetSignalTrueParentFromVertex(vertex, event)) return true;
+  AnaTrueParticlePD* trueDaughter1 = nullptr;
+  AnaTrueParticlePD* trueDaughter2 = nullptr;
+  if (!GetRecoDaughterTrueObjectsFromVertex(vertex, trueDaughter1, trueDaughter2)) return false;
+  if (!(trueDaughter1->ParentID > 0 && trueDaughter1->ParentID == trueDaughter2->ParentID)) return false;
+  if (!((trueDaughter1->PDG == 211 && trueDaughter2->PDG == -211) ||
+        (trueDaughter1->PDG == -211 && trueDaughter2->PDG == 211))) {
+    return false;
+  }
+  if (GetSharedTrueParentFromVertex(vertex, event)) return false;  // stored parent that is not a decaying K0S
+  return IsK0SPionPairByTrueMass(trueDaughter1, trueDaughter2);
 }
 
 bool HasNonK0TrueObject(AnaNeutralParticlePD* neutralParticle) {
@@ -207,33 +252,27 @@ AnaTrueParticlePD* neutralKaonAnaUtils::GetSignalTrueParent(AnaNeutralParticlePD
   if (!neutralParticle || !neutralParticle->AnnihilationVertex) {
     return nullptr;
   }
+  return GetSignalTrueParentFromVertex(neutralParticle->AnnihilationVertex, event);
+}
 
-  AnaTrueParticlePD* neutralTrue = static_cast<AnaTrueParticlePD*>(neutralParticle->TrueObject);
-  if (!neutralTrue) {
-    return nullptr;
-  }
+//********************************************************************
+bool neutralKaonAnaUtils::IsParentMatchedSignalCandidate(AnaNeutralParticlePD* neutralParticle,
+                                                         const AnaEventB& event){
+//********************************************************************
 
-  if (!(neutralTrue->PDG == 310 && neutralTrue->ProcessEnd == 2)) {
-    return nullptr;
-  }
-
-  AnaTrueParticlePD* vertexParent = GetSignalTrueParentFromVertex(neutralParticle->AnnihilationVertex, event);
+  AnaTrueParticlePD* vertexParent = GetSignalTrueParent(neutralParticle, event);
   if (!vertexParent) {
-    return nullptr;
+    return false;
   }
-
-  if (vertexParent->ID != neutralTrue->ID) {
-    return nullptr;
-  }
-
-  return neutralTrue;
+  const AnaTrueParticlePD* neutralTrue = static_cast<AnaTrueParticlePD*>(neutralParticle->TrueObject);
+  return neutralTrue && neutralTrue->ID == vertexParent->ID;
 }
 
 //********************************************************************
 bool neutralKaonAnaUtils::IsSignalCandidate(AnaNeutralParticlePD* neutralParticle, const AnaEventB& event){
 //********************************************************************
 
-  return GetSignalTrueParent(neutralParticle, event) != nullptr;
+  return neutralParticle && IsSignalPairFromVertex(neutralParticle->AnnihilationVertex, event);
 }
 
 //********************************************************************
@@ -249,7 +288,7 @@ void neutralKaonAnaUtils::FillSignalCandidateCategory(AnaNeutralParticlePD* neut
 
   const bool hasNeutralTrueObject = (neutralParticle->TrueObject != nullptr);
 
-  if (GetSignalTrueParent(neutralParticle, event) != nullptr) {
+  if (IsSignalCandidate(neutralParticle, event)) {
     signalCode = GetSignalStoppingSubtypeCode(neutralParticle);
   } else if (HasNonK0TrueObject(neutralParticle)) {
     signalCode = 3;
@@ -280,7 +319,7 @@ int neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(AnaAnnihilat
     return 2;
   }
   int signalCode = 2;
-  if (GetSignalTrueParentFromVertex(vertex, event) != nullptr) {
+  if (IsSignalPairFromVertex(vertex, event)) {
     signalCode = GetSignalStoppingSubtypeCodeFromVertex(vertex);
   }
   return signalCode;

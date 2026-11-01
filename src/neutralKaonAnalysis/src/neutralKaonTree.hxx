@@ -47,6 +47,7 @@ namespace neutralKaonTree {
     k0lengthfit, // Neutral length from creation to annihilation Fit position [cm]
     k0truelength, // True K0 length from true creation to true decay vertex [cm]
     k0truepdg, // True PDG of reconstructed neutral candidate
+    k0parenttruematch, // 1 when a signal candidate's neutral is also truth-matched through its reco parent (signal definition until 2026-11-01)
     k0truegeneration, // True generation of reconstructed neutral candidate
     k0alignmentpandora, // Angle (rad): neutral axis vs vertex momentum (Pandora dirs)
     k0alignmentfit, // Angle (rad): neutral axis vs vertex momentum (fit dirs)

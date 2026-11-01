@@ -80,23 +80,32 @@ AnnihilationEndpointPairing StartStartAnnihilationPairing(const AnaParticlePD* d
   return out;
 }
 
-// Swap start/end, reverse trajectory and hit order, flip TrajectoryDirection.
+// Swap start/end, reverse trajectory and hit order, flip TrajectoryDirection. Both directions point along the travel
+// (DirectionEnd forward at the end, as used with a minus sign in FillPositionFit), so the swapped directions are
+// negated: the new start direction is minus the old end direction. (Until 2026-11-01 they were swapped without the
+// sign change, so a reversed daughter pointed back towards the vertex.)
 void ReverseParticle(AnaParticlePD* p) {
   if (!p) return;
   if (!HasValidStartPosition(p) || !HasValidEndPosition(p)) return;
 
+  auto flipDirections = [](auto* start, auto* end) {  // Float_t (DirectionStart/End) or double (the SCE ones)
+    const bool startValid = start[0] > -900. && start[1] > -900. && start[2] > -900.;
+    const bool endValid = end[0] > -900. && end[1] > -900. && end[2] > -900.;
+    for (int k = 0; k < 3; ++k) {
+      std::swap(start[k], end[k]);
+      if (endValid) start[k] = -start[k];
+      if (startValid) end[k] = -end[k];
+    }
+  };
+
   for (int k = 0; k < 4; ++k) {
     std::swap(p->PositionStart[k], p->PositionEnd[k]);
   }
-  for (int k = 0; k < 3; ++k) {
-    std::swap(p->DirectionStart[k], p->DirectionEnd[k]);
-  }
+  flipDirections(p->DirectionStart, p->DirectionEnd);
   for (int k = 0; k < 4; ++k) {
     std::swap(p->PositionStartSCE[k], p->PositionEndSCE[k]);
   }
-  for (int k = 0; k < 3; ++k) {
-    std::swap(p->DirectionStartSCE[k], p->DirectionEndSCE[k]);
-  }
+  flipDirections(p->DirectionStartSCE, p->DirectionEndSCE);
   std::swap(p->Momentum, p->MomentumEnd);
 
   std::reverse(p->TrjPoints.begin(), p->TrjPoints.end());
