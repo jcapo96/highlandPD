@@ -1,4 +1,5 @@
 #include "pdMomReconstruction.hxx"
+#include "pdDedxPdfModel.hxx"
 #include "pdAnalysisUtils.hxx"
 #include <TFile.h>
 #include <TProfile.h>
@@ -508,6 +509,10 @@ Float_t EstimatePionMomentumFromCSDA(const AnaParticlePD* particle) {
   if (!particle) return -999.0f;
   if (!(particle->Length > 0.0f) || particle->Length == -999.0f) return -999.0f;
 
+  // With the new dE/dx model, one Bethe-Bloch range table and density for TLE and CSDA (audit B10).
+  if (pdDedxPdf::Enabled())
+    return static_cast<Float_t>(pdDedxPdf::MomentumGeVFromRangeCm(static_cast<double>(particle->Length), kPionMassMeV));
+
   TGraph* tg = PionCsdaRangeToKeGraphBB();
   if (!tg) return -999.0f;
 
@@ -525,6 +530,9 @@ Float_t EstimatePionKineticEnergyFromCSDA(const AnaParticlePD* particle) {
 //***************************************************************
   if (!particle) return -999.f;
   if (!(particle->Length > 0.0f) || particle->Length == -999.0f) return -999.f;
+
+  if (pdDedxPdf::Enabled())
+    return static_cast<Float_t>(pdDedxPdf::KeFromRangeCm(static_cast<double>(particle->Length), kPionMassMeV) / 1000.);
 
   TGraph* tg = PionCsdaRangeToKeGraphBB();
   if (!tg) return -999.f;

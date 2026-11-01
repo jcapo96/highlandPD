@@ -1,5 +1,6 @@
 #include "pdMomReconstruction.hxx"
 #include "pdUtilsDEdx.hxx"
+#include "pdDedxPdfModel.hxx"
 #include "pdUtilsTrack.hxx"
 #include <TF1.h>
 #include <TMath.h>
@@ -421,6 +422,61 @@ TGraph* KeVsRangeGraphCached(const std::string& ssparticle) {
   return (it == cache.end()) ? nullptr : it->second;
 }
 
+// ---- New dE/dx likelihood model (pdDedxPdfModel; off unless pdDedxPdf::SetModel enables it) ----
+
+// Hits as InteriorPionCollectionPlaneDedxRr selects them, with their pitch.
+bool InteriorDedxRrPitchSample(AnaParticlePD* part, double maxRR, int minPoints, int skipFirst, int skipLast,
+                               double dedxMin, double dedxMax, std::vector<double>& dedx, std::vector<double>& rr,
+                               std::vector<double>& pitch) {
+  dedx.clear();
+  rr.clear();
+  pitch.clear();
+  if (!part || part->Hits[2].empty()) return false;
+  skipFirst = std::max(skipFirst, 0);
+  skipLast = std::max(skipLast, 0);
+  const int n = static_cast<int>(part->Hits[2].size());
+  if (n < skipFirst + skipLast + 1) return false;
+  const bool capRR = maxRR < 0.5 * std::numeric_limits<double>::max();
+  const bool window = (dedxMin > 0. && dedxMax > dedxMin);
+  for (int i = skipFirst; i < n - skipLast; ++i) {
+    const AnaHitPD& h = part->Hits[2][i];
+    const double r = static_cast<double>(h.ResidualRange);
+    const double d = static_cast<double>(h.dEdx);
+    if (!std::isfinite(r) || !std::isfinite(d) || !(r > 0.)) continue;
+    if (capRR && r > maxRR) continue;
+    if (window && (d < dedxMin || d > dedxMax)) continue;
+    dedx.push_back(d);
+    rr.push_back(r);
+    pitch.push_back(static_cast<double>(h.Pitch));
+  }
+  return static_cast<int>(dedx.size()) >= minPoints;
+}
+
+// The model PDF is tabulated on its own dE/dx window: use it only when the caller selects hits with that window.
+bool NewModelAppliesToWindow(double dedxMin, double dedxMax) {
+  if (!pdDedxPdf::Enabled()) return false;
+  const pdDedxPdf::Model& m = pdDedxPdf::GetModel();
+  return std::abs(dedxMin - m.dedxMin) < 1e-9 && std::abs(dedxMax - m.dedxMax) < 1e-9;
+}
+
+// Sorted (p, lnL) curve with duplicates in p merged, as the legacy curve builders return it.
+bool CurveFromScan(const pdDedxPdf::ScanResult& res, std::vector<double>& pGeV, std::vector<double>& logL) {
+  std::vector<std::pair<double, double>> pairs;
+  for (size_t i = 0; i < res.pGeV.size(); ++i) pairs.push_back({res.pGeV[i], res.logL[i]});
+  std::sort(pairs.begin(), pairs.end());
+  pGeV.clear();
+  logL.clear();
+  for (const auto& pr : pairs) {
+    if (!pGeV.empty() && std::abs(pr.first - pGeV.back()) <= 1e-12 * std::max(1.0, std::abs(pr.first))) {
+      if (pr.second > logL.back()) logL.back() = pr.second;
+    } else {
+      pGeV.push_back(pr.first);
+      logL.push_back(pr.second);
+    }
+  }
+  return pGeV.size() >= 2u;
+}
+
 pdAnaUtils::DEdxFreeRangeFitResult ParticleFreeRangeFit(AnaParticlePD* part, Int_t PDG, double Lmax, double step,
                                                        double maxRRForHits, int minInteriorPoints,
                                                        bool computeMomentum, int skipHitsFirst, int skipHitsLast,
@@ -434,6 +490,22 @@ pdAnaUtils::DEdxFreeRangeFitResult ParticleFreeRangeFit(AnaParticlePD* part, Int
   if (!PdgToMassAndKeName(PDG, mass, ssparticle)) return bad;
 
   if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
+
+  if (NewModelAppliesToWindow(dedxMinMeVcm, dedxMaxMeVcm)) {
+    std::vector<double> d, r, pt;
+    if (!InteriorDedxRrPitchSample(part, maxRRForHits, minInteriorPoints, skipHitsFirst, skipHitsLast, dedxMinMeVcm,
+                                   dedxMaxMeVcm, d, r, pt))
+      return bad;
+    pdDedxPdf::ScanResult res;
+    const double len = pdAnaUtils::MeasuredTrackLengthCmForPionFreeRange(part, r);
+    if (!pdDedxPdf::ScanTLE(r, d, pt, len, mass, Lmax, step, scanStepFineCm, lowPMomentumRefineGeV, res)) return bad;
+    pdAnaUtils::DEdxFreeRangeFitResult out;
+    out.logLikelihood = static_cast<Float_t>(res.logL[res.best]);
+    out.bestOffsetCm = static_cast<Float_t>(res.offsetCm[res.best]);
+    if (computeMomentum) out.momentumGeV = static_cast<Float_t>(res.pGeV[res.best]);
+    (void)computeDedxBiasDiagnostics;  // the dE/dx-bias diagnostics are legacy only
+    return out;
+  }
 
   std::vector<double> dedx, rr;
   if (!InteriorDedxRrSample(part, maxRRForHits, minInteriorPoints, dedx, rr, skipHitsFirst, skipHitsLast,
@@ -470,6 +542,22 @@ bool BuildPionFreeRangeLogLikelihoodVsMomentumCurveInternal(AnaParticlePD* part,
   if (!PdgToMassAndKeName(kPdg, mass, ssparticle)) return false;
 
   if (CollectionPlaneResidualRangeLooksUnset(part)) pdAnaUtils::ComputeResidualRange(part);
+
+  if (NewModelAppliesToWindow(dedxMinMeVcm, dedxMaxMeVcm)) {
+    std::vector<double> d, r, pt;
+    if (!InteriorDedxRrPitchSample(part, std::numeric_limits<double>::max(), minInteriorPoints, skipHitsFirst,
+                                   skipHitsLast, dedxMinMeVcm, dedxMaxMeVcm, d, r, pt))
+      return false;
+    // dedxScale multiplies the measured dE/dx after the window selection, as in the legacy path.
+    if (std::isfinite(dedxScale) && dedxScale > 0. && dedxScale != 1.)
+      for (double& x : d) x *= dedxScale;
+    pdDedxPdf::ScanResult res;
+    const double len = pdAnaUtils::MeasuredTrackLengthCmForPionFreeRange(part, r);
+    if (!pdDedxPdf::ScanTLE(r, d, pt, len, mass, Lmax, step, scanStepFineCm, lowPMomentumRefineGeV, res))
+      return false;
+    (void)pdfPathCm;  // the model uses the hit pitch (or its own fixed pitch)
+    return CurveFromScan(res, pGeV, logL);
+  }
 
   std::vector<double> dedx, rr;
   if (!InteriorDedxRrSample(part, std::numeric_limits<double>::max(), minInteriorPoints, dedx, rr, skipHitsFirst,
@@ -602,6 +690,17 @@ bool pdAnaUtils::BuildPionFreeRangeLogLikelihoodVsMomentumCurveFromVectors(
   if (!InteriorDedxRrSampleFromVectors(rrCm, dedxMeVcm, minInteriorPoints, dedx, rr, skipFirst, skipLast, dedxMinMeVcm,
                                        dedxMaxMeVcm))
     return false;
+
+  if (NewModelAppliesToWindow(dedxMinMeVcm, dedxMaxMeVcm)) {  // no pitch here: the model's fixed pitch
+    const double len = (std::isfinite(measuredTrackLengthCm) && measuredTrackLengthCm > 0.)
+                           ? measuredTrackLengthCm
+                           : pdAnaUtils::MeasuredTrackLengthCmForPionFreeRange(nullptr, rr);
+    pdDedxPdf::ScanResult res;
+    if (!pdDedxPdf::ScanTLE(rr, dedx, std::vector<double>(), len, mass, Lmax, step, scanStepFineCm,
+                            lowPMomentumRefineGeV, res))
+      return false;
+    return CurveFromScan(res, pGeV, logL);
+  }
 
   TGraph* tg_ke = KeVsRangeGraphCached(ssparticle);
   if (!tg_ke) return false;

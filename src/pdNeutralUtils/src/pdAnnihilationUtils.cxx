@@ -3,6 +3,7 @@
 #include "pdJointK0sPionMomentum.hxx"
 #include "pdMomReconstruction.hxx"
 #include "pdUtilsDEdx.hxx"
+#include "pdUtilsRangePID.hxx"
 #include "neutralKaonAnalysisUtils.hxx"
 #include "Parameters.hxx"
 #include "TVector3.h"
@@ -1261,10 +1262,44 @@ std::vector<AnaAnnihilationVertexPD*> CreateVerticesCommon(AnaEventB& event, dou
     if (!daughter1 || !daughter2) continue;
 
     bool shouldAssignMomentum = true;
-    if (ND::params().HasParameter("neutralKaonAnalysis.EnsureMomentumSignalOnly") &&
-        ND::params().GetParameterI("neutralKaonAnalysis.EnsureMomentumSignalOnly") == 1) {
+    const int momentumGate = ND::params().HasParameter("neutralKaonAnalysis.EnsureMomentumSignalOnly")
+                                 ? ND::params().GetParameterI("neutralKaonAnalysis.EnsureMomentumSignalOnly")
+                                 : 0;
+    if (momentumGate == 1) {
       const int signalCode = neutralKaonAnaUtils::GetSignalCategoryCodeForAnnihilationVertex(vertex, event);
       shouldAssignMomentum = (signalCode == 1 || signalCode == 5 || signalCode == 6);
+    }
+    if (momentumGate == 2 || momentumGate == 3) {
+      // Lambda mode: pion TLE only for the pion candidate of the pair. 2: Lambda truth signal (a true p and pi-
+      // with the same parent, both from a decay), on the true pi-; 3: every candidate, on the daughter that is not
+      // proton-like (Chi2PID(2212)/npts below AnnihilationVertexDaughterProtonChi2NdfRejectBelow), as the Python
+      // Lambda mass takes the proton.
+      AnaParticlePD* pionDaughter = nullptr;
+      if (momentumGate == 2) {
+        const AnaTrueParticleB* t1 = daughter1->TrueObject ? static_cast<const AnaTrueParticleB*>(daughter1->TrueObject) : nullptr;
+        const AnaTrueParticleB* t2 = daughter2->TrueObject ? static_cast<const AnaTrueParticleB*>(daughter2->TrueObject) : nullptr;
+        if (t1 && t2 && t1->ParentID > 0 && t1->ParentID == t2->ParentID &&
+            t1->ProcessStart == AnaTrueParticleB::Decay && t2->ProcessStart == AnaTrueParticleB::Decay) {
+          if (t1->PDG == 2212 && t2->PDG == -211) pionDaughter = daughter2;
+          if (t1->PDG == -211 && t2->PDG == 2212) pionDaughter = daughter1;
+        }
+      } else {
+        const double protonBelow =
+            ND::params().HasParameter("neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow")
+                ? ND::params().GetParameterD("neutralKaonAnalysis.AnnihilationVertexDaughterProtonChi2NdfRejectBelow")
+                : 50.;
+        const Float_t c1 = pdAnaUtils::Chi2PIDChi2PerHit(daughter1, 2212);
+        pionDaughter = (c1 > -900.f && static_cast<double>(c1) < protonBelow) ? daughter2 : daughter1;
+      }
+      vertex->Daughter1MomentumMethod = kMomMethodUnassigned;
+      vertex->Daughter2MomentumMethod = kMomMethodUnassigned;
+      if (pionDaughter) {
+        DaughterMomentumDebugInfo dbg;
+        const Int_t method = AssignPionMomentumFromResidualRange(pionDaughter, &dbg);
+        if (pionDaughter == daughter1) vertex->Daughter1MomentumMethod = method;
+        else vertex->Daughter2MomentumMethod = method;
+      }
+      continue;
     }
 
     DaughterMomentumDebugInfo daughter1Debug;

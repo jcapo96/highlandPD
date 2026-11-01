@@ -1,4 +1,6 @@
 #include "pdMomReconstructionFromParams.hxx"
+#include "pdDedxPdfModel.hxx"
+#include <iostream>
 #include "Parameters.hxx"
 
 namespace pdMomReconstruction {
@@ -160,6 +162,34 @@ void FillJointK0sTwoPionGridFitConfig_FromNeutralKaonParams(JointK0sTwoPionGridF
                       : 1.0;
   cfg.useEventSigmaM = !ND::params().HasParameter("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") ||
                        ND::params().GetParameterI("neutralKaonAnalysis.JointK0sMassSigmaEventPropagation") != 0;
+}
+
+//***************************************************************
+void SetDedxPdfModel_FromParams(const std::string& prefix) {
+//***************************************************************
+  pdDedxPdf::Model m;
+  auto has = [&](const char* k) { return ND::params().HasParameter(prefix + "." + k); };
+  auto getD = [&](const char* k) { return ND::params().GetParameterD(prefix + "." + k); };
+  auto getI = [&](const char* k) { return ND::params().GetParameterI(prefix + "." + k); };
+  if (has("DedxPdfModelEnable")) m.enabled = getI("DedxPdfModelEnable") == 1;
+  if (has("DedxPdfModelPerHitPitch")) m.perHitPitch = getI("DedxPdfModelPerHitPitch") == 1;
+  if (has("DedxPdfModelTrackMedianPitch")) m.trackMedianPitch = getI("DedxPdfModelTrackMedianPitch") == 1;
+  if (has("FreeRangeDedxPdfPathCm")) m.fixedPitchCm = getD("FreeRangeDedxPdfPathCm");
+  if (has("DedxPdfModelResolutionFrac")) m.resolutionFrac = getD("DedxPdfModelResolutionFrac");
+  if (has("DedxPdfModelResolutionAbs")) m.resolutionAbs = getD("DedxPdfModelResolutionAbs");
+  if (has("DedxPdfModelOutlierFrac")) m.outlierFrac = getD("DedxPdfModelOutlierFrac");
+  if (has("DedxPdfModelTruncate")) m.truncate = getI("DedxPdfModelTruncate") == 1;
+  if (has("FreeRangeDedxMinMeVcm")) m.dedxMin = getD("FreeRangeDedxMinMeVcm");
+  if (has("FreeRangeDedxMaxMeVcm")) m.dedxMax = getD("FreeRangeDedxMaxMeVcm");
+  if (has("DedxPdfModelDensityGcm3")) m.densityGcm3 = getD("DedxPdfModelDensityGcm3");
+  if (has("DedxPdfModelDedxScale")) m.dedxScale = getD("DedxPdfModelDedxScale");
+  pdDedxPdf::SetModel(m);
+  if (m.enabled)
+    std::cout << "pdDedxPdf model enabled (" << prefix << "): perHitPitch " << m.perHitPitch << ", trackMedianPitch "
+              << m.trackMedianPitch << ", resolution "
+              << m.resolutionFrac << " + " << m.resolutionAbs << " MeV/cm, outliers " << m.outlierFrac
+              << ", truncate " << m.truncate << ", window [" << m.dedxMin << ", " << m.dedxMax << "], density "
+              << m.densityGcm3 << ", dE/dx scale " << m.dedxScale << std::endl;
 }
 
 }  // namespace pdMomReconstruction

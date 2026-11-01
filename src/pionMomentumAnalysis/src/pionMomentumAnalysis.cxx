@@ -10,6 +10,7 @@
 #include "ParticlePositionSCECorrection.hxx"
 #include "SCEGeometricVariation.hxx"
 #include "pdMomReconstruction.hxx"
+#include "pdMomReconstructionFromParams.hxx"
 #include "pdUtilsDEdx.hxx"
 #include "pdUtilsRangePID.hxx"
 #include "pdUtilsTrack.hxx"
@@ -89,6 +90,7 @@ bool pionMomentumAnalysis::Initialize() {
   SetMinAccumCutLevelToSave(ND::params().GetParameterI("pionMomentumAnalysis.MinAccumLevelToSave"));
   _ApplySCECorrection = ND::params().GetParameterI("pionMomentumAnalysis.ApplySCECorrection");
   _ApplySCESystematic = ND::params().GetParameterI("pionMomentumAnalysis.ApplySCESystematic");
+  pdMomReconstruction::SetDedxPdfModel_FromParams("pionMomentumAnalysis");  // off by default: legacy dE/dx PDF
   {
     pdMomReconstruction::PionMCSConfig mcsLoaded;
     pdMomReconstruction::FillPionMCSConfig_FromPionMomentumParams(mcsLoaded);

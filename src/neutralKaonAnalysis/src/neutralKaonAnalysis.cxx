@@ -1,5 +1,6 @@
 #include "neutralKaonAnalysis.hxx"
 #include "Parameters.hxx"
+#include "pdMomReconstructionFromParams.hxx"
 #include "neutralKaonSelection.hxx"
 #include "CategoriesUtils.hxx"
 #include "BasicUtils.hxx"
@@ -298,6 +299,9 @@ bool neutralKaonAnalysis::Initialize(){
   // SCE correction parameter
   _ApplySCECorrection = ND::params().GetParameterI("neutralKaonAnalysis.ApplySCECorrection");
   _ApplySCESystematic = ND::params().GetParameterI("neutralKaonAnalysis.ApplySCESystematic");
+
+  // dE/dx likelihood model of the TLE fit (off by default: legacy PDF)
+  pdMomReconstruction::SetDedxPdfModel_FromParams("neutralKaonAnalysis");
 
   // Initialize event display data tree
   // This stores data for later visualization via DrawingTools in ROOT macros
