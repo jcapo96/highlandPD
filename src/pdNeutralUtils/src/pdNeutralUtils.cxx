@@ -322,6 +322,33 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
       ND::params().HasParameter("neutralKaonAnalysis.CreationVertexBeamParticleMode")
           ? ND::params().GetParameterI("neutralKaonAnalysis.CreationVertexBeamParticleMode")
           : 0;
+  // Second-particle guard (0 = original behaviour): beam tail line, start near that line from UpstreamLength cm before
+  // the beam end to the decay, minimum angle between the two lines, and the closest-approach midpoint within
+  // MaxStartGap of the second particle's start (the second track must begin at the vertex it defines).
+  const int secondParticleGuard =
+      ND::params().HasParameter("neutralKaonAnalysis.CreationVertexSecondParticleGuard")
+          ? ND::params().GetParameterI("neutralKaonAnalysis.CreationVertexSecondParticleGuard")
+          : 0;
+  const double secondParticleMinAngleDeg =
+      ND::params().HasParameter("neutralKaonAnalysis.CreationVertexSecondParticleMinAngleDeg")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexSecondParticleMinAngleDeg")
+          : 10.0;
+  const double secondParticleMaxStartGap =
+      ND::params().HasParameter("neutralKaonAnalysis.CreationVertexSecondParticleMaxStartGap")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexSecondParticleMaxStartGap")
+          : 10.0;
+  const double secondParticleUpstreamLength =
+      ND::params().HasParameter("neutralKaonAnalysis.CreationVertexSecondParticleUpstreamLength")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.CreationVertexSecondParticleUpstreamLength")
+          : 30.0;
+  const double creationTailFitLength =
+      ND::params().HasParameter("neutralKaonAnalysis.TrackFitCreationLength")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.TrackFitCreationLength")
+          : 25.0;
+  const double creationTailFitDistanceFromEnd =
+      ND::params().HasParameter("neutralKaonAnalysis.TrackFitDistanceCreationFromEnd")
+          ? ND::params().GetParameterD("neutralKaonAnalysis.TrackFitDistanceCreationFromEnd")
+          : 10.0;
 
   for (AnaAnnihilationVertexPD* annihilationVtx : annihilationVertices) {
     if (!annihilationVtx) continue;
@@ -434,8 +461,21 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
       if (parentParticle && hasValidCreationPos && hasValidAnnihilationPosForCylinder && creationVertexRadius > 0.0 &&
           trackFitLength > 0.0 && trackFitDistanceFromStart >= 0.0) {
         std::vector<double> beamLineParams;
-        if (BuildRecoFitLine(parentParticle, trackFitLength, trackFitDistanceFromStart, beamLineParams)) {
+        bool hasBeamLine = BuildRecoFitLine(parentParticle, trackFitLength, trackFitDistanceFromStart, beamLineParams);
+        if (secondParticleGuard == 1) {
+          // Same tail fit as the beam-end projection, instead of the line fitted at the beam's TPC entry.
+          std::vector<double> tailLineParams;
+          pdAnaUtils::ExtrapolateTrack(parentParticle, tailLineParams, creationTailFitLength, false,
+                                       creationTailFitDistanceFromEnd);
+          if (tailLineParams.size() >= 6 && std::isfinite(tailLineParams[3]) && tailLineParams[0] > -900.0 &&
+              std::isfinite(tailLineParams[0])) {
+            beamLineParams = tailLineParams;
+            hasBeamLine = true;
+          }
+        }
+        if (hasBeamLine) {
           const TVector3 creationPos(parentEndX, parentEndY, parentEndZ);
+          const TVector3 beamDir(beamLineParams[3], beamLineParams[4], beamLineParams[5]);
           Float_t bestMinDistance = 1e9f;
           std::vector<double> bestSecondLineParams;
           TVector3 bestClosestBeam(-999.0, -999.0, -999.0);
@@ -457,7 +497,15 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
             const TVector3 candidateStart(candidateSecond->PositionStart[0],
                                           candidateSecond->PositionStart[1],
                                           candidateSecond->PositionStart[2]);
-            if (!IsInsideCreationCylinder(candidateStart, beamLineParams, creationPos, annihilationPos, creationVertexRadius)) {
+            if (secondParticleGuard == 1) {
+              // Cylinder around the tail line, extended upstream: the reco beam end can overshoot the interaction.
+              const TVector3 upstreamPos = creationPos - secondParticleUpstreamLength * beamDir.Unit();
+              if (!IsInsideCreationCylinder(candidateStart, beamLineParams, upstreamPos, annihilationPos,
+                                            creationVertexRadius)) {
+                continue;
+              }
+            } else if (!IsInsideCreationCylinder(candidateStart, beamLineParams, creationPos, annihilationPos,
+                                                 creationVertexRadius)) {
               continue;
             }
 
@@ -470,6 +518,14 @@ std::vector<AnaNeutralParticlePD*> CreateNeutralsFromAnnihilationVertices(
                 static_cast<Float_t>(pdAnaUtils::FindClosestPointsBetweenLines(beamLineParams, secondLineParams,
                                                                                closestBeam, closestSecond));
             if (!(std::isfinite(minDistance) && minDistance >= 0.f)) continue;
+            if (secondParticleGuard == 1) {
+              // Nearly parallel lines give an unconstrained midpoint (outliers of 100-200 cm along the beam).
+              const TVector3 secondDir(secondLineParams[3], secondLineParams[4], secondLineParams[5]);
+              const double sinAngle = beamDir.Unit().Cross(secondDir.Unit()).Mag();
+              if (sinAngle < std::sin(secondParticleMinAngleDeg * M_PI / 180.0)) continue;
+              const TVector3 midpoint = 0.5 * (closestBeam + closestSecond);
+              if ((midpoint - candidateStart).Mag() > secondParticleMaxStartGap) continue;
+            }
             if (minDistance >= bestMinDistance) continue;
 
             bestMinDistance = minDistance;

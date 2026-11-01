@@ -89,6 +89,14 @@ need to be enabled in baseAnalysis parameter file
 
 # Keep second-particle candidates only if Chi2PID(2212) chi2/npts is <= this threshold (same as k0protonchi2ndfproton).
 < neutralKaonAnalysis.CreationVertexSecondParticleMaxProtonChi2Ndf = 50.0 >
+# Second-particle guard. 0 = original: start inside the cylinder around the beam line fitted at the TPC entry, between
+# the beam end and the decay; closest-approach midpoint taken whatever its position. 1 = beam tail line (the same fit
+# as the beam-end projection), cylinder from UpstreamLength cm before the beam end to the decay, angle between the
+# two lines at least MinAngleDeg, midpoint within MaxStartGap cm of the second particle start.
+< neutralKaonAnalysis.CreationVertexSecondParticleGuard = 0 >
+< neutralKaonAnalysis.CreationVertexSecondParticleMinAngleDeg = 10.0 >
+< neutralKaonAnalysis.CreationVertexSecondParticleMaxStartGap = 10.0 >
+< neutralKaonAnalysis.CreationVertexSecondParticleUpstreamLength = 30.0 >
 
 # Neutral candidates from annihilation vertices: when 1, keep at most one neutral per vertex (winner among parents).
 # When 0, keep every neutral built for each qualifying parent (no per-vertex elimination).
