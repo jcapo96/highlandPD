@@ -245,9 +245,9 @@ bool ScanTLE(const std::vector<double>& rr, const std::vector<double>& dedx, con
     }
   }
 
-  auto scan = [&](double step, ScanResult& res) {
-    res = ScanResult();
-    for (double L = L0; L <= LmaxCm + 1e-9; L += step) {
+  // Scan of [La, Lb] in steps of `step`, appended to res.
+  auto scan = [&](double La, double Lb, double step, ScanResult& res) {
+    for (double L = La; L <= Lb + 1e-9; L += step) {
       double ll = 0.;
       for (size_t i = 0; i < n; ++i) {
         const double range = rr[i] + L;
@@ -263,13 +263,63 @@ bool ScanTLE(const std::vector<double>& rr, const std::vector<double>& dedx, con
     }
   };
 
-  scan(stepCm, out);
+  scan(L0, LmaxCm, stepCm, out);
   if (out.pGeV.size() < 2) return false;
   if (fineStepCm > 0. && fineStepCm + 1e-12 < stepCm && lowPRefineGeV > 0. &&
       *std::min_element(out.pGeV.begin(), out.pGeV.end()) < lowPRefineGeV) {
-    ScanResult fine;
-    scan(fineStepCm, fine);
-    if (fine.pGeV.size() >= 2) out = fine;
+    if (!(gModel.fineWindowCm > 0.)) {  // full fine rescan (as the legacy scan)
+      ScanResult fine;
+      scan(L0, LmaxCm, fineStepCm, fine);
+      if (fine.pGeV.size() >= 2) out = fine;
+    } else {
+      // Local refinement: fine steps within +-fineWindowCm of the highest coarse local maxima; coarse points
+      // elsewhere are kept, so the returned curve still covers the whole scan range.
+      std::vector<size_t> peaks;
+      const size_t m = out.logL.size();
+      for (size_t i = 0; i < m; ++i) {
+        const bool left = (i == 0) || out.logL[i] >= out.logL[i - 1];
+        const bool right = (i + 1 == m) || out.logL[i] >= out.logL[i + 1];
+        if (left && right) peaks.push_back(i);
+      }
+      std::sort(peaks.begin(), peaks.end(), [&](size_t a, size_t b) { return out.logL[a] > out.logL[b]; });
+      if (peaks.size() > static_cast<size_t>(std::max(1, gModel.fineMaxPeaks))) peaks.resize(std::max(1, gModel.fineMaxPeaks));
+      std::vector<std::pair<double, double>> win;
+      for (size_t k : peaks)
+        win.push_back({std::max(L0, out.offsetCm[k] - gModel.fineWindowCm), std::min(LmaxCm, out.offsetCm[k] + gModel.fineWindowCm)});
+      std::sort(win.begin(), win.end());
+      std::vector<std::pair<double, double>> merged;
+      for (const auto& w : win) {
+        if (!merged.empty() && w.first <= merged.back().second + fineStepCm) merged.back().second = std::max(merged.back().second, w.second);
+        else merged.push_back(w);
+      }
+      auto inside = [&](double L) {
+        for (const auto& w : merged)
+          if (L >= w.first - 1e-9 && L <= w.second + 1e-9) return true;
+        return false;
+      };
+      ScanResult res;
+      for (size_t i = 0; i < m; ++i)
+        if (!inside(out.offsetCm[i])) {
+          res.offsetCm.push_back(out.offsetCm[i]);
+          res.pGeV.push_back(out.pGeV[i]);
+          res.logL.push_back(out.logL[i]);
+        }
+      for (const auto& w : merged) {
+        // align the fine grid with the full fine scan (L0 + k * fineStep)
+        const double start = L0 + std::ceil((w.first - L0) / fineStepCm - 1e-9) * fineStepCm;
+        scan(start, w.second, fineStepCm, res);
+      }
+      std::vector<size_t> o(res.offsetCm.size());
+      for (size_t i = 0; i < o.size(); ++i) o[i] = i;
+      std::sort(o.begin(), o.end(), [&](size_t a, size_t b) { return res.offsetCm[a] < res.offsetCm[b]; });
+      ScanResult sorted;
+      for (size_t i : o) {
+        sorted.offsetCm.push_back(res.offsetCm[i]);
+        sorted.pGeV.push_back(res.pGeV[i]);
+        sorted.logL.push_back(res.logL[i]);
+      }
+      if (sorted.pGeV.size() >= 2) out = sorted;
+    }
   }
   out.best = static_cast<int>(std::max_element(out.logL.begin(), out.logL.end()) - out.logL.begin());
   return true;

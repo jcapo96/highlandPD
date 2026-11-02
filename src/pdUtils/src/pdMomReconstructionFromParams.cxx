@@ -183,13 +183,16 @@ void SetDedxPdfModel_FromParams(const std::string& prefix) {
   if (has("FreeRangeDedxMaxMeVcm")) m.dedxMax = getD("FreeRangeDedxMaxMeVcm");
   if (has("DedxPdfModelDensityGcm3")) m.densityGcm3 = getD("DedxPdfModelDensityGcm3");
   if (has("DedxPdfModelDedxScale")) m.dedxScale = getD("DedxPdfModelDedxScale");
+  if (has("DedxPdfModelFineWindowCm")) m.fineWindowCm = getD("DedxPdfModelFineWindowCm");
+  if (has("DedxPdfModelFineMaxPeaks")) m.fineMaxPeaks = getI("DedxPdfModelFineMaxPeaks");
   pdDedxPdf::SetModel(m);
   if (m.enabled)
     std::cout << "pdDedxPdf model enabled (" << prefix << "): perHitPitch " << m.perHitPitch << ", trackMedianPitch "
               << m.trackMedianPitch << ", resolution "
               << m.resolutionFrac << " + " << m.resolutionAbs << " MeV/cm, outliers " << m.outlierFrac
               << ", truncate " << m.truncate << ", window [" << m.dedxMin << ", " << m.dedxMax << "], density "
-              << m.densityGcm3 << ", dE/dx scale " << m.dedxScale << std::endl;
+              << m.densityGcm3 << ", dE/dx scale " << m.dedxScale << ", fine window " << m.fineWindowCm << " cm x "
+              << m.fineMaxPeaks << " peaks" << std::endl;
 }
 
 }  // namespace pdMomReconstruction

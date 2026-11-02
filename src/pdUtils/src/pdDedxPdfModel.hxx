@@ -31,6 +31,8 @@ struct Model {
   double dedxMax = 5.0;
   double densityGcm3 = 1.3954;
   double dedxScale = 1.0;      // multiplies the measured dE/dx in ScanTLE (calibration of the data to the model)
+  double fineWindowCm = 0.0;   // > 0: fine steps only within +-fineWindowCm of the best coarse maxima (0: full rescan)
+  int fineMaxPeaks = 3;        // number of coarse local maxima refined when fineWindowCm > 0
 };
 
 void SetModel(const Model& m);  // also clears the PDF cache
