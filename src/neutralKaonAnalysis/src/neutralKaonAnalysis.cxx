@@ -305,7 +305,10 @@ bool neutralKaonAnalysis::Initialize(){
 
   // Initialize event display data tree
   // This stores data for later visualization via DrawingTools in ROOT macros
-  _EventDisplayDataTree = new EventDisplayDataTree();
+  // WriteEventDisplayDataTree = 0 skips the tree (about 90 % of the output size); default 1.
+  if (!ND::params().HasParameter("neutralKaonAnalysis.WriteEventDisplayDataTree") ||
+      ND::params().GetParameterI("neutralKaonAnalysis.WriteEventDisplayDataTree") != 0)
+    _EventDisplayDataTree = new EventDisplayDataTree();
 
   // Define categories for color drawing. Have a look at highland/src/highland2/highlandUtils/src/CategoriesUtils.hxx
   anaUtils::AddStandardCategories();
