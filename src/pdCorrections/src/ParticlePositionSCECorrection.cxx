@@ -11,6 +11,15 @@ ParticlePositionSCECorrection::ParticlePositionSCECorrection(){
 
   _sce = new SpaceCharge();
   _sce->Initialize();
+  _sce0 = NULL;
+  // SCE systematic (k0s_sce build): scale the calibration displacement map by SCEScale (HighLAND SCE.dat sigma 0.08).
+  _scale = ND::params().GetParameterD("neutralKaonAnalysis.SCEScale");
+  if(_scale != 1.0){
+    std::cout << "ParticlePositionSCECorrection: SCE map scaled by " << _scale << std::endl;
+    _sce->ApplyGlobalVariation(_scale);
+    _sce0 = new SpaceCharge();
+    _sce0->Initialize();
+  }
 }
 
 //********************************************************************
@@ -47,6 +56,20 @@ void ParticlePositionSCECorrection::Apply(AnaSpillC& spillC){
 
       //correct end and start position/direction
       pdAnaUtils::ComputeParticlePositionAndDirection(part);
+    }
+
+    // SCE systematic: hits are not moved by the correction, so shift them by (scale-1) times the nominal displacement.
+    if(_sce0){
+      for (int plane = 0; plane < 3; ++plane) {
+        for (size_t ihit = 0; ihit < part->Hits[plane].size(); ++ihit) {
+          AnaHitPD& hit = part->Hits[plane][ihit];
+          if (hit.Position.X() < -900 || hit.Position_NoSCE.X() < -900) continue;
+          TVector3 d = _sce0->GetCalPosOffsets(hit.Position_NoSCE, hit.TPCid);
+          hit.Position.SetX(hit.Position.X() - (_scale - 1.0) * d.X());
+          hit.Position.SetY(hit.Position.Y() + (_scale - 1.0) * d.Y());
+          hit.Position.SetZ(hit.Position.Z() + (_scale - 1.0) * d.Z());
+        }
+      }
     }
 
     // Apply global X-bias shift consistently to all reconstructed particle positions.

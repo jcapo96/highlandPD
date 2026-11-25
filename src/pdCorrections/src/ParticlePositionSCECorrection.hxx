@@ -26,6 +26,9 @@ public:
 protected:
 
   SpaceCharge* _sce;
+  /// Nominal map, used for the hit shift when the map is scaled (SCE systematic, scripts/k0s_sce).
+  SpaceCharge* _sce0;
+  double _scale;
 };
 
 #endif

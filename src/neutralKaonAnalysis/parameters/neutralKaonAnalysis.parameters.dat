@@ -13,6 +13,9 @@ need to be enabled in baseAnalysis parameter file
 --- Systematics ------------
  < neutralKaonAnalysis.ApplySCESystematic = 0 >
 
+Scale of the SCE calibration map in the correction (1 = nominal; 0.92/1.08 for the SCE systematic, MC only)
+ < neutralKaonAnalysis.SCEScale = 1.0 >
+
 --- Event Display ------------
  # Event display data is always saved to EventDisplayData tree for signal candidates.
  # This allows regeneration with full OpenGL zoom via DrawingTools::EvtDisplay()
